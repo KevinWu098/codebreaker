@@ -27,11 +27,21 @@ export const verifyJwt = async (
   }
 };
 
+const isWebSocketUpgrade = (request: Request): boolean =>
+  request.headers.get("upgrade")?.toLowerCase() === "websocket";
+
 const extractBearerToken = (request: Request): string | null => {
   const header = request.headers.get("authorization");
 
   if (header?.startsWith("Bearer ")) {
     return header.slice("Bearer ".length);
+  }
+
+  // Browsers can't set `Authorization` on WebSocket upgrades, so we accept the
+  // token via `?token=` for that case only. Allowing it on regular HTTP would
+  // let tokens leak into request logs and browser history.
+  if (!isWebSocketUpgrade(request)) {
+    return null;
   }
 
   const url = new URL(request.url);

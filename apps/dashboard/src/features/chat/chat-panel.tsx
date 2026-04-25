@@ -138,6 +138,9 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
     host,
     name: sessionId,
     protocol: secure ? "wss" : "ws",
+    ...(connection.token
+      ? { query: { token: connection.token }, queryDeps: [connection.token] }
+      : {}),
   });
 
   const chat = useAgentChat({ agent });
