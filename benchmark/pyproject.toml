@@ -1,0 +1,17 @@
+[project]
+name = "ecvebench"
+version = "0.1.0"
+description = "ECVEBench: a multi-language cybersecurity benchmark for AI agent evaluation."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["httpx>=0.27"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pipeline", "harness", "scorer"]
+
+[tool.uv]
+dev-dependencies = ["ruff"]

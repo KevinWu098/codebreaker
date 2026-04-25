@@ -37,3 +37,13 @@ Thumbs.db
 
 # cloudflare
 .wrangler/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# ecvebench pipeline artifacts
+benchmark/pipeline/output/
+benchmark/pipeline/scratch/
