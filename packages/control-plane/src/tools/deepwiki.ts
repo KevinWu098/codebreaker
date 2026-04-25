@@ -4,6 +4,7 @@ import {
 } from "@codebreaker/control-plane/tools/tiers";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { CompatibilityCallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -89,12 +90,19 @@ const callDeepWikiTool = async (
   const client = await createMcpClient();
 
   try {
-    const response = await client.callTool({ arguments: arguments_, name });
+    const response = await client.callTool(
+      { arguments: arguments_, name },
+      CompatibilityCallToolResultSchema
+    );
 
     if (response.isError) {
-      throw new Error(
-        `DeepWiki tool returned an error: ${extractText(response)}`
-      );
+      let detail: string;
+      try {
+        detail = extractText(response);
+      } catch {
+        detail = JSON.stringify(response);
+      }
+      throw new Error(`DeepWiki tool returned an error: ${detail}`);
     }
 
     return capResult(extractText(response));
@@ -103,38 +111,96 @@ const callDeepWikiTool = async (
   }
 };
 
-const extractText = (
-  response: Awaited<ReturnType<Client["callTool"]>>
-): string => {
-  if (
-    response.structuredContent &&
-    typeof response.structuredContent === "object" &&
-    "result" in response.structuredContent &&
-    typeof response.structuredContent.result === "string"
-  ) {
-    return response.structuredContent.result;
+type ToolCallResult = Awaited<ReturnType<Client["callTool"]>> & {
+  toolResult?: unknown;
+};
+
+const normalizeContentBlocks = (raw: unknown): unknown[] => {
+  if (Array.isArray(raw)) {
+    return raw;
+  }
+  if (raw !== undefined && raw !== null) {
+    return [raw];
+  }
+  return [];
+};
+
+const textFromStructured = (sc: unknown): string | undefined => {
+  if (typeof sc === "string" && sc.length > 0) {
+    return sc;
+  }
+  if (sc && typeof sc === "object" && "result" in sc) {
+    const r = (sc as { result: unknown }).result;
+    if (typeof r === "string") {
+      return r;
+    }
+  }
+  if (sc && typeof sc === "object") {
+    return JSON.stringify(sc, null, 2);
+  }
+  return;
+};
+
+const textFromLegacyToolResult = (tr: unknown): string | undefined => {
+  if (typeof tr === "string") {
+    return tr;
+  }
+  if (tr && typeof tr === "object" && "result" in (tr as object)) {
+    const r = (tr as { result: unknown }).result;
+    if (typeof r === "string") {
+      return r;
+    }
+  }
+  if (tr !== null && typeof tr !== "undefined") {
+    return JSON.stringify(tr, null, 2);
+  }
+  return;
+};
+
+const textFromContentBlocks = (blocks: unknown[]): string | undefined => {
+  const textParts: string[] = [];
+  for (const item of blocks) {
+    if (
+      typeof item === "object" &&
+      item !== null &&
+      "type" in item &&
+      item.type === "text" &&
+      "text" in item &&
+      typeof item.text === "string"
+    ) {
+      textParts.push(item.text);
+    }
+  }
+  if (textParts.length > 0) {
+    return textParts.join("\n\n");
+  }
+  if (blocks.length > 0) {
+    return JSON.stringify(blocks, null, 2);
+  }
+  return;
+};
+
+const extractText = (response: ToolCallResult): string => {
+  const fromSc = textFromStructured(response.structuredContent);
+  if (fromSc !== undefined) {
+    return fromSc;
   }
 
-  const textContent = Array.isArray(response.content)
-    ? response.content
-        .filter(
-          (item): item is { text: string; type: string } =>
-            typeof item === "object" &&
-            item !== null &&
-            "type" in item &&
-            item.type === "text" &&
-            "text" in item &&
-            typeof item.text === "string"
-        )
-        .map((item) => item.text)
-        .join("\n\n")
-    : "";
-
-  if (!textContent) {
-    throw new Error("DeepWiki MCP tool result did not include text content");
+  if ("toolResult" in response && response.toolResult != null) {
+    const fromTr = textFromLegacyToolResult(response.toolResult);
+    if (fromTr !== undefined) {
+      return fromTr;
+    }
   }
 
-  return textContent;
+  const fromBlocks = textFromContentBlocks(
+    normalizeContentBlocks(response.content)
+  );
+  if (fromBlocks !== undefined) {
+    return fromBlocks;
+  }
+
+  throw new Error("DeepWiki MCP tool result did not include text content");
 };
 
 const capResult = (result: string): { result: string; truncated: boolean } => {

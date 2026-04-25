@@ -490,6 +490,12 @@ export const CveFollowupStageRowSchema = z
     id: z.string().min(1),
     kind: CveFollowupStageKindSchema,
     lastError: z.string().nullable(),
+    /**
+     * Devin session status, fetched live from Devin's API at response time.
+     * Null when the stage has no Devin session or when the live fetch failed
+     * or was skipped (e.g. Devin not configured, or stage already terminal).
+     */
+    liveDevinStatus: z.string().nullable().optional(),
     prUrl: z.string().nullable(),
     status: CveFollowupStageStatusSchema,
     updatedAt: z.string().datetime(),

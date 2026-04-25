@@ -8,6 +8,7 @@ import {
 import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
 import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/dataset";
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
+import { enrichStagesWithDevinStatus } from "@codebreaker/control-plane/cve-followup/devin";
 import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { CveFollowupStore } from "@codebreaker/control-plane/db/cve-followups";
@@ -109,10 +110,11 @@ export const createRouter = (): Hono<{
     if (!f) {
       return null;
     }
+    const stages = await cve.listStages(f.id);
     return {
       events: await cve.listEvents(f.id),
       followup: f,
-      stages: await cve.listStages(f.id),
+      stages: await enrichStagesWithDevinStatus(env, stages),
       validations: await cve.listValidationsForFollowup(f.id),
     };
   };
