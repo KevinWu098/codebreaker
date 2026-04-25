@@ -36,8 +36,16 @@ const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 // in the `running` state before the watchdog finalizes it. Sized to comfortably
 // exceed the largest configured `timeoutSeconds + AGENT_TURN_COMPLETION_GRACE`.
 const WATCHDOG_MAX_RUNNING_SECONDS = 900;
-const JSON_RETRY_PROMPT =
-  "Your previous reply did not contain a parseable JSON benchmark result. Reply now with ONLY the JSON object matching the contract from the system prompt — no prose, no markdown fences, no commentary. Do not call any tools.";
+const JSON_RETRY_PROMPT = [
+  "Your previous reply could not be parsed as JSON.",
+  "Reply now with ONLY the raw JSON object(s). No other text whatsoever.",
+  "",
+  "Rules:",
+  "- The very first character of your response MUST be `{`.",
+  "- Do NOT include reasoning, chain-of-thought, commentary, markdown fences, or code snippets.",
+  "- Do NOT call any tools.",
+  "- Just output the JSON matching the schema from the system prompt.",
+].join("\n");
 const JSON_RETRY_TIMEOUT_SECONDS = 60;
 
 export class BenchmarkRunOrchestrator {
