@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-nifi-001",
+  "ghsa_id": "GHSA-42wx-65g4-5cxv",
+  "codebase": {
+    "repo": "https://github.com/apache/nifi",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "a3edd34db031d5d5efc83a90e99368a1dfd20a4f"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data flow content processing and transformation"
+    },
+    "L2": {
+      "description": "An XML External Entity (XXE) vulnerability exists where a SAX parser used to process XML content does not disable external general entity resolution or disallow DOCTYPE declarations. An attacker can supply crafted malicious XML input to cause information disclosure or remote code execution."
+    },
+    "L3": {
+      "area": "Data flow content processing and transformation",
+      "description": "An XML External Entity (XXE) vulnerability exists where a SAX parser used to process XML content does not disable external general entity resolution or disallow DOCTYPE declarations. An attacker can supply crafted malicious XML input to cause information disclosure or remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The SplitXml processor creates a SAX parser without disabling external general entity processing or disallowing DOCTYPE declarations, allowing XXE attacks through crafted XML input.",
+    "locations": [
+      {
+        "file": "nifi-nar-bundles/nifi-standard-bundle/nifi-standard-processors/src/main/java/org/apache/nifi/processors/standard/SplitXml.java",
+        "function": "onTrigger"
+      }
+    ]
+  }
+}

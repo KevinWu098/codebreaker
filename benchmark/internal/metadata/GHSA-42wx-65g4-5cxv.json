@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-42wx-65g4-5cxv",
+  "post_patch_commit": "28067a29fd13cdf8e21b440fc65c6dd67872522f",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit found directly from GHSA advisory reference. The patch modifies SplitXml.java to use a new XmlUtils.createSafeSaxReader() utility method that disables external general entity processing and disallows DOCTYPE declarations. The vulnerable location is the onTrigger method in SplitXml.java where the SAX parser was previously created without XXE protections. XmlUtils.java was also modified but only to add the new safe reader utility; the vulnerability itself resides in SplitXml.java.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
