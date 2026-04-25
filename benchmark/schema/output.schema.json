@@ -2,7 +2,15 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ECVEBench AgentOutput",
   "type": "object",
-  "required": ["task_id", "difficulty", "vulnerable", "confidence", "vuln_class", "locations", "reason"],
+  "required": [
+    "task_id",
+    "difficulty",
+    "vulnerable",
+    "confidence",
+    "vuln_class",
+    "locations",
+    "reason"
+  ],
   "additionalProperties": false,
   "properties": {
     "task_id": {
@@ -56,19 +64,13 @@
             "type": "string"
           },
           "function": {
-            "oneOf": [
-              { "type": "null" },
-              { "type": "string" }
-            ]
+            "oneOf": [{ "type": "null" }, { "type": "string" }]
           }
         }
       }
     },
     "reason": {
-      "oneOf": [
-        { "type": "null" },
-        { "type": "string" }
-      ],
+      "oneOf": [{ "type": "null" }, { "type": "string" }],
       "description": "Unscored. Agent explanation of the vulnerability."
     }
   }

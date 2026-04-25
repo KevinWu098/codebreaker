@@ -2,7 +2,14 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ECVEBench InternalMetadata",
   "type": "object",
-  "required": ["ghsa_id", "post_patch_commit", "noisy_patch", "curation_notes", "dataset_version", "snapshot_date"],
+  "required": [
+    "ghsa_id",
+    "post_patch_commit",
+    "noisy_patch",
+    "curation_notes",
+    "dataset_version",
+    "snapshot_date"
+  ],
   "additionalProperties": false,
   "properties": {
     "ghsa_id": {
