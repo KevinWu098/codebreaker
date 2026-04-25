@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import posixpath
 import time
 from collections.abc import AsyncIterator, Callable
 from typing import Any
@@ -103,7 +104,7 @@ class ModalSandboxManager:
             app=modal.App.lookup("codebreaker-modal-shim", create_if_missing=True),
             cpu=profile.cpu,
             encrypted_ports=profile.encrypted_ports,
-            environment=profile.env,
+            env=profile.env,
             image=build_image(profile),
             memory=profile.memory_mb,
             timeout=profile.timeout_seconds,
@@ -141,8 +142,9 @@ class ModalSandboxManager:
     def exec(self, request: ExecRequest) -> ExecResult:
         self.check_rate_limit(request.session_id)
         sandbox, metadata = self.ensure_sandbox(request.session_id, request.profile)
-        cwd = request.cwd or resolve_profile(metadata.profile).workdir
-        timeout_seconds = request.timeout_seconds or resolve_profile(metadata.profile).timeout_seconds
+        profile = resolve_profile(metadata.profile)
+        cwd = resolve_workdir(request.cwd, profile.workdir)
+        timeout_seconds = request.timeout_seconds or profile.timeout_seconds
         started_at = time.monotonic()
         process = sandbox.exec(
             "bash",
@@ -242,6 +244,16 @@ class ModalSandboxManager:
 
 def shell_quote(value: str) -> str:
     return "'" + value.replace("'", "'\"'\"'") + "'"
+
+
+def resolve_workdir(cwd: str | None, default_workdir: str) -> str:
+    if not cwd:
+        return default_workdir
+
+    if posixpath.isabs(cwd):
+        return posixpath.normpath(cwd)
+
+    return posixpath.normpath(posixpath.join(default_workdir, cwd))
 
 
 def read_stream(stream: Any) -> bytes:
