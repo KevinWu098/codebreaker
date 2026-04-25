@@ -144,7 +144,7 @@ The harness projects a task record into an agent input at a given difficulty. Th
 
 ```bash
 python benchmark/harness/generate_input.py \
-    --task-id ecvebench-electerm-001 \
+    --task-id ecvebench-filebrowser-001 \
     --difficulty L1
 ```
 
@@ -154,7 +154,7 @@ Or as a library:
 from benchmark.harness import generate_input, load_task
 from pathlib import Path
 
-task = load_task(Path("benchmark/data/tasks"), "ecvebench-electerm-001")
+task = load_task(Path("benchmark/data/tasks"), "ecvebench-filebrowser-001")
 agent_input = generate_input(task, "L1")
 ```
 
@@ -210,10 +210,10 @@ benchmark/
 │   └── scratch/                   # gitignored throwaway experiments
 ├── data/
 │   └── tasks/                     # one JSON file per unique GHSA
-│       └── ecvebench-electerm-001.json
+│       └── ecvebench-filebrowser-001.json
 ├── internal/
 │   └── metadata/                  # one JSON file per GHSA, keyed by GHSA ID
-│       └── GHSA-8x35-hph8-37hq.json
+│       └── GHSA-5gg9-5g7w-hm73.json
 ├── harness/
 │   ├── __init__.py
 │   └── generate_input.py          # task -> agent input projection
