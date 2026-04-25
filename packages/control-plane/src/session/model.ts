@@ -93,7 +93,8 @@ const selectCloudflareGatewayModel = (
   config: SessionConfig,
   env: Env,
   providerApiKey: string | undefined,
-  providerName: string
+  providerName: string,
+  preferGatewayToken = false
 ): LanguageModel | undefined => {
   const baseURL = cloudflareGatewayBaseUrl(env);
   const modelId = cloudflareGatewayModelId(
@@ -105,12 +106,19 @@ const selectCloudflareGatewayModel = (
     return;
   }
 
+  const apiKeyValue = preferGatewayToken
+    ? (env.CLOUDFLARE_AI_GATEWAY_TOKEN ?? providerApiKey)
+    : (providerApiKey ?? env.CLOUDFLARE_AI_GATEWAY_TOKEN);
   const apiKey = requireEnv(
-    providerApiKey ?? env.CLOUDFLARE_AI_GATEWAY_TOKEN,
+    apiKeyValue,
     "provider API key or CLOUDFLARE_AI_GATEWAY_TOKEN",
     providerName
   );
-  const headers = cloudflareGatewayHeaders(config, env, providerApiKey);
+  const headers = cloudflareGatewayHeaders(
+    config,
+    env,
+    apiKey === providerApiKey ? providerApiKey : undefined
+  );
 
   return createOpenAI({
     apiKey,
@@ -126,7 +134,8 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
         config,
         env,
         env.ANTHROPIC_API_KEY,
-        "Anthropic"
+        "Anthropic",
+        true
       );
 
       if (gatewayModel) {
@@ -207,7 +216,8 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
         config,
         env,
         env.OPENAI_API_KEY,
-        "OpenAI"
+        "OpenAI",
+        true
       );
 
       if (gatewayModel) {
