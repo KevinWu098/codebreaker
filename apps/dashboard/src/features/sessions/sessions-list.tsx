@@ -14,7 +14,7 @@ import { formatNumber, formatRelativeTime, truncateId } from "@/lib/format";
 
 interface SessionsListProps {
   onSelect: (id: string) => void;
-  selectedId: string | undefined;
+  selectedId: string | null;
 }
 
 export const SessionsList = ({

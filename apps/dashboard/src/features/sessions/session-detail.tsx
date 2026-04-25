@@ -6,6 +6,7 @@ import {
   Trigger as TabsTrigger,
 } from "@radix-ui/react-tabs";
 import { ChevronLeft, Trash2 } from "lucide-react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -26,7 +27,9 @@ import {
 import { cn } from "@/lib/cn";
 import { formatNumber, formatRelativeTime, truncateId } from "@/lib/format";
 
-type Tab = "overview" | "config" | "messages" | "chat" | "sandbox";
+const TAB_IDS = ["overview", "config", "messages", "chat", "sandbox"] as const;
+
+type Tab = (typeof TAB_IDS)[number];
 
 interface TabDef {
   id: Tab;
@@ -203,7 +206,10 @@ export const SessionDetail = ({
   onBack,
   sessionId,
 }: SessionDetailProps): React.JSX.Element => {
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useQueryState(
+    "tab",
+    parseAsStringLiteral(TAB_IDS).withDefault("overview")
+  );
   const session = useSessionQuery(sessionId);
   const state = useSessionStateQuery(sessionId);
   const config = useSessionConfigQuery(sessionId, tab === "config");
