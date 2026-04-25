@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ECVEBench InternalMetadata",
+  "type": "object",
+  "required": ["ghsa_id", "post_patch_commit", "noisy_patch", "curation_notes", "dataset_version", "snapshot_date"],
+  "additionalProperties": false,
+  "properties": {
+    "ghsa_id": {
+      "type": "string",
+      "description": "Primary key. Source GitHub Security Advisory ID.",
+      "pattern": "^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$"
+    },
+    "post_patch_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "Full 40-character SHA of the fixed version. Used by harness for negative validation. Never exposed to agent."
+    },
+    "noisy_patch": {
+      "type": "boolean",
+      "description": "True if the patch commit touches more than 3 non-test files, indicating location was derived semantically or from advisory description rather than diff."
+    },
+    "curation_notes": {
+      "type": "string",
+      "description": "Free-text notes from the curator explaining location derivation, known ambiguities, or manual review decisions."
+    },
+    "dataset_version": {
+      "type": "string",
+      "description": "Version of the dataset this record belongs to.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "snapshot_date": {
+      "type": "string",
+      "description": "Date this record was curated or last updated.",
+      "format": "date"
+    }
+  }
+}
