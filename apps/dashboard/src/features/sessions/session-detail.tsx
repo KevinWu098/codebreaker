@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
+import { DefinitionField } from "@/components/definition-field";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
 import { RefreshButton } from "@/components/refresh-button";
@@ -24,7 +25,6 @@ import {
   useSessionQuery,
   useSessionStateQuery,
 } from "@/hooks/queries";
-import { cn } from "@/lib/cn";
 import {
   formatNumber,
   formatRelativeTime,
@@ -164,35 +164,35 @@ const SessionRowCard = ({ row }: { row: SessionRow }): React.JSX.Element => {
   return (
     <Card title="d1 session row">
       <dl className="grid grid-cols-[160px_1fr] gap-x-3 gap-y-2 text-xs">
-        <Field label="id" mono>
+        <DefinitionField label="id" mono>
           {row.id}
-        </Field>
-        <Field label="status">
+        </DefinitionField>
+        <DefinitionField label="status">
           <Badge status={row.status} />
-        </Field>
-        <Field label="title">{row.title ?? "—"}</Field>
-        <Field label="model" mono>
+        </DefinitionField>
+        <DefinitionField label="title">{row.title ?? "—"}</DefinitionField>
+        <DefinitionField label="model" mono>
           {row.modelProvider}/{row.modelId}
-        </Field>
-        <Field label="repo" mono>
+        </DefinitionField>
+        <DefinitionField label="repo" mono>
           {formatRepo(row.repoOwner, row.repoName)}
-        </Field>
-        <Field label="turns" numeric>
+        </DefinitionField>
+        <DefinitionField label="turns" numeric>
           {formatNumber(row.turnCount)}
-        </Field>
-        <Field label="tokens (in/out/total)" numeric>
+        </DefinitionField>
+        <DefinitionField label="tokens (in/out/total)" numeric>
           {formatNumber(row.inputTokens)} / {formatNumber(row.outputTokens)} /{" "}
           {formatNumber(tokens)}
-        </Field>
-        <Field label="created" mono>
+        </DefinitionField>
+        <DefinitionField label="created" mono>
           {row.createdAt}
-        </Field>
-        <Field label="updated" mono>
+        </DefinitionField>
+        <DefinitionField label="updated" mono>
           {row.updatedAt}
-        </Field>
-        <Field label="completed" mono>
+        </DefinitionField>
+        <DefinitionField label="completed" mono>
           {row.completedAt ?? "—"}
-        </Field>
+        </DefinitionField>
       </dl>
     </Card>
   );
@@ -301,28 +301,3 @@ export const SessionDetail = ({
     </div>
   );
 };
-
-interface FieldProps {
-  children: React.ReactNode;
-  label: string;
-  mono?: boolean;
-  numeric?: boolean;
-}
-
-const Field = ({
-  children,
-  label,
-  mono,
-  numeric,
-}: FieldProps): React.JSX.Element => (
-  <>
-    <dt className="text-[10px] text-fg-muted uppercase tracking-wider">
-      {label}
-    </dt>
-    <dd
-      className={cn("text-fg", mono && "font-mono", numeric && "tabular-nums")}
-    >
-      {children}
-    </dd>
-  </>
-);

@@ -24,6 +24,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/button";
 import { ErrorState } from "@/components/error-state";
+import { FormField } from "@/components/form-field";
 import { useCreateSessionMutation } from "@/hooks/mutations";
 
 interface CreateSessionDialogProps {
@@ -165,7 +166,7 @@ export const CreateSessionDialog = ({
               title="create failed"
             />
 
-            <Field
+            <FormField
               error={errors.title?.message}
               id={titleId}
               label="title (optional)"
@@ -176,10 +177,10 @@ export const CreateSessionDialog = ({
                 placeholder="weekend exfil hunt"
                 {...register("title")}
               />
-            </Field>
+            </FormField>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field
+              <FormField
                 error={errors.provider?.message}
                 id={providerId}
                 label="provider"
@@ -203,9 +204,9 @@ export const CreateSessionDialog = ({
                     </option>
                   ))}
                 </select>
-              </Field>
+              </FormField>
 
-              <Field
+              <FormField
                 error={errors.modelId?.message}
                 id={modelId}
                 label="model id"
@@ -216,11 +217,11 @@ export const CreateSessionDialog = ({
                   key={provider}
                   {...register("modelId")}
                 />
-              </Field>
+              </FormField>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field
+              <FormField
                 error={errors.extensionPolicy?.message}
                 id={policyId}
                 label="extension policy"
@@ -236,9 +237,9 @@ export const CreateSessionDialog = ({
                     </option>
                   ))}
                 </select>
-              </Field>
+              </FormField>
 
-              <Field
+              <FormField
                 error={errors.profile?.message}
                 id={profileId}
                 label="sandbox profile"
@@ -254,11 +255,11 @@ export const CreateSessionDialog = ({
                     </option>
                   ))}
                 </select>
-              </Field>
+              </FormField>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field
+              <FormField
                 error={errors.maxTurns?.message}
                 id={turnsId}
                 label="max turns"
@@ -270,9 +271,9 @@ export const CreateSessionDialog = ({
                   type="number"
                   {...register("maxTurns", { valueAsNumber: true })}
                 />
-              </Field>
+              </FormField>
 
-              <Field
+              <FormField
                 error={errors.maxSteps?.message}
                 id={stepsId}
                 label="max steps / turn"
@@ -284,10 +285,10 @@ export const CreateSessionDialog = ({
                   type="number"
                   {...register("maxSteps", { valueAsNumber: true })}
                 />
-              </Field>
+              </FormField>
             </div>
 
-            <Field
+            <FormField
               error={errors.systemPrompt?.message}
               id={promptId}
               label="system prompt (optional)"
@@ -298,7 +299,7 @@ export const CreateSessionDialog = ({
                 rows={4}
                 {...register("systemPrompt")}
               />
-            </Field>
+            </FormField>
 
             <footer className="-mx-3 mt-2 -mb-3 flex items-center justify-end gap-2 border-border border-t px-3 py-2">
               <DialogClose asChild>
@@ -318,25 +319,3 @@ export const CreateSessionDialog = ({
     </DialogRoot>
   );
 };
-
-interface FieldProps {
-  children: React.ReactNode;
-  error?: string | undefined;
-  id: string;
-  label: string;
-}
-
-const Field = ({
-  children,
-  error,
-  id,
-  label,
-}: FieldProps): React.JSX.Element => (
-  <div className="space-y-1">
-    <label className="field-label" htmlFor={id}>
-      {label}
-    </label>
-    {children}
-    {error ? <p className="text-[10px] text-status-failed">{error}</p> : null}
-  </div>
-);
