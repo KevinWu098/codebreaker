@@ -8,6 +8,14 @@
   "name": "codebreaker",
   "scripts": {
     "check": "ultracite check",
+    "db:apply:local": "pnpm --dir packages/control-plane exec wrangler d1 migrations apply codebreaker-sessions --local --config wrangler.jsonc",
+    "db:apply:remote": "pnpm --dir packages/control-plane exec wrangler d1 migrations apply codebreaker-sessions --remote --config wrangler.jsonc",
+    "db:generate": "pnpm --dir packages/control-plane exec drizzle-kit generate --config drizzle.config.ts",
+    "db:studio": "pnpm --dir packages/control-plane exec drizzle-kit studio --config drizzle.config.ts",
+    "dev:modal": "cd packages/modal-shim && modal serve src/codebreaker_modal_shim/main.py",
+    "dev:worker": "pnpm --dir packages/control-plane exec wrangler dev --config wrangler.jsonc",
+    "deploy:modal": "cd packages/modal-shim && modal deploy src/codebreaker_modal_shim/main.py",
+    "deploy:worker": "pnpm --dir packages/control-plane exec wrangler deploy --config wrangler.jsonc",
     "fix": "ultracite fix",
     "prepare": "lefthook install",
     "typecheck": "pnpm -r --parallel exec tsc --noEmit"
