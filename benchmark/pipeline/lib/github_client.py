@@ -53,11 +53,17 @@ class GitHubClient:
 
     def _handle_rate_limit(self, response: httpx.Response) -> None:
         remaining = response.headers.get("x-ratelimit-remaining")
-        if remaining is not None and int(remaining) <= 1:
+        if remaining is None:
+            return
+        try:
+            if int(remaining) > 1:
+                return
             reset_at = int(response.headers.get("x-ratelimit-reset", "0"))
-            sleep_for = max(reset_at - int(time.time()), 0) + RATE_LIMIT_BUFFER_SECONDS
-            print(f"  [rate-limit] sleeping {sleep_for}s until reset")
-            time.sleep(sleep_for)
+        except ValueError:
+            return
+        sleep_for = max(reset_at - int(time.time()), 0) + RATE_LIMIT_BUFFER_SECONDS
+        print(f"  [rate-limit] sleeping {sleep_for}s until reset")
+        time.sleep(sleep_for)
 
     def _request(
         self,
@@ -67,8 +73,10 @@ class GitHubClient:
         params: dict[str, Any] | None = None,
         max_retries: int = 3,
     ) -> httpx.Response:
+        last_response: httpx.Response | None = None
         for attempt in range(max_retries):
             response = self._client.request(method, url, params=params)
+            last_response = response
             if response.status_code in (403, 429):
                 retry_after = response.headers.get("retry-after")
                 if retry_after:
@@ -89,11 +97,21 @@ class GitHubClient:
                 )
                 time.sleep(sleep_for)
                 continue
+            if response.status_code >= 500:
+                sleep_for = 2 ** attempt
+                print(
+                    f"  [server-error] {response.status_code} on {url}, "
+                    f"retry {attempt + 1}/{max_retries}, sleeping {sleep_for}s"
+                )
+                time.sleep(sleep_for)
+                continue
             response.raise_for_status()
             self._handle_rate_limit(response)
             return response
-        response.raise_for_status()
-        return response
+        if last_response is None:
+            raise RuntimeError("_request called with max_retries=0")
+        last_response.raise_for_status()
+        return last_response
 
     @staticmethod
     def _parse_next_cursor(link_header: str | None) -> str | None:

@@ -17,6 +17,7 @@ import argparse
 import json
 import os
 import sys
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -79,12 +80,14 @@ def _drop(state: dict[str, Any], reason: str | None) -> None:
         state["dropped"][reason] = state["dropped"].get(reason, 0) + 1
 
 
-FILTERS: list[tuple[str, Any]] = [
-    ("has_description", lambda adv: has_description(adv)),
+AdvisoryFilter = Callable[[dict[str, Any]], tuple[bool, str | None]]
+
+FILTERS: list[tuple[str, AdvisoryFilter]] = [
+    ("has_description", has_description),
     ("is_english", lambda adv: is_english(adv.get("description", ""))),
-    ("is_single_package", lambda adv: is_single_package(adv)),
-    ("has_reference_url", lambda adv: has_reference_url(adv)),
-    ("has_cvss", lambda adv: has_cvss(adv)),
+    ("is_single_package", is_single_package),
+    ("has_reference_url", has_reference_url),
+    ("has_cvss", has_cvss),
 ]
 
 
@@ -161,21 +164,26 @@ def run(
 
             page_size = len(page.advisories)
             page_candidates = 0
+            page_records: list[dict[str, Any]] = []
 
-            for _i, advisory in enumerate(page.advisories, start=1):
+            for advisory in page.advisories:
                 state["advisories_seen"] += 1
 
                 record, rejection = _process_advisory(advisory, seen, state)
 
                 if record:
-                    with output_path.open("a") as f:
-                        f.write(json.dumps(record, separators=(",", ":")))
-                        f.write("\n")
+                    page_records.append(record)
                     state["candidates_written"] += 1
                     page_candidates += 1
                 elif rejection:
                     with rejected_path.open("a") as f:
                         f.write(json.dumps(rejection, separators=(",", ":")))
+                        f.write("\n")
+
+            if page_records:
+                with output_path.open("a") as f:
+                    for record in page_records:
+                        f.write(json.dumps(record, separators=(",", ":")))
                         f.write("\n")
 
             cursor = page.next_cursor
