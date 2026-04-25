@@ -44,6 +44,11 @@ export const CreateSessionResponseSchema = z.object({
 });
 export type CreateSessionResponse = z.infer<typeof CreateSessionResponseSchema>;
 
+export const SessionDetailResponseSchema = z.object({
+  session: SessionRowSchema,
+});
+export type SessionDetailResponse = z.infer<typeof SessionDetailResponseSchema>;
+
 export const ListSessionsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(25),
   offset: z.coerce.number().int().nonnegative().default(0),
@@ -70,3 +75,57 @@ export const InspectExecResponseSchema = z.object({
   result: ExecResultSchema,
 });
 export type InspectExecResponse = z.infer<typeof InspectExecResponseSchema>;
+
+export const SessionMessagesResponseSchema = z.object({
+  messages: z.array(z.unknown()),
+});
+export type SessionMessagesResponse = z.infer<
+  typeof SessionMessagesResponseSchema
+>;
+
+export const SessionConfigResponseSchema = z.object({
+  config: SessionConfigSchema.nullable(),
+});
+export type SessionConfigResponse = z.infer<typeof SessionConfigResponseSchema>;
+
+export const SessionAgentStateSchema = z.object({
+  sessionId: z.string().min(1).optional(),
+  status: SessionStatusSchema,
+});
+export type SessionAgentState = z.infer<typeof SessionAgentStateSchema>;
+
+export const SessionStateResponseSchema = z.object({
+  state: SessionAgentStateSchema,
+});
+export type SessionStateResponse = z.infer<typeof SessionStateResponseSchema>;
+
+export const SandboxMetadataSchema = z.object({
+  created_at: z.number(),
+  image_fingerprint: z.string().min(1),
+  profile: SandboxProfileNameSchema,
+  sandbox_id: z.string().min(1),
+  session_id: z.string().min(1),
+  snapshot_id: z.string().nullable().optional(),
+});
+export type SandboxMetadata = z.infer<typeof SandboxMetadataSchema>;
+
+export const SessionSandboxResponseSchema = z.object({
+  sandbox: SandboxMetadataSchema.nullable(),
+});
+export type SessionSandboxResponse = z.infer<
+  typeof SessionSandboxResponseSchema
+>;
+
+export const AdminShimHealthResponseSchema = z.object({
+  health: z.unknown(),
+});
+export type AdminShimHealthResponse = z.infer<
+  typeof AdminShimHealthResponseSchema
+>;
+
+export const AdminShimSandboxesResponseSchema = z.object({
+  sandboxes: z.array(SandboxMetadataSchema),
+});
+export type AdminShimSandboxesResponse = z.infer<
+  typeof AdminShimSandboxesResponseSchema
+>;
