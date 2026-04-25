@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8v2h-4jpm-3wfm",
+  "post_patch_commit": "2500e1cdc12cb35af73d5c8c9b85656aba6bab4d",
+  "noisy_patch": true,
+  "curation_notes": "This is a large servicing release (78 files, 20 CVEs). The CVE-2017-8658 fix is specifically in lib/Parser/Parse.cpp in ParseFncDeclHelper, where m_currDeferredStub is nullified before parsing formal parameters to prevent using deferred function stubs inside formal argument lists. The location was derived from the commit message which explicitly tags the change with [CVE-2017-8658] and the corresponding diff hunk in Parse.cpp.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
