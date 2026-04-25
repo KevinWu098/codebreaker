@@ -32,6 +32,13 @@
       "database_id": "95269127-d119-4e26-9686-b24313025da7"
     }
   ],
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.jsonl"],
+      "fallthrough": true
+    }
+  ],
   "worker_loaders": [
     {
       "binding": "LOADER"

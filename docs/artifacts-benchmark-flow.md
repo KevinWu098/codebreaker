@@ -1,25 +1,25 @@
-# Forgejo Benchmark Artifact Flow
+# GitHub Benchmark Artifact Flow
 
-Codebreaker stores benchmark artifacts in Git-backed repositories managed by the control plane. Forgejo is the active provider while Cloudflare Artifacts remains a future provider behind the same `GitTreeStore` interface.
+Codebreaker stores benchmark artifacts in Git-backed repositories managed on GitHub. The implementation uses the GitHub REST API (create repositories + fork upstream repos) through the `GitTreeStore` interface. A Cloudflare Artifacts provider remains a future option behind the same interface.
 
 ## Storage Boundaries
 
-- Forgejo owns canonical artifact storage as bare Git repositories.
+- GitHub owns canonical Git repository storage (object database + server-side metadata).
 - The control plane owns repository provisioning, short-lived operation credentials, and D1 metadata.
 - `SessionAgent` owns durable agent state and exposes the current artifact state to the model as Think context.
 - Modal sandboxes only hold working checkouts under `/workspace`; they are not canonical storage.
 
 ## Repository Lifecycle
 
-Each benchmark target has a stable target repository. The control plane creates or reuses it from `config.benchmark.target`, importing from `sourceUrl` when provided.
+Each benchmark target has a stable target repository. The control plane creates or reuses it from `config.benchmark.target`. If `sourceUrl` points at a public GitHub repository, the stable target is created by forking that upstream into the configured GitHub user/org.
 
-Each session gets a per-run repository. The run repo is seeded from the stable target when Forgejo migration can read it; otherwise it is created empty and the checkout/commit flow still works against the run repo.
+Each session gets a per-run repository. The run repo is created by forking the stable target repository, which preserves history and default branches without using GitHub’s legacy “source import” API.
 
 Agents write exploit code, validation scripts, reports, and evidence only to the per-run checkout. Final paths, run command, commit SHA, and status are mirrored into `SessionAgent` state and D1.
 
 ## Credential Flow
 
-Forgejo credentials are never stored in D1, Think context, model-visible messages, or pushed files. The Worker reads the Forgejo service token from environment secrets and returns an operation credential only when an artifact route needs to clone or push.
+GitHub credentials (typically a personal access token) are never stored in D1, Think context, model-visible messages, or pushed files. The Worker reads the token from environment secrets and returns an operation credential only when an artifact route needs to clone or push.
 
 Modal receives the credential in the `/git/checkout` or `/git/commit` request. The shim passes it to Git through `http.extraHeader`, resets the remote URL to the clean clone URL, and avoids persisting credentials in `.git/config`.
 
@@ -36,17 +36,21 @@ Modal receives the credential in the `/git/checkout` or `/git/commit` request. T
 
 ## Local Configuration
 
-Set these Worker env vars or secrets for Forgejo-backed artifacts:
+Set these Worker env vars or secrets for GitHub-backed artifacts:
 
 ```text
-GIT_TREE_PROVIDER=forgejo
-FORGEJO_BASE_URL=https://forgejo.example.com
-FORGEJO_TOKEN=<service-account-token>
-FORGEJO_OWNER=<user-or-org>
-FORGEJO_USERNAME=git
+GIT_TREE_PROVIDER=github
+GITHUB_TOKEN=<github-token>
+# Prefer a GitHub org as the owner namespace for forks/repos:
+GITHUB_ORG=<org-login>
+# If you are not using an org, set a user account instead:
+GITHUB_OWNER=<user-login>
+
+# Optional: username used in HTTPS git Basic auth (many setups use "x-access-token")
+GITHUB_GIT_USERNAME=x-access-token
 ```
 
-The service token needs repository read/write scope and enough permission to create or migrate repositories for the configured owner.
+The token must be able to create private repositories, fork upstream repositories, archive repositories, and read/write `git` over HTTPS.
 # Artifacts Benchmark Flow
 
 Cloudflare Artifacts is the durable Git-backed storage layer for benchmark code and work product. Agents and sandboxes do not own the canonical files.

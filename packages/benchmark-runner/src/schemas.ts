@@ -1,10 +1,10 @@
+import { ModelProviderSchema } from "@codebreaker/shared/schemas/primitives";
 import { z } from "zod";
 
 const GHSA_ID_PATTERN = /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/;
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const DATASET_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const MODEL_PROVIDER_VALUES = ["openai", "anthropic"] as const;
 
 export const GhsaIdSchema = z.string().regex(GHSA_ID_PATTERN);
 export type GhsaId = z.infer<typeof GhsaIdSchema>;
@@ -154,7 +154,7 @@ export type BenchmarkRunEventKind = z.infer<typeof BenchmarkRunEventKindSchema>;
 export const BenchmarkRunModelSchema = z
   .object({
     id: z.string().min(1),
-    provider: z.enum(MODEL_PROVIDER_VALUES),
+    provider: ModelProviderSchema,
     reasoningEffort: z.enum(["minimal", "low", "medium", "high"]).optional(),
   })
   .strict();
@@ -188,7 +188,7 @@ export const BenchmarkRunRowSchema = z
     error: z.string().nullable(),
     id: z.string().min(1),
     modelId: z.string().min(1),
-    modelProvider: z.enum(MODEL_PROVIDER_VALUES),
+    modelProvider: ModelProviderSchema,
     score: z.number().min(0).max(1).nullable(),
     sessionId: z.string().nullable(),
     status: BenchmarkRunStatusSchema,

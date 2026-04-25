@@ -1,5 +1,5 @@
-import tasksJsonl from "../../../../benchmark/data/tasks.jsonl?raw";
-import metadataJsonl from "../../../../benchmark/internal/metadata.jsonl?raw";
+import tasksJsonl from "../../../../benchmark/data/tasks.jsonl";
+import metadataJsonl from "../../../../benchmark/internal/metadata.jsonl";
 
 export const benchmarkDatasetFixtures = {
   metadataJsonl,

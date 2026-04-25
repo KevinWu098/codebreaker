@@ -18,11 +18,11 @@ Do not copy the JSONL contents into `.dev.vars` or Worker secrets. Update the fi
 1. `GET /benchmark-tasks` lists task summaries.
 2. `POST /benchmark-runs` creates and, by default, starts a run.
 3. The orchestrator creates an agent session with benchmark config.
-4. Forgejo target and run repositories are provisioned.
+4. GitHub target and run repositories are provisioned.
 5. Modal checks out the vulnerable commit from the run repo.
 6. The agent receives the rendered benchmark input.
 7. The orchestrator parses the final agent JSON, scores it, writes `codebreaker-result.json`, commits artifacts, and records D1 rows.
-8. `POST /benchmark-runs/:id/cleanup` terminates Modal and/or archives Forgejo according to the run cleanup policy.
+8. `POST /benchmark-runs/:id/cleanup` terminates Modal and/or archives GitHub according to the run cleanup policy.
 
 ## CLI
 
@@ -47,4 +47,4 @@ Run fixture validation locally:
 pnpm --dir packages/benchmark-runner validate:fixtures
 ```
 
-For a live smoke test, configure Forgejo, Modal, model credentials, and JWT auth, then create a run from the dashboard or CLI.
+For a live smoke test, configure GitHub, Modal, model credentials, and JWT auth, then create a run from the dashboard or CLI.

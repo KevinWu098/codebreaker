@@ -14,6 +14,7 @@ import {
   BenchmarkRunResultSchema,
   BenchmarkRunRowSchema,
 } from "@codebreaker/benchmark-runner/schemas";
+import type { ModelProvider } from "@codebreaker/shared/lib/models";
 import { nowIso } from "@codebreaker/shared/lib/utils";
 
 interface BenchmarkRunRecord {
@@ -27,7 +28,7 @@ interface BenchmarkRunRecord {
   error: string | null;
   id: string;
   model_id: string;
-  model_provider: "openai" | "anthropic";
+  model_provider: ModelProvider;
   score: number | null;
   session_id: string | null;
   status: BenchmarkRunStatus;
@@ -60,7 +61,7 @@ export interface CreateBenchmarkRunInput {
   difficulty: Difficulty;
   id: string;
   modelId: string;
-  modelProvider: "openai" | "anthropic";
+  modelProvider: ModelProvider;
   taskId: string;
 }
 
