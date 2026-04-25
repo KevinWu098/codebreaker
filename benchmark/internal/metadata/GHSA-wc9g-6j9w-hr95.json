@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wc9g-6j9w-hr95",
+  "post_patch_commit": "0d4efc880a727599fa4f6d7a64cc967afe475530",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The patch removes 'public' from the ACL options in @Route annotations across 24 API endpoint methods in includes/controllers/ApiController.php and 2 methods in tools/templates/controllers/ApiController.php. The advisory specifically describes unauthenticated archive creation and download, but the patch also fixes user management, comment, page, reaction, and triple endpoints. includes/YesWikiInit.php had only a cosmetic blank line removal and was excluded from locations.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2025-04-25"
+}
