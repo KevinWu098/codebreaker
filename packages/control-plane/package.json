@@ -68,6 +68,10 @@
       "types": "./src/tools/builtins.ts",
       "default": "./src/tools/builtins.ts"
     },
+    "./tools/deepwiki": {
+      "types": "./src/tools/deepwiki.ts",
+      "default": "./src/tools/deepwiki.ts"
+    },
     "./tools/http": {
       "types": "./src/tools/http.ts",
       "default": "./src/tools/http.ts"

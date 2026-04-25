@@ -78,7 +78,7 @@ const selectCloudflareGatewayModel = (
     apiKey,
     gateway: env.CLOUDFLARE_AI_GATEWAY_ID ?? "default",
   });
-  const unified = createUnified();
+  const unified = createUnified({ includeUsage: true });
 
   return gateway(unified(modelId)) as LanguageModel;
 };
