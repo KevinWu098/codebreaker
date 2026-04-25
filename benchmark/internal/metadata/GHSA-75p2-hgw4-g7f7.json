@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-75p2-hgw4-g7f7",
+  "post_patch_commit": "1dc25f2bea6ea522dbac1512b5563c4746d539c3",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit sets XmlResolver = null on the XmlDocument used to parse the remote update feed in BackgroundWorkerDoWork. Only one source file (AutoUpdater.cs) was changed for the fix; the other 3 files were version bumps (AssemblyInfo.cs, nuspec, appveyor.yml). Location derived directly from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
