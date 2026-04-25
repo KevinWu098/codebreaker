@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ECVEBench AgentInput",
+  "description": "Runtime projection of a TaskInstance at a specific difficulty. Produced by the harness and fed to the agent. Contains no ground truth.",
+  "type": "object",
+  "required": ["task_id", "difficulty", "codebase", "hint"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "GHSA-level task identifier. Matches the task_id in tasks.jsonl."
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["L0", "L1"],
+      "description": "Difficulty level this input was rendered at."
+    },
+    "codebase": {
+      "type": "object",
+      "required": ["repo", "language", "commit"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": {
+          "type": "string",
+          "format": "uri"
+        },
+        "language": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      }
+    },
+    "hint": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["description"],
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "type": "string",
+              "description": "Scrubbed vulnerability description. No file or function references."
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -2,22 +2,17 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ECVEBench TaskInstance",
   "type": "object",
-  "required": ["task_id", "ghsa_id", "difficulty", "codebase", "hint", "ground_truth"],
+  "required": ["task_id", "ghsa_id", "codebase", "hints", "ground_truth"],
   "additionalProperties": false,
   "properties": {
     "task_id": {
       "type": "string",
-      "description": "Unique task identifier. Format: ecvebench-{project}-{n}-{L0|L1}"
+      "description": "Unique GHSA-level task identifier. Format: ecvebench-{project}-{n}. Difficulty is a runtime parameter, not part of the task id."
     },
     "ghsa_id": {
       "type": "string",
       "description": "Source GitHub Security Advisory ID",
       "pattern": "^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$"
-    },
-    "difficulty": {
-      "type": "string",
-      "enum": ["L0", "L1"],
-      "description": "L0=no hint, L1=scrubbed description hint"
     },
     "codebase": {
       "type": "object",
@@ -40,10 +35,17 @@
         }
       }
     },
-    "hint": {
-      "oneOf": [
-        { "type": "null" },
-        {
+    "hints": {
+      "type": "object",
+      "description": "Map of difficulty level to the hint shown at that level. The harness projects exactly one of these into the agent input at runtime.",
+      "required": ["L0", "L1"],
+      "additionalProperties": false,
+      "properties": {
+        "L0": {
+          "type": "null",
+          "description": "L0 is pure discovery; no hint is shown."
+        },
+        "L1": {
           "type": "object",
           "required": ["description"],
           "additionalProperties": false,
@@ -54,7 +56,7 @@
             }
           }
         }
-      ]
+      }
     },
     "ground_truth": {
       "type": "object",

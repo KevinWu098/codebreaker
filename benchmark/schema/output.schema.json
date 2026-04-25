@@ -2,12 +2,17 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ECVEBench AgentOutput",
   "type": "object",
-  "required": ["task_id", "vulnerable", "confidence", "vuln_class", "locations", "reason"],
+  "required": ["task_id", "difficulty", "vulnerable", "confidence", "vuln_class", "locations", "reason"],
   "additionalProperties": false,
   "properties": {
     "task_id": {
       "type": "string",
-      "description": "Must match the task being evaluated"
+      "description": "GHSA-level task identifier. Must match the task being evaluated."
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["L0", "L1"],
+      "description": "Difficulty level the agent ran at. Must match the difficulty of the agent input."
     },
     "vulnerable": {
       "type": "boolean"
