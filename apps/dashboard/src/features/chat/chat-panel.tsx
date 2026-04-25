@@ -7,18 +7,13 @@ import {
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
+import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
-import { CopyTextButton } from "@/components/copy-text-button";
 import { ErrorState } from "@/components/error-state";
-import { JsonView } from "@/components/json-view";
-import { type MessagePart, ToolCallPart } from "@/components/tool-call-part";
+import { MessagePartRenderer } from "@/components/message-part-renderer";
+import type { MessagePart } from "@/components/tool-call-part";
 import { useConnection } from "@/lib/connection";
 
 interface ChatPanelProps {
@@ -61,44 +56,15 @@ const renderPart = (
   part: MessagePart,
   messageId: string,
   partIndex: number
-): React.JSX.Element => {
-  const key = partKey(messageId, partIndex, part.type);
-
-  if (part.type === "text" && typeof part.text === "string") {
-    return (
-      <div className="relative" key={key}>
-        <div className="absolute inset-e-0 top-0 z-10">
-          <CopyTextButton text={part.text} title="copy text" />
-        </div>
-        <MessageResponse className="pe-8!">{part.text}</MessageResponse>
-      </div>
-    );
-  }
-
-  if (typeof part.type === "string" && part.type.startsWith("tool")) {
-    const name = part.toolName ?? part.type;
-    const state = part.state ?? "running";
-
-    return (
-      <ToolCallPart
-        header={
-          <>
-            <Badge status={state === "result" ? "completed" : "running"}>
-              tool · {state}
-            </Badge>
-            <span className="font-mono text-fg">{name}</span>
-          </>
-        }
-        input={part.input}
-        jsonMaxHeight={140}
-        key={key}
-        output={part.output}
-      />
-    );
-  }
-
-  return <JsonView key={key} maxHeight={140} value={part} />;
-};
+): React.JSX.Element => (
+  <MessagePartRenderer
+    jsonMaxHeight={140}
+    key={partKey(messageId, partIndex, part.type)}
+    part={part}
+    partKey={partKey(messageId, partIndex, part.type)}
+    variant="live"
+  />
+);
 
 const ChatTitle = ({
   identified,

@@ -1,11 +1,11 @@
 import { Card } from "@/components/card";
-import { CopyTextButton } from "@/components/copy-text-button";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
+import { MessagePartRenderer } from "@/components/message-part-renderer";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
-import { type MessagePart, ToolCallPart } from "@/components/tool-call-part";
+import type { MessagePart } from "@/components/tool-call-part";
 import { useSessionMessagesQuery } from "@/hooks/queries";
 
 interface MessagesPanelProps {
@@ -34,42 +34,9 @@ const partKey = (
 const messageKey = (message: Message, fallbackId: string): string =>
   message.id ?? fallbackId;
 
-const renderPart = (part: MessagePart, key: string): React.JSX.Element => {
-  if (part.type === "text" && typeof part.text === "string") {
-    return (
-      <div className="relative" key={key}>
-        <div className="absolute inset-e-0 top-0 z-10">
-          <CopyTextButton text={part.text} title="copy text" />
-        </div>
-        <p className="whitespace-pre-wrap pe-7 text-fg text-sm leading-relaxed">
-          {part.text}
-        </p>
-      </div>
-    );
-  }
-
-  if (typeof part.type === "string" && part.type.startsWith("tool")) {
-    return (
-      <ToolCallPart
-        header={
-          <>
-            <span className="text-[10px] text-fg-muted uppercase tracking-wider">
-              tool
-            </span>
-            <span className="font-mono text-fg">
-              {part.toolName ?? part.type}
-            </span>
-          </>
-        }
-        input={part.input}
-        key={key}
-        output={part.output}
-      />
-    );
-  }
-
-  return <JsonView key={key} maxHeight={160} value={part} />;
-};
+const renderPart = (part: MessagePart, key: string): React.JSX.Element => (
+  <MessagePartRenderer key={key} part={part} partKey={key} variant="static" />
+);
 
 export const MessagesPanel = ({
   sessionId,
