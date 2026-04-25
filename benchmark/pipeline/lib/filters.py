@@ -37,14 +37,14 @@ def extract_cwe_ids(advisory: dict[str, Any]) -> list[str]:
 
 
 def extract_cvss(advisory: dict[str, Any]) -> float | None:
-    """Extract CVSS score from the advisory if present."""
-    cvss = advisory.get("cvss")
-    if isinstance(cvss, dict):
-        score = cvss.get("score")
-        if isinstance(score, (int, float)):
-            return float(score)
-    if isinstance(cvss, (int, float)):
-        return float(cvss)
+    """Extract CVSS score from the advisory, preferring v3 over v4."""
+    severities = advisory.get("cvss_severities") or {}
+    for version in ("cvss_v3", "cvss_v4"):
+        entry = severities.get(version)
+        if isinstance(entry, dict):
+            score = entry.get("score")
+            if isinstance(score, (int, float)) and score > 0:
+                return float(score)
     return None
 
 

@@ -10,6 +10,7 @@ import re
 import time
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import unquote
 
 import httpx
 
@@ -102,7 +103,7 @@ class GitHubClient:
             if 'rel="next"' in part:
                 match = re.search(r"[?&]after=([^&>]+)", part)
                 if match:
-                    return match.group(1)
+                    return unquote(match.group(1))
         return None
 
     def list_advisories(

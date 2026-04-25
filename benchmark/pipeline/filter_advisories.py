@@ -34,6 +34,7 @@ from .lib.filters import (
 from .lib.github_client import GitHubClient
 
 DEFAULT_OUTPUT = Path(__file__).resolve().parent / "output" / "filtered.jsonl"
+DEFAULT_REJECTED = Path(__file__).resolve().parent / "output" / "rejected.jsonl"
 DEFAULT_CHECKPOINT = Path(__file__).resolve().parent / "output" / "filter_checkpoint.json"
 
 
@@ -91,18 +92,23 @@ def _process_advisory(
     advisory: dict[str, Any],
     seen: set[str],
     state: dict[str, Any],
-) -> dict[str, Any] | None:
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Returns (candidate_record, rejection_record). Exactly one is non-None."""
     ghsa_id = advisory.get("ghsa_id", "")
 
     if ghsa_id in seen:
         _drop(state, "dedup")
-        return None
+        return None, {"ghsa_id": ghsa_id, "reason": "dedup"}
 
     for _name, fn in FILTERS:
         passed, reason = fn(advisory)
         if not passed:
             _drop(state, reason)
-            return None
+            return None, {
+                "ghsa_id": ghsa_id,
+                "reason": reason,
+                "summary": (advisory.get("summary") or "")[:200],
+            }
 
     cve_id: str | None = None
     for ident in advisory.get("identifiers") or []:
@@ -122,13 +128,14 @@ def _process_advisory(
     }
 
     seen.add(ghsa_id)
-    return record
+    return record, None
 
 
 def run(
     *,
     token: str,
     output_path: Path,
+    rejected_path: Path,
     checkpoint_path: Path,
     max_pages: int | None = None,
 ) -> None:
@@ -155,11 +162,10 @@ def run(
             page_size = len(page.advisories)
             page_candidates = 0
 
-            for i, advisory in enumerate(page.advisories, start=1):
+            for _i, advisory in enumerate(page.advisories, start=1):
                 state["advisories_seen"] += 1
-                ghsa_id = advisory.get("ghsa_id", "?")
 
-                record = _process_advisory(advisory, seen, state)
+                record, rejection = _process_advisory(advisory, seen, state)
 
                 if record:
                     with output_path.open("a") as f:
@@ -167,6 +173,10 @@ def run(
                         f.write("\n")
                     state["candidates_written"] += 1
                     page_candidates += 1
+                elif rejection:
+                    with rejected_path.open("a") as f:
+                        f.write(json.dumps(rejection, separators=(",", ":")))
+                        f.write("\n")
 
             cursor = page.next_cursor
             state["last_cursor"] = cursor
@@ -187,6 +197,7 @@ def run(
 
     _save_checkpoint(checkpoint_path, state)
     print(f"\nDone. {state['candidates_written']} candidates -> {output_path}")
+    print(f"Rejections -> {rejected_path}")
     print(f"Drop breakdown: {json.dumps(state['dropped'], indent=2)}")
 
 
@@ -197,6 +208,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--output", type=Path, default=DEFAULT_OUTPUT,
         help=f"Output JSONL path (default: {DEFAULT_OUTPUT}).",
+    )
+    parser.add_argument(
+        "--rejected", type=Path, default=DEFAULT_REJECTED,
+        help=f"Rejected advisories JSONL path (default: {DEFAULT_REJECTED}).",
     )
     parser.add_argument(
         "--checkpoint", type=Path, default=DEFAULT_CHECKPOINT,
@@ -215,6 +230,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print("ECVEBench Advisory Filter")
     print(f"  output:     {args.output}")
+    print(f"  rejected:   {args.rejected}")
     print(f"  checkpoint: {args.checkpoint}")
     if args.max_pages:
         print(f"  max-pages:  {args.max_pages}")
@@ -223,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     run(
         token=token,
         output_path=args.output,
+        rejected_path=args.rejected,
         checkpoint_path=args.checkpoint,
         max_pages=args.max_pages,
     )
