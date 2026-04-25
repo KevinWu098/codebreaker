@@ -35,6 +35,12 @@ export const defaultCompactionConfig = {
   summarizeAtTokens: 225_000,
 } as const satisfies CompactionConfig;
 
+export const defaultSessionRuntimeConfig = {
+  maxSteps: 50,
+  maxTurns: 200,
+  timeoutSeconds: 3600,
+} as const;
+
 export const ModelConfigSchema = z.object({
   id: z.string().min(1),
   provider: ModelProviderSchema,
@@ -51,13 +57,25 @@ export type SessionSandboxConfig = z.infer<typeof SessionSandboxConfigSchema>;
 export const SessionConfigSchema = z.object({
   compaction: CompactionConfigSchema.default(defaultCompactionConfig),
   extensionPolicy: ExtensionPolicySchema.default("readonly"),
-  maxSteps: z.number().int().positive().default(50),
-  maxTurns: z.number().int().positive().default(200),
+  maxSteps: z
+    .number()
+    .int()
+    .positive()
+    .default(defaultSessionRuntimeConfig.maxSteps),
+  maxTurns: z
+    .number()
+    .int()
+    .positive()
+    .default(defaultSessionRuntimeConfig.maxTurns),
   model: ModelConfigSchema,
   repo: RepoConfigSchema.optional(),
   sandbox: SessionSandboxConfigSchema.optional(),
   systemPrompt: z.string().min(1).optional(),
-  timeoutSeconds: z.number().int().positive().default(3600),
+  timeoutSeconds: z
+    .number()
+    .int()
+    .positive()
+    .default(defaultSessionRuntimeConfig.timeoutSeconds),
   title: z.string().min(1).max(200).optional(),
 });
 export type SessionConfig = z.infer<typeof SessionConfigSchema>;

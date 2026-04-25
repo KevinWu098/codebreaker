@@ -12,6 +12,10 @@
       "types": "./src/db/session-index.ts",
       "default": "./src/db/session-index.ts"
     },
+    "./http/cors": {
+      "types": "./src/http/cors.ts",
+      "default": "./src/http/cors.ts"
+    },
     "./http/errors": {
       "types": "./src/http/errors.ts",
       "default": "./src/http/errors.ts"
