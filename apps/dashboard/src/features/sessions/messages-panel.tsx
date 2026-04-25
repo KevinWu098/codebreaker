@@ -1,12 +1,14 @@
-import { Card } from "../../components/card";
-import { ErrorBanner } from "../../components/error-banner";
-import { JsonView } from "../../components/json-view";
-import { RefreshButton } from "../../components/refresh-button";
-import { useAsync } from "../../hooks/use-async";
-import { api } from "../../lib/api";
-import { useConnection } from "../../lib/connection";
+import { Card } from "@/components/card";
+import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { JsonView } from "@/components/json-view";
+import { RefreshButton } from "@/components/refresh-button";
+import { Spinner } from "@/components/spinner";
+import { useAsync } from "@/hooks/use-async";
+import { api } from "@/lib/api";
+import { useConnection } from "@/lib/connection";
 
-interface Props {
+interface MessagesPanelProps {
   sessionId: string;
 }
 
@@ -21,87 +23,141 @@ interface MessagePart {
 interface Message {
   createdAt?: string | number;
   id?: string;
-  parts?: MessagePart[];
+  parts?: readonly MessagePart[];
   role?: string;
 }
 
 const isMessage = (value: unknown): value is Message =>
   typeof value === "object" && value !== null;
 
-const renderPart = (part: MessagePart, index: number): React.JSX.Element => {
+const partKey = (
+  message: Message,
+  fallbackId: string,
+  partIndex: number
+): string => {
+  const baseId = message.id ?? fallbackId;
+  return `${baseId}:p${partIndex}`;
+};
+
+const messageKey = (message: Message, fallbackId: string): string =>
+  message.id ?? fallbackId;
+
+const renderPart = (part: MessagePart, key: string): React.JSX.Element => {
   if (part.type === "text" && typeof part.text === "string") {
     return (
-      <div className="message-body" key={index}>
+      <p
+        className="whitespace-pre-wrap text-fg text-sm leading-relaxed"
+        key={key}
+      >
         {part.text}
-      </div>
+      </p>
     );
   }
 
   if (typeof part.type === "string" && part.type.startsWith("tool")) {
     return (
-      <div className="tool-call" key={index}>
-        <div className="tool-call-name">{part.toolName ?? part.type}</div>
+      <div
+        className="rounded border border-border bg-bg-overlay p-2 text-xs"
+        key={key}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-fg-muted uppercase tracking-wider">
+            tool
+          </span>
+          <span className="font-mono text-fg">
+            {part.toolName ?? part.type}
+          </span>
+        </div>
         {part.input !== undefined && (
-          <div className="dim text-xs" style={{ marginTop: 4 }}>
-            input
+          <div className="mt-2 space-y-1">
+            <span className="field-label">input</span>
+            <JsonView maxHeight={160} value={part.input} />
           </div>
         )}
-        {part.input !== undefined && (
-          <JsonView maxHeight={160} value={part.input} />
-        )}
         {part.output !== undefined && (
-          <div className="dim text-xs" style={{ marginTop: 4 }}>
-            output
+          <div className="mt-2 space-y-1">
+            <span className="field-label">output</span>
+            <JsonView maxHeight={160} value={part.output} />
           </div>
-        )}
-        {part.output !== undefined && (
-          <JsonView maxHeight={160} value={part.output} />
         )}
       </div>
     );
   }
 
-  return <JsonView key={index} maxHeight={160} value={part} />;
+  return <JsonView key={key} maxHeight={160} value={part} />;
 };
 
-export const MessagesPanel = ({ sessionId }: Props): React.JSX.Element => {
+export const MessagesPanel = ({
+  sessionId,
+}: MessagesPanelProps): React.JSX.Element => {
   const connection = useConnection();
-  const messages = useAsync(
-    () => api.getMessages(sessionId),
-    [sessionId, connection.baseUrl, connection.token],
-    { enabled: connection.token.length > 0, pollMs: 5000 }
-  );
-  const title = `Messages (${messages.data?.messages.length ?? "—"})`;
+  const enabled = connection.token.length > 0;
+
+  const messages = useAsync(() => api.getMessages(sessionId), {
+    enabled,
+    key: `messages:${sessionId}:${connection.baseUrl}:${connection.token}`,
+    pollMs: 5000,
+  });
+
+  const count = messages.data?.messages.length;
+  const titleText = count === undefined ? "messages" : `messages · ${count}`;
 
   return (
     <Card
-      actions={<RefreshButton onClick={() => messages.refresh()} />}
-      title={title}
+      actions={
+        <RefreshButton
+          loading={messages.loading}
+          onClick={() => messages.refresh()}
+        />
+      }
+      title={titleText}
     >
-      <ErrorBanner error={messages.error} title="Messages unavailable" />
-      {!messages.data && <span className="dim">Loading…</span>}
-      {messages.data?.messages.length === 0 && (
-        <div className="empty">No messages yet</div>
+      <ErrorState error={messages.error} title="messages unavailable" />
+
+      {!(messages.data || messages.error) && (
+        <div className="flex justify-center py-6">
+          <Spinner />
+        </div>
       )}
-      <div className="message-list">
+
+      {messages.data?.messages.length === 0 && (
+        <EmptyState hint="no turns recorded yet." title="empty transcript" />
+      )}
+
+      <div className="space-y-3">
         {messages.data?.messages.map((raw, idx) => {
+          const fallbackId = `m${idx}`;
+
           if (!isMessage(raw)) {
-            return <JsonView key={idx} maxHeight={160} value={raw} />;
+            return <JsonView key={fallbackId} maxHeight={200} value={raw} />;
           }
 
           const role = raw.role ?? "assistant";
+          const isUser = role === "user";
 
           return (
-            <div
-              className={`message${role === "user" ? "user" : ""}`}
-              key={raw.id ?? idx}
+            <article
+              className={
+                isUser
+                  ? "border-accent border-l-2 pl-3"
+                  : "border-border border-l-2 pl-3"
+              }
+              key={messageKey(raw, fallbackId)}
             >
-              <div className="message-meta">
-                <span>{role}</span>
-                <span>{raw.id ?? ""}</span>
+              <header className="flex items-center gap-2 text-[10px] text-fg-muted uppercase tracking-wider">
+                <span className={isUser ? "text-accent" : "text-fg"}>
+                  {role}
+                </span>
+                {raw.id ? (
+                  <span className="font-mono text-fg-subtle">{raw.id}</span>
+                ) : null}
+              </header>
+              <div className="mt-1 space-y-2">
+                {raw.parts?.map((part, partIndex) =>
+                  renderPart(part, partKey(raw, fallbackId, partIndex))
+                )}
               </div>
-              {raw.parts?.map((part, partIndex) => renderPart(part, partIndex))}
-            </div>
+            </article>
           );
         })}
       </div>

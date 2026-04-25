@@ -1,20 +1,34 @@
-interface Props {
+import { RotateCw } from "lucide-react";
+import { Button } from "@/components/button";
+import { cn } from "@/lib/cn";
+
+interface RefreshButtonProps {
+  className?: string;
   disabled?: boolean;
-  label?: string;
+  loading?: boolean;
   onClick: () => void;
+  title?: string;
 }
 
 export const RefreshButton = ({
-  onClick,
-  label = "↻",
+  className,
   disabled,
-}: Props): React.JSX.Element => (
-  <button
-    className="btn btn-ghost text-xs"
+  loading,
+  onClick,
+  title = "refresh",
+}: RefreshButtonProps): React.JSX.Element => (
+  <Button
+    aria-label={title}
+    className={cn("btn-icon", className)}
     disabled={disabled}
     onClick={onClick}
-    type="button"
+    title={title}
+    variant="ghost"
   >
-    {label}
-  </button>
+    <RotateCw
+      aria-hidden="true"
+      className={loading ? "animate-spin" : undefined}
+      size={12}
+    />
+  </Button>
 );

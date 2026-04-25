@@ -14,7 +14,7 @@ import type {
   SessionMessagesResponse,
   SessionSandboxResponse,
 } from "@codebreaker/shared/schemas/api";
-import { connectionStore } from "./connection";
+import { connectionStore } from "@/lib/connection";
 
 export class ApiClientError extends Error {
   status: number;

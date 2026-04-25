@@ -1,104 +1,151 @@
+import { Plus } from "lucide-react";
 import { useState } from "react";
-import { ErrorBanner } from "../../components/error-banner";
-import { StatusBadge } from "../../components/status-badge";
-import { useAsync } from "../../hooks/use-async";
-import { api } from "../../lib/api";
-import { useConnection } from "../../lib/connection";
-import { formatRelativeTime, truncateId } from "../../lib/format";
-import { CreateSessionDialog } from "./create-session-dialog";
+import { Badge } from "@/components/badge";
+import { Button } from "@/components/button";
+import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { PageHeader } from "@/components/page-header";
+import { RefreshButton } from "@/components/refresh-button";
+import { Spinner } from "@/components/spinner";
+import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
+import { useAsync } from "@/hooks/use-async";
+import { api } from "@/lib/api";
+import { useConnection } from "@/lib/connection";
+import { formatNumber, formatRelativeTime, truncateId } from "@/lib/format";
 
-interface Props {
+interface SessionsListProps {
   onSelect: (id: string) => void;
   selectedId: string | undefined;
 }
 
 export const SessionsList = ({
-  selectedId,
   onSelect,
-}: Props): React.JSX.Element => {
+  selectedId,
+}: SessionsListProps): React.JSX.Element => {
   const connection = useConnection();
   const [showCreate, setShowCreate] = useState(false);
+  const enabled = connection.token.length > 0;
 
-  const sessions = useAsync(
-    () => api.listSessions({ limit: 100, offset: 0 }),
-    [connection.baseUrl, connection.token],
-    { enabled: connection.token.length > 0, pollMs: 5000 }
-  );
+  const sessions = useAsync(() => api.listSessions({ limit: 100, offset: 0 }), {
+    enabled,
+    key: `sessions:${connection.baseUrl}:${connection.token}`,
+    pollMs: 5000,
+  });
 
   return (
-    <div className="sidebar">
-      <div className="sidebar-header">
-        <h2>Sessions</h2>
-        <div className="flex gap-2">
-          <button
-            className="btn btn-ghost"
-            disabled={!connection.token}
-            onClick={() => sessions.refresh()}
-            title="Refresh"
-            type="button"
-          >
-            ↻
-          </button>
-          <button
-            className="btn btn-primary"
-            disabled={!connection.token}
-            onClick={() => setShowCreate(true)}
-            type="button"
-          >
-            + New
-          </button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        actions={
+          <>
+            <RefreshButton
+              disabled={!enabled}
+              loading={sessions.loading}
+              onClick={() => sessions.refresh()}
+            />
+            <Button
+              disabled={!enabled}
+              onClick={() => setShowCreate(true)}
+              variant="primary"
+            >
+              <Plus aria-hidden="true" size={12} />
+              <span>new session</span>
+            </Button>
+          </>
+        }
+        description="every row maps to a d1 row + a session-agent durable object."
+        title="sessions"
+      />
 
-      {!connection.token && (
-        <div className="empty">
-          Set a JWT token in the top bar to load sessions.
+      {!enabled && (
+        <EmptyState
+          hint="set a jwt in the sidebar to load sessions."
+          title="no token configured"
+        />
+      )}
+
+      <ErrorState error={sessions.error} title="list failed" />
+
+      {enabled && sessions.data && sessions.data.sessions.length === 0 && (
+        <EmptyState
+          action={
+            <Button onClick={() => setShowCreate(true)} variant="primary">
+              create your first session
+            </Button>
+          }
+          hint="d1 returned zero rows."
+          title="no sessions yet"
+        />
+      )}
+
+      {enabled && !sessions.data && !sessions.error && (
+        <div className="flex justify-center py-6">
+          <Spinner />
         </div>
       )}
 
-      {sessions.error && (
-        <div style={{ padding: 10 }}>
-          <ErrorBanner error={sessions.error} title="Failed to list sessions" />
+      {sessions.data && sessions.data.sessions.length > 0 && (
+        <div className="card overflow-hidden">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>id</th>
+                <th>title</th>
+                <th>status</th>
+                <th>model</th>
+                <th>repo</th>
+                <th className="num">turns</th>
+                <th className="num">tokens</th>
+                <th>updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions.data.sessions.map((session) => {
+                const tokens = session.inputTokens + session.outputTokens;
+                const repo = session.repoOwner
+                  ? `${session.repoOwner}/${session.repoName ?? ""}`
+                  : (session.repoName ?? "—");
+
+                return (
+                  <tr
+                    aria-selected={session.id === selectedId}
+                    className={
+                      session.id === selectedId ? "bg-bg-hover" : undefined
+                    }
+                    key={session.id}
+                  >
+                    <td>
+                      <button
+                        className="id-link"
+                        onClick={() => onSelect(session.id)}
+                        title={session.id}
+                        type="button"
+                      >
+                        {truncateId(session.id)}
+                      </button>
+                    </td>
+                    <td className="truncate">{session.title ?? "—"}</td>
+                    <td>
+                      <Badge status={session.status} />
+                    </td>
+                    <td className="font-mono text-fg-muted">
+                      {session.modelProvider}/{session.modelId}
+                    </td>
+                    <td className="font-mono text-fg-muted">{repo}</td>
+                    <td className="num">{formatNumber(session.turnCount)}</td>
+                    <td className="num dim">{formatNumber(tokens)}</td>
+                    <td
+                      className="text-fg-muted"
+                      title={new Date(session.updatedAt).toISOString()}
+                    >
+                      {formatRelativeTime(session.updatedAt)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
-
-      {sessions.data && sessions.data.sessions.length === 0 && (
-        <div className="empty">No sessions yet. Click + New.</div>
-      )}
-
-      <ul className="sidebar-list">
-        {sessions.data?.sessions.map((session) => (
-          <li
-            className={`row${session.id === selectedId ? "active" : ""}`}
-            key={session.id}
-            onClick={() => onSelect(session.id)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                onSelect(session.id);
-              }
-            }}
-          >
-            <div className="between center flex gap-2">
-              <span className="id" title={session.id}>
-                {session.title ?? truncateId(session.id, 14, 6)}
-              </span>
-              <StatusBadge status={session.status} />
-            </div>
-            <div className="meta">
-              <span>
-                {session.modelProvider}/{session.modelId}
-              </span>
-              <span>{formatRelativeTime(session.updatedAt)}</span>
-            </div>
-            <div className="meta">
-              <span className="dim">turns {session.turnCount}</span>
-              <span className="dim">
-                {session.inputTokens + session.outputTokens} tok
-              </span>
-            </div>
-          </li>
-        ))}
-      </ul>
 
       {showCreate && (
         <CreateSessionDialog

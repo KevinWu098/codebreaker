@@ -1,23 +1,34 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
+import { cn } from "@/lib/cn";
 
-interface Props {
+interface CardProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   actions?: ReactNode;
+  bodyClassName?: string;
   children: ReactNode;
   title?: ReactNode;
 }
 
 export const Card = ({
-  title,
   actions,
+  bodyClassName,
   children,
-}: Props): React.JSX.Element => (
-  <section className="card">
-    {(title || actions) && (
-      <header className="card-title">
-        <span>{title}</span>
-        {actions ? <span className="flex gap-2">{actions}</span> : null}
-      </header>
-    )}
-    {children}
-  </section>
-);
+  className,
+  title,
+  ...rest
+}: CardProps): React.JSX.Element => {
+  const hasHeader = title !== undefined || actions !== undefined;
+
+  return (
+    <section className={cn("card", className)} {...rest}>
+      {hasHeader && (
+        <header className="card-header">
+          <span className="lowercase">{title}</span>
+          {actions ? (
+            <span className="flex items-center gap-1.5">{actions}</span>
+          ) : null}
+        </header>
+      )}
+      <div className={cn("card-body", bodyClassName)}>{children}</div>
+    </section>
+  );
+};

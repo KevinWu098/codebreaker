@@ -16,11 +16,17 @@
     "@codebreaker/shared": "workspace:*",
     "agents": "0.11.5",
     "ai": "6.0.168",
+    "clsx": "2.1.1",
+    "lucide-react": "1.11.0",
     "react": "19.2.5",
     "react-dom": "19.2.5",
+    "streamdown": "2.5.0",
+    "tailwind-merge": "3.5.0",
+    "tailwindcss": "4.2.4",
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "4.2.4",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.1",

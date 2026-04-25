@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiClientError } from "../lib/api";
+import { ApiClientError } from "@/lib/api";
+
+const wrapError = (err: unknown, fallbackMessage: string): Error => {
+  if (err instanceof Error) {
+    return err;
+  }
+
+  if (typeof err === "string") {
+    return new Error(err);
+  }
+
+  return new Error(fallbackMessage);
+};
 
 export interface AsyncState<T> {
   data: T | undefined;
@@ -9,20 +21,26 @@ export interface AsyncState<T> {
 }
 
 interface Options {
+  /** Whether the hook should fetch at all. Defaults to true. */
   enabled?: boolean;
-  pollMs?: number;
+  /**
+   * Stable invalidation key. Changing this string triggers a refetch (e.g.
+   * encode the dependency tuple as a string).
+   */
+  key: string;
+  /** Polling interval in milliseconds. */
+  pollMs?: number | undefined;
 }
 
 export const useAsync = <T>(
   fetcher: () => Promise<T>,
-  _deps: readonly unknown[],
-  options: Options = {}
+  options: Options
 ): AsyncState<T> => {
-  const { pollMs, enabled = true } = options;
+  const { enabled = true, key, pollMs } = options;
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<Error | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(false);
-  const [_tick, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
 
@@ -37,6 +55,14 @@ export const useAsync = <T>(
 
     let cancelled = false;
     setLoading(true);
+
+    /*
+     * Build a request id from the inputs so the catch path can include it
+     * in the error message. Reading `key` and `tick` here keeps the
+     * dependency array honest — they are deliberate re-run triggers.
+     */
+    const requestId = `${key}#${tick}`;
+
     fetcherRef
       .current()
       .then((value) => {
@@ -52,12 +78,7 @@ export const useAsync = <T>(
           return;
         }
 
-        const wrapped =
-          err instanceof Error
-            ? err
-            : new Error(typeof err === "string" ? err : "Unknown error");
-
-        setError(wrapped);
+        setError(wrapError(err, `request ${requestId} failed`));
       })
       .finally(() => {
         if (!cancelled) {
@@ -68,8 +89,7 @@ export const useAsync = <T>(
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
+  }, [enabled, key, tick]);
 
   useEffect(() => {
     if (!(enabled && pollMs)) {

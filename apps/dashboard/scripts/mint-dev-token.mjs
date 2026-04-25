@@ -10,11 +10,12 @@ const devVarsPath = resolve(repoRoot, "packages/control-plane/.dev.vars");
 
 const ttlSeconds = Number.parseInt(process.env.TTL ?? "86400", 10);
 const subject = process.env.SUB ?? "operator";
+const NEWLINE_RE = /\r?\n/;
 
 const parseDevVars = (raw) => {
   const env = {};
 
-  for (const line of raw.split(/\r?\n/)) {
+  for (const line of raw.split(NEWLINE_RE)) {
     const trimmed = line.trim();
 
     if (!trimmed || trimmed.startsWith("#")) {

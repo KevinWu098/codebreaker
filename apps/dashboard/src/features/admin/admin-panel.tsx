@@ -1,83 +1,101 @@
-import type { ReactNode } from "react";
-import { Card } from "../../components/card";
-import { ErrorBanner } from "../../components/error-banner";
-import { JsonView } from "../../components/json-view";
-import { RefreshButton } from "../../components/refresh-button";
-import { useAsync } from "../../hooks/use-async";
-import { api } from "../../lib/api";
-import { useConnection } from "../../lib/connection";
-import { formatRelativeTime } from "../../lib/format";
+import { Card } from "@/components/card";
+import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { JsonView } from "@/components/json-view";
+import { PageHeader } from "@/components/page-header";
+import { RefreshButton } from "@/components/refresh-button";
+import { Spinner } from "@/components/spinner";
+import { useAsync } from "@/hooks/use-async";
+import { api } from "@/lib/api";
+import { useConnection } from "@/lib/connection";
+import { formatRelativeTime, truncateId } from "@/lib/format";
 
 export const AdminPanel = (): React.JSX.Element => {
   const connection = useConnection();
   const enabled = connection.token.length > 0;
+  const baseKey = `${connection.baseUrl}:${connection.token}`;
 
-  const health = useAsync(
-    () => api.shimHealth(),
-    [connection.baseUrl, connection.token],
-    { enabled, pollMs: 10_000 }
-  );
+  const health = useAsync(() => api.shimHealth(), {
+    enabled,
+    key: `health:${baseKey}`,
+    pollMs: 10_000,
+  });
 
-  const sandboxes = useAsync(
-    () => api.shimSandboxes(),
-    [connection.baseUrl, connection.token],
-    { enabled, pollMs: 8000 }
-  );
+  const sandboxes = useAsync(() => api.shimSandboxes(), {
+    enabled,
+    key: `sandboxes:${baseKey}`,
+    pollMs: 8000,
+  });
 
-  const sandboxesTitle: ReactNode = `Sandboxes (${
-    sandboxes.data?.sandboxes.length ?? "—"
-  })`;
+  const sandboxCount = sandboxes.data?.sandboxes.length;
+  const sandboxesTitle =
+    sandboxCount === undefined ? "sandboxes" : `sandboxes · ${sandboxCount}`;
 
   return (
-    <div className="main">
-      <div className="detail-header">
-        <div>
-          <h2>Admin · Modal shim</h2>
-          <div className="sub">Operator inspection of the Modal HTTPS shim</div>
-        </div>
-        <div className="actions">
-          <button
-            className="btn"
+    <div className="space-y-4">
+      <PageHeader
+        actions={
+          <RefreshButton
+            disabled={!enabled}
+            loading={health.loading || sandboxes.loading}
             onClick={() => {
               health.refresh();
               sandboxes.refresh();
             }}
-            type="button"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
+          />
+        }
+        description="operator inspection of the modal https shim."
+        title="admin · modal shim"
+      />
 
       {!enabled && (
-        <div className="banner banner-warn">
-          Set a JWT token in the top bar to access /admin endpoints.
-        </div>
+        <EmptyState
+          hint="set a jwt in the sidebar to access /admin endpoints."
+          title="admin endpoints require auth"
+        />
       )}
 
       <Card
-        actions={<RefreshButton onClick={() => health.refresh()} />}
-        title="Shim health"
+        actions={
+          <RefreshButton
+            disabled={!enabled}
+            loading={health.loading}
+            onClick={() => health.refresh()}
+          />
+        }
+        title="shim health"
       >
-        <ErrorBanner error={health.error} title="Shim health failed" />
-        {health.data ? (
-          <JsonView value={health.data.health} />
-        ) : (
-          <span className="dim">Loading…</span>
-        )}
+        <ErrorState error={health.error} title="shim health failed" />
+        {health.data && <JsonView maxHeight={320} value={health.data.health} />}
+        {!health.data && enabled && <Spinner />}
       </Card>
 
       <Card
-        actions={<RefreshButton onClick={() => sandboxes.refresh()} />}
+        actions={
+          <RefreshButton
+            disabled={!enabled}
+            loading={sandboxes.loading}
+            onClick={() => sandboxes.refresh()}
+          />
+        }
+        bodyClassName="p-0"
         title={sandboxesTitle}
       >
-        <ErrorBanner error={sandboxes.error} title="Sandboxes failed" />
+        <ErrorState
+          className="m-3"
+          error={sandboxes.error}
+          title="sandboxes failed"
+        />
         {sandboxes.data?.sandboxes.length === 0 && (
-          <div className="empty">No active sandboxes</div>
+          <EmptyState
+            className="m-3"
+            hint="no sandboxes have been provisioned."
+            title="no active sandboxes"
+          />
         )}
         {sandboxes.data && sandboxes.data.sandboxes.length > 0 && (
-          <div className="scroll-x">
-            <table className="data">
+          <div className="overflow-x-auto">
+            <table className="table">
               <thead>
                 <tr>
                   <th>session</th>
@@ -91,12 +109,27 @@ export const AdminPanel = (): React.JSX.Element => {
               <tbody>
                 {sandboxes.data.sandboxes.map((entry) => (
                   <tr key={entry.sandbox_id}>
-                    <td className="mono">{entry.session_id}</td>
-                    <td>{entry.profile}</td>
-                    <td className="mono">{entry.sandbox_id}</td>
-                    <td className="mono dim">{entry.image_fingerprint}</td>
-                    <td className="mono dim">{entry.snapshot_id ?? "—"}</td>
-                    <td title={new Date(entry.created_at * 1000).toISOString()}>
+                    <td className="font-mono text-fg">{entry.session_id}</td>
+                    <td className="lowercase">{entry.profile}</td>
+                    <td
+                      className="font-mono text-fg-muted"
+                      title={entry.sandbox_id}
+                    >
+                      {truncateId(entry.sandbox_id, 14, 6)}
+                    </td>
+                    <td
+                      className="font-mono text-fg-muted"
+                      title={entry.image_fingerprint}
+                    >
+                      {truncateId(entry.image_fingerprint, 12, 4)}
+                    </td>
+                    <td className="font-mono text-fg-muted">
+                      {entry.snapshot_id ? truncateId(entry.snapshot_id) : "—"}
+                    </td>
+                    <td
+                      className="text-fg-muted"
+                      title={new Date(entry.created_at * 1000).toISOString()}
+                    >
                       {formatRelativeTime(entry.created_at * 1000)}
                     </td>
                   </tr>
