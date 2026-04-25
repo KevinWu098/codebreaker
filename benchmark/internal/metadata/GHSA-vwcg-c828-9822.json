@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vwcg-c828-9822",
+  "post_patch_commit": "fe82348d160904d0013b9a3e267d50158f5c7afb",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The patch modifies two source files: server/api/jwt-helper.js and server/api/index.js. In jwt-helper.js, verifyToken was patched to set req.isAuthenticated (true/false) so downstream handlers can distinguish authenticated from guest sessions. The getNewToken function was replaced with getNewTokenFromRequest which checks req.isAuthenticated before minting a new JWT — previously it read user identity from the attacker-controllable x-auth-user HTTP header. In index.js, the heartbeat POST handler (inside init) was restructured to check req.isAuthenticated before allowing token refresh. A test file was also added but excluded from locations.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
