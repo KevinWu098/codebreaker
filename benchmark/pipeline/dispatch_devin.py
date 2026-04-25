@@ -20,6 +20,7 @@ import argparse
 import json
 import sys
 import time
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -44,12 +45,34 @@ PROMPT_TEMPLATE = (
 ).read_text()
 
 
-def render_prompt(candidate: dict[str, Any]) -> str:
+BRANCH_OVERRIDE_TEMPLATE = """
+
+---
+
+## Branch override
+
+Do NOT create a new branch. Instead, check out the existing branch
+`{branch}` and commit your files there. If the branch does not exist
+yet, create it from `main`.
+
+**Important**: Other Devin agents may have already committed tasks to
+this branch. Do NOT revert, modify, or rebase their commits. Simply
+pull the latest changes, add your own files, and commit on top.
+
+If a PR from `{branch}` to `main` already exists, do NOT open a new
+one. Instead, update the existing PR description to append a summary
+of the task you just added (GHSA ID, vulnerability class, and task ID).
+If no PR exists yet, create one with title `Add curated tasks ({branch})`
+and list your task in the description.
+"""
+
+
+def render_prompt(candidate: dict[str, Any], *, branch: str | None = None) -> str:
     """Fill the prompt template with pre-computed candidate fields."""
     cvss = candidate.get("cvss")
     cvss_str = "null" if cvss is None else str(cvss)
 
-    return (
+    prompt = (
         PROMPT_TEMPLATE
         .replace("{{GHSA_ID}}", candidate["ghsa_id"])
         .replace("{{VULN_CLASS}}", candidate["vuln_class"])
@@ -57,19 +80,26 @@ def render_prompt(candidate: dict[str, Any]) -> str:
         .replace("{{CVE_ID}}", candidate.get("cve_id") or "N/A")
         .replace("{{CWE_IDS}}", ", ".join(candidate.get("cwe_ids") or []))
         .replace("{{ECOSYSTEM}}", candidate.get("ecosystem") or "unknown")
+        .replace("{{SNAPSHOT_DATE}}", date.today().isoformat())
     )
+
+    if branch:
+        prompt += BRANCH_OVERRIDE_TEMPLATE.format(branch=branch)
+
+    return prompt
 
 
 def dispatch_one(
     candidate: dict[str, Any],
     *,
     client: httpx.Client,
+    branch: str | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any] | None:
     """Create a single Devin session. Returns response data or None on failure."""
     ghsa_id = candidate["ghsa_id"]
     vuln_class = candidate["vuln_class"]
-    prompt = render_prompt(candidate)
+    prompt = render_prompt(candidate, branch=branch)
 
     if dry_run:
         print(f"  [dry-run] {ghsa_id} ({vuln_class})")
@@ -111,6 +141,7 @@ def run(
     input_path: Path,
     count: int,
     offset: int,
+    branch: str | None,
     dry_run: bool,
     delay: float,
 ) -> int:
@@ -120,7 +151,8 @@ def run(
         return 1
 
     mode = "[dry-run] " if dry_run else ""
-    print(f"{mode}Dispatching {len(batch)} candidates (offset={offset})\n")
+    branch_msg = f" -> branch {branch}" if branch else ""
+    print(f"{mode}Dispatching {len(batch)} candidates (offset={offset}){branch_msg}\n")
 
     successes: list[dict[str, Any]] = []
 
@@ -133,7 +165,7 @@ def run(
     ) as client:
         for i, candidate in enumerate(batch):
             print(f"[{i + 1}/{len(batch)}] {candidate['ghsa_id']}")
-            result = dispatch_one(candidate, client=client, dry_run=dry_run)
+            result = dispatch_one(candidate, client=client, branch=branch, dry_run=dry_run)
             if result:
                 successes.append({"ghsa_id": candidate["ghsa_id"], **result})
             if not dry_run and i < len(batch) - 1:
@@ -157,6 +189,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--count", type=int, required=True, help="Number of candidates to dispatch.")
     parser.add_argument("--offset", type=int, default=0, help="Skip first N candidates (default: 0).")
     parser.add_argument("--dry-run", action="store_true", help="Render prompts but don't call the API.")
+    parser.add_argument("--branch", type=str, default=None, help="Shared branch name (all agents commit here instead of per-task branches).")
     parser.add_argument("--delay", type=float, default=2.0, help="Seconds between API calls (default: 2).")
     args = parser.parse_args(argv)
 
@@ -168,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
         input_path=args.input,
         count=args.count,
         offset=args.offset,
+        branch=args.branch,
         dry_run=args.dry_run,
         delay=args.delay,
     )

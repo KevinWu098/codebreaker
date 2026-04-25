@@ -1,15 +1,20 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import type { ChatStatus, UIMessage } from "ai";
-import { MessageSquare, Trash2 } from "lucide-react";
-import { memo, useCallback, useMemo, useState } from "react";
+import { Check, Copy, MessageSquare, Trash2 } from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
   ConversationContent,
   ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import { Message, MessageContent } from "@/components/ai-elements/message";
+import {
+  Message,
+  MessageAction,
+  MessageActions,
+  MessageContent,
+} from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputBody,
@@ -23,8 +28,12 @@ import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { ErrorState } from "@/components/error-state";
-import { MessagePartRenderer } from "@/components/message-part-renderer";
+import {
+  isRenderableMessagePart,
+  MessagePartRenderer,
+} from "@/components/message-part-renderer";
 import type { MessagePart } from "@/components/tool-call-part";
+import { Spinner } from "@/components/ui/spinner";
 import { useConnection } from "@/lib/connection";
 
 interface ChatPanelProps {
@@ -37,6 +46,7 @@ interface AgentHost {
 }
 
 const DEFAULT_HOST: AgentHost = { host: "localhost:8787", secure: false };
+const COPIED_RESET_MS = 2000;
 
 const parseHost = (baseUrl: string): AgentHost => {
   try {
@@ -53,15 +63,85 @@ const partKey = (
   type: string | undefined
 ): string => `${messageId}:${type ?? "unknown"}:${partIndex}`;
 
-const TRANSIENT_PART_TYPES = new Set(["step-start"]);
+const messageText = (message: UIMessage): string =>
+  message.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("");
 
-const isRenderablePart = (
-  part: MessagePart,
-  showTransientParts: boolean
-): boolean =>
-  typeof part.type !== "string" ||
-  !TRANSIENT_PART_TYPES.has(part.type) ||
-  showTransientParts;
+const hasAssistantText = (message: UIMessage | undefined): boolean =>
+  message !== undefined &&
+  message.role !== "user" &&
+  messageText(message).trim().length > 0;
+
+interface ChatMessageActionsProps {
+  text: string;
+}
+
+const ChatMessageActions = memo(
+  ({ text }: ChatMessageActionsProps): React.JSX.Element => {
+    const [copied, setCopied] = useState(false);
+    const resetRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+      undefined
+    );
+
+    useEffect(
+      () => () => {
+        if (resetRef.current) {
+          clearTimeout(resetRef.current);
+        }
+      },
+      []
+    );
+
+    const copyMessage = useCallback(async (): Promise<void> => {
+      if (resetRef.current) {
+        clearTimeout(resetRef.current);
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        resetRef.current = setTimeout(() => {
+          setCopied(false);
+          resetRef.current = undefined;
+        }, COPIED_RESET_MS);
+      } catch {
+        // Clipboard permissions vary by browser/context; keep the action silent.
+      }
+    }, [text]);
+
+    return (
+      <MessageActions className="mt-1 opacity-70 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 group-[.is-user]:ml-auto">
+        <MessageAction
+          disabled={!text}
+          label={copied ? "Copied" : "Copy message"}
+          onClick={copyMessage}
+          tooltip={copied ? "Copied" : "Copy message"}
+        >
+          {copied ? (
+            <Check aria-hidden="true" className="text-status-completed" />
+          ) : (
+            <Copy aria-hidden="true" />
+          )}
+        </MessageAction>
+      </MessageActions>
+    );
+  }
+);
+
+ChatMessageActions.displayName = "ChatMessageActions";
+
+const ChatLoadingMessage = (): React.JSX.Element => (
+  <Message aria-live="polite" from="assistant">
+    <MessageContent className="rounded-lg border border-border bg-bg-raised/70 px-3 py-2 text-fg-muted">
+      <span className="flex items-center gap-2 text-xs">
+        <Spinner className="size-3" />
+        <span>agent is working</span>
+      </span>
+    </MessageContent>
+  </Message>
+);
 
 interface ChatMessageItemProps {
   message: UIMessage;
@@ -74,8 +154,9 @@ const ChatMessageItem = memo(
     showTransientParts,
   }: ChatMessageItemProps): React.JSX.Element => {
     const isUser = message.role === "user";
+    const text = messageText(message);
     const renderableParts = message.parts.filter((part) =>
-      isRenderablePart(part as MessagePart, showTransientParts)
+      isRenderableMessagePart(part as MessagePart, showTransientParts)
     );
 
     return (
@@ -97,11 +178,13 @@ const ChatMessageItem = memo(
                 part={typedPart}
                 partKey={key}
                 role={message.role}
+                showTransientParts={showTransientParts}
                 variant="live"
               />
             );
           })}
         </MessageContent>
+        {text && <ChatMessageActions text={text} />}
       </Message>
     );
   }
@@ -176,7 +259,9 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
 
   const isStreaming = chat.isStreaming;
   const chatStatus = chatStatusFor(chat.error, isStreaming);
-  const latestMessageId = chat.messages.at(-1)?.id;
+  const latestMessage = chat.messages.at(-1);
+  const latestMessageId = latestMessage?.id;
+  const showLoadingMessage = isStreaming && !hasAssistantText(latestMessage);
 
   return (
     <Card
@@ -218,6 +303,7 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
                 />
               ))
             )}
+            {showLoadingMessage && <ChatLoadingMessage />}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>

@@ -2,7 +2,12 @@ import type { SessionStatus } from "@codebreaker/shared/schemas/primitives";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-export type BadgeStatus = SessionStatus | "paused";
+export type BadgeStatus =
+  | SessionStatus
+  | "cancelled"
+  | "cleaned"
+  | "cleaning_up"
+  | "paused";
 
 const KNOWN_STATUSES: readonly BadgeStatus[] = [
   "pending",
@@ -12,6 +17,9 @@ const KNOWN_STATUSES: readonly BadgeStatus[] = [
   "failed",
   "paused",
   "archived",
+  "cancelled",
+  "cleaned",
+  "cleaning_up",
 ];
 
 const isKnownStatus = (value: string): value is BadgeStatus =>
@@ -19,6 +27,9 @@ const isKnownStatus = (value: string): value is BadgeStatus =>
 
 const STATUS_CLASS: Record<BadgeStatus, string> = {
   archived: "badge-archived",
+  cancelled: "badge-paused",
+  cleaned: "badge-completed",
+  cleaning_up: "badge-running",
   completed: "badge-completed",
   failed: "badge-failed",
   idle: "badge-idle",
@@ -29,6 +40,9 @@ const STATUS_CLASS: Record<BadgeStatus, string> = {
 
 const STATUS_DOT_CLASS: Record<BadgeStatus, string> = {
   archived: "bg-status-archived",
+  cancelled: "bg-status-paused",
+  cleaned: "bg-status-completed",
+  cleaning_up: "bg-status-running",
   completed: "bg-status-completed",
   failed: "bg-status-failed",
   idle: "bg-status-idle",

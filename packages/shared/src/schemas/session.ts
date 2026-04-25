@@ -37,7 +37,10 @@ export const defaultCompactionConfig = {
 } as const satisfies CompactionConfig;
 
 export const defaultSessionRuntimeConfig = {
-  maxSteps: 50,
+  maxInputTokens: null,
+  maxSteps: 40,
+  maxToolCalls: null,
+  maxTotalTokens: null,
   maxTurns: 200,
   timeoutSeconds: 3600,
 } as const;
@@ -55,10 +58,22 @@ export const SessionSandboxConfigSchema = z.object({
 });
 export type SessionSandboxConfig = z.infer<typeof SessionSandboxConfigSchema>;
 
+export const RunBudgetConfigSchema = z.object({
+  maxInputTokens: z.number().int().positive().nullable().default(null),
+  maxToolCalls: z.number().int().positive().nullable().default(null),
+  maxTotalTokens: z.number().int().positive().nullable().default(null),
+});
+export type RunBudgetConfig = z.infer<typeof RunBudgetConfigSchema>;
+
 export const SessionConfigSchema = z.object({
   benchmark: BenchmarkConfigSchema.optional(),
   compaction: CompactionConfigSchema.default(defaultCompactionConfig),
   extensionPolicy: ExtensionPolicySchema.default("readonly"),
+  budgets: RunBudgetConfigSchema.default({
+    maxInputTokens: defaultSessionRuntimeConfig.maxInputTokens,
+    maxToolCalls: defaultSessionRuntimeConfig.maxToolCalls,
+    maxTotalTokens: defaultSessionRuntimeConfig.maxTotalTokens,
+  }),
   maxSteps: z
     .number()
     .int()

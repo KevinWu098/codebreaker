@@ -7,7 +7,7 @@ import {
   Root as TabsRoot,
   Trigger as TabsTrigger,
 } from "@radix-ui/react-tabs";
-import { ChevronLeft, Trash2 } from "lucide-react";
+import { ChevronLeft, Square, Trash2 } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
@@ -21,7 +21,10 @@ import { Spinner } from "@/components/spinner";
 import { ChatPanel } from "@/features/chat/chat-panel";
 import { SandboxPanel } from "@/features/sandbox/sandbox-panel";
 import { MessagesPanel } from "@/features/sessions/messages-panel";
-import { useArchiveSessionMutation } from "@/hooks/mutations";
+import {
+  useArchiveSessionMutation,
+  useFinalizeSessionMutation,
+} from "@/hooks/mutations";
 import {
   useSessionConfigQuery,
   useSessionQuery,
@@ -62,6 +65,19 @@ const getBenchmarkRunId = (sessionId: string): string | null => {
   return runId || null;
 };
 
+const formatSessionRepo = (
+  session: Pick<
+    SessionRow,
+    "repoName" | "repoOwner" | "runRepoName" | "targetRepoName"
+  >
+): string => {
+  if (session.repoName || session.repoOwner) {
+    return formatRepo(session.repoOwner, session.repoName);
+  }
+
+  return session.runRepoName ?? session.targetRepoName ?? "—";
+};
+
 interface SessionDetailProps {
   onArchived: () => void;
   onBack: () => void;
@@ -88,6 +104,7 @@ const SessionHeader = ({
 }: HeaderProps): React.JSX.Element => {
   const [confirming, setConfirming] = useState(false);
   const archive = useArchiveSessionMutation(sessionId);
+  const finalize = useFinalizeSessionMutation(sessionId);
 
   const runArchive = (): void => {
     archive.mutate(undefined, {
@@ -127,6 +144,16 @@ const SessionHeader = ({
 
         <div className="flex items-center gap-1.5">
           <RefreshButton loading={loading} onClick={onRefresh} />
+          <Button
+            disabled={finalize.isPending || row?.status === "archived"}
+            onClick={() =>
+              finalize.mutate({ reason: "Operator requested final answer" })
+            }
+            variant="ghost"
+          >
+            <Square aria-hidden="true" size={12} />
+            <span>{finalize.isPending ? "finalizing…" : "final answer"}</span>
+          </Button>
           {confirming ? (
             <ConfirmArchive
               archiving={archive.isPending}
@@ -146,6 +173,7 @@ const SessionHeader = ({
         </div>
       </div>
       <ErrorState error={archive.error} title="archive failed" />
+      <ErrorState error={finalize.error} title="finalize failed" />
     </div>
   );
 };
@@ -215,7 +243,7 @@ const SessionRowCard = ({
           {row.modelProvider}/{row.modelId}
         </DefinitionField>
         <DefinitionField label="repo" mono>
-          {formatRepo(row.repoOwner, row.repoName)}
+          {formatSessionRepo(row)}
         </DefinitionField>
         <DefinitionField label="turns" numeric>
           {formatNumber(row.turnCount)}

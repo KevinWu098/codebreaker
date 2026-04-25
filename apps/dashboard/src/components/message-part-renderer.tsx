@@ -16,8 +16,19 @@ interface MessagePartRendererProps {
   part: MessagePart;
   partKey: string;
   role?: string;
+  showTransientParts?: boolean;
   variant: "live" | "static";
 }
+
+const TRANSIENT_PART_TYPES = new Set(["step-start"]);
+
+export const isRenderableMessagePart = (
+  part: MessagePart,
+  showTransientParts = false
+): boolean =>
+  typeof part.type !== "string" ||
+  !TRANSIENT_PART_TYPES.has(part.type) ||
+  showTransientParts;
 
 const isToolState = (state: string | undefined): state is ToolPart["state"] =>
   state === "input-streaming" ||
@@ -44,12 +55,40 @@ const toolStateFor = (part: MessagePart): ToolPart["state"] => {
   return part.input === undefined ? "input-streaming" : "input-available";
 };
 
+const serializeForClipboard = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  try {
+    const serialized = JSON.stringify(value, null, 2);
+    return serialized ?? String(value);
+  } catch {
+    return String(value);
+  }
+};
+
+const toolCallClipboardText = (part: MessagePart): string =>
+  serializeForClipboard({
+    type: part.type,
+    ...(part.toolName ? { toolName: part.toolName } : {}),
+    ...(part.state ? { state: part.state } : {}),
+    ...(part.input === undefined ? {} : { input: part.input }),
+    ...(part.output === undefined ? {} : { output: part.output }),
+    ...(part.errorText === undefined ? {} : { errorText: part.errorText }),
+  });
+
 export const MessagePartRenderer = ({
   part,
   partKey: key,
   role,
+  showTransientParts = false,
   variant,
-}: MessagePartRendererProps): React.JSX.Element => {
+}: MessagePartRendererProps): React.ReactNode => {
+  if (!isRenderableMessagePart(part, showTransientParts)) {
+    return null;
+  }
+
   if (part.type === "text" && typeof part.text === "string") {
     if (variant === "live" && role !== "user") {
       return <MessageResponse key={key}>{part.text}</MessageResponse>;
@@ -69,11 +108,16 @@ export const MessagePartRenderer = ({
 
   if (typeof part.type === "string" && part.type.startsWith("tool")) {
     return (
-      <Tool defaultOpen={variant === "live"} key={key}>
+      <Tool className="relative" defaultOpen={variant === "live"} key={key}>
         <ToolHeader
           {...(part.toolName ? { title: part.toolName } : {})}
           state={toolStateFor(part)}
           type={part.type as `tool-${string}`}
+        />
+        <CopyTextButton
+          className="absolute top-2.5 right-10 z-10 opacity-70 transition-opacity group-hover:opacity-100"
+          text={toolCallClipboardText(part)}
+          title="copy tool call"
         />
         <ToolContent>
           {part.input !== undefined && <ToolInput input={part.input} />}

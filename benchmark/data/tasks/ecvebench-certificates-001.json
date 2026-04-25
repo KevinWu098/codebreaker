@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "description": "An authorization bypass vulnerability exists in the certificate authority's token reuse protection mechanism. For certain provisioner types that do not implement a standard token-based flow, errors returned during token identifier extraction are silently ignored, which disables replay protection and allows previously consumed tokens to be accepted again. Additionally, the certificate revocation pathway does not verify that the serial number in the incoming request matches the subject carried inside the authenticated token, enabling an attacker to revoke arbitrary certificates without proper authorization."
+      "description": "An authorization bypass vulnerability exists in the certificate authority's token validation logic. When certain provisioner types do not support token-based authentication flows, the token reuse protection mechanism silently fails open, allowing an attacker to bypass authorization checks entirely. Additionally, revocation endpoints do not verify that the serial number in the request matches the serial number in the presented credential, enabling unauthorized certificate revocation."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "ACME and SCEP provisioners returned generic errors from token identifier extraction that were silently swallowed, completely disabling token reuse protection. The revocation path also lacked serial number verification, allowing unauthorized certificate revocation.",
+    "reason": "The token reuse validation in the authorization path silently ignores errors from provisioners that do not support token flows (ACME and SCEP), completely bypassing authorization. Additionally, revocation endpoints fail to verify serial number consistency between requests and credentials.",
     "locations": [
       {
         "file": "authority/authorize.go",

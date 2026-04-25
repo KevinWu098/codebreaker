@@ -16,6 +16,7 @@ These values have already been extracted and verified by the selection pipeline.
 - **CVE ID**: {{CVE_ID}}
 - **CWE IDs**: {{CWE_IDS}}
 - **Ecosystem**: {{ECOSYSTEM}}
+- **Snapshot date**: {{SNAPSHOT_DATE}}
 
 ## Step 1: Read the advisory
 
@@ -160,7 +161,7 @@ Create `benchmark/internal/metadata/{GHSA_ID}.json` with this exact structure:
   "noisy_patch": "<true if >3 non-test files changed, false otherwise>?",
   "curation_notes": "<explain how you derived the locations and any ambiguities>",
   "dataset_version": "0.1.0",
-  "snapshot_date": "<today's date in YYYY-MM-DD format>"
+  "snapshot_date": "{{SNAPSHOT_DATE}}"
 }
 ```
 

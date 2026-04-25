@@ -83,6 +83,11 @@ const DEFAULT_VALUES: FormValues = {
 };
 
 const buildSessionConfig = (values: FormValues): SessionConfig => ({
+  budgets: {
+    maxInputTokens: defaultSessionRuntimeConfig.maxInputTokens,
+    maxToolCalls: defaultSessionRuntimeConfig.maxToolCalls,
+    maxTotalTokens: defaultSessionRuntimeConfig.maxTotalTokens,
+  },
   compaction: defaultCompactionConfig,
   extensionPolicy: values.extensionPolicy,
   maxSteps: values.maxSteps,

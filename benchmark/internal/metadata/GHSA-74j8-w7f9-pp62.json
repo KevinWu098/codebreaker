@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-74j8-w7f9-pp62",
   "post_patch_commit": "4cdf52e55666864e5f90ed502e9fc13e18985b7b",
   "noisy_patch": false,
-  "curation_notes": "The patch adds a new NamespaceReconciler controller that enforces pod security admission labels on user namespaces (prefixed with 'ns-'). It also registers this controller in the user controller's main entrypoint. The vulnerability location is the main function where the missing controller registration left user namespaces without pod security enforcement. Only 2 files were changed (1 new file, 1 modified), neither being test files.",
+  "curation_notes": "The patch adds a new NamespaceReconciler controller that enforces pod security labels on user namespaces (prefixed with 'ns-'). The vulnerability location is controllers/user/main.go in the main function, where controller registration occurs but the namespace security controller was missing. Only 2 files were changed: one new controller file and the main registration file.",
   "dataset_version": "0.1.0",
   "snapshot_date": "2026-04-25"
 }

@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "description": "An authentication bypass vulnerability exists in an AI agent API endpoint. The endpoint lacks authentication middleware, allowing unauthenticated remote attackers to send requests and perform arbitrary database operations against any connected backend server using privileged credentials such as the master key."
+      "description": "An API endpoint for AI-assisted database operations is missing authentication middleware, allowing unauthenticated remote attackers to invoke it and perform arbitrary database operations using the application's privileged master key. No identity verification or session validation is applied before processing requests."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 9.9,
-    "reason": "The AI Agent API endpoint does not enforce any authentication, allowing unauthenticated remote attackers to perform arbitrary database operations using the master key against any connected Parse Server.",
+    "reason": "The AI agent API endpoint lacks authentication middleware, allowing unauthenticated remote attackers to send requests and perform arbitrary database operations against any connected Parse Server using the master key.",
     "locations": [
       {
         "file": "Parse-Dashboard/app.js",

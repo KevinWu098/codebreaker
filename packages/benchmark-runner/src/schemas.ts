@@ -168,9 +168,12 @@ export const CreateBenchmarkRunRequestSchema = z
     difficulty: DifficultySchema,
     id: z.string().min(1).optional(),
     maxTurns: z.number().int().positive().default(20),
+    maxInputTokens: z.number().int().positive().optional(),
     model: BenchmarkRunModelSchema,
+    maxToolCalls: z.number().int().positive().optional(),
+    maxTotalTokens: z.number().int().positive().optional(),
     taskId: z.string().min(1),
-    timeoutSeconds: z.number().int().positive().default(1800),
+    timeoutSeconds: z.number().int().positive().default(900),
   })
   .strict();
 export type CreateBenchmarkRunRequest = z.infer<

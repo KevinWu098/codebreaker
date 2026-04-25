@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "description": "An authentication bypass vulnerability exists in the self-registration endpoint of a web-based file management application. When self-registration is enabled and the default user configuration includes elevated privileges, the registration handler blindly copies all default settings—including administrative permissions—to newly created accounts without any server-side guard. An unauthenticated attacker can register a new account that inherits full administrative control, allowing them to manage all files, users, and server settings."
+      "description": "An authorization bypass vulnerability exists in the self-registration endpoint where new user accounts inherit all default permissions — including administrative privileges — without any server-side restriction. When self-registration is enabled and the default user configuration includes administrator access, any unauthenticated visitor can create an account that is granted full administrative control over the application, including file management, user management, and server configuration."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "The signup handler applies all default user settings, including admin permissions, to self-registered accounts without stripping elevated privileges, allowing any unauthenticated visitor to create a full administrator account.",
+    "reason": "The signup handler blindly applies all default user settings, including the admin permission flag, to newly registered accounts without stripping elevated privileges, allowing any unauthenticated visitor to register as a full administrator.",
     "locations": [
       {
         "file": "http/auth.go",

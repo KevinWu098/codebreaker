@@ -21,6 +21,7 @@ import type {
   BenchmarkArtifactState,
   BenchmarkConfig,
 } from "@codebreaker/shared/schemas/artifacts";
+import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 import { getAgentByName } from "agents";
 
 export class BenchmarkRunOrchestrator {
@@ -60,7 +61,7 @@ export class BenchmarkRunOrchestrator {
       provider: run.modelProvider,
     };
     const maxTurns = request?.maxTurns ?? 20;
-    const timeoutSeconds = request?.timeoutSeconds ?? 1800;
+    const timeoutSeconds = request?.timeoutSeconds ?? 900;
 
     await this.runs.update({ id: runId, status: "running" });
 
@@ -70,6 +71,15 @@ export class BenchmarkRunOrchestrator {
         maxTurns,
         metadata: record.metadata,
         model,
+        ...(request?.maxInputTokens
+          ? { maxInputTokens: request.maxInputTokens }
+          : {}),
+        ...(request?.maxToolCalls
+          ? { maxToolCalls: request.maxToolCalls }
+          : {}),
+        ...(request?.maxTotalTokens
+          ? { maxTotalTokens: request.maxTotalTokens }
+          : {}),
         task: record.task,
         timeoutSeconds,
       });
@@ -112,6 +122,9 @@ export class BenchmarkRunOrchestrator {
         ref: record.task.codebase.commit,
         runId,
         sessionId,
+        ...(sessionConfig.sandbox?.profile
+          ? { profile: sessionConfig.sandbox.profile }
+          : {}),
       });
 
       await agent.requestFollowUp(
@@ -128,6 +141,11 @@ export class BenchmarkRunOrchestrator {
         message: "Agent turn completed",
         runId,
       });
+
+      const completedRun = await this.requireRun(runId);
+      if (completedRun.status === "cancelled") {
+        return completedRun;
+      }
 
       const rawOutput = await this.readAssistantOutput(agent);
       const agentOutput = parseAgentOutput(rawOutput);
@@ -161,6 +179,11 @@ export class BenchmarkRunOrchestrator {
         await this.cleanup(runId);
       }
     } catch (error) {
+      const currentRun = await this.requireRun(runId);
+      if (currentRun.status === "cancelled") {
+        return currentRun;
+      }
+
       const message = error instanceof Error ? error.message : String(error);
       const result = await this.runs.putResult({
         error: message,
@@ -186,11 +209,20 @@ export class BenchmarkRunOrchestrator {
   }
 
   async cancel(runId: string) {
+    const run = await this.requireRun(runId);
+
     await this.runs.addEvent({
       kind: "cancelled",
       message: "Benchmark run cancelled",
       runId,
     });
+
+    if (run.sessionId) {
+      const agent = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, run.sessionId as string)
+      );
+      await withDORetry(() => agent.stopAndFinalize("Benchmark run cancelled"));
+    }
 
     return this.runs.update({
       completedAt: new Date().toISOString(),
@@ -282,6 +314,7 @@ export class BenchmarkRunOrchestrator {
 
   private async checkoutArtifact(input: {
     artifact: BenchmarkArtifactState;
+    profile?: SandboxProfileName;
     ref: string;
     runId: string;
     sessionId: string;
@@ -302,14 +335,18 @@ export class BenchmarkRunOrchestrator {
       },
       scope: "read",
     });
-    const checkout = await ModalExecutor.fromEnv(this.env).checkoutGitRepo({
+    const checkoutOptions = {
       branch: input.artifact.workingBranch,
       credential,
       path: `/workspace/${input.artifact.runRepoName}`,
       ref: input.ref,
       remoteUrl: input.artifact.runRepoRemote,
       sessionId: input.sessionId,
-    });
+      ...(input.profile ? { profile: input.profile } : {}),
+    };
+    const checkout = await ModalExecutor.fromEnv(this.env).checkoutGitRepo(
+      checkoutOptions
+    );
 
     await this.runs.addEvent({
       details: checkout,

@@ -13,6 +13,19 @@ import { useSessionsQuery } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import { formatNumber, formatRelativeTime, formatRepo } from "@/lib/format";
 
+const formatSessionRepo = (session: {
+  repoName: string | null;
+  repoOwner: string | null;
+  runRepoName: string | null;
+  targetRepoName: string | null;
+}): string => {
+  if (session.repoName || session.repoOwner) {
+    return formatRepo(session.repoOwner, session.repoName);
+  }
+
+  return session.runRepoName ?? session.targetRepoName ?? "—";
+};
+
 interface SessionsListProps {
   onSelect: (id: string) => void;
   selectedId: string | null;
@@ -92,13 +105,13 @@ export const SessionsList = ({
                 <th>repo</th>
                 <th className="num">turns</th>
                 <th className="num">tokens</th>
-                <th>updated</th>
+                <th className="w-28 whitespace-nowrap">updated</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((session) => {
                 const tokens = session.inputTokens + session.outputTokens;
-                const repo = formatRepo(session.repoOwner, session.repoName);
+                const repo = formatSessionRepo(session);
 
                 return (
                   <tr
@@ -110,7 +123,7 @@ export const SessionsList = ({
                   >
                     <td>
                       <button
-                        className="id-link"
+                        className="id-link block max-w-28 truncate whitespace-nowrap"
                         onClick={() => onSelect(session.id)}
                         title={session.id}
                         type="button"
@@ -129,7 +142,7 @@ export const SessionsList = ({
                     <td className="num">{formatNumber(session.turnCount)}</td>
                     <td className="num dim">{formatNumber(tokens)}</td>
                     <td
-                      className="text-fg-muted"
+                      className="whitespace-nowrap text-fg-muted"
                       title={new Date(session.updatedAt).toISOString()}
                     >
                       {formatRelativeTime(session.updatedAt)}

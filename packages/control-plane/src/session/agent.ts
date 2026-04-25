@@ -8,7 +8,9 @@ import {
   type StepContext,
   Think,
   type TurnConfig,
+  type TurnContext,
 } from "@cloudflare/think";
+import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { selectModel } from "@codebreaker/control-plane/session/model";
 import {
@@ -32,12 +34,22 @@ import { generateText, type ToolSet } from "ai";
 
 export interface SessionAgentState {
   artifact?: BenchmarkArtifactState;
+  control?: {
+    finalizing?: boolean;
+    inputTokens?: number;
+    outputTokens?: number;
+    stopReason?: string;
+    toolCalls?: number;
+  };
   sessionId?: string;
   status: SessionStatus;
 }
 
 const DEFAULT_SYSTEM_PROMPT =
   "You are Codebreaker, a background security and code workflow agent. Stay within the configured policy and explain tool limitations clearly.";
+const BENCHMARK_SESSION_PREFIX = "bench-";
+const FINALIZE_PROMPT = (reason: string) =>
+  `Stop now. Do not call tools. Based only on the transcript and tool results so far, give your best final answer. If the original task required a specific output format, obey that format exactly. Stop reason: ${reason}`;
 
 export class SessionAgent extends Think<Env, SessionAgentState> {
   initialState: SessionAgentState = {
@@ -82,6 +94,9 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       policy: config.extensionPolicy,
       sessionId: this.sessionId,
       workspace: this.workspace,
+      ...(config.sandbox?.profile
+        ? { defaultSandboxProfile: config.sandbox.profile }
+        : {}),
     }).tools;
   }
 
@@ -130,23 +145,38 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       .compactAfter(config.compaction.summarizeAtTokens);
   }
 
-  override beforeTurn(): TurnConfig | undefined {
+  override beforeTurn(ctx: TurnContext): TurnConfig | undefined {
     const config = this.readConfig();
 
     this.setState({
       ...this.state,
       status: "running",
     });
+    const eventId = `running:${crypto.randomUUID()}`;
     this.ctx.waitUntil(
-      this.sessionIndex.setStatus({
-        eventId: `running:${crypto.randomUUID()}`,
-        id: this.sessionId,
-        status: "running",
-      })
+      Promise.all([
+        this.sessionIndex.setStatus({
+          eventId,
+          id: this.sessionId,
+          status: "running",
+        }),
+        this.sessionIndex.incrementTurn({
+          eventId,
+          id: this.sessionId,
+        }),
+      ]).then(() => undefined)
     );
 
     if (!config) {
       return;
+    }
+
+    if (this.state.control?.finalizing) {
+      return {
+        activeTools: [],
+        maxSteps: 1,
+        system: `${ctx.system}\n\nYou are finalizing a stopped run. Do not call tools. Answer from the transcript only.`,
+      };
     }
 
     const turnConfig: TurnConfig = {
@@ -165,13 +195,27 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   override onStepFinish(ctx: StepContext): void {
+    const inputTokens = ctx.usage.inputTokens ?? 0;
+    const outputTokens = ctx.usage.outputTokens ?? 0;
+    const toolCalls = ctx.toolCalls?.length ?? 0;
+
+    const control = this.recordUsage({
+      inputTokens,
+      outputTokens,
+      toolCalls,
+    });
+    const stopReason = this.budgetStopReason(control);
+
     this.ctx.waitUntil(
-      this.sessionIndex.addTokenUsage({
-        eventId: `${ctx.response.id}:${ctx.stepNumber}`,
-        id: this.sessionId,
-        inputTokens: ctx.usage.inputTokens ?? 0,
-        outputTokens: ctx.usage.outputTokens ?? 0,
-      })
+      Promise.all([
+        this.sessionIndex.addTokenUsage({
+          eventId: `${ctx.response.id}:${ctx.stepNumber}`,
+          id: this.sessionId,
+          inputTokens,
+          outputTokens,
+        }),
+        stopReason ? this.stopAndFinalize(stopReason) : Promise.resolve(),
+      ]).then(() => undefined)
     );
   }
 
@@ -183,31 +227,44 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       status,
     });
     this.ctx.waitUntil(
-      Promise.all([
-        this.sessionIndex.incrementTurn({
-          eventId: result.requestId,
-          id: this.sessionId,
-        }),
-        this.sessionIndex.setStatus({
-          eventId: `${result.status}:${result.requestId}`,
-          id: this.sessionId,
-          status,
-        }),
-      ]).then(() => undefined)
+      this.sessionIndex.setStatus({
+        eventId: `${result.status}:${result.requestId}`,
+        id: this.sessionId,
+        status,
+      })
     );
+    if (status === "failed") {
+      this.ctx.waitUntil(
+        this.markBenchmarkRunFailed("Agent chat response failed")
+      );
+    }
+    if (this.state.control?.finalizing && result.status !== "aborted") {
+      this.setState({
+        ...this.state,
+        control: {
+          ...this.state.control,
+          finalizing: false,
+        },
+      });
+    }
   }
 
   override onChatError(error: unknown): unknown {
+    const message = error instanceof Error ? error.message : String(error);
+
     this.setState({
       ...this.state,
       status: "failed",
     });
     this.ctx.waitUntil(
-      this.sessionIndex.setStatus({
-        eventId: `chat-error:${crypto.randomUUID()}`,
-        id: this.sessionId,
-        status: "failed",
-      })
+      Promise.all([
+        this.sessionIndex.setStatus({
+          eventId: `chat-error:${crypto.randomUUID()}`,
+          id: this.sessionId,
+          status: "failed",
+        }),
+        this.markBenchmarkRunFailed(message),
+      ]).then(() => undefined)
     );
 
     return error;
@@ -218,15 +275,35 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   ): Promise<ChatRecoveryOptions> {
     const config = this.readConfig();
     const timeoutMs = (config?.timeoutSeconds ?? 300) * 1000;
-    const replayWindowMs = Math.min(timeoutMs, 5 * 60 * 1000);
-    const shouldContinue = Date.now() - ctx.createdAt <= replayWindowMs;
+    const shouldContinue = Date.now() - ctx.createdAt <= timeoutMs;
+    const nextState: SessionAgentState = shouldContinue
+      ? {
+          ...this.state,
+          status: "running",
+        }
+      : {
+          ...this.state,
+          control: {
+            ...this.state.control,
+            finalizing: true,
+            stopReason: "Agent turn recovery window expired",
+          },
+          status: "running",
+        };
+
+    this.setState(nextState);
 
     this.ctx.waitUntil(
-      this.sessionIndex.setStatus({
-        eventId: `recovery:${ctx.requestId}`,
-        id: this.sessionId,
-        status: shouldContinue ? "running" : "failed",
-      })
+      Promise.all([
+        this.sessionIndex.setStatus({
+          eventId: `recovery:${ctx.requestId}`,
+          id: this.sessionId,
+          status: "running",
+        }),
+        shouldContinue
+          ? Promise.resolve()
+          : this.finalizeAfterStable("Agent turn recovery window expired"),
+      ]).then(() => undefined)
     );
 
     return Promise.resolve({
@@ -263,6 +340,31 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     this.resetTurnState();
 
     return this.state;
+  }
+
+  @callable()
+  async stopAndFinalize(
+    reason = "Operator requested stop"
+  ): Promise<SaveMessagesResult> {
+    if (this.state.control?.finalizing) {
+      return {
+        requestId: "already-finalizing",
+        status: "skipped",
+      };
+    }
+
+    this.setState({
+      ...this.state,
+      control: {
+        ...this.state.control,
+        finalizing: true,
+        stopReason: reason,
+      },
+      status: "running",
+    });
+    this.resetTurnState();
+
+    return await this.finalizeAfterStable(reason);
   }
 
   @callable()
@@ -348,6 +450,107 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
   private get sessionIndex(): SessionIndexStore {
     return new SessionIndexStore(this.env.DB);
+  }
+
+  private async finalizeAfterStable(
+    reason: string
+  ): Promise<SaveMessagesResult> {
+    await this.waitUntilStable({ timeout: 5000 });
+
+    return this.saveMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: crypto.randomUUID(),
+        parts: [{ text: FINALIZE_PROMPT(reason), type: "text" }],
+        role: "user",
+      },
+    ]);
+  }
+
+  private recordUsage(input: {
+    inputTokens: number;
+    outputTokens: number;
+    toolCalls: number;
+  }): NonNullable<SessionAgentState["control"]> {
+    const control = {
+      ...this.state.control,
+      inputTokens: (this.state.control?.inputTokens ?? 0) + input.inputTokens,
+      outputTokens:
+        (this.state.control?.outputTokens ?? 0) + input.outputTokens,
+      toolCalls: (this.state.control?.toolCalls ?? 0) + input.toolCalls,
+    };
+
+    this.setState({
+      ...this.state,
+      control,
+    });
+
+    return control;
+  }
+
+  private budgetStopReason(
+    control: NonNullable<SessionAgentState["control"]>
+  ): string | null {
+    if (control.finalizing) {
+      return null;
+    }
+
+    const budgets = this.readConfig()?.budgets;
+    const inputTokens = control.inputTokens ?? 0;
+    const outputTokens = control.outputTokens ?? 0;
+    const totalTokens = inputTokens + outputTokens;
+    const toolCalls = control.toolCalls ?? 0;
+
+    if (budgets?.maxToolCalls && toolCalls >= budgets.maxToolCalls) {
+      return `Tool call budget reached (${toolCalls}/${budgets.maxToolCalls})`;
+    }
+
+    if (budgets?.maxInputTokens && inputTokens >= budgets.maxInputTokens) {
+      return `Input token budget reached (${inputTokens}/${budgets.maxInputTokens})`;
+    }
+
+    if (budgets?.maxTotalTokens && totalTokens >= budgets.maxTotalTokens) {
+      return `Total token budget reached (${totalTokens}/${budgets.maxTotalTokens})`;
+    }
+
+    return null;
+  }
+
+  private getBenchmarkRunId(): string | null {
+    if (!this.state.sessionId?.startsWith(BENCHMARK_SESSION_PREFIX)) {
+      return null;
+    }
+
+    return this.state.sessionId.slice(BENCHMARK_SESSION_PREFIX.length) || null;
+  }
+
+  private async markBenchmarkRunFailed(message: string): Promise<void> {
+    const runId = this.getBenchmarkRunId();
+
+    if (!runId) {
+      return;
+    }
+
+    const runs = new BenchmarkRunStore(this.env.DB);
+    const run = await runs.get(runId);
+
+    const canFailRun = run?.status === "pending" || run?.status === "running";
+
+    if (!canFailRun) {
+      return;
+    }
+
+    await runs.update({
+      completedAt: new Date().toISOString(),
+      error: message,
+      id: runId,
+      status: "failed",
+    });
+    await runs.addEvent({
+      kind: "failed",
+      message,
+      runId,
+    });
   }
 
   private compactionTailTokenBudget(config: SessionConfig): number {

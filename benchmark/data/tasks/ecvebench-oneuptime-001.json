@@ -10,15 +10,23 @@
   "hints": {
     "L0": null,
     "L1": {
-      "description": "An authorization bypass vulnerability exists in the API's tenant isolation mechanism. The server trusts a client-controlled HTTP header to determine whether a request should skip tenant-scoped authorization checks. By setting this header, a low-privileged authenticated user can bypass permission validation and tenant scoping, enabling cross-tenant data access, exposure of sensitive user credential fields through nested entity relations, and ultimately full account takeover via leaked password reset tokens."
+      "description": "An authorization bypass vulnerability exists in a multi-tenant monitoring platform where the API trusts a client-controlled HTTP header to determine whether internal permission and tenant isolation checks should be enforced. When this header is present, the server skips all authorization validations and disables tenant scoping, allowing any authenticated user to access resources belonging to other tenants. Additionally, sensitive credential data including plaintext password reset tokens can be retrieved through cross-tenant queries, enabling full account takeover via the password reset flow."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "The server trusts a client-controlled HTTP header to bypass authorization and tenant isolation checks, allowing any authenticated user to access other tenants' data, leak sensitive credential fields, and take over accounts.",
+    "reason": "The API trusts a client-controlled HTTP header to bypass all authorization and tenant isolation checks, allowing any authenticated user to access cross-tenant data including sensitive credentials, leading to full account takeover.",
     "locations": [
+      {
+        "file": "Common/Server/API/CommonAPI.ts",
+        "function": "getDatabaseCommonInteractionProps"
+      },
+      {
+        "file": "Common/Server/Types/Database/Permissions/BasePermission.ts",
+        "function": "checkPermissions"
+      },
       {
         "file": "Common/Server/Types/Database/Permissions/TenantPermission.ts",
         "function": "addTenantScopeToQuery"

@@ -10,18 +10,22 @@
   "hints": {
     "L0": null,
     "L1": {
-      "description": "An authorization bypass vulnerability exists in the API layer. When processing OAuth-authenticated requests, the server only verifies that the user is authenticated and holds the appropriate role (e.g., administrator status), but does not validate that the OAuth access token was actually granted the scopes required for the requested action. Additionally, the token response always reports full permissions to the client regardless of the scopes that were originally authorized. This allows an attacker who obtains an access token with minimal read-only permissions to perform privileged write operations, administrative actions, and other sensitive API calls that should require elevated OAuth scopes."
+      "description": "An authorization bypass vulnerability exists in the application's OAuth-based API authentication layer. When processing authenticated API requests, the server only verifies that a valid access token is present but does not check whether the token's granted scopes authorize the requested action. Furthermore, the token response mechanism always reports maximum permissions regardless of the scopes actually granted to the token. This allows an attacker who obtains or is granted a limited-scope access token (e.g., read-only) to perform privileged operations including administrative actions, account modifications, and server configuration changes."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 9.9,
-    "reason": "The API endpoints only check user authentication and admin role but never verify OAuth token scopes, allowing any valid access token (even read-only) to perform privileged operations including administrative actions.",
+    "reason": "The API does not enforce OAuth scope restrictions on any endpoint, and the token response hardcodes all scopes regardless of what was granted, allowing a read-only token to perform write, follow, and administrative actions.",
     "locations": [
       {
         "file": "app/Auth/BearerTokenResponse.php",
         "function": "getExtraParams"
+      },
+      {
+        "file": "app/Providers/AuthServiceProvider.php",
+        "function": "boot"
       },
       {
         "file": "app/Http/Controllers/Api/ApiV1Controller.php",
@@ -44,7 +48,11 @@
         "function": null
       },
       {
-        "file": "app/Providers/AuthServiceProvider.php",
+        "file": "app/Http/Controllers/Api/V1/DomainBlockController.php",
+        "function": null
+      },
+      {
+        "file": "app/Http/Controllers/Api/V1/TagsController.php",
         "function": null
       }
     ]

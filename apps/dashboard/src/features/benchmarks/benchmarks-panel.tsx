@@ -4,7 +4,7 @@ import {
   MODEL_OPTIONS_BY_PROVIDER,
   MODEL_PROVIDERS,
 } from "@codebreaker/shared/lib/models";
-import { Play, RefreshCw, Trash2 } from "lucide-react";
+import { Play, RefreshCw, Square, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -16,6 +16,7 @@ import { JsonView } from "@/components/json-view";
 import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/spinner";
 import {
+  useCancelBenchmarkRunMutation,
   useCleanupBenchmarkRunMutation,
   useCreateBenchmarkRunMutation,
   useStartBenchmarkRunMutation,
@@ -33,21 +34,7 @@ const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
   `${model.provider}/${model.id}`;
 const DEFAULT_MODEL_VALUE = modelValue(DEFAULT_MODEL);
 
-const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => {
-  if (status === "completed") {
-    return "completed";
-  }
-
-  if (status === "failed") {
-    return "failed";
-  }
-
-  if (status === "pending") {
-    return "pending";
-  }
-
-  return "running";
-};
+const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => status;
 
 export interface BenchmarksPanelProps {
   onOpenSession?: (sessionId: string) => void;
@@ -103,7 +90,7 @@ export const BenchmarksPanel = ({
           provider: selectedModel.provider,
         },
         taskId: selectedTaskId,
-        timeoutSeconds: 1800,
+        timeoutSeconds: 900,
       },
       {
         onSuccess: (response) => selectRun(response.run.id),
@@ -285,9 +272,11 @@ const BenchmarkRunDetail = ({
   runId: string;
 }): React.JSX.Element => {
   const detail = useBenchmarkRunQuery(runId);
+  const cancel = useCancelBenchmarkRunMutation(runId);
   const cleanup = useCleanupBenchmarkRunMutation(runId);
   const start = useStartBenchmarkRunMutation(runId);
   const run = detail.data?.run;
+  const canCancel = run?.status === "running";
   const canStart =
     run?.status === "pending" ||
     run?.status === "failed" ||
@@ -323,6 +312,14 @@ const BenchmarkRunDetail = ({
             <span>{start.isPending ? "starting…" : "start"}</span>
           </Button>
           <Button
+            disabled={!canCancel || cancel.isPending}
+            onClick={() => cancel.mutate()}
+            variant="danger"
+          >
+            <Square aria-hidden="true" size={12} />
+            <span>{cancel.isPending ? "stopping…" : "stop"}</span>
+          </Button>
+          <Button
             disabled={cleanup.isPending}
             onClick={() => cleanup.mutate()}
             variant="danger"
@@ -335,6 +332,7 @@ const BenchmarkRunDetail = ({
       title="run detail"
     >
       <ErrorState error={detail.error} title="detail unavailable" />
+      <ErrorState error={cancel.error} title="stop failed" />
       <ErrorState error={cleanup.error} title="cleanup failed" />
       <ErrorState error={start.error} title="start failed" />
       {!detail.data && <Spinner />}

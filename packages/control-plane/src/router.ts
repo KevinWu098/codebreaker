@@ -20,6 +20,7 @@ import {
   ArtifactCheckoutRequestSchema,
   ArtifactCommitRequestSchema,
   CreateSessionRequestSchema,
+  FinalizeSessionRequestSchema,
   InspectExecRequestSchema,
   ListSessionsQuerySchema,
   UpdateArtifactStateRequestSchema,
@@ -201,7 +202,7 @@ export const createRouter = (): Hono<{
           provider: run.modelProvider,
         },
         taskId: run.taskId,
-        timeoutSeconds: 1800,
+        timeoutSeconds: 900,
       };
       context.executionCtx.waitUntil(
         new BenchmarkRunOrchestrator(context.env)
@@ -312,6 +313,24 @@ export const createRouter = (): Hono<{
       });
 
       return context.json({ ok: true });
+    }
+  );
+
+  app.post(
+    "/sessions/:id/finalize",
+    zValidator("param", SessionParamsSchema),
+    zValidator("json", FinalizeSessionRequestSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const request = context.req.valid("json");
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
+      const result = await withDORetry(() =>
+        agent.stopAndFinalize(request.reason)
+      );
+
+      return context.json({ result });
     }
   );
 

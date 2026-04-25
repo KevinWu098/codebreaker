@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "description": "An authorization bypass vulnerability exists in the document inclusion mechanism. When one document includes the content of another, the included content is executed with the privileges of the including context rather than the included content's own author. This allows a user with edit permissions on any includable document to escalate their privileges by embedding malicious scripting content that will be executed with the including document author's elevated rights, potentially achieving arbitrary code execution."
+      "description": "An authorization bypass vulnerability exists in the wiki platform's content inclusion mechanism. When one document's content is embedded into another, the included content is executed using the privileges of the including document's author rather than the included content's own author. This allows any user who can modify a document that is subsequently included by a page authored by a more privileged user to execute operations with those elevated privileges, effectively achieving privilege escalation through content authorship impersonation."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "The include macro executes included document content with the includer's author rights instead of the included document's own author, allowing any user who can edit an included document to impersonate the includer and gain elevated privileges such as programming rights.",
+    "reason": "The content inclusion mechanism executes included document content with the includer's rights instead of the included content author's rights, allowing any user who can edit an included document to impersonate the including page's author.",
     "locations": [
       {
         "file": "xwiki-platform-core/xwiki-platform-rendering/xwiki-platform-rendering-macros/xwiki-platform-rendering-macro-include/src/main/java/org/xwiki/rendering/internal/macro/include/IncludeMacro.java",
