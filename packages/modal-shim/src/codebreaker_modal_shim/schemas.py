@@ -24,6 +24,7 @@ class SandboxProfile(BaseModel):
     workdir: str = "/workspace"
     env: dict[str, str] = Field(default_factory=dict)
     cpu: float = 1
+    idle_timeout_seconds: int | None = None
     memory_mb: int = 1024
     timeout_seconds: int = 300
     encrypted_ports: list[int] = Field(default_factory=list)

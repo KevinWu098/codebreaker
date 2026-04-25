@@ -10,6 +10,7 @@ export const SandboxProfileSchema = z.object({
   cpu: z.number().positive(),
   encryptedPorts: z.array(z.number().int().positive()).default([]),
   env: z.record(z.string(), z.string()).default({}),
+  idleTimeoutSeconds: z.number().int().positive().optional(),
   image: z.string().min(1),
   installCommands: z.array(z.string().min(1)).default([]),
   memoryMb: z.number().int().positive(),
