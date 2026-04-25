@@ -172,6 +172,7 @@ See `schema/output.schema.json` for the formal schema.
 ```
 benchmark/
 ├── README.md
+├── pyproject.toml
 ├── docs/
 │   ├── curation.md                # data sourcing, filtering, and curation process
 │   └── prompts/
@@ -181,10 +182,13 @@ benchmark/
 │   ├── agent_input.schema.json    # JSON Schema for AgentInput (runtime projection)
 │   ├── output.schema.json         # JSON Schema for AgentOutput
 │   └── metadata.schema.json       # JSON Schema for InternalMetadata
-├── examples/
-│   ├── ecvebench-electerm-001.task.json         # canonical task record
-│   ├── ecvebench-electerm-001-L0.input.json     # rendered agent input at L0
-│   └── ecvebench-electerm-001-L1.input.json     # rendered agent input at L1
+├── pipeline/
+│   ├── filter_advisories.py       # step 1: filter GHSAs from advisory API
+│   ├── lib/
+│   │   ├── filters.py             # filter functions and reference parsers
+│   │   └── github_client.py       # GitHub REST API client with rate-limit handling
+│   ├── output/                    # gitignored runtime artifacts (filtered.jsonl, etc.)
+│   └── scratch/                   # gitignored throwaway experiments
 ├── data/
 │   └── tasks/                     # one JSON file per unique GHSA
 │       └── ecvebench-electerm-001.json
