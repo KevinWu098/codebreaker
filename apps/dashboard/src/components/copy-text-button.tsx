@@ -1,6 +1,6 @@
 import { Check, Copy } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/button";
+import { AppButton } from "@/components/app-button";
 import { cn } from "@/lib/utils";
 
 const COPIED_RESET_MS = 2000;
@@ -46,7 +46,7 @@ export const CopyTextButton = ({
   }, [text]);
 
   return (
-    <Button
+    <AppButton
       aria-label={copied ? "copied" : title}
       className={cn("btn-icon h-6 min-h-0 shrink-0 px-1.5 py-0", className)}
       onClick={copy}
@@ -59,6 +59,6 @@ export const CopyTextButton = ({
       ) : (
         <Copy aria-hidden="true" size={12} />
       )}
-    </Button>
+    </AppButton>
   );
 };

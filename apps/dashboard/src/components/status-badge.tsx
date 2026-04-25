@@ -58,7 +58,7 @@ interface BadgeProps {
   withDot?: boolean;
 }
 
-export const Badge = ({
+export const StatusBadge = ({
   children,
   className,
   status,

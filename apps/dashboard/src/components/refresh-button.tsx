@@ -1,5 +1,5 @@
 import { RotateCw } from "lucide-react";
-import { Button } from "@/components/button";
+import { AppButton } from "@/components/app-button";
 import { cn } from "@/lib/utils";
 
 interface RefreshButtonProps {
@@ -17,7 +17,7 @@ export const RefreshButton = ({
   onClick,
   title = "refresh",
 }: RefreshButtonProps): React.JSX.Element => (
-  <Button
+  <AppButton
     aria-label={title}
     className={cn("btn-icon", className)}
     disabled={disabled}
@@ -30,5 +30,5 @@ export const RefreshButton = ({
       className={loading ? "animate-spin" : undefined}
       size={12}
     />
-  </Button>
+  </AppButton>
 );

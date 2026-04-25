@@ -24,14 +24,14 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import { Badge } from "@/components/badge";
-import { Button } from "@/components/button";
+import { AppButton } from "@/components/app-button";
 import { Card } from "@/components/card";
 import { ErrorState } from "@/components/error-state";
 import {
   isRenderableMessagePart,
   MessagePartRenderer,
 } from "@/components/message-part-renderer";
+import { StatusBadge } from "@/components/status-badge";
 import type { MessagePart } from "@/components/tool-call-part";
 import { Spinner } from "@/components/ui/spinner";
 import { useConnection } from "@/lib/connection";
@@ -213,10 +213,10 @@ const ChatTitle = ({
 }): React.JSX.Element => (
   <span className="flex items-center gap-2">
     live chat
-    <Badge status={identified ? "completed" : "idle"}>
+    <StatusBadge status={identified ? "completed" : "idle"}>
       {identified ? "ws connected" : "connecting"}
-    </Badge>
-    {isStreaming && <Badge status="running">streaming</Badge>}
+    </StatusBadge>
+    {isStreaming && <StatusBadge status="running">streaming</StatusBadge>}
   </span>
 );
 
@@ -271,14 +271,14 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
   return (
     <Card
       actions={
-        <Button
+        <AppButton
           disabled={isStreaming}
           onClick={() => chat.clearHistory()}
           variant="ghost"
         >
           <Trash2 aria-hidden="true" size={12} />
           <span>clear</span>
-        </Button>
+        </AppButton>
       }
       title={
         <ChatTitle identified={agent.identified} isStreaming={isStreaming} />

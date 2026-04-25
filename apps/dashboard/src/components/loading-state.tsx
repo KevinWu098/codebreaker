@@ -5,7 +5,7 @@ interface SpinnerProps {
   label?: string;
 }
 
-export const Spinner = ({
+export const LoadingState = ({
   className,
   label = "loading",
 }: SpinnerProps): React.JSX.Element => (

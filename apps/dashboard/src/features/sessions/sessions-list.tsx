@@ -5,13 +5,13 @@ import {
 } from "@codebreaker/shared/lib/utils";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/badge";
-import { Button } from "@/components/button";
+import { AppButton } from "@/components/app-button";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
+import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { RefreshButton } from "@/components/refresh-button";
-import { Spinner } from "@/components/spinner";
+import { StatusBadge } from "@/components/status-badge";
 import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
 import { useSessionsQuery } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
@@ -58,14 +58,14 @@ export const SessionsList = ({
               loading={sessions.isFetching}
               onClick={() => sessions.refetch()}
             />
-            <Button
+            <AppButton
               disabled={!enabled}
               onClick={() => setShowCreate(true)}
               variant="primary"
             >
               <Plus aria-hidden="true" size={12} />
               <span>new session</span>
-            </Button>
+            </AppButton>
           </>
         }
         description="every row maps to a d1 row + a session-agent durable object."
@@ -83,16 +83,16 @@ export const SessionsList = ({
 
       {enabled && sessions.isLoading && (
         <div className="flex justify-center py-6">
-          <Spinner />
+          <LoadingState />
         </div>
       )}
 
       {enabled && sessions.data && rows.length === 0 && (
         <EmptyState
           action={
-            <Button onClick={() => setShowCreate(true)} variant="primary">
+            <AppButton onClick={() => setShowCreate(true)} variant="primary">
               create your first session
-            </Button>
+            </AppButton>
           }
           hint="d1 returned zero rows."
           title="no sessions yet"
@@ -167,7 +167,7 @@ export const SessionsList = ({
                       </div>
                     </td>
                     <td>
-                      <Badge status={session.status} />
+                      <StatusBadge status={session.status} />
                     </td>
                     <td className="font-mono text-fg-muted">
                       {session.modelProvider}/{session.modelId}

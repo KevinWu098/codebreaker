@@ -6,14 +6,14 @@ import {
 } from "@codebreaker/shared/schemas/sandbox";
 import { Play } from "lucide-react";
 import { useId, useState } from "react";
-import { Badge } from "@/components/badge";
-import { Button } from "@/components/button";
+import { AppButton } from "@/components/app-button";
 import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
+import { LoadingState } from "@/components/loading-state";
 import { RefreshButton } from "@/components/refresh-button";
-import { Spinner } from "@/components/spinner";
+import { StatusBadge } from "@/components/status-badge";
 import { useExecSandboxMutation } from "@/hooks/mutations";
 import { useSandboxQuery } from "@/hooks/queries";
 import { formatDuration, formatRelativeTime } from "@/lib/format";
@@ -117,7 +117,7 @@ export const SandboxPanel = ({
         <ErrorState error={sandbox.error} title="sandbox unavailable" />
         {sandbox.isLoading && (
           <div className="flex justify-center py-4">
-            <Spinner />
+            <LoadingState />
           </div>
         )}
         {sandbox.data && metadata === null && (
@@ -138,7 +138,7 @@ export const SandboxPanel = ({
 
             <dt className="field-label">profile</dt>
             <dd>
-              <Badge status="idle">{metadata.profile}</Badge>
+              <StatusBadge status="idle">{metadata.profile}</StatusBadge>
             </dd>
 
             <dt className="field-label">image fingerprint</dt>
@@ -228,14 +228,14 @@ export const SandboxPanel = ({
                 value={timeoutValue}
               />
             </div>
-            <Button
+            <AppButton
               disabled={exec.isPending || !command.trim()}
               onClick={execute}
               variant="primary"
             >
               <Play aria-hidden="true" size={12} />
               <span>{exec.isPending ? "running…" : "run"}</span>
-            </Button>
+            </AppButton>
           </div>
 
           {history.length > 0 && (
@@ -267,7 +267,7 @@ const ExecRecordRow = ({ entry }: { entry: ExecRecord }): React.JSX.Element => {
         <span className="flex items-center gap-2">
           {result && (
             <>
-              <Badge
+              <StatusBadge
                 status={
                   result.timedOut || result.exitCode !== 0
                     ? "failed"
@@ -275,17 +275,19 @@ const ExecRecordRow = ({ entry }: { entry: ExecRecord }): React.JSX.Element => {
                 }
               >
                 exit {result.exitCode}
-              </Badge>
+              </StatusBadge>
               <span className="font-mono text-fg-muted">
                 {formatDuration(result.durationMs)}
               </span>
-              {result.timedOut && <Badge status="failed">timed out</Badge>}
+              {result.timedOut && (
+                <StatusBadge status="failed">timed out</StatusBadge>
+              )}
               {(result.stdoutTruncated || result.stderrTruncated) && (
-                <Badge status="paused">truncated</Badge>
+                <StatusBadge status="paused">truncated</StatusBadge>
               )}
             </>
           )}
-          {entry.error && <Badge status="failed">error</Badge>}
+          {entry.error && <StatusBadge status="failed">error</StatusBadge>}
           {!(result || entry.error) && (
             <span className="text-fg-muted text-xs">running…</span>
           )}

@@ -33,15 +33,15 @@ import {
 } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
-import { Badge } from "@/components/badge";
-import { Button } from "@/components/button";
+import { AppButton } from "@/components/app-button";
 import { Card } from "@/components/card";
 import { DefinitionField } from "@/components/definition-field";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
+import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
-import { Spinner } from "@/components/spinner";
+import { StatusBadge } from "@/components/status-badge";
 import {
   useCancelBenchmarkRunMutation,
   useCleanupBenchmarkRunMutation,
@@ -758,7 +758,7 @@ export const BenchmarksPanel = ({
     <div className="space-y-4">
       <PageHeader
         actions={
-          <Button
+          <AppButton
             onClick={() => setTab(tab === "create" ? "results" : "create")}
             variant="primary"
           >
@@ -768,7 +768,7 @@ export const BenchmarksPanel = ({
               <Play aria-hidden="true" size={12} />
             )}
             <span>{tab === "create" ? "view results" : "new run"}</span>
-          </Button>
+          </AppButton>
         }
         description="review benchmark outcomes, agent behavior, and where runs are failing."
         title="benchmarks"
@@ -821,7 +821,7 @@ export const BenchmarksPanel = ({
         <TabsContent className="mt-4 space-y-4 outline-none" value="create">
           <Card
             actions={
-              <Button
+              <AppButton
                 disabled={
                   !enabled || createRun.isPending || batchRunCount !== null
                 }
@@ -832,7 +832,7 @@ export const BenchmarksPanel = ({
                 <span>
                   {createRun.isPending ? "running…" : "run benchmark"}
                 </span>
-              </Button>
+              </AppButton>
             }
             title="new benchmark run"
           >
@@ -909,7 +909,7 @@ export const BenchmarksPanel = ({
 
           <Card
             actions={
-              <Button
+              <AppButton
                 disabled={
                   !enabled || createRun.isPending || batchRunCount !== null
                 }
@@ -922,7 +922,7 @@ export const BenchmarksPanel = ({
                     ? "run batch"
                     : `creating ${batchRunCount} run(s)…`}
                 </span>
-              </Button>
+              </AppButton>
             }
             title="batch benchmark run"
           >
@@ -1055,7 +1055,7 @@ const BenchmarkRunsTable = ({
     }
     title="runs"
   >
-    {loading && <Spinner />}
+    {loading && <LoadingState />}
     {!loading && runs.length === 0 && (
       <EmptyState hint="start a benchmark run above." title="no runs yet" />
     )}
@@ -1096,7 +1096,7 @@ const BenchmarkRunsTable = ({
                 {taskWithDifficulty(run)}
               </td>
               <td>
-                <Badge status={badgeStatusForRun(run.status)} />
+                <StatusBadge status={badgeStatusForRun(run.status)} />
               </td>
               <td className="num">{scoreColumnForRun(run)}</td>
               <td className="max-w-[14rem] whitespace-normal text-fg-muted text-xs">
@@ -1259,14 +1259,14 @@ const BenchmarkRunDetail = ({
     <Card
       actions={
         <div className="flex flex-wrap gap-2">
-          <Button
+          <AppButton
             disabled={!canStart || start.isPending}
             onClick={() => start.mutate()}
           >
             <Play aria-hidden="true" size={12} />
             <span>{start.isPending ? "starting…" : "start"}</span>
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             disabled={!run || retry.isPending}
             onClick={() => {
               if (!run) {
@@ -1280,23 +1280,23 @@ const BenchmarkRunDetail = ({
           >
             <RotateCcw aria-hidden="true" size={12} />
             <span>{retry.isPending ? "retrying…" : "retry"}</span>
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             disabled={!canCancel || cancel.isPending}
             onClick={() => cancel.mutate()}
             variant="danger"
           >
             <Square aria-hidden="true" size={12} />
             <span>{cancel.isPending ? "stopping…" : "stop"}</span>
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             disabled={cleanup.isPending}
             onClick={() => cleanup.mutate()}
             variant="danger"
           >
             <Trash2 aria-hidden="true" size={12} />
             <span>cleanup</span>
-          </Button>
+          </AppButton>
         </div>
       }
       title="run detail"
@@ -1306,7 +1306,7 @@ const BenchmarkRunDetail = ({
       <ErrorState error={cleanup.error} title="cleanup failed" />
       <ErrorState error={start.error} title="start failed" />
       <ErrorState error={retry.error} title="retry failed" />
-      {!detail.data && <Spinner />}
+      {!detail.data && <LoadingState />}
       {run && (
         <dl className={cn("mb-4 text-xs", BENCHMARK_DL_GRID)}>
           <DefinitionField label="id" mono>
@@ -1316,7 +1316,7 @@ const BenchmarkRunDetail = ({
             {taskWithDifficulty(run)}
           </DefinitionField>
           <DefinitionField label="status">
-            <Badge status={badgeStatusForRun(run.status)} />
+            <StatusBadge status={badgeStatusForRun(run.status)} />
           </DefinitionField>
           <DefinitionField label="model" mono>
             {run.modelProvider}/{run.modelId}

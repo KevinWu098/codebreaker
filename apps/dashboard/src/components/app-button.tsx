@@ -15,7 +15,7 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
   primary: "btn-primary",
 };
 
-export const Button = ({
+export const AppButton = ({
   children,
   className,
   type = "button",

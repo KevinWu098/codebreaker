@@ -13,14 +13,14 @@ import {
 import { ChevronLeft, Square, Trash2 } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
-import { Badge } from "@/components/badge";
-import { Button } from "@/components/button";
+import { AppButton } from "@/components/app-button";
 import { Card } from "@/components/card";
 import { DefinitionField } from "@/components/definition-field";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
+import { LoadingState } from "@/components/loading-state";
 import { RefreshButton } from "@/components/refresh-button";
-import { Spinner } from "@/components/spinner";
+import { StatusBadge } from "@/components/status-badge";
 import { ChatPanel } from "@/features/chat/chat-panel";
 import { SandboxPanel } from "@/features/sandbox/sandbox-panel";
 import { MessagesPanel } from "@/features/sessions/messages-panel";
@@ -124,7 +124,7 @@ const SessionHeader = ({
           </button>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="lowercase">{row?.title ?? truncateId(sessionId)}</h1>
-            {row ? <Badge status={row.status} /> : null}
+            {row ? <StatusBadge status={row.status} /> : null}
           </div>
           <div className="font-mono text-fg-muted text-xs">
             {sessionId}
@@ -151,7 +151,7 @@ const SessionHeader = ({
 
         <div className="flex items-center gap-1.5">
           <RefreshButton loading={loading} onClick={onRefresh} />
-          <Button
+          <AppButton
             disabled={finalize.isPending || row?.status === "archived"}
             onClick={() =>
               finalize.mutate({ reason: "Operator requested final answer" })
@@ -160,7 +160,7 @@ const SessionHeader = ({
           >
             <Square aria-hidden="true" size={12} />
             <span>{finalize.isPending ? "finalizing…" : "final answer"}</span>
-          </Button>
+          </AppButton>
           {confirming ? (
             <ConfirmArchive
               archiving={archive.isPending}
@@ -168,14 +168,14 @@ const SessionHeader = ({
               onConfirm={runArchive}
             />
           ) : (
-            <Button
+            <AppButton
               disabled={archive.isPending || row?.status === "archived"}
               onClick={() => setConfirming(true)}
               variant="danger"
             >
               <Trash2 aria-hidden="true" size={12} />
               <span>archive</span>
-            </Button>
+            </AppButton>
           )}
         </div>
       </div>
@@ -198,12 +198,12 @@ const ConfirmArchive = ({
 }: ConfirmArchiveProps): React.JSX.Element => (
   <>
     <span className="text-fg-muted text-xs">archive?</span>
-    <Button disabled={archiving} onClick={onCancel} variant="ghost">
+    <AppButton disabled={archiving} onClick={onCancel} variant="ghost">
       cancel
-    </Button>
-    <Button disabled={archiving} onClick={onConfirm} variant="danger">
+    </AppButton>
+    <AppButton disabled={archiving} onClick={onConfirm} variant="danger">
       {archiving ? "archiving…" : "confirm"}
-    </Button>
+    </AppButton>
   </>
 );
 
@@ -243,7 +243,7 @@ const SessionRowCard = ({
           {idValue}
         </DefinitionField>
         <DefinitionField label="status">
-          <Badge status={row.status} />
+          <StatusBadge status={row.status} />
         </DefinitionField>
         <DefinitionField label="title">{row.title ?? "—"}</DefinitionField>
         <DefinitionField label="task" mono>
@@ -350,7 +350,7 @@ export const SessionDetail = ({
               {state.data ? (
                 <JsonView maxHeight={420} value={state.data.state} />
               ) : (
-                <Spinner />
+                <LoadingState />
               )}
             </Card>
           </div>
@@ -370,7 +370,7 @@ export const SessionDetail = ({
             {config.data ? (
               <JsonView maxHeight={520} value={config.data.config} />
             ) : (
-              <Spinner />
+              <LoadingState />
             )}
           </Card>
         </TabsContent>

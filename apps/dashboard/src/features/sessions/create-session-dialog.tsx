@@ -26,7 +26,7 @@ import { X } from "lucide-react";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "@/components/button";
+import { AppButton } from "@/components/app-button";
 import { ErrorState } from "@/components/error-state";
 import { FormField } from "@/components/form-field";
 import { useCreateSessionMutation } from "@/hooks/mutations";
@@ -331,15 +331,15 @@ export const CreateSessionDialog = ({
 
             <footer className="-mx-3 mt-2 -mb-3 flex items-center justify-end gap-2 border-border border-t px-3 py-2">
               <DialogClose asChild>
-                <Button variant="ghost">cancel</Button>
+                <AppButton variant="ghost">cancel</AppButton>
               </DialogClose>
-              <Button
+              <AppButton
                 disabled={mutation.isPending}
                 type="submit"
                 variant="primary"
               >
                 {mutation.isPending ? "creating…" : "create"}
-              </Button>
+              </AppButton>
             </footer>
           </form>
         </DialogContent>

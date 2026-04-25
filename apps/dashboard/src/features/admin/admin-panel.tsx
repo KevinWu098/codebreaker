@@ -3,9 +3,9 @@ import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
+import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { RefreshButton } from "@/components/refresh-button";
-import { Spinner } from "@/components/spinner";
 import { useShimHealthQuery, useShimSandboxesQuery } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import { formatRelativeTime } from "@/lib/format";
@@ -57,7 +57,7 @@ export const AdminPanel = (): React.JSX.Element => {
       >
         <ErrorState error={health.error} title="shim health failed" />
         {health.data && <JsonView maxHeight={320} value={health.data.health} />}
-        {!health.data && enabled && health.isLoading && <Spinner />}
+        {!health.data && enabled && health.isLoading && <LoadingState />}
       </Card>
 
       <Card

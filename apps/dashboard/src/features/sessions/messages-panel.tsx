@@ -2,12 +2,12 @@ import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
+import { LoadingState } from "@/components/loading-state";
 import {
   isRenderableMessagePart,
   MessagePartRenderer,
 } from "@/components/message-part-renderer";
 import { RefreshButton } from "@/components/refresh-button";
-import { Spinner } from "@/components/spinner";
 import type { MessagePart } from "@/components/tool-call-part";
 import { useSessionMessagesQuery } from "@/hooks/queries";
 
@@ -64,7 +64,7 @@ export const MessagesPanel = ({
 
       {messages.isLoading && (
         <div className="flex justify-center py-6">
-          <Spinner />
+          <LoadingState />
         </div>
       )}
 
