@@ -1,101 +1,69 @@
-import { Fragment, useMemo } from "react";
+import { JsonView as RawJsonView } from "react-json-view-lite";
+import "react-json-view-lite/dist/index.css";
 import { cn } from "@/lib/cn";
 
 interface JsonViewProps {
   className?: string;
+  collapsedDepth?: number;
   maxHeight?: number;
   value: unknown;
 }
 
-type TokenKind = "key" | "str" | "num" | "bool" | "null" | "plain";
+type RawJsonViewProps = React.ComponentProps<typeof RawJsonView>;
+type StyleProps = NonNullable<RawJsonViewProps["style"]>;
 
-interface Token {
-  kind: TokenKind;
-  /** Byte offset in the source string — unique and stable across re-renders. */
-  offset: number;
-  text: string;
-}
+const STYLES: StyleProps = {
+  ariaLables: {
+    collapseJson: "collapse",
+    expandJson: "expand",
+  },
+  basicChildStyle: "rjv-row",
+  booleanValue: "rjv-bool",
+  childFieldsContainer: "rjv-children",
+  clickableLabel: "rjv-key rjv-key-clickable",
+  collapseIcon: "rjv-icon rjv-icon-collapse",
+  collapsedContent: "rjv-collapsed",
+  container: "rjv-container",
+  expandIcon: "rjv-icon rjv-icon-expand",
+  label: "rjv-key",
+  noQuotesForStringValues: false,
+  nullValue: "rjv-null",
+  numberValue: "rjv-num",
+  otherValue: "rjv-other",
+  punctuation: "rjv-punct",
+  quotesForFieldNames: false,
+  stringifyStringValues: false,
+  stringValue: "rjv-str",
+};
 
-const TOKEN_REGEX =
-  /"(?:[^"\\]|\\.)*"(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
-
-const tokenize = (json: string): Token[] => {
-  const tokens: Token[] = [];
-  let cursor = 0;
-
-  for (const match of json.matchAll(TOKEN_REGEX)) {
-    const start = match.index ?? 0;
-
-    if (start > cursor) {
-      tokens.push({
-        kind: "plain",
-        offset: cursor,
-        text: json.slice(cursor, start),
-      });
-    }
-
-    const matchText = match[0];
-    const colonSuffix = match[1];
-
-    if (matchText.startsWith('"')) {
-      if (colonSuffix === undefined) {
-        tokens.push({ kind: "str", offset: start, text: matchText });
-      } else {
-        const stringPart = matchText.slice(
-          0,
-          matchText.length - colonSuffix.length
-        );
-        tokens.push({ kind: "key", offset: start, text: stringPart });
-        tokens.push({
-          kind: "plain",
-          offset: start + stringPart.length,
-          text: colonSuffix,
-        });
-      }
-    } else if (matchText === "true" || matchText === "false") {
-      tokens.push({ kind: "bool", offset: start, text: matchText });
-    } else if (matchText === "null") {
-      tokens.push({ kind: "null", offset: start, text: matchText });
-    } else {
-      tokens.push({ kind: "num", offset: start, text: matchText });
-    }
-
-    cursor = start + matchText.length;
+const ensureRenderable = (value: unknown): object | unknown[] => {
+  if (Array.isArray(value)) {
+    return value;
   }
 
-  if (cursor < json.length) {
-    tokens.push({ kind: "plain", offset: cursor, text: json.slice(cursor) });
+  if (value !== null && typeof value === "object") {
+    return value as object;
   }
 
-  return tokens;
+  return { value };
 };
 
 export const JsonView = ({
   className,
+  collapsedDepth = 2,
   maxHeight,
   value,
 }: JsonViewProps): React.JSX.Element => {
-  const tokens = useMemo(() => {
-    const json = JSON.stringify(value, null, 2) ?? "undefined";
-    return tokenize(json);
-  }, [value]);
   const style = maxHeight ? { maxHeight: `${maxHeight}px` } : undefined;
 
   return (
-    <pre className={cn("json-view", className)} style={style}>
-      {tokens.map((token) => {
-        const key = `${token.kind}@${token.offset}`;
-
-        if (token.kind === "plain") {
-          return <Fragment key={key}>{token.text}</Fragment>;
-        }
-
-        return (
-          <span className={token.kind} key={key}>
-            {token.text}
-          </span>
-        );
-      })}
-    </pre>
+    <div className={cn("json-view", className)} style={style}>
+      <RawJsonView
+        clickToExpandNode
+        data={ensureRenderable(value)}
+        shouldExpandNode={(level) => level < collapsedDepth}
+        style={STYLES}
+      />
+    </div>
   );
 };

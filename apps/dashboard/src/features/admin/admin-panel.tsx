@@ -5,27 +5,16 @@ import { JsonView } from "@/components/json-view";
 import { PageHeader } from "@/components/page-header";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
-import { useAsync } from "@/hooks/use-async";
-import { api } from "@/lib/api";
+import { useShimHealthQuery, useShimSandboxesQuery } from "@/hooks/queries";
 import { useConnection } from "@/lib/connection";
 import { formatRelativeTime, truncateId } from "@/lib/format";
 
 export const AdminPanel = (): React.JSX.Element => {
   const connection = useConnection();
   const enabled = connection.token.length > 0;
-  const baseKey = `${connection.baseUrl}:${connection.token}`;
 
-  const health = useAsync(() => api.shimHealth(), {
-    enabled,
-    key: `health:${baseKey}`,
-    pollMs: 10_000,
-  });
-
-  const sandboxes = useAsync(() => api.shimSandboxes(), {
-    enabled,
-    key: `sandboxes:${baseKey}`,
-    pollMs: 8000,
-  });
+  const health = useShimHealthQuery();
+  const sandboxes = useShimSandboxesQuery();
 
   const sandboxCount = sandboxes.data?.sandboxes.length;
   const sandboxesTitle =
@@ -37,10 +26,10 @@ export const AdminPanel = (): React.JSX.Element => {
         actions={
           <RefreshButton
             disabled={!enabled}
-            loading={health.loading || sandboxes.loading}
+            loading={health.isFetching || sandboxes.isFetching}
             onClick={() => {
-              health.refresh();
-              sandboxes.refresh();
+              health.refetch();
+              sandboxes.refetch();
             }}
           />
         }
@@ -59,23 +48,26 @@ export const AdminPanel = (): React.JSX.Element => {
         actions={
           <RefreshButton
             disabled={!enabled}
-            loading={health.loading}
-            onClick={() => health.refresh()}
+            loading={health.isFetching}
+            onClick={() => health.refetch()}
           />
         }
         title="shim health"
       >
-        <ErrorState error={health.error} title="shim health failed" />
+        <ErrorState
+          error={health.error ?? undefined}
+          title="shim health failed"
+        />
         {health.data && <JsonView maxHeight={320} value={health.data.health} />}
-        {!health.data && enabled && <Spinner />}
+        {!health.data && enabled && health.isLoading && <Spinner />}
       </Card>
 
       <Card
         actions={
           <RefreshButton
             disabled={!enabled}
-            loading={sandboxes.loading}
-            onClick={() => sandboxes.refresh()}
+            loading={sandboxes.isFetching}
+            onClick={() => sandboxes.refetch()}
           />
         }
         bodyClassName="p-0"
@@ -83,7 +75,7 @@ export const AdminPanel = (): React.JSX.Element => {
       >
         <ErrorState
           className="m-3"
-          error={sandboxes.error}
+          error={sandboxes.error ?? undefined}
           title="sandboxes failed"
         />
         {sandboxes.data?.sandboxes.length === 0 && (

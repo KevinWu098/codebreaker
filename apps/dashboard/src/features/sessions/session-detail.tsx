@@ -1,4 +1,10 @@
 import type { SessionRow } from "@codebreaker/shared/schemas/api";
+import {
+  Content as TabsContent,
+  List as TabsList,
+  Root as TabsRoot,
+  Trigger as TabsTrigger,
+} from "@radix-ui/react-tabs";
 import { ChevronLeft, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
@@ -11,10 +17,13 @@ import { Spinner } from "@/components/spinner";
 import { ChatPanel } from "@/features/chat/chat-panel";
 import { SandboxPanel } from "@/features/sandbox/sandbox-panel";
 import { MessagesPanel } from "@/features/sessions/messages-panel";
-import { type AsyncState, useAsync } from "@/hooks/use-async";
-import { api } from "@/lib/api";
+import { useArchiveSessionMutation } from "@/hooks/mutations";
+import {
+  useSessionConfigQuery,
+  useSessionQuery,
+  useSessionStateQuery,
+} from "@/hooks/queries";
 import { cn } from "@/lib/cn";
-import { useConnection } from "@/lib/connection";
 import { formatNumber, formatRelativeTime, truncateId } from "@/lib/format";
 
 type Tab = "overview" | "config" | "messages" | "chat" | "sandbox";
@@ -56,22 +65,15 @@ const SessionHeader = ({
   sessionId,
 }: HeaderProps): React.JSX.Element => {
   const [confirming, setConfirming] = useState(false);
-  const [archiving, setArchiving] = useState(false);
-  const [error, setError] = useState<Error | undefined>(undefined);
+  const archive = useArchiveSessionMutation(sessionId);
 
-  const archive = async (): Promise<void> => {
-    setArchiving(true);
-    setError(undefined);
-
-    try {
-      await api.archiveSession(sessionId);
-      setConfirming(false);
-      onArchived();
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("unknown error"));
-    } finally {
-      setArchiving(false);
-    }
+  const runArchive = (): void => {
+    archive.mutate(undefined, {
+      onSuccess: () => {
+        setConfirming(false);
+        onArchived();
+      },
+    });
   };
 
   return (
@@ -105,13 +107,13 @@ const SessionHeader = ({
           <RefreshButton loading={loading} onClick={onRefresh} />
           {confirming ? (
             <ConfirmArchive
-              archiving={archiving}
+              archiving={archive.isPending}
               onCancel={() => setConfirming(false)}
-              onConfirm={archive}
+              onConfirm={runArchive}
             />
           ) : (
             <Button
-              disabled={archiving || row?.status === "archived"}
+              disabled={archive.isPending || row?.status === "archived"}
               onClick={() => setConfirming(true)}
               variant="danger"
             >
@@ -121,7 +123,7 @@ const SessionHeader = ({
           )}
         </div>
       </div>
-      <ErrorState error={error} title="archive failed" />
+      <ErrorState error={archive.error ?? undefined} title="archive failed" />
     </div>
   );
 };
@@ -146,28 +148,6 @@ const ConfirmArchive = ({
       {archiving ? "archiving…" : "confirm"}
     </Button>
   </>
-);
-
-interface TabBarProps {
-  active: Tab;
-  onChange: (next: Tab) => void;
-}
-
-const TabBar = ({ active, onChange }: TabBarProps): React.JSX.Element => (
-  <div aria-label="session sections" className="tabs" role="tablist">
-    {TABS.map((entry) => (
-      <button
-        aria-selected={active === entry.id}
-        className="tab"
-        key={entry.id}
-        onClick={() => onChange(entry.id)}
-        role="tab"
-        type="button"
-      >
-        {entry.label}
-      </button>
-    ))}
-  </div>
 );
 
 const formatRepo = (row: SessionRow): string => {
@@ -218,115 +198,103 @@ const SessionRowCard = ({ row }: { row: SessionRow }): React.JSX.Element => {
   );
 };
 
-interface OverviewProps {
-  row: SessionRow | undefined;
-  sessionError: Error | undefined;
-  state: AsyncState<{ state: unknown }>;
-}
-
-const OverviewTab = ({
-  row,
-  sessionError,
-  state,
-}: OverviewProps): React.JSX.Element => (
-  <div className="space-y-4">
-    <ErrorState error={sessionError} title="load failed" />
-    {row && <SessionRowCard row={row} />}
-    <Card
-      actions={
-        <RefreshButton
-          loading={state.loading}
-          onClick={() => state.refresh()}
-        />
-      }
-      title="durable object state"
-    >
-      <ErrorState error={state.error} title="state unavailable" />
-      {state.data ? (
-        <JsonView maxHeight={420} value={state.data.state} />
-      ) : (
-        <Spinner />
-      )}
-    </Card>
-  </div>
-);
-
-interface ConfigTabProps {
-  config: AsyncState<{ config: unknown }>;
-}
-
-const ConfigTab = ({ config }: ConfigTabProps): React.JSX.Element => (
-  <Card
-    actions={
-      <RefreshButton
-        loading={config.loading}
-        onClick={() => config.refresh()}
-      />
-    }
-    title="session config (from agent)"
-  >
-    <ErrorState error={config.error} title="config unavailable" />
-    {config.data ? (
-      <JsonView maxHeight={520} value={config.data.config} />
-    ) : (
-      <Spinner />
-    )}
-  </Card>
-);
-
 export const SessionDetail = ({
   onArchived,
   onBack,
   sessionId,
 }: SessionDetailProps): React.JSX.Element => {
-  const connection = useConnection();
-  const enabled = connection.token.length > 0;
   const [tab, setTab] = useState<Tab>("overview");
-
-  const baseKey = `${sessionId}:${connection.baseUrl}:${connection.token}`;
-
-  const session = useAsync(() => api.getSession(sessionId), {
-    enabled,
-    key: `session:${baseKey}`,
-    pollMs: 4000,
-  });
-
-  const state = useAsync(() => api.getState(sessionId), {
-    enabled,
-    key: `state:${baseKey}`,
-    pollMs: 4000,
-  });
-
-  const config = useAsync(() => api.getConfig(sessionId), {
-    enabled: enabled && tab === "config",
-    key: `config:${baseKey}:${tab}`,
-  });
-
+  const session = useSessionQuery(sessionId);
+  const state = useSessionStateQuery(sessionId);
+  const config = useSessionConfigQuery(sessionId, tab === "config");
   const row = session.data?.session;
 
   return (
     <div className="space-y-4">
       <SessionHeader
-        loading={session.loading || state.loading}
+        loading={session.isFetching || state.isFetching}
         onArchived={onArchived}
         onBack={onBack}
         onRefresh={() => {
-          session.refresh();
-          state.refresh();
+          session.refetch();
+          state.refetch();
         }}
         row={row}
         sessionId={sessionId}
       />
 
-      <TabBar active={tab} onChange={setTab} />
+      <TabsRoot onValueChange={(value) => setTab(value as Tab)} value={tab}>
+        <TabsList aria-label="session sections" className="tabs">
+          {TABS.map((entry) => (
+            <TabsTrigger className="tab" key={entry.id} value={entry.id}>
+              {entry.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      {tab === "overview" && (
-        <OverviewTab row={row} sessionError={session.error} state={state} />
-      )}
-      {tab === "config" && <ConfigTab config={config} />}
-      {tab === "messages" && <MessagesPanel sessionId={sessionId} />}
-      {tab === "chat" && <ChatPanel sessionId={sessionId} />}
-      {tab === "sandbox" && <SandboxPanel sessionId={sessionId} />}
+        <TabsContent className="mt-4 outline-none" value="overview">
+          <div className="space-y-4">
+            <ErrorState
+              error={session.error ?? undefined}
+              title="load failed"
+            />
+            {row && <SessionRowCard row={row} />}
+            <Card
+              actions={
+                <RefreshButton
+                  loading={state.isFetching}
+                  onClick={() => state.refetch()}
+                />
+              }
+              title="durable object state"
+            >
+              <ErrorState
+                error={state.error ?? undefined}
+                title="state unavailable"
+              />
+              {state.data ? (
+                <JsonView maxHeight={420} value={state.data.state} />
+              ) : (
+                <Spinner />
+              )}
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent className="mt-4 outline-none" value="config">
+          <Card
+            actions={
+              <RefreshButton
+                loading={config.isFetching}
+                onClick={() => config.refetch()}
+              />
+            }
+            title="session config (from agent)"
+          >
+            <ErrorState
+              error={config.error ?? undefined}
+              title="config unavailable"
+            />
+            {config.data ? (
+              <JsonView maxHeight={520} value={config.data.config} />
+            ) : (
+              <Spinner />
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent className="mt-4 outline-none" value="messages">
+          <MessagesPanel sessionId={sessionId} />
+        </TabsContent>
+
+        <TabsContent className="mt-4 outline-none" value="chat">
+          <ChatPanel sessionId={sessionId} />
+        </TabsContent>
+
+        <TabsContent className="mt-4 outline-none" value="sandbox">
+          <SandboxPanel sessionId={sessionId} />
+        </TabsContent>
+      </TabsRoot>
     </div>
   );
 };

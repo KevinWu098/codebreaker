@@ -4,9 +4,7 @@ import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
-import { useAsync } from "@/hooks/use-async";
-import { api } from "@/lib/api";
-import { useConnection } from "@/lib/connection";
+import { useSessionMessagesQuery } from "@/hooks/queries";
 
 interface MessagesPanelProps {
   sessionId: string;
@@ -90,42 +88,39 @@ const renderPart = (part: MessagePart, key: string): React.JSX.Element => {
 export const MessagesPanel = ({
   sessionId,
 }: MessagesPanelProps): React.JSX.Element => {
-  const connection = useConnection();
-  const enabled = connection.token.length > 0;
+  const messages = useSessionMessagesQuery(sessionId);
 
-  const messages = useAsync(() => api.getMessages(sessionId), {
-    enabled,
-    key: `messages:${sessionId}:${connection.baseUrl}:${connection.token}`,
-    pollMs: 5000,
-  });
-
-  const count = messages.data?.messages.length;
-  const titleText = count === undefined ? "messages" : `messages · ${count}`;
+  const list = messages.data?.messages ?? [];
+  const titleText =
+    messages.data === undefined ? "messages" : `messages · ${list.length}`;
 
   return (
     <Card
       actions={
         <RefreshButton
-          loading={messages.loading}
-          onClick={() => messages.refresh()}
+          loading={messages.isFetching}
+          onClick={() => messages.refetch()}
         />
       }
       title={titleText}
     >
-      <ErrorState error={messages.error} title="messages unavailable" />
+      <ErrorState
+        error={messages.error ?? undefined}
+        title="messages unavailable"
+      />
 
-      {!(messages.data || messages.error) && (
+      {messages.isLoading && (
         <div className="flex justify-center py-6">
           <Spinner />
         </div>
       )}
 
-      {messages.data?.messages.length === 0 && (
+      {messages.data && list.length === 0 && (
         <EmptyState hint="no turns recorded yet." title="empty transcript" />
       )}
 
       <div className="space-y-3">
-        {messages.data?.messages.map((raw, idx) => {
+        {list.map((raw, idx) => {
           const fallbackId = `m${idx}`;
 
           if (!isMessage(raw)) {

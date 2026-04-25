@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ApiClientError, api } from "@/lib/api";
+import { useHealthProbe } from "@/hooks/queries";
+import { ApiClientError } from "@/lib/api";
 import { connectionStore, useConnection } from "@/lib/connection";
 
 type HealthState = "unknown" | "ok" | "error";
@@ -16,9 +17,36 @@ const HEALTH_DOT_CLASS: Record<HealthState, string> = {
   unknown: "bg-status-idle",
 };
 
+const resolveHealth = (
+  isLoading: boolean,
+  isSuccess: boolean,
+  error: Error | null
+): HealthState => {
+  if (isSuccess) {
+    return "ok";
+  }
+
+  // 401 means the worker is reachable but the token isn't accepted.
+  if (error instanceof ApiClientError && error.status === 401) {
+    return "ok";
+  }
+
+  if (error) {
+    return "error";
+  }
+
+  if (isLoading) {
+    return "unknown";
+  }
+
+  return "unknown";
+};
+
 export const ConnectionForm = (): React.JSX.Element => {
   const connection = useConnection();
-  const [health, setHealth] = useState<HealthState>("unknown");
+  const probe = useHealthProbe();
+  const health = resolveHealth(probe.isLoading, probe.isSuccess, probe.error);
+
   const [draftBaseUrl, setDraftBaseUrl] = useState(connection.baseUrl);
   const [draftToken, setDraftToken] = useState(connection.token);
 
@@ -26,41 +54,6 @@ export const ConnectionForm = (): React.JSX.Element => {
     setDraftBaseUrl(connection.baseUrl);
     setDraftToken(connection.token);
   }, [connection.baseUrl, connection.token]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setHealth("unknown");
-
-    const probe = (): void => {
-      api
-        .health()
-        .then(() => {
-          if (!cancelled) {
-            setHealth("ok");
-          }
-        })
-        .catch((err: unknown) => {
-          if (cancelled) {
-            return;
-          }
-
-          if (err instanceof ApiClientError && err.status === 401) {
-            setHealth("ok");
-            return;
-          }
-
-          setHealth("error");
-        });
-    };
-
-    probe();
-    const interval = window.setInterval(probe, 10_000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
-  }, []);
 
   const commitBaseUrl = (): void => {
     connectionStore.setBaseUrl(draftBaseUrl);

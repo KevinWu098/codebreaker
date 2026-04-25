@@ -8,8 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
-import { useAsync } from "@/hooks/use-async";
-import { api } from "@/lib/api";
+import { useSessionsQuery } from "@/hooks/queries";
 import { useConnection } from "@/lib/connection";
 import { formatNumber, formatRelativeTime, truncateId } from "@/lib/format";
 
@@ -26,11 +25,8 @@ export const SessionsList = ({
   const [showCreate, setShowCreate] = useState(false);
   const enabled = connection.token.length > 0;
 
-  const sessions = useAsync(() => api.listSessions({ limit: 100, offset: 0 }), {
-    enabled,
-    key: `sessions:${connection.baseUrl}:${connection.token}`,
-    pollMs: 5000,
-  });
+  const sessions = useSessionsQuery({ limit: 100, offset: 0 });
+  const rows = sessions.data?.sessions ?? [];
 
   return (
     <div className="space-y-4">
@@ -39,8 +35,8 @@ export const SessionsList = ({
           <>
             <RefreshButton
               disabled={!enabled}
-              loading={sessions.loading}
-              onClick={() => sessions.refresh()}
+              loading={sessions.isFetching}
+              onClick={() => sessions.refetch()}
             />
             <Button
               disabled={!enabled}
@@ -63,9 +59,15 @@ export const SessionsList = ({
         />
       )}
 
-      <ErrorState error={sessions.error} title="list failed" />
+      <ErrorState error={sessions.error ?? undefined} title="list failed" />
 
-      {enabled && sessions.data && sessions.data.sessions.length === 0 && (
+      {enabled && sessions.isLoading && (
+        <div className="flex justify-center py-6">
+          <Spinner />
+        </div>
+      )}
+
+      {enabled && sessions.data && rows.length === 0 && (
         <EmptyState
           action={
             <Button onClick={() => setShowCreate(true)} variant="primary">
@@ -77,13 +79,7 @@ export const SessionsList = ({
         />
       )}
 
-      {enabled && !sessions.data && !sessions.error && (
-        <div className="flex justify-center py-6">
-          <Spinner />
-        </div>
-      )}
-
-      {sessions.data && sessions.data.sessions.length > 0 && (
+      {rows.length > 0 && (
         <div className="card overflow-hidden">
           <table className="table">
             <thead>
@@ -99,7 +95,7 @@ export const SessionsList = ({
               </tr>
             </thead>
             <tbody>
-              {sessions.data.sessions.map((session) => {
+              {rows.map((session) => {
                 const tokens = session.inputTokens + session.outputTokens;
                 const repo = session.repoOwner
                   ? `${session.repoOwner}/${session.repoName ?? ""}`
@@ -152,7 +148,6 @@ export const SessionsList = ({
           onClose={() => setShowCreate(false)}
           onCreated={(id) => {
             setShowCreate(false);
-            sessions.refresh();
             onSelect(id);
           }}
         />

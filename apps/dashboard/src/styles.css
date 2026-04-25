@@ -277,7 +277,8 @@
     @apply -mb-px cursor-pointer border-b border-transparent px-1 pb-2 text-xs lowercase text-fg-muted transition-colors hover:text-fg;
   }
 
-  .tab[aria-selected="true"] {
+  .tab[aria-selected="true"],
+  .tab[data-state="active"] {
     @apply border-fg text-fg;
   }
 
@@ -350,24 +351,46 @@
     @apply w-full resize-none rounded border border-border bg-bg-raised px-2 py-1 font-mono text-sm text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none;
   }
 
-  /* JSON view. */
+  /* JSON view (react-json-view-lite). */
   .json-view {
-    @apply m-0 overflow-auto rounded border border-border bg-bg-overlay p-2 font-mono text-[11px] leading-relaxed text-fg;
+    @apply overflow-auto rounded border border-border bg-bg-overlay p-2 font-mono text-[11px] leading-relaxed text-fg;
   }
-  .json-view .key {
+  .json-view .rjv-container {
+    @apply bg-transparent text-fg;
+  }
+  .json-view .rjv-row {
+    @apply pl-3;
+  }
+  .json-view .rjv-children {
+    @apply ml-1 border-l border-border/60 pl-2;
+  }
+  .json-view .rjv-key {
     @apply text-accent;
   }
-  .json-view .str {
+  .json-view .rjv-key-clickable {
+    @apply cursor-pointer hover:text-fg;
+  }
+  .json-view .rjv-str {
     @apply text-status-completed;
   }
-  .json-view .num {
+  .json-view .rjv-num {
     @apply text-status-paused;
   }
-  .json-view .bool {
+  .json-view .rjv-bool {
     @apply text-status-running;
   }
-  .json-view .null {
+  .json-view .rjv-null,
+  .json-view .rjv-other {
     @apply text-fg-subtle;
+  }
+  .json-view .rjv-punct {
+    @apply text-fg-muted;
+  }
+  .json-view .rjv-collapsed {
+    @apply text-fg-subtle italic;
+  }
+  .json-view .rjv-icon {
+    @apply mr-1 inline-block w-3 text-fg-muted hover:text-fg;
   }
 
   /* Streaming markdown overrides — keep within the terminal palette. */

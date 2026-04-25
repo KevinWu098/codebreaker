@@ -22,17 +22,17 @@ export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 
 export const CompactionConfigSchema = z.object({
   enabled: z.boolean().default(true),
-  maxContextTokens: z.number().int().positive().default(128_000),
+  maxContextTokens: z.number().int().positive().default(250_000),
   preserveRecentMessages: z.number().int().nonnegative().default(12),
-  summarizeAtTokens: z.number().int().positive().default(96_000),
+  summarizeAtTokens: z.number().int().positive().default(225_000),
 });
 export type CompactionConfig = z.infer<typeof CompactionConfigSchema>;
 
 export const defaultCompactionConfig = {
   enabled: true,
-  maxContextTokens: 128_000,
+  maxContextTokens: 250_000,
   preserveRecentMessages: 12,
-  summarizeAtTokens: 96_000,
+  summarizeAtTokens: 225_000,
 } as const satisfies CompactionConfig;
 
 export const ModelConfigSchema = z.object({
@@ -51,8 +51,8 @@ export type SessionSandboxConfig = z.infer<typeof SessionSandboxConfigSchema>;
 export const SessionConfigSchema = z.object({
   compaction: CompactionConfigSchema.default(defaultCompactionConfig),
   extensionPolicy: ExtensionPolicySchema.default("readonly"),
-  maxSteps: z.number().int().positive().default(10),
-  maxTurns: z.number().int().positive().default(25),
+  maxSteps: z.number().int().positive().default(50),
+  maxTurns: z.number().int().positive().default(200),
   model: ModelConfigSchema,
   repo: RepoConfigSchema.optional(),
   sandbox: SessionSandboxConfigSchema.optional(),

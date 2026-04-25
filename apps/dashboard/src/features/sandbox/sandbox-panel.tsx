@@ -9,9 +9,8 @@ import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
-import { useAsync } from "@/hooks/use-async";
-import { api } from "@/lib/api";
-import { useConnection } from "@/lib/connection";
+import { useExecSandboxMutation } from "@/hooks/mutations";
+import { useSandboxQuery } from "@/hooks/queries";
 import { formatDuration, formatRelativeTime, truncateId } from "@/lib/format";
 
 interface SandboxPanelProps {
@@ -44,83 +43,67 @@ const recordKey = (record: ExecRecord): string =>
 export const SandboxPanel = ({
   sessionId,
 }: SandboxPanelProps): React.JSX.Element => {
-  const connection = useConnection();
-  const enabled = connection.token.length > 0;
   const cmdId = useId();
   const cwdId = useId();
   const profileFieldId = useId();
   const timeoutId = useId();
 
-  const sandbox = useAsync(() => api.getSandbox(sessionId), {
-    enabled,
-    key: `sandbox:${sessionId}:${connection.baseUrl}:${connection.token}`,
-    pollMs: 5000,
-  });
+  const sandbox = useSandboxQuery(sessionId);
+  const exec = useExecSandboxMutation(sessionId);
 
   const [command, setCommand] = useState("uname -a");
   const [cwd, setCwd] = useState("");
   const [profile, setProfile] = useState<SandboxProfileName | "">("");
   const [timeoutValue, setTimeoutValue] = useState("60");
-  const [running, setRunning] = useState(false);
   const [history, setHistory] = useState<readonly ExecRecord[]>([]);
 
-  const execute = async (): Promise<void> => {
+  const execute = (): void => {
     const trimmed = command.trim();
 
     if (!trimmed) {
       return;
     }
 
-    setRunning(true);
-    const record: ExecRecord = {
-      command: trimmed,
-      startedAt: Date.now(),
-    };
+    const startedAt = Date.now();
 
-    setHistory((previous) => [record, ...previous].slice(0, 20));
+    setHistory((previous) =>
+      [{ command: trimmed, startedAt }, ...previous].slice(0, 20)
+    );
 
-    try {
-      const response = await api.execSandbox(sessionId, {
+    exec.mutate(
+      {
         command: trimmed,
         ...(cwd ? { cwd } : {}),
         ...(profile ? { profile } : {}),
         ...(timeoutValue ? { timeoutSeconds: Number(timeoutValue) } : {}),
-      });
-
-      setHistory((previous) =>
-        previous.map((entry) =>
-          entry === record
-            ? {
-                ...entry,
-                finishedAt: Date.now(),
-                result: {
-                  durationMs: response.result.durationMs,
-                  exitCode: response.result.exitCode,
-                  stderr: response.result.stderr,
-                  stderrTruncated: response.result.stderrTruncated,
-                  stdout: response.result.stdout,
-                  stdoutTruncated: response.result.stdoutTruncated,
-                  timedOut: response.result.timedOut,
-                },
-              }
-            : entry
-        )
-      );
-
-      sandbox.refresh();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "unknown error";
-
-      setHistory((previous) =>
-        previous.map((entry) =>
-          entry === record
-            ? { ...entry, error: message, finishedAt: Date.now() }
-            : entry
-        )
-      );
-    } finally {
-      setRunning(false);
-    }
+      },
+      {
+        onError: (error) => {
+          const message =
+            error instanceof Error ? error.message : "unknown error";
+          setHistory((previous) =>
+            previous.map((entry) =>
+              entry.startedAt === startedAt
+                ? { ...entry, error: message, finishedAt: Date.now() }
+                : entry
+            )
+          );
+        },
+        onSuccess: (response) => {
+          setHistory((previous) =>
+            previous.map((entry) =>
+              entry.startedAt === startedAt
+                ? {
+                    ...entry,
+                    finishedAt: Date.now(),
+                    result: { ...response.result },
+                  }
+                : entry
+            )
+          );
+        },
+      }
+    );
   };
 
   const metadata = sandbox.data?.sandbox;
@@ -130,14 +113,17 @@ export const SandboxPanel = ({
       <Card
         actions={
           <RefreshButton
-            loading={sandbox.loading}
-            onClick={() => sandbox.refresh()}
+            loading={sandbox.isFetching}
+            onClick={() => sandbox.refetch()}
           />
         }
         title="sandbox metadata · modal"
       >
-        <ErrorState error={sandbox.error} title="sandbox unavailable" />
-        {!(sandbox.data || sandbox.error) && (
+        <ErrorState
+          error={sandbox.error ?? undefined}
+          title="sandbox unavailable"
+        />
+        {sandbox.isLoading && (
           <div className="flex justify-center py-4">
             <Spinner />
           </div>
@@ -251,12 +237,12 @@ export const SandboxPanel = ({
               />
             </div>
             <Button
-              disabled={running || !command.trim()}
+              disabled={exec.isPending || !command.trim()}
               onClick={execute}
               variant="primary"
             >
               <Play aria-hidden="true" size={12} />
-              <span>{running ? "running…" : "run"}</span>
+              <span>{exec.isPending ? "running…" : "run"}</span>
             </Button>
           </div>
 
