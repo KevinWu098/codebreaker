@@ -7,6 +7,7 @@ import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/d
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
+import { withDORetry } from "@codebreaker/control-plane/do/retry";
 import { jwtAuth } from "@codebreaker/control-plane/http/auth";
 import { parseAllowedOrigins } from "@codebreaker/control-plane/http/cors";
 import { jsonError } from "@codebreaker/control-plane/http/errors";
@@ -227,9 +228,11 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
         id,
         status: "pending",
       });
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
 
-      await agent.init(id, request.config, artifact);
+      await withDORetry(() => agent.init(id, request.config, artifact));
       if (artifact) {
         await store.setArtifactState({
           artifact,
@@ -269,10 +272,12 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
       const store = new SessionIndexStore(context.env.DB);
 
-      await agent.archive();
+      await withDORetry(() => agent.archive());
       await store.setStatus({
         completedAt: new Date().toISOString(),
         eventId: `archive:${id}`,
@@ -289,10 +294,12 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
 
       return context.json({
-        messages: await agent.getMessages(),
+        messages: await withDORetry(() => agent.getMessages()),
       });
     }
   );
@@ -302,10 +309,12 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
 
       return context.json({
-        config: await agent.inspectConfig(),
+        config: await withDORetry(() => agent.inspectConfig()),
       });
     }
   );
@@ -315,10 +324,12 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
 
       return context.json({
-        state: await agent.inspectState(),
+        state: await withDORetry(() => agent.inspectState()),
       });
     }
   );
@@ -372,8 +383,10 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
-      const state = await agent.inspectState();
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
+      const state = await withDORetry(() => agent.inspectState());
 
       return context.json({
         artifact: state.artifact ?? null,
@@ -388,15 +401,17 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     async (context) => {
       const { id } = context.req.valid("param");
       const updates = context.req.valid("json");
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
-      const state = await agent.inspectState();
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
+      const state = await withDORetry(() => agent.inspectState());
       const artifact = requireArtifactState(state.artifact);
       const nextArtifact = BenchmarkArtifactStateSchema.parse({
         ...artifact,
         ...updates,
       });
 
-      await agent.setArtifactState(nextArtifact);
+      await withDORetry(() => agent.setArtifactState(nextArtifact));
 
       return context.json({
         artifact: nextArtifact,
@@ -411,8 +426,10 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     async (context) => {
       const { id } = context.req.valid("param");
       const request = context.req.valid("json");
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
-      const state = await agent.inspectState();
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
+      const state = await withDORetry(() => agent.inspectState());
       const artifact = requireArtifactState(state.artifact);
       const store = createGitTreeStore(context.env);
       const credential = await store.mintCredential({
@@ -443,7 +460,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
         : artifact;
 
       if (nextArtifact !== artifact) {
-        await agent.setArtifactState(nextArtifact);
+        await withDORetry(() => agent.setArtifactState(nextArtifact));
       }
 
       return context.json({
@@ -460,8 +477,10 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     async (context) => {
       const { id } = context.req.valid("param");
       const request = context.req.valid("json");
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
-      const state = await agent.inspectState();
+      const agent = await withDORetry(() =>
+        getAgentByName(context.env.SESSION_AGENT, id)
+      );
+      const state = await withDORetry(() => agent.inspectState());
       const artifact = requireArtifactState(state.artifact);
       const repoPath = `/workspace/${artifact.runRepoName}`;
       const store = createGitTreeStore(context.env);
@@ -492,7 +511,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
         status: result.pushed ? "draft" : artifact.status,
       });
 
-      await agent.setArtifactState(nextArtifact);
+      await withDORetry(() => agent.setArtifactState(nextArtifact));
 
       return context.json({
         artifact: nextArtifact,
