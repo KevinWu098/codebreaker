@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3qm2-rfqw-fmrw",
+  "post_patch_commit": "18abedadaa77646cce6f2ca2149c0119a2e4f428",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 18abeda fixes double-free in move_elements implementations in src/traits.rs. The vulnerable code used ptr::read to read elements from arrays and boxed slices while calling a user-provided closure, then called forget(self) only after all elements were consumed. A panic in the closure would cause already-read elements to be dropped twice. The fix replaces the unsafe ptr::read loop with a safe ArrayIter (new file src/array_iter.rs) for array sources and into_vec() for boxed slice sources. 3 non-test source files changed (traits.rs modified, array_iter.rs added, lib.rs module declaration), so noisy_patch is false. Locations derived from the patch diff targeting the move_elements function in src/traits.rs.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
