@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r5v6-2599-9g3m",
+  "post_patch_commit": "924a107c5d66e79af1e9fd15ed6b29af4c06ffbc",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff which modifies the tenant scoping condition in TenantPermission.addTenantScopeToQuery and ModelPermission.addTenantScopeToQuery. The fix corrects the conditional logic so that when isMultiTenantRequest is true and a tenantId is provided, the query is still properly scoped through user global access permissions instead of falling through without tenant filtering.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
