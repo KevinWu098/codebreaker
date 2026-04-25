@@ -7,21 +7,22 @@ Devin agent dispatch.
 
 Usage:
 
-    GITHUB_TOKEN=ghp_... uv run python -m pipeline.filter_advisories
-    GITHUB_TOKEN=ghp_... uv run python -m pipeline.filter_advisories --max-pages 2
+    uv run python -m pipeline.filter_advisories
+    uv run python -m pipeline.filter_advisories --max-pages 2
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
-from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
+from .lib.env import require_env
 from .lib.filters import (
     extract_cwe_ids,
     extract_cvss,
@@ -231,10 +232,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    token = os.environ.get("GITHUB_TOKEN")
-    if not token:
-        print("error: GITHUB_TOKEN environment variable is required.", file=sys.stderr)
-        return 1
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+    token = require_env("GITHUB_TOKEN")
 
     print("ECVEBench Advisory Filter")
     print(f"  output:     {args.output}")
