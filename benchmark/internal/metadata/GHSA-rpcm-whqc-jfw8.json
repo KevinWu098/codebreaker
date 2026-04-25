@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rpcm-whqc-jfw8",
+  "post_patch_commit": "ffeff7c65deac5a6f886db2a59bcae4e420e4706",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit (ffeff7c) replaces an unsafe mem::replace/mem::uninitialized block in the MultiDecoder Read impl with the sound take_mut crate. Only src/gzip.rs contained the actual vulnerability fix; Cargo.toml and src/lib.rs changes were just adding the take_mut dependency. Location derived from the patch diff: the read() method in the io::Read impl for MultiDecoder in src/gzip.rs.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
