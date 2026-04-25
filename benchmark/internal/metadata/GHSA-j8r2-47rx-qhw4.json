@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j8r2-47rx-qhw4",
+  "post_patch_commit": "26b6ba8ed5b2a11a646ce2d5da8d42cd53574b1f",
+  "noisy_patch": false,
+  "curation_notes": "The advisory and patch both clearly identify the vulnerability in the recursive file deletion logic within the cache cleaner component. Only one source file was changed in the patch. The fix adds a canonical path check to ensure files being deleted remain within the allowed base directory. Location derived directly from the patch diff which modifies the recursivelyDelete method.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

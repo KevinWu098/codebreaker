@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6x93-h9g3-9phr",
+  "post_patch_commit": "b27de1ce439ae7f533cec26677e9698671275b70",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit b27de1c replaced Math.random() with crypto.randomInt() in index.js. The vulnerable rand() function was removed entirely and its call site in the generate() function was updated to use crypto.randomInt() directly. Only 1 non-test source file (index.js) was changed; the other changes were to README.md, package.json, and package-lock.json. Location derived from the patch diff: the rand function in index.js is where Math.random() was used.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
