@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hvr8-466p-75rh",
+  "post_patch_commit": "4e0d9b0b9740d258ade40cce248c93777362ac1e",
+  "noisy_patch": false,
+  "curation_notes": "The advisory explicitly names the function ImagingResampleHorizontal in libImaging/Resample.c. The patch commit (4e0d9b0) modifies only this single file, adding integer overflow checks before malloc calls for coefficient and bounds buffers. Location derived directly from the advisory description and confirmed by the single-file patch diff. Not noisy (1 source file changed).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

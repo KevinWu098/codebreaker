@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-958j-443g-7mm7",
+  "post_patch_commit": "519aeefbd93adad833cb45ba36f71622d3068223",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #6970 into main. Only one non-test source file changed (internal/db/repo_editor.go). The vulnerable function isRepositoryGitPath was identified directly from the patch diff, which added checks for paths containing '.git.' (with trailing dot) to prevent Windows path equivalence bypass.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
