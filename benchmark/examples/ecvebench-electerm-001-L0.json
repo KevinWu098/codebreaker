@@ -1,0 +1,23 @@
+{
+  "task_id": "ecvebench-electerm-001-L0",
+  "ghsa_id": "GHSA-8x35-hph8-37hq",
+  "difficulty": "L0",
+  "codebase": {
+    "repo": "https://github.com/electerm/electerm",
+    "language": "javascript",
+    "commit": "9590d7933c4021bbc006c3a0ccd366091b008e09"
+  },
+  "hint": null,
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 9.8,
+    "reason": "The runLinux() function appends attacker-controlled remote version strings directly into an exec() shell call without sanitization, allowing arbitrary command execution.",
+    "locations": [
+      {
+        "file": "npm/install.js",
+        "function": "runLinux"
+      }
+    ]
+  }
+}
