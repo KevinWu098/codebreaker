@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w5fq-8965-c969",
+  "post_patch_commit": "d395054dc2c360690239f2aedc6fd3ae9b46e279",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit d395054 is a merge commit from PR #22206 (3.6 branch) that combines the CloudSpec auth fix with a macaroon token race fix. The CloudSpec vulnerability location was derived from the fix commits: 80a52cb added an authorization wrapper in the controller facade, and 9ab2e7a refactored the auth check down into the common cloudspec package's CloudSpec method. The primary vulnerability is in cloudspec.go's CloudSpec function which returned cloud credentials to any authenticated client without checking superuser/admin privileges. The merge commit touches 11 files (8+ non-test) across multiple facade registration files, making it a noisy patch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
