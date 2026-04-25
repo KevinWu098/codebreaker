@@ -2,6 +2,7 @@ import { createWorkspaceStateBackend, type Workspace } from "@cloudflare/shell";
 import { createExecuteTool } from "@cloudflare/think/tools/execute";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import { ModalExecutor } from "@codebreaker/control-plane/sandbox/modal";
+import { createDeepWikiTools } from "@codebreaker/control-plane/tools/deepwiki";
 import { createHttpTools } from "@codebreaker/control-plane/tools/http";
 import { createModalTools } from "@codebreaker/control-plane/tools/modal";
 import {
@@ -48,6 +49,7 @@ export const createBuiltinTools = ({
   sessionId,
   workspace,
 }: BuiltinToolOptions): TieredToolSet => {
+  const deepWikiTools = createDeepWikiTools();
   const httpTools = createHttpTools();
   const modalTools = createModalTools({
     ...(defaultRemoteTimeoutSeconds
@@ -58,7 +60,12 @@ export const createBuiltinTools = ({
     ...(defaultSandboxProfile ? { defaultProfile: defaultSandboxProfile } : {}),
   });
   const executeTools = createExecuteTools(env, workspace);
-  const allTools = mergeTieredToolSets(httpTools, modalTools, executeTools);
+  const allTools = mergeTieredToolSets(
+    deepWikiTools,
+    httpTools,
+    modalTools,
+    executeTools
+  );
 
   return {
     tiers: allTools.tiers,
@@ -71,6 +78,7 @@ export const activeBuiltinToolNames = (policy: ExtensionPolicy): string[] =>
     {
       ...WORKSPACE_TOOL_TIERS,
       ...SESSION_TOOL_TIERS,
+      ...createDeepWikiTools().tiers,
       ...createHttpTools().tiers,
       execute: ToolTier.ExecLocal,
       exec_remote: ToolTier.ExecRemote,

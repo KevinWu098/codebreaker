@@ -16,6 +16,8 @@ import { Octokit, type RestEndpointMethodTypes } from "@octokit/rest";
 const TRAILING_SLASH_REGEX = /\/$/;
 const REF_CHECK_ATTEMPTS = 5;
 const REF_CHECK_DELAY_MS = 1000;
+const FORK_IN_PROGRESS_ATTEMPTS = 30;
+const FORK_IN_PROGRESS_DELAY_MS = 2000;
 
 type GitHubRepository =
   RestEndpointMethodTypes["repos"]["get"]["response"]["data"];
@@ -195,36 +197,53 @@ export class GitHubGitTreeStore implements GitTreeStore {
     });
   }
 
-  private isRepoNameExistsOnAccountError(error: unknown): boolean {
+  private matchesErrorMessage(
+    error: unknown,
+    predicate: (message: string) => boolean
+  ): boolean {
     if (!(error instanceof RequestError)) {
       return false;
     }
 
-    const fromMessage = (value: string): boolean =>
-      value.toLowerCase().includes("name already exists");
-    if (fromMessage(error.message)) {
+    if (predicate(error.message)) {
       return true;
     }
     const data = error.response?.data;
     if (data && typeof data === "object" && "message" in data) {
       const m = (data as { message?: unknown }).message;
-      if (typeof m === "string" && fromMessage(m)) {
+      if (typeof m === "string" && predicate(m)) {
         return true;
       }
     }
     return false;
   }
 
+  private isRepoNameExistsOnAccountError(error: unknown): boolean {
+    return this.matchesErrorMessage(error, (value) =>
+      value.toLowerCase().includes("name already exists")
+    );
+  }
+
+  private isRepoAlreadyBeingForkedError(error: unknown): boolean {
+    return this.matchesErrorMessage(error, (value) =>
+      value.toLowerCase().includes("already being forked")
+    );
+  }
+
   private async getRepoByNameWithRetry(
-    name: string
+    name: string,
+    options: { attempts: number; delayMs: number } = {
+      attempts: REF_CHECK_ATTEMPTS,
+      delayMs: REF_CHECK_DELAY_MS,
+    }
   ): Promise<GitHubRepository | null> {
-    for (let attempt = 0; attempt < REF_CHECK_ATTEMPTS; attempt += 1) {
+    for (let attempt = 0; attempt < options.attempts; attempt += 1) {
       const repo = await this.getRepoByName(name);
       if (repo) {
         return repo;
       }
-      if (attempt < REF_CHECK_ATTEMPTS - 1) {
-        await delay(REF_CHECK_DELAY_MS);
+      if (attempt < options.attempts - 1) {
+        await delay(options.delayMs);
       }
     }
     return null;
@@ -255,6 +274,19 @@ export class GitHubGitTreeStore implements GitTreeStore {
         }
         throw new Error(
           `GitHub reported the repository name already exists, but could not load ${this.owner}/${input.newRepoName} after retries`,
+          { cause: error }
+        );
+      }
+      if (this.isRepoAlreadyBeingForkedError(error)) {
+        const existing = await this.getRepoByNameWithRetry(input.newRepoName, {
+          attempts: FORK_IN_PROGRESS_ATTEMPTS,
+          delayMs: FORK_IN_PROGRESS_DELAY_MS,
+        });
+        if (existing) {
+          return existing;
+        }
+        throw new Error(
+          `GitHub reported ${input.upstream.owner}/${input.upstream.name} is already being forked, but ${this.owner}/${input.newRepoName} did not appear after retries`,
           { cause: error }
         );
       }

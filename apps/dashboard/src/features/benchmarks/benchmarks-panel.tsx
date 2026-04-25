@@ -1,5 +1,6 @@
 import type {
   BenchmarkCleanupPolicy,
+  BenchmarkRunEvent,
   BenchmarkRunLocation,
   BenchmarkRunModel,
   BenchmarkRunResult,
@@ -16,7 +17,21 @@ import {
   MODEL_OPTIONS_BY_PROVIDER,
   MODEL_PROVIDERS,
 } from "@codebreaker/shared/lib/models";
-import { Play, RefreshCw, RotateCcw, Square, Trash2 } from "lucide-react";
+import {
+  Content as TabsContent,
+  List as TabsList,
+  Root as TabsRoot,
+  Trigger as TabsTrigger,
+} from "@radix-ui/react-tabs";
+import {
+  BarChart3,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Square,
+  Trash2,
+} from "lucide-react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -39,7 +54,12 @@ import {
   useBenchmarkTasksQuery,
 } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
-import { formatNumber, formatRelativeTime, formatUsd } from "@/lib/format";
+import {
+  formatDuration,
+  formatNumber,
+  formatRelativeTime,
+  formatUsd,
+} from "@/lib/format";
 
 const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.kimi[0];
 const BENCHMARK_MAX_INPUT_TOKENS = 300_000;
@@ -50,6 +70,9 @@ const BENCHMARK_MAX_TURNS = 1;
 const BENCHMARK_TIMEOUT_SECONDS = 600;
 const DEFAULT_BATCH_REPEAT_COUNT = 1;
 const DIFFICULTY_OPTIONS: readonly Difficulty[] = ["L0", "L1", "L2", "L3"];
+const BENCHMARK_TAB_IDS = ["results", "create"] as const;
+
+type BenchmarkTab = (typeof BENCHMARK_TAB_IDS)[number];
 
 const createBenchmarkRequestFromRun = (
   run: BenchmarkRunRow
@@ -357,6 +380,80 @@ const scoreColumnForRun = (run: BenchmarkRunRow): React.ReactNode => {
   );
 };
 
+const scoreText = (score: number | null | undefined): string =>
+  score == null ? "—" : score.toFixed(2);
+
+const percentText = (value: number | null): string =>
+  value == null ? "—" : `${Math.round(value * 100)}%`;
+
+const average = (values: number[]): number | null => {
+  if (values.length === 0) {
+    return null;
+  }
+
+  let total = 0;
+  for (const value of values) {
+    total += value;
+  }
+
+  return total / values.length;
+};
+
+const booleanRate = (
+  values: Array<boolean | null | undefined>
+): number | null => {
+  const known = values.filter((value): value is boolean => value != null);
+  if (known.length === 0) {
+    return null;
+  }
+
+  let matches = 0;
+  for (const value of known) {
+    if (value) {
+      matches += 1;
+    }
+  }
+
+  return matches / known.length;
+};
+
+const runDuration = (run: BenchmarkRunRow): string => {
+  if (!run.completedAt) {
+    return "—";
+  }
+
+  const startedAt = new Date(run.createdAt).getTime();
+  const completedAt = new Date(run.completedAt).getTime();
+  if (Number.isNaN(startedAt) || Number.isNaN(completedAt)) {
+    return "—";
+  }
+
+  return formatDuration(Math.max(0, completedAt - startedAt));
+};
+
+const totalTokenCount = (run: BenchmarkRunRow): number | null => {
+  if (run.inputTokens == null || run.outputTokens == null) {
+    return null;
+  }
+
+  return run.inputTokens + run.outputTokens;
+};
+
+const runCost = (run: BenchmarkRunRow): number | null => {
+  if (run.inputTokens == null || run.outputTokens == null) {
+    return null;
+  }
+
+  const tokenCost = estimateTokenUsageCost({
+    inputTokens: run.inputTokens,
+    modelId: run.modelId,
+    modelProvider: run.modelProvider,
+    outputTokens: run.outputTokens,
+  });
+
+  return tokenCost?.totalUsd ?? null;
+};
+
 const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => status;
 
 const benchmarkRunTokensLine = (run: BenchmarkRunRow): React.ReactNode => {
@@ -392,6 +489,86 @@ const benchmarkRunTokensLine = (run: BenchmarkRunRow): React.ReactNode => {
   );
 };
 
+const MetricCard = ({
+  hint,
+  label,
+  value,
+}: {
+  hint?: string;
+  label: string;
+  value: React.ReactNode;
+}): React.JSX.Element => (
+  <div className="rounded border border-border bg-bg-raised p-3">
+    <div className="field-label">{label}</div>
+    <div className="mt-1 font-semibold text-lg">{value}</div>
+    {hint ? <div className="mt-1 text-fg-muted text-xs">{hint}</div> : null}
+  </div>
+);
+
+const BenchmarkResultsSummary = ({
+  runs,
+}: {
+  runs: BenchmarkRunRow[];
+}): React.JSX.Element => {
+  const scoredRuns = runs.filter((run) => run.score != null);
+  const completedRuns = runs.filter((run) => run.status === "completed");
+  const runningRuns = runs.filter(
+    (run) => run.status === "pending" || run.status === "running"
+  );
+  const failedRuns = runs.filter(
+    (run) => run.status === "failed" || run.status === "cancelled"
+  );
+  const avgScore = average(scoredRuns.flatMap((run) => run.score ?? []));
+  const vulnRate = booleanRate(
+    scoredRuns.map((run) => run.scoreBreakdown?.vulnerableMatched)
+  );
+  const classRate = booleanRate(
+    scoredRuns.map((run) => run.scoreBreakdown?.vulnClassMatched)
+  );
+  const avgLocationScore = average(
+    scoredRuns.flatMap((run) => run.scoreBreakdown?.locationScore ?? [])
+  );
+  const knownCosts = runs.flatMap((run) => runCost(run) ?? []);
+  const knownTokens = runs.flatMap((run) => totalTokenCount(run) ?? []);
+  const totalCost = knownCosts.reduce((sum, cost) => sum + cost, 0);
+  const totalTokens = knownTokens.reduce((sum, tokens) => sum + tokens, 0);
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <MetricCard
+        hint={`${completedRuns.length} completed · ${runningRuns.length} active · ${failedRuns.length} stopped`}
+        label="runs"
+        value={formatNumber(runs.length)}
+      />
+      <MetricCard
+        hint={`${scoredRuns.length} scored run(s)`}
+        label="average score"
+        value={scoreText(avgScore)}
+      />
+      <MetricCard
+        hint={`vulnerability ${percentText(vulnRate)} · class ${percentText(classRate)}`}
+        label="classification"
+        value={percentText(
+          average(
+            [vulnRate, classRate].filter(
+              (value): value is number => value != null
+            )
+          )
+        )}
+      />
+      <MetricCard
+        hint={
+          knownTokens.length > 0
+            ? `${formatNumber(totalTokens)} tokens · ${formatUsd(totalCost)} est.`
+            : "token usage appears after sessions complete"
+        }
+        label="location score"
+        value={percentText(avgLocationScore)}
+      />
+    </div>
+  );
+};
+
 export interface BenchmarksPanelProps {
   onOpenSession?: (sessionId: string) => void;
   onSelectRun?: (runId: string) => void;
@@ -405,6 +582,10 @@ export const BenchmarksPanel = ({
 }: BenchmarksPanelProps): React.JSX.Element => {
   const connection = useConnection();
   const enabled = isAuthorized(connection);
+  const [tab, setTab] = useQueryState(
+    "tab",
+    parseAsStringLiteral(BENCHMARK_TAB_IDS).withDefault("results")
+  );
   const tasks = useBenchmarkTasksQuery();
   const runs = useBenchmarkRunsQuery();
   const createRun = useCreateBenchmarkRunMutation();
@@ -537,15 +718,16 @@ export const BenchmarksPanel = ({
       tasks: selectedBatchTasks,
     });
 
-    if (result.error) {
-      setBatchError(result.error);
+    if (result.error || !result.requests) {
+      setBatchError(result.error ?? "No benchmark runs were created.");
       return;
     }
 
-    setBatchRunCount(result.requests.length);
+    const { requests } = result;
+    setBatchRunCount(requests.length);
     try {
       let lastRunId: string | null = null;
-      for (const request of result.requests) {
+      for (const request of requests) {
         const response = await createRun.mutateAsync(request);
         lastRunId = response.run.id;
       }
@@ -566,15 +748,18 @@ export const BenchmarksPanel = ({
       <PageHeader
         actions={
           <Button
-            disabled={!enabled || createRun.isPending || batchRunCount !== null}
-            onClick={startRun}
+            onClick={() => setTab(tab === "create" ? "results" : "create")}
             variant="primary"
           >
-            <Play aria-hidden="true" size={12} />
-            <span>{createRun.isPending ? "running…" : "run benchmark"}</span>
+            {tab === "create" ? (
+              <BarChart3 aria-hidden="true" size={12} />
+            ) : (
+              <Play aria-hidden="true" size={12} />
+            )}
+            <span>{tab === "create" ? "view results" : "new run"}</span>
           </Button>
         }
-        description="start and observe control-plane owned benchmark runs."
+        description="review benchmark outcomes, agent behavior, and where runs are failing."
         title="benchmarks"
       />
 
@@ -589,201 +774,249 @@ export const BenchmarksPanel = ({
       <ErrorState error={runs.error} title="runs unavailable" />
       <ErrorState error={createRun.error} title="run failed" />
 
-      <Card title="new benchmark run">
-        <div className="grid gap-3 md:grid-cols-3">
-          <label className="space-y-1 text-xs">
-            <span className="field-label">task</span>
-            <select
-              className="input"
-              onChange={(event) => {
-                const nextTaskId = event.target.value;
-                const nextTask = taskOptions.find(
-                  (task) => task.taskId === nextTaskId
-                );
+      <TabsRoot
+        onValueChange={(value) => setTab(value as BenchmarkTab)}
+        value={tab}
+      >
+        <TabsList aria-label="benchmark sections" className="tabs">
+          <TabsTrigger className="tab" value="results">
+            results
+          </TabsTrigger>
+          <TabsTrigger className="tab" value="create">
+            create
+          </TabsTrigger>
+        </TabsList>
 
-                setSelectedTaskId(nextTaskId);
-                if (
-                  nextTask &&
-                  !nextTask.difficulties.includes(difficulty) &&
-                  nextTask.difficulties[0]
-                ) {
-                  setDifficulty(nextTask.difficulties[0]);
+        <TabsContent className="mt-4 space-y-4 outline-none" value="results">
+          <BenchmarkResultsSummary runs={runs.data?.runs ?? []} />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(500px,1fr)]">
+            <BenchmarkRunsTable
+              loading={runs.isLoading}
+              onSelect={selectRun}
+              runs={runs.data?.runs ?? []}
+              selectedRunId={activeRunId}
+            />
+            {selectedRun ?? (
+              <Card title="run detail">
+                <EmptyState
+                  hint="select a run to inspect scoring, agent output, events, and raw payloads."
+                  title="no run selected"
+                />
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent className="mt-4 space-y-4 outline-none" value="create">
+          <Card
+            actions={
+              <Button
+                disabled={
+                  !enabled || createRun.isPending || batchRunCount !== null
                 }
-              }}
-              value={selectedTaskId}
-            >
-              <option value="">select task</option>
-              {taskOptions.map((task) => (
-                <option key={task.taskId} value={task.taskId}>
-                  {task.taskId}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1 text-xs">
-            <span className="field-label">difficulty</span>
-            <select
-              className="input"
-              onChange={(event) =>
-                setDifficulty(event.target.value as Difficulty)
-              }
-              value={difficulty}
-            >
-              {singleRunDifficultyOptions.map((difficultyOption) => (
-                <option key={difficultyOption} value={difficultyOption}>
-                  {difficultyOption}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1 text-xs">
-            <span className="field-label">model</span>
-            <select
-              className="input"
-              onChange={(event) => setModel(event.target.value)}
-              value={model}
-            >
-              {MODEL_PROVIDERS.map((provider) => (
-                <optgroup key={provider} label={provider}>
-                  {MODEL_OPTIONS_BY_PROVIDER[provider].map((option) => (
-                    <option
-                      key={option.id}
-                      title={`Documented at ${option.documentationUrl}`}
-                      value={modelValue(option)}
-                    >
-                      {option.label} ({option.id})
+                onClick={startRun}
+                variant="primary"
+              >
+                <Play aria-hidden="true" size={12} />
+                <span>
+                  {createRun.isPending ? "running…" : "run benchmark"}
+                </span>
+              </Button>
+            }
+            title="new benchmark run"
+          >
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="space-y-1 text-xs">
+                <span className="field-label">task</span>
+                <select
+                  className="input"
+                  onChange={(event) => {
+                    const nextTaskId = event.target.value;
+                    const nextTask = taskOptions.find(
+                      (task) => task.taskId === nextTaskId
+                    );
+
+                    setSelectedTaskId(nextTaskId);
+                    if (
+                      nextTask &&
+                      !nextTask.difficulties.includes(difficulty) &&
+                      nextTask.difficulties[0]
+                    ) {
+                      setDifficulty(nextTask.difficulties[0]);
+                    }
+                  }}
+                  value={selectedTaskId}
+                >
+                  <option value="">select task</option>
+                  {taskOptions.map((task) => (
+                    <option key={task.taskId} value={task.taskId}>
+                      {task.taskId}
                     </option>
                   ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-        </div>
-      </Card>
+                </select>
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="field-label">difficulty</span>
+                <select
+                  className="input"
+                  onChange={(event) =>
+                    setDifficulty(event.target.value as Difficulty)
+                  }
+                  value={difficulty}
+                >
+                  {singleRunDifficultyOptions.map((difficultyOption) => (
+                    <option key={difficultyOption} value={difficultyOption}>
+                      {difficultyOption}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="field-label">model</span>
+                <select
+                  className="input"
+                  onChange={(event) => setModel(event.target.value)}
+                  value={model}
+                >
+                  {MODEL_PROVIDERS.map((provider) => (
+                    <optgroup key={provider} label={provider}>
+                      {MODEL_OPTIONS_BY_PROVIDER[provider].map((option) => (
+                        <option
+                          key={option.id}
+                          title={`Documented at ${option.documentationUrl}`}
+                          value={modelValue(option)}
+                        >
+                          {option.label} ({option.id})
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </Card>
 
-      <Card
-        actions={
-          <Button
-            disabled={!enabled || createRun.isPending || batchRunCount !== null}
-            onClick={startBatch}
-            variant="primary"
+          <Card
+            actions={
+              <Button
+                disabled={
+                  !enabled || createRun.isPending || batchRunCount !== null
+                }
+                onClick={startBatch}
+                variant="primary"
+              >
+                <Play aria-hidden="true" size={12} />
+                <span>
+                  {batchRunCount === null
+                    ? "run batch"
+                    : `creating ${batchRunCount} run(s)…`}
+                </span>
+              </Button>
+            }
+            title="batch benchmark run"
           >
-            <Play aria-hidden="true" size={12} />
-            <span>
-              {batchRunCount === null
-                ? "run batch"
-                : `creating ${batchRunCount} run(s)…`}
-            </span>
-          </Button>
-        }
-        title="batch benchmark run"
-      >
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <label className="space-y-1 text-xs">
-            <span className="field-label">tasks</span>
-            <select
-              className="input min-h-40 font-mono text-[11px]"
-              multiple
-              onChange={(event) =>
-                setBatchTaskIds(
-                  Array.from(
-                    event.currentTarget.selectedOptions,
-                    (option) => option.value
-                  )
-                )
-              }
-              value={batchTaskIds}
-            >
-              {taskOptions.map((task) => (
-                <option key={task.taskId} value={task.taskId}>
-                  {task.taskId}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="space-y-4">
-            <fieldset className="space-y-2 text-xs">
-              <legend className="field-label">levels</legend>
-              <div className="flex flex-wrap gap-3">
-                {DIFFICULTY_OPTIONS.map((difficultyOption) => (
-                  <label
-                    className="flex items-center gap-2"
-                    key={difficultyOption}
-                  >
-                    <input
-                      checked={batchDifficulties.includes(difficultyOption)}
-                      onChange={(event) =>
-                        setBatchDifficulty(
-                          difficultyOption,
-                          event.currentTarget.checked
-                        )
-                      }
-                      type="checkbox"
-                    />
-                    <span>{difficultyOption}</span>
-                  </label>
-                ))}
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <label className="space-y-1 text-xs">
+                <span className="field-label">tasks</span>
+                <select
+                  className="input min-h-40 font-mono text-[11px]"
+                  multiple
+                  onChange={(event) =>
+                    setBatchTaskIds(
+                      Array.from(
+                        event.currentTarget.selectedOptions,
+                        (option) => option.value
+                      )
+                    )
+                  }
+                  value={batchTaskIds}
+                >
+                  {taskOptions.map((task) => (
+                    <option key={task.taskId} value={task.taskId}>
+                      {task.taskId}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="space-y-4">
+                <fieldset className="space-y-2 text-xs">
+                  <legend className="field-label">levels</legend>
+                  <div className="flex flex-wrap gap-3">
+                    {DIFFICULTY_OPTIONS.map((difficultyOption) => (
+                      <label
+                        className="flex items-center gap-2"
+                        key={difficultyOption}
+                      >
+                        <input
+                          checked={batchDifficulties.includes(difficultyOption)}
+                          onChange={(event) =>
+                            setBatchDifficulty(
+                              difficultyOption,
+                              event.currentTarget.checked
+                            )
+                          }
+                          type="checkbox"
+                        />
+                        <span>{difficultyOption}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <label className="block space-y-1 text-xs">
+                  <span className="field-label">
+                    times to run each combination
+                  </span>
+                  <input
+                    className="input"
+                    min={1}
+                    onChange={(event) =>
+                      setBatchRepeatCount(event.target.value)
+                    }
+                    type="number"
+                    value={batchRepeatCount}
+                  />
+                </label>
+              </div>
+            </div>
+            <fieldset className="mt-4 space-y-2 text-xs">
+              <legend className="field-label">models</legend>
+              <div className="grid gap-2 md:grid-cols-2">
+                {MODEL_OPTIONS.map((option) => {
+                  const value = modelValue(option);
+
+                  return (
+                    <label className="flex items-start gap-2" key={value}>
+                      <input
+                        checked={batchModelValues.includes(value)}
+                        onChange={(event) =>
+                          setBatchModel(value, event.currentTarget.checked)
+                        }
+                        type="checkbox"
+                      />
+                      <span>
+                        {option.label}{" "}
+                        <span className="font-mono text-fg-muted">
+                          ({option.provider}/{option.id})
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </fieldset>
-            <label className="block space-y-1 text-xs">
-              <span className="field-label">times to run each combination</span>
-              <input
-                className="input"
-                min={1}
-                onChange={(event) => setBatchRepeatCount(event.target.value)}
-                type="number"
-                value={batchRepeatCount}
-              />
-            </label>
-          </div>
-        </div>
-        <fieldset className="mt-4 space-y-2 text-xs">
-          <legend className="field-label">models</legend>
-          <div className="grid gap-2 md:grid-cols-2">
-            {MODEL_OPTIONS.map((option) => {
-              const value = modelValue(option);
-
-              return (
-                <label className="flex items-start gap-2" key={value}>
-                  <input
-                    checked={batchModelValues.includes(value)}
-                    onChange={(event) =>
-                      setBatchModel(value, event.currentTarget.checked)
-                    }
-                    type="checkbox"
-                  />
-                  <span>
-                    {option.label}{" "}
-                    <span className="font-mono text-fg-muted">
-                      ({option.provider}/{option.id})
-                    </span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
-        <p className="mt-3 text-fg-muted text-xs">
-          This will create {batchPreviewCount} run(s): supported selected
-          task/level pairs x models x repeat count. The default selection uses
-          only {DEFAULT_MODEL.label}.
-        </p>
-        {batchError && (
-          <div className="error-card mt-3 text-xs" role="alert">
-            {batchError}
-          </div>
-        )}
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
-        <BenchmarkRunsTable
-          loading={runs.isLoading}
-          onSelect={selectRun}
-          runs={runs.data?.runs ?? []}
-          selectedRunId={activeRunId}
-        />
-        {selectedRun}
-      </div>
+            <p className="mt-3 text-fg-muted text-xs">
+              This will create {batchPreviewCount} run(s): supported selected
+              task/level pairs x models x repeat count. The default selection
+              uses only {DEFAULT_MODEL.label}.
+            </p>
+            {batchError && (
+              <div className="error-card mt-3 text-xs" role="alert">
+                {batchError}
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+      </TabsRoot>
     </div>
   );
 };
@@ -867,6 +1100,105 @@ const BenchmarkRunsTable = ({
       </table>
     )}
   </Card>
+);
+
+const BenchmarkRunAgentReview = ({
+  result,
+  task,
+}: {
+  result: BenchmarkRunResult | null;
+  task: TaskInstance | null;
+}): React.JSX.Element => {
+  const output = result?.agentOutput;
+
+  return (
+    <div className="mb-4 space-y-3 text-xs">
+      <div className="field-label">agent behavior</div>
+      {!output && (
+        <p className="text-fg-muted">
+          no parsed agent output yet. Check the raw payload or event timeline
+          for parse failures.
+        </p>
+      )}
+      {output && (
+        <dl className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3 gap-y-2">
+          <dt className="text-fg-muted">decision</dt>
+          <dd>
+            vulnerable {formatBool(output.vulnerable)} · class{" "}
+            {output.vuln_class ?? "—"} · confidence{" "}
+            {percentText(output.confidence)}
+          </dd>
+          <dt className="text-fg-muted">reason</dt>
+          <dd className="whitespace-pre-wrap">{output.reason ?? "—"}</dd>
+          <dt className="text-fg-muted">predicted locs</dt>
+          <dd>{formatNumber(output.locations.length)}</dd>
+        </dl>
+      )}
+      {task && (
+        <div className="rounded border border-border bg-bg-raised p-3">
+          <div className="field-label mb-2">ground truth</div>
+          <dl className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3 gap-y-2">
+            <dt className="text-fg-muted">decision</dt>
+            <dd>
+              vulnerable {formatBool(task.ground_truth.vulnerable)} · class{" "}
+              {task.ground_truth.vuln_class}
+            </dd>
+            <dt className="text-fg-muted">reason</dt>
+            <dd className="whitespace-pre-wrap">{task.ground_truth.reason}</dd>
+          </dl>
+        </div>
+      )}
+      {result?.rawOutput ? (
+        <details className="rounded border border-border bg-bg-raised p-3">
+          <summary className="cursor-pointer text-fg-muted">
+            raw agent output
+          </summary>
+          <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap text-[11px]">
+            {result.rawOutput}
+          </pre>
+        </details>
+      ) : null}
+    </div>
+  );
+};
+
+const BenchmarkRunEventsTimeline = ({
+  events,
+}: {
+  events: BenchmarkRunEvent[];
+}): React.JSX.Element => (
+  <div className="mb-4 space-y-2 text-xs">
+    <div className="field-label">run events</div>
+    {events.length === 0 ? (
+      <p className="text-fg-muted">no events recorded.</p>
+    ) : (
+      <ol className="space-y-2">
+        {events.map((event) => (
+          <li
+            className="border-border border-l-2 pl-3"
+            key={event.id}
+            title={event.createdAt}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{event.kind}</span>
+              <span className="text-fg-muted">
+                {formatRelativeTime(event.createdAt)}
+              </span>
+            </div>
+            <div className="text-fg-muted">{event.message}</div>
+            {event.details == null ? null : (
+              <JsonView
+                className="mt-2"
+                collapsedDepth={1}
+                maxHeight={160}
+                value={event.details}
+              />
+            )}
+          </li>
+        ))}
+      </ol>
+    )}
+  </div>
 );
 
 const BenchmarkRunDetail = ({
@@ -971,15 +1303,24 @@ const BenchmarkRunDetail = ({
           <DefinitionField label="status">
             <Badge status={badgeStatusForRun(run.status)} />
           </DefinitionField>
+          <DefinitionField label="model" mono>
+            {run.modelProvider}/{run.modelId}
+          </DefinitionField>
           <DefinitionField label="session" mono>
             {sessionValue}
           </DefinitionField>
           <DefinitionField label="tokens (in/out/total)" numeric>
             {benchmarkRunTokensLine(run)}
           </DefinitionField>
+          <DefinitionField label="duration" numeric>
+            {runDuration(run)}
+          </DefinitionField>
           <DefinitionField label="artifact" mono>
             {run.artifactPath ?? "—"}
           </DefinitionField>
+          {run.error ? (
+            <DefinitionField label="error">{run.error}</DefinitionField>
+          ) : null}
         </dl>
       )}
       {run && detail.data && (
@@ -989,6 +1330,15 @@ const BenchmarkRunDetail = ({
           run={run}
           task={detail.data.task}
         />
+      )}
+      {detail.data && (
+        <BenchmarkRunAgentReview
+          result={detail.data.result}
+          task={detail.data.task}
+        />
+      )}
+      {detail.data && (
+        <BenchmarkRunEventsTimeline events={detail.data.events} />
       )}
       {detail.data && <JsonView maxHeight={420} value={detail.data} />}
     </Card>
