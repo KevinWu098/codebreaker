@@ -139,6 +139,7 @@
     "@codebreaker/benchmark-runner": "workspace:*",
     "@codebreaker/shared": "workspace:*",
     "@hono/zod-validator": "0.7.6",
+    "@modelcontextprotocol/sdk": "1.29.0",
     "@octokit/request-error": "7.1.0",
     "@octokit/rest": "22.0.1",
     "agents": "0.11.5",
