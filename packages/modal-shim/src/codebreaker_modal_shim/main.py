@@ -40,6 +40,8 @@ image = modal.Image.debian_slim().apt_install("git").pip_install(
     "fastapi>=0.115.0",
     "pydantic>=2.9.2",
 ).add_local_python_source(
+    "codebreaker_shim_shared",
+).add_local_python_source(
     "codebreaker_modal_shim",
 ).add_local_file(
     str(_PROFILES_JSON), remote_path="/app/sandbox-profiles.json",

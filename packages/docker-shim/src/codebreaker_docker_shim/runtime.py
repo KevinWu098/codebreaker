@@ -1,11 +1,7 @@
 import base64
 import hashlib
 import io
-import json
-import os
 import posixpath
-import re
-import shlex
 import tarfile
 import time
 from collections.abc import Callable
@@ -36,20 +32,24 @@ from codebreaker_docker_shim.schemas import (
     WriteRequest,
     WriteResponse,
 )
+from codebreaker_shim_shared.helpers import (
+    STDIO_LIMIT_BYTES,
+    cap_text,
+    check_rate_limit,
+    forget_sandbox,
+    get_metadata,
+    git_auth_args,
+    last_nonempty_line,
+    list_metadata,
+    redact_diagnostics_for_client,
+    repo_name_from_url,
+    require_auth,
+    resolve_workdir,
+    shell_quote,
+    with_idempotency as _with_idempotency,
+)
 
-STDIO_LIMIT_BYTES = 256 * 1024
-IDEMPOTENCY_TTL_SECONDS = 15 * 60
-RATE_LIMIT_WINDOW_SECONDS = 60
-RATE_LIMIT_REQUESTS = 60
 TIMEOUT_EXIT_CODE = 124
-
-_REDACT_AUTH_BASIC = re.compile(
-    r"Authorization:\s*Basic\s+[A-Za-z0-9+/=]+", re.IGNORECASE
-)
-_REDACT_AUTH_BEARER = re.compile(
-    r"Authorization:\s*Bearer\s+[^\s'\"`]+", re.IGNORECASE
-)
-
 
 SANDBOXES: dict[str, dict[str, Any]] = {}
 IDEMPOTENCY: dict[str, dict[str, Any]] = {}
@@ -65,83 +65,32 @@ class RawExecResult:
     timed_out: bool
 
 
-def redact_diagnostics_for_client(message: str) -> str:
-    """
-    Error strings can embed the full git command line, including
-    `http.extraHeader=... Authorization: Basic <base64(user:token)>` which must
-    never be returned in API responses or stored downstream.
-    """
-    if not message:
-        return message
-
-    out = _REDACT_AUTH_BASIC.sub("Authorization: Basic <redacted>", message)
-    return _REDACT_AUTH_BEARER.sub("Authorization: Bearer <redacted>", out)
-
-
 class DockerSandboxManager:
     def __init__(self) -> None:
         self.client = docker.from_env()
 
     def require_auth(self, request: Request) -> None:
-        expected_secret = os.environ.get("SHIM_SECRET")
-
-        if not expected_secret:
-            raise HTTPException(status_code=500, detail="SHIM_SECRET is not configured")
-
-        if request.headers.get("X-Shim-Secret") != expected_secret:
-            raise HTTPException(status_code=401, detail="Invalid shim secret")
+        require_auth(request)
 
     def check_rate_limit(self, session_id: str) -> None:
-        now = time.time()
-        timestamps = [
-            timestamp
-            for timestamp in RATE_LIMITS.get(session_id, [])
-            if now - float(timestamp) < RATE_LIMIT_WINDOW_SECONDS
-        ]
-
-        if len(timestamps) >= RATE_LIMIT_REQUESTS:
-            raise HTTPException(
-                headers={"Retry-After": str(RATE_LIMIT_WINDOW_SECONDS)},
-                status_code=429,
-                detail="Rate limit exceeded",
-            )
-
-        RATE_LIMITS[session_id] = [*timestamps, now]
+        check_rate_limit(session_id, RATE_LIMITS)
 
     def cached_response(self, request: Request) -> dict[str, Any] | None:
-        key = request.headers.get("X-Idempotency-Key")
+        from codebreaker_shim_shared.helpers import cached_response as _cached_response
 
-        if not key:
-            return None
-
-        cached = IDEMPOTENCY.get(key)
-
-        if not cached:
-            return None
-
-        if float(cached["expires_at"]) < time.time():
-            del IDEMPOTENCY[key]
-            return None
-
-        return dict(cached["response"])
+        return _cached_response(request, IDEMPOTENCY)
 
     def store_response(self, request: Request, response: dict[str, Any]) -> None:
-        key = request.headers.get("X-Idempotency-Key")
+        from codebreaker_shim_shared.helpers import store_response as _store_response
 
-        if not key:
-            return
-
-        IDEMPOTENCY[key] = {
-            "expires_at": time.time() + IDEMPOTENCY_TTL_SECONDS,
-            "response": response,
-        }
+        _store_response(request, response, IDEMPOTENCY)
 
     def ensure_sandbox(
         self, session_id: str, profile_name: str
     ) -> tuple[Container, SandboxMetadata]:
         profile = resolve_profile(profile_name)  # type: ignore[arg-type]
         fingerprint = profile_fingerprint(profile)
-        existing = self.get_metadata(session_id)
+        existing = get_metadata(session_id, SANDBOXES)
 
         if existing and existing.image_fingerprint == fingerprint:
             try:
@@ -153,7 +102,7 @@ class DockerSandboxManager:
 
                 return container, existing
             except docker.errors.NotFound:
-                self.forget_sandbox(session_id)
+                forget_sandbox(session_id, SANDBOXES)
 
         if existing:
             self.terminate(TerminateRequest(session_id=session_id))
@@ -194,18 +143,10 @@ class DockerSandboxManager:
         return container, metadata
 
     def get_metadata(self, session_id: str) -> SandboxMetadata | None:
-        metadata = SANDBOXES.get(session_id)
-
-        if not metadata:
-            return None
-
-        return SandboxMetadata.model_validate(metadata)
+        return get_metadata(session_id, SANDBOXES)
 
     def list_metadata(self) -> list[SandboxMetadata]:
-        return [
-            SandboxMetadata.model_validate(metadata)
-            for metadata in SANDBOXES.values()
-        ]
+        return list_metadata(SANDBOXES)
 
     def exec(self, request: ExecRequest) -> ExecResult:
         self.check_rate_limit(request.session_id)
@@ -383,7 +324,7 @@ class DockerSandboxManager:
         )
 
     def terminate(self, request: TerminateRequest) -> dict[str, bool]:
-        metadata = self.get_metadata(request.session_id)
+        metadata = get_metadata(request.session_id, SANDBOXES)
 
         if not metadata:
             return {"terminated": False}
@@ -394,13 +335,20 @@ class DockerSandboxManager:
         except docker.errors.NotFound:
             pass
         finally:
-            self.forget_sandbox(request.session_id)
+            forget_sandbox(request.session_id, SANDBOXES)
 
         return {"terminated": True}
 
     def forget_sandbox(self, session_id: str) -> None:
-        if self.get_metadata(session_id):
-            del SANDBOXES[session_id]
+        forget_sandbox(session_id, SANDBOXES)
+
+
+def with_idempotency(
+    _manager: DockerSandboxManager,
+    request: Request,
+    operation: Callable[[], dict[str, Any]],
+) -> dict[str, Any]:
+    return _with_idempotency(request, operation, IDEMPOTENCY)
 
 
 def container_name(session_id: str) -> str:
@@ -445,51 +393,6 @@ def write_container_file(container: Container, path: str, content: bytes) -> Non
     container.put_archive(parent, buffer.getvalue())
 
 
-def shell_quote(value: str) -> str:
-    return shlex.quote(value)
-
-
-def git_auth_args(request: GitCheckoutRequest | GitCommitRequest) -> str:
-    if request.credential.type == "token-header":
-        header = f"Authorization: Bearer {request.credential.password}"
-    else:
-        encoded = base64.b64encode(
-            f"{request.credential.username}:{request.credential.password}".encode()
-        ).decode()
-        header = f"Authorization: Basic {encoded}"
-
-    return f"-c http.extraHeader={shell_quote(header)}"
-
-
-def repo_name_from_url(remote_url: str) -> str:
-    name = remote_url.rstrip("/").rsplit("/", maxsplit=1)[-1]
-
-    if name.endswith(".git"):
-        name = name[:-4]
-
-    return name or "repo"
-
-
-def last_nonempty_line(value: str) -> str | None:
-    for line in reversed(value.splitlines()):
-        stripped = line.strip()
-
-        if stripped:
-            return stripped
-
-    return None
-
-
-def resolve_workdir(cwd: str | None, default_workdir: str) -> str:
-    if not cwd:
-        return default_workdir
-
-    if posixpath.isabs(cwd):
-        return posixpath.normpath(cwd)
-
-    return posixpath.normpath(posixpath.join(default_workdir, cwd))
-
-
 def normalize_exec_output(output: Any) -> tuple[bytes, bytes]:
     if isinstance(output, tuple):
         stdout, stderr = output
@@ -506,24 +409,3 @@ def read_exec_run_output(output: Any) -> str:
         return output.decode(errors="replace")
 
     return str(output)
-
-
-def cap_text(value: bytes, limit: int) -> tuple[str, bool]:
-    truncated = len(value) > limit
-    return value[:limit].decode(errors="replace"), truncated
-
-
-def with_idempotency(
-    manager: DockerSandboxManager,
-    request: Request,
-    operation: Callable[[], dict[str, Any]],
-) -> dict[str, Any]:
-    cached = manager.cached_response(request)
-
-    if cached is not None:
-        return cached
-
-    response = operation()
-    manager.store_response(request, response)
-
-    return response
