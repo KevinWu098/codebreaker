@@ -53,7 +53,6 @@ import {
   useBenchmarkRunsQuery,
   useBenchmarkTasksQuery,
 } from "@/hooks/queries";
-import { cn } from "@/lib/cn";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import {
   formatDuration,
@@ -61,6 +60,7 @@ import {
   formatRelativeTime,
   formatUsd,
 } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.kimi[0];
 const BENCHMARK_MAX_INPUT_TOKENS = 300_000;
