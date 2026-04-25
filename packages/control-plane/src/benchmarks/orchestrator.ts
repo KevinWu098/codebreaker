@@ -30,6 +30,7 @@ const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
 const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
 const DEFAULT_BENCHMARK_MAX_TURNS = 1;
 const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
+const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 
 export class BenchmarkRunOrchestrator {
   private readonly dataset: BenchmarkDatasetService;
@@ -145,17 +146,19 @@ export class BenchmarkRunOrchestrator {
         getAgentByName(this.env.SESSION_AGENT, sessionId)
       );
 
-      await agent.requestFollowUp(
-        benchmarkInitialPrompt(record.task, run.difficulty)
-      );
-
       await this.runs.addEvent({
         kind: "agent_started",
         message: "Agent turn started",
         runId,
       });
-      const turnResult = await agent.requestFollowUp(
-        benchmarkInitialPrompt(record.task, run.difficulty)
+      const turnResult = await withTimeout(
+        agent.requestFollowUp(
+          benchmarkInitialPrompt(record.task, run.difficulty)
+        ),
+        (timeoutSeconds + AGENT_TURN_COMPLETION_GRACE_SECONDS) * 1000,
+        `Agent turn did not complete within ${
+          timeoutSeconds + AGENT_TURN_COMPLETION_GRACE_SECONDS
+        }s`
       );
       if (turnResult.status !== "completed") {
         throw new Error(`Agent turn ${turnResult.status}`);
@@ -423,6 +426,25 @@ const parseAgentOutput = (rawOutput: string): AgentOutput => {
   const parsed = JSON.parse(json) as unknown;
 
   return AgentOutputSchema.parse(parsed);
+};
+
+const withTimeout = async <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
+  }
 };
 
 const extractJsonObject = (value: string): string | null => {

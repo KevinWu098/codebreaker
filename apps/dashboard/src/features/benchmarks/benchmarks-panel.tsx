@@ -1,11 +1,21 @@
-import type { BenchmarkRunRow } from "@codebreaker/benchmark-runner/schemas";
+import type {
+  BenchmarkCleanupPolicy,
+  BenchmarkRunLocation,
+  BenchmarkRunModel,
+  BenchmarkRunResult,
+  BenchmarkRunRow,
+  BenchmarkRunScoreBreakdown,
+  CreateBenchmarkRunRequest,
+  Difficulty,
+  TaskInstance,
+} from "@codebreaker/benchmark-runner/schemas";
 import {
   estimateTokenUsageCost,
   MODEL_OPTIONS,
   MODEL_OPTIONS_BY_PROVIDER,
   MODEL_PROVIDERS,
 } from "@codebreaker/shared/lib/models";
-import { Play, RefreshCw, Square, Trash2 } from "lucide-react";
+import { Play, RefreshCw, RotateCcw, Square, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -37,9 +47,261 @@ const BENCHMARK_MAX_TOOL_CALLS = 40;
 const BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
 const BENCHMARK_MAX_TURNS = 1;
 const BENCHMARK_TIMEOUT_SECONDS = 600;
+const DEFAULT_BATCH_REPEAT_COUNT = 1;
+
+const createBenchmarkRequestFromRun = (
+  run: BenchmarkRunRow
+): CreateBenchmarkRunRequest => ({
+  autoStart: true,
+  cleanupPolicy: run.cleanupPolicy,
+  difficulty: run.difficulty,
+  maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
+  maxSteps: BENCHMARK_MAX_STEPS,
+  maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
+  maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
+  maxTurns: BENCHMARK_MAX_TURNS,
+  model: {
+    id: run.modelId,
+    provider: run.modelProvider,
+  },
+  taskId: run.taskId,
+  timeoutSeconds: BENCHMARK_TIMEOUT_SECONDS,
+});
+
+const createBenchmarkRequestsFromBatch = ({
+  cleanupPolicy,
+  difficulties,
+  models,
+  repeatCount,
+  taskIds,
+}: {
+  cleanupPolicy: BenchmarkCleanupPolicy;
+  difficulties: Difficulty[];
+  models: BenchmarkRunModel[];
+  repeatCount: number;
+  taskIds: string[];
+}): CreateBenchmarkRunRequest[] => {
+  const requests: CreateBenchmarkRunRequest[] = [];
+
+  for (const taskId of taskIds) {
+    for (const difficulty of difficulties) {
+      for (const model of models) {
+        for (let i = 0; i < repeatCount; i += 1) {
+          requests.push({
+            autoStart: true,
+            cleanupPolicy,
+            difficulty,
+            maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
+            maxSteps: BENCHMARK_MAX_STEPS,
+            maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
+            maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
+            maxTurns: BENCHMARK_MAX_TURNS,
+            model,
+            taskId,
+            timeoutSeconds: BENCHMARK_TIMEOUT_SECONDS,
+          });
+        }
+      }
+    }
+  }
+
+  return requests;
+};
+
 const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
   `${model.provider}/${model.id}`;
 const DEFAULT_MODEL_VALUE = modelValue(DEFAULT_MODEL);
+
+const taskWithDifficulty = (
+  run: Pick<BenchmarkRunRow, "difficulty" | "taskId">
+): string => `${run.taskId} ${run.difficulty}`;
+
+const formatBool = (v: boolean | null): string => {
+  if (v === true) {
+    return "yes";
+  }
+  if (v === false) {
+    return "no";
+  }
+  return "—";
+};
+
+const formatMatch = (m: boolean | null): string => {
+  if (m === true) {
+    return "right";
+  }
+  if (m === false) {
+    return "wrong";
+  }
+  return "—";
+};
+
+const triCheckIcon = (v: boolean | null): string => {
+  if (v === true) {
+    return "✓";
+  }
+  if (v === false) {
+    return "✗";
+  }
+  return "—";
+};
+
+const locationCountSummary = (
+  correct: number | null,
+  expectedCount: number | undefined
+): string => {
+  if (correct == null) {
+    return "";
+  }
+  if (expectedCount != null) {
+    return ` · ${correct} of ${expectedCount} ground-truth location(s) matched`;
+  }
+  return ` · ${correct} ground-truth location(s) matched`;
+};
+
+const scoreBreakdownLocationCaption = (
+  b: BenchmarkRunScoreBreakdown
+): string => {
+  if (b.correctLocations != null) {
+    return `${b.correctLocations} loc`;
+  }
+  if (b.locationScore != null) {
+    return b.locationScore.toFixed(2);
+  }
+  return "—";
+};
+
+const locHintDetailSuffix = (b: BenchmarkRunScoreBreakdown): string => {
+  if (b.correctLocations == null) {
+    return "";
+  }
+  return `, ${b.correctLocations} ground-truth location(s) correct`;
+};
+
+const BenchmarkRunScoringDetail = ({
+  locations,
+  result,
+  run,
+  task,
+}: {
+  locations: BenchmarkRunLocation[];
+  result: BenchmarkRunResult | null;
+  run: BenchmarkRunRow;
+  task: TaskInstance | null;
+}): React.JSX.Element => {
+  if (!result) {
+    return (
+      <div className="mb-4 text-xs">
+        <div className="field-label mb-2">scoring</div>
+        <p className="text-fg-muted">
+          {run.score == null
+            ? "no scored result yet."
+            : `composite ${run.score.toFixed(2)} (no breakdown stored).`}
+        </p>
+      </div>
+    );
+  }
+
+  const composite = result.score?.score ?? run.score;
+  const expectedLocCount = task?.ground_truth.locations.length;
+
+  return (
+    <div className="mb-4 space-y-3 text-xs">
+      <div className="field-label">scoring</div>
+      <dl className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3 gap-y-2">
+        <dt className="text-fg-muted">composite</dt>
+        <dd className="num">
+          {composite == null ? "—" : composite.toFixed(2)}
+        </dd>
+        <dt className="text-fg-muted">vulnerability</dt>
+        <dd>
+          expected {formatBool(result.expectedVulnerable)} · predicted{" "}
+          {formatBool(result.predictedVulnerable)} ·{" "}
+          <span
+            className={
+              result.vulnerableMatched === false ? "font-medium text-fg" : ""
+            }
+          >
+            {formatMatch(result.vulnerableMatched)}
+          </span>
+        </dd>
+        <dt className="text-fg-muted">vuln class</dt>
+        <dd className="break-words">
+          expected {result.expectedVulnClass ?? "—"} · predicted{" "}
+          {result.predictedVulnClass ?? "—"} ·{" "}
+          <span
+            className={
+              result.vulnClassMatched === false ? "font-medium text-fg" : ""
+            }
+          >
+            {formatMatch(result.vulnClassMatched)}
+          </span>
+        </dd>
+        <dt className="text-fg-muted">locations</dt>
+        <dd>
+          subscore {result.locationScore?.toFixed(2) ?? "—"}
+          {locationCountSummary(result.correctLocations, expectedLocCount)}
+        </dd>
+      </dl>
+      {locations.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-fg-muted">predicted locations</div>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>file</th>
+                <th>function</th>
+                <th className="num">ground truth</th>
+              </tr>
+            </thead>
+            <tbody>
+              {locations.map((loc) => (
+                <tr key={loc.id}>
+                  <td className="max-w-[12rem] break-all font-mono text-[11px]">
+                    {loc.file}
+                  </td>
+                  <td className="font-mono text-[11px] text-fg-muted">
+                    {loc.function ?? "—"}
+                  </td>
+                  <td className="num">{formatMatch(loc.matchedGroundTruth)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const scoreColumnForRun = (run: BenchmarkRunRow): React.ReactNode => {
+  const line = run.score?.toFixed(2) ?? "—";
+  const b = run.scoreBreakdown;
+  if (!b) {
+    return line;
+  }
+
+  const vHint = `vulnerability (expected vs predicted): ${formatMatch(
+    b.vulnerableMatched
+  )}`;
+  const cHint = `vulnerability class: ${formatMatch(b.vulnClassMatched)}`;
+  const locHint = `location subscore${locHintDetailSuffix(b)}`;
+  const locText = scoreBreakdownLocationCaption(b);
+
+  return (
+    <div className="text-right">
+      <div>{line}</div>
+      <div
+        className="mt-0.5 text-[10px] text-fg-muted leading-tight"
+        title={`${vHint}. ${cHint}. ${locHint}.`}
+      >
+        <span title={vHint}>V{triCheckIcon(b.vulnerableMatched)}</span>{" "}
+        <span title={cHint}>C{triCheckIcon(b.vulnClassMatched)}</span>{" "}
+        <span title={locHint}>L {locText}</span>
+      </div>
+    </div>
+  );
+};
 
 const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => status;
 
@@ -98,6 +360,41 @@ export const BenchmarksPanel = ({
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [difficulty, setDifficulty] = useState<"L0" | "L1">("L0");
   const [model, setModel] = useState(DEFAULT_MODEL_VALUE);
+  const [batchTaskIds, setBatchTaskIds] = useState<string[]>([]);
+  const [batchDifficulties, setBatchDifficulties] = useState<Difficulty[]>([
+    "L0",
+  ]);
+  const [batchModelValues, setBatchModelValues] = useState<string[]>([
+    DEFAULT_MODEL_VALUE,
+  ]);
+  const [batchRepeatCount, setBatchRepeatCount] = useState(
+    String(DEFAULT_BATCH_REPEAT_COUNT)
+  );
+  const [batchError, setBatchError] = useState<string | null>(null);
+  const [batchRunCount, setBatchRunCount] = useState<number | null>(null);
+  const taskOptions = tasks.data?.tasks ?? [];
+  const selectedBatchModels = batchModelValues.flatMap((value) => {
+    const selectedModel = MODEL_OPTIONS.find(
+      (option) => modelValue(option) === value
+    );
+
+    return selectedModel
+      ? [
+          {
+            id: selectedModel.id,
+            provider: selectedModel.provider,
+          },
+        ]
+      : [];
+  });
+  const repeatCountNumber = Number(batchRepeatCount);
+  const batchPreviewCount =
+    Number.isInteger(repeatCountNumber) && repeatCountNumber > 0
+      ? batchTaskIds.length *
+        batchDifficulties.length *
+        selectedBatchModels.length *
+        repeatCountNumber
+      : 0;
   const activeRunId = selectedRunId ?? localSelectedRunId;
   const selectRun = (runId: string): void => {
     setLocalSelectedRunId(runId);
@@ -106,6 +403,7 @@ export const BenchmarksPanel = ({
   const selectedRun = activeRunId ? (
     <BenchmarkRunDetail
       {...(onOpenSession ? { onOpenSession } : {})}
+      onSelectRun={selectRun}
       runId={activeRunId}
     />
   ) : null;
@@ -142,12 +440,75 @@ export const BenchmarksPanel = ({
     );
   };
 
+  const setBatchDifficulty = (next: Difficulty, checked: boolean): void => {
+    setBatchDifficulties((current) =>
+      (["L0", "L1"] as const).filter((difficultyOption) =>
+        difficultyOption === next ? checked : current.includes(difficultyOption)
+      )
+    );
+  };
+
+  const setBatchModel = (next: string, checked: boolean): void => {
+    setBatchModelValues((current) =>
+      MODEL_OPTIONS.map((option) => modelValue(option)).filter((modelOption) =>
+        modelOption === next ? checked : current.includes(modelOption)
+      )
+    );
+  };
+
+  const startBatch = async (): Promise<void> => {
+    setBatchError(null);
+
+    if (batchTaskIds.length === 0) {
+      setBatchError("Select at least one task.");
+      return;
+    }
+    if (batchDifficulties.length === 0) {
+      setBatchError("Select at least one level.");
+      return;
+    }
+    if (selectedBatchModels.length === 0) {
+      setBatchError("Select at least one model.");
+      return;
+    }
+    if (!(Number.isInteger(repeatCountNumber) && repeatCountNumber > 0)) {
+      setBatchError("Repeat count must be a positive whole number.");
+      return;
+    }
+
+    const requests = createBenchmarkRequestsFromBatch({
+      cleanupPolicy: "retain",
+      difficulties: batchDifficulties,
+      models: selectedBatchModels,
+      repeatCount: repeatCountNumber,
+      taskIds: batchTaskIds,
+    });
+
+    setBatchRunCount(requests.length);
+    try {
+      let lastRunId: string | null = null;
+      for (const request of requests) {
+        const response = await createRun.mutateAsync(request);
+        lastRunId = response.run.id;
+      }
+      if (lastRunId) {
+        selectRun(lastRunId);
+      }
+    } catch (error) {
+      setBatchError(
+        error instanceof Error ? error.message : "Batch benchmark failed"
+      );
+    } finally {
+      setBatchRunCount(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <PageHeader
         actions={
           <Button
-            disabled={!enabled || createRun.isPending}
+            disabled={!enabled || createRun.isPending || batchRunCount !== null}
             onClick={startRun}
             variant="primary"
           >
@@ -180,7 +541,7 @@ export const BenchmarksPanel = ({
               value={selectedTaskId}
             >
               <option value="">select task</option>
-              {(tasks.data?.tasks ?? []).map((task) => (
+              {taskOptions.map((task) => (
                 <option key={task.taskId} value={task.taskId}>
                   {task.taskId}
                 </option>
@@ -223,6 +584,122 @@ export const BenchmarksPanel = ({
             </select>
           </label>
         </div>
+      </Card>
+
+      <Card
+        actions={
+          <Button
+            disabled={!enabled || createRun.isPending || batchRunCount !== null}
+            onClick={() => {
+              startBatch();
+            }}
+            variant="primary"
+          >
+            <Play aria-hidden="true" size={12} />
+            <span>
+              {batchRunCount === null
+                ? "run batch"
+                : `creating ${batchRunCount} run(s)…`}
+            </span>
+          </Button>
+        }
+        title="batch benchmark run"
+      >
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <label className="space-y-1 text-xs">
+            <span className="field-label">tasks</span>
+            <select
+              className="input min-h-40 font-mono text-[11px]"
+              multiple
+              onChange={(event) =>
+                setBatchTaskIds(
+                  Array.from(
+                    event.currentTarget.selectedOptions,
+                    (option) => option.value
+                  )
+                )
+              }
+              value={batchTaskIds}
+            >
+              {taskOptions.map((task) => (
+                <option key={task.taskId} value={task.taskId}>
+                  {task.taskId}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="space-y-4">
+            <fieldset className="space-y-2 text-xs">
+              <legend className="field-label">levels</legend>
+              <div className="flex flex-wrap gap-3">
+                {(["L0", "L1"] as const).map((difficultyOption) => (
+                  <label
+                    className="flex items-center gap-2"
+                    key={difficultyOption}
+                  >
+                    <input
+                      checked={batchDifficulties.includes(difficultyOption)}
+                      onChange={(event) =>
+                        setBatchDifficulty(
+                          difficultyOption,
+                          event.currentTarget.checked
+                        )
+                      }
+                      type="checkbox"
+                    />
+                    <span>{difficultyOption}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <label className="block space-y-1 text-xs">
+              <span className="field-label">times to run each combination</span>
+              <input
+                className="input"
+                min={1}
+                onChange={(event) => setBatchRepeatCount(event.target.value)}
+                type="number"
+                value={batchRepeatCount}
+              />
+            </label>
+          </div>
+        </div>
+        <fieldset className="mt-4 space-y-2 text-xs">
+          <legend className="field-label">models</legend>
+          <div className="grid gap-2 md:grid-cols-2">
+            {MODEL_OPTIONS.map((option) => {
+              const value = modelValue(option);
+
+              return (
+                <label className="flex items-start gap-2" key={value}>
+                  <input
+                    checked={batchModelValues.includes(value)}
+                    onChange={(event) =>
+                      setBatchModel(value, event.currentTarget.checked)
+                    }
+                    type="checkbox"
+                  />
+                  <span>
+                    {option.label}{" "}
+                    <span className="font-mono text-fg-muted">
+                      ({option.provider}/{option.id})
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+        <p className="mt-3 text-fg-muted text-xs">
+          This will create {batchPreviewCount} run(s): selected tasks x levels x
+          models x repeat count. The default selection uses only{" "}
+          {DEFAULT_MODEL.label}.
+        </p>
+        {batchError && (
+          <div className="error-card mt-3 text-xs" role="alert">
+            {batchError}
+          </div>
+        )}
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
@@ -272,7 +749,12 @@ const BenchmarkRunsTable = ({
             <th>run</th>
             <th>task</th>
             <th>status</th>
-            <th className="num">score</th>
+            <th
+              className="num"
+              title="composite; V= vuln, C= class, L= locations"
+            >
+              score
+            </th>
             <th title="input / output / total (USD est.)">tokens</th>
             <th>updated</th>
           </tr>
@@ -293,11 +775,13 @@ const BenchmarkRunsTable = ({
                   {run.id.slice(0, 8)}
                 </button>
               </td>
-              <td className="font-mono text-fg-muted">{run.taskId}</td>
+              <td className="font-mono text-fg-muted">
+                {taskWithDifficulty(run)}
+              </td>
               <td>
                 <Badge status={badgeStatusForRun(run.status)} />
               </td>
-              <td className="num">{run.score?.toFixed(2) ?? "—"}</td>
+              <td className="num">{scoreColumnForRun(run)}</td>
               <td className="max-w-[14rem] whitespace-normal text-fg-muted text-xs">
                 {benchmarkRunTokensLine(run)}
               </td>
@@ -314,15 +798,18 @@ const BenchmarkRunsTable = ({
 
 const BenchmarkRunDetail = ({
   onOpenSession,
+  onSelectRun,
   runId,
 }: {
   onOpenSession?: (sessionId: string) => void;
+  onSelectRun?: (runId: string) => void;
   runId: string;
 }): React.JSX.Element => {
   const detail = useBenchmarkRunQuery(runId);
   const cancel = useCancelBenchmarkRunMutation(runId);
   const cleanup = useCleanupBenchmarkRunMutation(runId);
   const start = useStartBenchmarkRunMutation(runId);
+  const retry = useCreateBenchmarkRunMutation();
   const run = detail.data?.run;
   const canCancel = run?.status === "running";
   const canStart =
@@ -351,13 +838,28 @@ const BenchmarkRunDetail = ({
   return (
     <Card
       actions={
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             disabled={!canStart || start.isPending}
             onClick={() => start.mutate()}
           >
             <Play aria-hidden="true" size={12} />
             <span>{start.isPending ? "starting…" : "start"}</span>
+          </Button>
+          <Button
+            disabled={!run || retry.isPending}
+            onClick={() => {
+              if (!run) {
+                return;
+              }
+              retry.mutate(createBenchmarkRequestFromRun(run), {
+                onSuccess: (response) => onSelectRun?.(response.run.id),
+              });
+            }}
+            title="start a new run with the same task, difficulty, model, and cleanup policy"
+          >
+            <RotateCcw aria-hidden="true" size={12} />
+            <span>{retry.isPending ? "retrying…" : "retry"}</span>
           </Button>
           <Button
             disabled={!canCancel || cancel.isPending}
@@ -383,6 +885,7 @@ const BenchmarkRunDetail = ({
       <ErrorState error={cancel.error} title="stop failed" />
       <ErrorState error={cleanup.error} title="cleanup failed" />
       <ErrorState error={start.error} title="start failed" />
+      <ErrorState error={retry.error} title="retry failed" />
       {!detail.data && <Spinner />}
       {run && (
         <dl className="mb-4 grid grid-cols-[120px_1fr] gap-x-3 gap-y-2 text-xs">
@@ -390,16 +893,13 @@ const BenchmarkRunDetail = ({
             {run.id}
           </DefinitionField>
           <DefinitionField label="task" mono>
-            {run.taskId}
+            {taskWithDifficulty(run)}
           </DefinitionField>
           <DefinitionField label="status">
             <Badge status={badgeStatusForRun(run.status)} />
           </DefinitionField>
           <DefinitionField label="session" mono>
             {sessionValue}
-          </DefinitionField>
-          <DefinitionField label="score" numeric>
-            {run.score?.toFixed(2) ?? "—"}
           </DefinitionField>
           <DefinitionField label="tokens (in/out/total)" numeric>
             {benchmarkRunTokensLine(run)}
@@ -408,6 +908,14 @@ const BenchmarkRunDetail = ({
             {run.artifactPath ?? "—"}
           </DefinitionField>
         </dl>
+      )}
+      {run && detail.data && (
+        <BenchmarkRunScoringDetail
+          locations={detail.data.locations}
+          result={detail.data.result}
+          run={run}
+          task={detail.data.task}
+        />
       )}
       {detail.data && <JsonView maxHeight={420} value={detail.data} />}
     </Card>

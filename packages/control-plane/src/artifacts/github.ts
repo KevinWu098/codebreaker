@@ -195,22 +195,71 @@ export class GitHubGitTreeStore implements GitTreeStore {
     });
   }
 
+  private isRepoNameExistsOnAccountError(error: unknown): boolean {
+    if (!(error instanceof RequestError)) {
+      return false;
+    }
+
+    const fromMessage = (value: string): boolean =>
+      value.toLowerCase().includes("name already exists");
+    if (fromMessage(error.message)) {
+      return true;
+    }
+    const data = error.response?.data;
+    if (data && typeof data === "object" && "message" in data) {
+      const m = (data as { message?: unknown }).message;
+      if (typeof m === "string" && fromMessage(m)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private async getRepoByNameWithRetry(
+    name: string
+  ): Promise<GitHubRepository | null> {
+    for (let attempt = 0; attempt < REF_CHECK_ATTEMPTS; attempt += 1) {
+      const repo = await this.getRepoByName(name);
+      if (repo) {
+        return repo;
+      }
+      if (attempt < REF_CHECK_ATTEMPTS - 1) {
+        await delay(REF_CHECK_DELAY_MS);
+      }
+    }
+    return null;
+  }
+
   private async forkIntoOwner(input: {
     description?: string;
     newRepoName: string;
     privateRepo: boolean;
     upstream: { name: string; owner: string };
   }): Promise<GitHubRepository> {
-    const { data } = await this.octokit.repos.createFork({
-      name: input.newRepoName,
-      owner: input.upstream.owner,
-      private: input.privateRepo,
-      repo: input.upstream.name,
-      ...(this.isOrg ? { organization: this.owner } : {}),
-      ...(input.description ? { description: input.description } : {}),
-    });
+    try {
+      const { data } = await this.octokit.repos.createFork({
+        name: input.newRepoName,
+        owner: input.upstream.owner,
+        private: input.privateRepo,
+        repo: input.upstream.name,
+        ...(this.isOrg ? { organization: this.owner } : {}),
+        ...(input.description ? { description: input.description } : {}),
+      });
 
-    return data;
+      return data;
+    } catch (error) {
+      if (this.isRepoNameExistsOnAccountError(error)) {
+        const existing = await this.getRepoByNameWithRetry(input.newRepoName);
+        if (existing) {
+          return existing;
+        }
+        throw new Error(
+          `GitHub reported the repository name already exists, but could not load ${this.owner}/${input.newRepoName} after retries`,
+          { cause: error }
+        );
+      }
+      throw error;
+    }
   }
 
   private async ensureTargetRefsPresent(

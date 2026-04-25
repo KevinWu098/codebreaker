@@ -34,6 +34,11 @@ interface BenchmarkRunRecord {
   model_id: string;
   model_provider: ModelProvider;
   output_tokens: number | null;
+  result_correct_locations: number | null;
+  result_id: string | null;
+  result_location_score: number | null;
+  result_vuln_class_matched: number | null;
+  result_vulnerable_matched: number | null;
   score: number | null;
   session_id: string | null;
   status: BenchmarkRunStatus;
@@ -100,6 +105,15 @@ export interface UpdateBenchmarkRunInput {
   sessionId?: string | null;
   status?: BenchmarkRunStatus;
 }
+
+const benchmarkRunSelectFrom = `from benchmark_runs br
+        left join sessions s on s.id = br.session_id
+        left join benchmark_run_results brr on brr.id = (
+          select id from benchmark_run_results
+          where run_id = br.id
+          order by created_at desc
+          limit 1
+        )`;
 
 export class BenchmarkRunStore {
   private readonly db: D1Database;
@@ -173,9 +187,13 @@ export class BenchmarkRunStore {
           br.session_id,
           br.status,
           br.task_id,
-          br.updated_at
-        from benchmark_runs br
-        left join sessions s on s.id = br.session_id
+          br.updated_at,
+          brr.id as result_id,
+          brr.correct_locations as result_correct_locations,
+          brr.location_score as result_location_score,
+          brr.vuln_class_matched as result_vuln_class_matched,
+          brr.vulnerable_matched as result_vulnerable_matched
+        ${benchmarkRunSelectFrom}
         order by br.created_at desc`
       )
       .all<BenchmarkRunRecord>();
@@ -204,9 +222,13 @@ export class BenchmarkRunStore {
           br.session_id,
           br.status,
           br.task_id,
-          br.updated_at
-        from benchmark_runs br
-        left join sessions s on s.id = br.session_id
+          br.updated_at,
+          brr.id as result_id,
+          brr.correct_locations as result_correct_locations,
+          brr.location_score as result_location_score,
+          brr.vuln_class_matched as result_vuln_class_matched,
+          brr.vulnerable_matched as result_vulnerable_matched
+        ${benchmarkRunSelectFrom}
         where br.id = ?`
       )
       .bind(id)
@@ -525,6 +547,16 @@ export class BenchmarkRunStore {
       modelProvider: row.model_provider,
       outputTokens: row.output_tokens,
       score: row.score,
+      ...(row.result_id
+        ? {
+            scoreBreakdown: {
+              correctLocations: row.result_correct_locations,
+              locationScore: row.result_location_score,
+              vulnClassMatched: dbToBoolean(row.result_vuln_class_matched),
+              vulnerableMatched: dbToBoolean(row.result_vulnerable_matched),
+            },
+          }
+        : { scoreBreakdown: null }),
       sessionId: row.session_id,
       status: row.status,
       taskId: row.task_id,
