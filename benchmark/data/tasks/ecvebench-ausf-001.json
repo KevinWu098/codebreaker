@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-ausf-001",
+  "ghsa_id": "GHSA-4jrw-92fg-4jwx",
+  "codebase": {
+    "repo": "https://github.com/free5gc/ausf",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "7c6b9eba458e9809cee1ccbfe7eb343d7b72bf04"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "SBI request processing and subscriber context management"
+    },
+    "L2": {
+      "description": "A nil interface conversion vulnerability exists in the authentication service's request handling logic. When processing an authentication request, the code attempts to perform a type assertion on an interface value without first verifying it is non-nil. A remote attacker can trigger a panic and crash the service by sending a crafted request that causes a lookup for a non-existent internal mapping, resulting in a complete denial of service."
+    },
+    "L3": {
+      "area": "SBI request processing and subscriber context management",
+      "description": "A nil interface conversion vulnerability exists in the authentication service's request handling logic. When processing an authentication request, the code attempts to perform a type assertion on an interface value without first verifying it is non-nil. A remote attacker can trigger a panic and crash the service by sending a crafted request that causes a lookup for a non-existent internal mapping, resulting in a complete denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 8.7,
+    "reason": "The UeAuthPostRequestProcedure function performs interface type assertions on values retrieved from internal context maps without nil checks, causing a panic when a crafted authentication request references non-existent subscriber identity mappings.",
+    "locations": [
+      {
+        "file": "internal/sbi/processor/ue_authentication.go",
+        "function": "UeAuthPostRequestProcedure"
+      }
+    ]
+  }
+}
