@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rq8g-5pc5-wrhr",
+  "post_patch_commit": "9332d4263a32b84e76bf538d7470d01ea63fa047",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit (9332d42) was identified from the v4.1.2 tag changelog and PR #34. The vulnerability is in lib/index.js in the randomDigits() function, which used Math.floor(buffer[i] / 25.6) to map random bytes to digits 0-9. Since 256 is not evenly divisible by 10, digits 0-5 each had a 26/256 probability while digits 6-9 each had a 25/256 probability, creating insufficient entropy. The fix uses rejection sampling, discarding byte values >= 250 so the remaining values map evenly to digits 0-9.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
