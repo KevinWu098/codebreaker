@@ -72,7 +72,7 @@ Advisories that do not clearly map to one of these classes are excluded. We inte
 
 ## Curation Process
 
-Curation is performed by [Devin](https://devin.ai/) AI agents, each assigned a single GHSA. The agent follows a structured prompt (see `pipeline/devin_prompt.md`) that walks it through the full curation workflow. Each agent opens a pull request containing exactly two files, which is then reviewed before merging.
+Curation is performed by [Devin](https://devin.ai/) AI agents, each assigned a single GHSA. The agent follows a structured prompt (see [`docs/prompts/curation_agent.md`](prompts/curation_agent.md)) that walks it through the full curation workflow. Each agent opens a pull request containing exactly two files, which is then reviewed before merging.
 
 ### Per-advisory workflow
 

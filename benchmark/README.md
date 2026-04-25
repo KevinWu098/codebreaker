@@ -173,7 +173,9 @@ See `schema/output.schema.json` for the formal schema.
 benchmark/
 ├── README.md
 ├── docs/
-│   └── curation.md                # data sourcing, filtering, and curation process
+│   ├── curation.md                # data sourcing, filtering, and curation process
+│   └── prompts/
+│       └── curation_agent.md      # prompt template for Devin curation agents
 ├── schema/
 │   ├── task.schema.json           # JSON Schema for TaskInstance (one per GHSA)
 │   ├── agent_input.schema.json    # JSON Schema for AgentInput (runtime projection)
@@ -200,6 +202,7 @@ benchmark/
 ## Documentation
 
 - **[Data Curation](docs/curation.md)** — How tasks are sourced, filtered, curated, and validated.
+- **[Curation Agent Prompt](docs/prompts/curation_agent.md)** — The prompt template sent to Devin for each GHSA.
 
 ## Dataset
 
