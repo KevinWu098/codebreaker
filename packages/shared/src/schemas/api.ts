@@ -58,17 +58,6 @@ export const ListSessionsResponseSchema = z.object({
 });
 export type ListSessionsResponse = z.infer<typeof ListSessionsResponseSchema>;
 
-export const SendMessageRequestSchema = z.object({
-  content: z.string().min(1),
-});
-export type SendMessageRequest = z.infer<typeof SendMessageRequestSchema>;
-
-export const SendMessageResponseSchema = z.object({
-  messageId: z.string().min(1).optional(),
-  text: z.string(),
-});
-export type SendMessageResponse = z.infer<typeof SendMessageResponseSchema>;
-
 export const InspectExecRequestSchema = z.object({
   command: z.string().min(1),
   cwd: z.string().min(1).optional(),

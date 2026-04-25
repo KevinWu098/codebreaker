@@ -3,7 +3,60 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./db/d1-schema": {
+      "types": "./src/db/d1-schema.ts",
+      "default": "./src/db/d1-schema.ts"
+    },
+    "./db/session-index": {
+      "types": "./src/db/session-index.ts",
+      "default": "./src/db/session-index.ts"
+    },
+    "./http/errors": {
+      "types": "./src/http/errors.ts",
+      "default": "./src/http/errors.ts"
+    },
+    "./http/auth": {
+      "types": "./src/http/auth.ts",
+      "default": "./src/http/auth.ts"
+    },
+    "./router": {
+      "types": "./src/router.ts",
+      "default": "./src/router.ts"
+    },
+    "./session/agent": {
+      "types": "./src/session/agent.ts",
+      "default": "./src/session/agent.ts"
+    },
+    "./session/model": {
+      "types": "./src/session/model.ts",
+      "default": "./src/session/model.ts"
+    },
+    "./types": {
+      "types": "./src/types.ts",
+      "default": "./src/types.ts"
+    }
+  },
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "3.0.71",
+    "@ai-sdk/openai": "3.0.53",
+    "@cloudflare/codemode": "0.3.4",
+    "@cloudflare/shell": "0.3.3",
+    "@cloudflare/think": "0.4.0",
+    "@codebreaker/shared": "workspace:*",
+    "@hono/zod-validator": "0.7.6",
+    "agents": "0.11.5",
+    "ai": "6.0.168",
+    "drizzle-orm": "0.45.2",
+    "hono": "4.12.15",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "4.20260425.1",
+    "drizzle-kit": "0.31.10",
+    "wrangler": "4.85.0"
   }
 }

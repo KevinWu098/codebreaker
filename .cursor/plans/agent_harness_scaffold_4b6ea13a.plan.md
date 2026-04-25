@@ -4,22 +4,22 @@ overview: Implement a greenfield serverless background-agent harness as a thin c
 todos:
   - id: scaffold-workspace
     content: Scaffold package directories, package manifests, TypeScript configs, Wrangler config, and Modal Python project while preserving root Ultracite tooling.
-    status: pending
+    status: completed
   - id: shared-contracts
     content: Implement shared Zod schemas and tiny utilities with subpath exports and no root barrel.
-    status: pending
+    status: completed
   - id: worker-shell
     content: Build the Cloudflare Worker shell with Hono health route, Env bindings, Durable Object export, D1 binding, and agent request routing.
-    status: pending
+    status: completed
   - id: d1-index
     content: Add Drizzle D1 schema, migrations, and SessionIndexStore with idempotent mirror updates.
-    status: pending
+    status: completed
   - id: think-agent
     content: Implement SessionAgent on top of Think with model selection, system prompt/context, tool loading, config, callable methods, and lifecycle mirroring.
     status: pending
   - id: api-routes
     content: Implement JWT-protected session/admin routes and typed error handling.
-    status: pending
+    status: completed
   - id: tool-policy
     content: Add tiered tool registry, policy filtering, constrained HTTP fetch, Think execute/codemode integration, and reserved exploit tier.
     status: pending
@@ -76,8 +76,9 @@ In [`packages/shared`](packages/shared), implement only stable contracts:
 
 - `src/schemas/primitives.ts`: model providers, reasoning effort, SCM provider, session status, extension policy.
 - `src/schemas/session.ts`: repo, compaction, and session config schemas.
-- `src/schemas/sandbox.ts`: sandbox providers, image profile registry, profile resolver, exec result schema.
-- `src/schemas/api.ts`: session CRUD, message send, inspection, and typed error schemas.
+- `src/schemas/sandbox.ts`: sandbox providers, sandbox profile shape, exec result schema.
+- `src/lib/sandbox-profiles.ts`: shared image profile registry and resolver.
+- `src/schemas/api.ts`: session CRUD, inspection, sandbox exec, and typed error schemas.
 - `src/lib/base64.ts`: Worker-safe base64 helpers.
 - `src/lib/utils.ts`: tiny shared helpers only.
 
@@ -115,7 +116,7 @@ Required behavior:
 
 Add [`packages/control-plane/src/session/model.ts`](packages/control-plane/src/session/model.ts) to map session config to OpenAI or Anthropic AI SDK model instances. Fail fast for unsupported providers or missing API keys.
 
-Add [`packages/control-plane/src/session/chat-collector.ts`](packages/control-plane/src/session/chat-collector.ts) only for buffered HTTP/dev/dashboard sends. Keep Cloudflare’s agent protocol as the streaming/chat protocol.
+Do not add a custom HTTP chat or stream protocol. Frontend clients should use the Cloudflare Agents/Think chat protocol directly; Hono should remain the control-plane API.
 
 ## Phase 4: API And Policy Surface
 
@@ -126,12 +127,13 @@ Implement Hono routes in [`packages/control-plane/src/router.ts`](packages/contr
 - `GET /sessions/:id`: read D1 row.
 - `POST /sessions`: validate config, create D1 row, initialize named Durable Object agent.
 - `DELETE /sessions/:id`: call agent `archive()`.
-- `POST /sessions/:id/messages`: buffered dev/dashboard send through Think chat collector.
 - `GET /sessions/:id/messages`, `/config`, `/state`: operator inspection.
 - `GET /sessions/:id/sandbox`, `POST /sessions/:id/sandbox/exec`: operator-only sandbox inspection/exec.
 - `GET /admin/shim/health`, `GET /admin/shim/sandboxes`: shim admin.
 
 Add typed error responses from shared schemas, CORS as needed, and JWT middleware for all session/admin endpoints.
+
+Do not expose `POST /sessions/:id/messages` from Hono. User-facing chat, streaming, client tools, and recovery belong to the Cloudflare Agents/Think protocol.
 
 Implement additive tool tiers:
 

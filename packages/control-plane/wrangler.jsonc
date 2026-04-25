@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "codebreaker-control-plane",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "SessionAgent",
+        "name": "SESSION_AGENT"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "new_sqlite_classes": ["SessionAgent"],
+      "tag": "v1"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "replace-with-d1-database-id",
+      "database_name": "codebreaker-sessions"
+    }
+  ],
+  "worker_loaders": [
+    {
+      "binding": "LOADER"
+    }
+  ]
+}
