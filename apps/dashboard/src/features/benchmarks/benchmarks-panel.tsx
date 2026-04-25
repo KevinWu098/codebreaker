@@ -53,6 +53,7 @@ import {
   useBenchmarkRunsQuery,
   useBenchmarkTasksQuery,
 } from "@/hooks/queries";
+import { cn } from "@/lib/cn";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import {
   formatDuration,
@@ -71,6 +72,10 @@ const BENCHMARK_TIMEOUT_SECONDS = 600;
 const DEFAULT_BATCH_REPEAT_COUNT = 1;
 const DIFFICULTY_OPTIONS: readonly Difficulty[] = ["L0", "L1", "L2", "L3"];
 const BENCHMARK_TAB_IDS = ["results", "create"] as const;
+
+/** dl: UA `dd` margin causes overlap; `min-w-0` lets long values wrap in `1fr`. */
+const BENCHMARK_DL_GRID =
+  "grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,auto)_1fr] sm:items-baseline [&_dt]:m-0 [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:break-words";
 
 type BenchmarkTab = (typeof BENCHMARK_TAB_IDS)[number];
 
@@ -285,7 +290,7 @@ const BenchmarkRunScoringDetail = ({
   return (
     <div className="mb-4 space-y-3 text-xs">
       <div className="field-label">scoring</div>
-      <dl className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3 gap-y-2">
+      <dl className={BENCHMARK_DL_GRID}>
         <dt className="text-fg-muted">composite</dt>
         <dd className="num">
           {composite == null ? "—" : composite.toFixed(2)}
@@ -1121,7 +1126,7 @@ const BenchmarkRunAgentReview = ({
         </p>
       )}
       {output && (
-        <dl className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3 gap-y-2">
+        <dl className={BENCHMARK_DL_GRID}>
           <dt className="text-fg-muted">decision</dt>
           <dd>
             vulnerable {formatBool(output.vulnerable)} · class{" "}
@@ -1129,7 +1134,9 @@ const BenchmarkRunAgentReview = ({
             {percentText(output.confidence)}
           </dd>
           <dt className="text-fg-muted">reason</dt>
-          <dd className="whitespace-pre-wrap">{output.reason ?? "—"}</dd>
+          <dd className="whitespace-pre-wrap break-words">
+            {output.reason ?? "—"}
+          </dd>
           <dt className="text-fg-muted">predicted locs</dt>
           <dd>{formatNumber(output.locations.length)}</dd>
         </dl>
@@ -1137,14 +1144,16 @@ const BenchmarkRunAgentReview = ({
       {task && (
         <div className="rounded border border-border bg-bg-raised p-3">
           <div className="field-label mb-2">ground truth</div>
-          <dl className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3 gap-y-2">
+          <dl className={BENCHMARK_DL_GRID}>
             <dt className="text-fg-muted">decision</dt>
             <dd>
               vulnerable {formatBool(task.ground_truth.vulnerable)} · class{" "}
               {task.ground_truth.vuln_class}
             </dd>
             <dt className="text-fg-muted">reason</dt>
-            <dd className="whitespace-pre-wrap">{task.ground_truth.reason}</dd>
+            <dd className="whitespace-pre-wrap break-words">
+              {task.ground_truth.reason}
+            </dd>
           </dl>
         </div>
       )}
@@ -1293,7 +1302,7 @@ const BenchmarkRunDetail = ({
       <ErrorState error={retry.error} title="retry failed" />
       {!detail.data && <Spinner />}
       {run && (
-        <dl className="mb-4 grid grid-cols-[120px_1fr] gap-x-3 gap-y-2 text-xs">
+        <dl className={cn("mb-4 text-xs", BENCHMARK_DL_GRID)}>
           <DefinitionField label="id" mono>
             {run.id}
           </DefinitionField>

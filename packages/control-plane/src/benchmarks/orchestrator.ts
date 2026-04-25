@@ -1,3 +1,4 @@
+import type { SaveMessagesResult } from "@cloudflare/think";
 import type {
   AgentOutput,
   BenchmarkRunRow,
@@ -28,25 +29,17 @@ import { getAgentByName } from "agents";
 const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 300_000;
 const DEFAULT_BENCHMARK_MAX_STEPS = 50;
 const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
-const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 400_000;
-const DEFAULT_BENCHMARK_MAX_TURNS = 1;
+const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
+const DEFAULT_BENCHMARK_MAX_TURNS = 2;
 const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 // Hard ceiling, in seconds, on how long any benchmark run is allowed to stay
 // in the `running` state before the watchdog finalizes it. Sized to comfortably
 // exceed the largest configured `timeoutSeconds + AGENT_TURN_COMPLETION_GRACE`.
 const WATCHDOG_MAX_RUNNING_SECONDS = 900;
-const JSON_RETRY_PROMPT = [
-  "Your previous reply could not be parsed as JSON.",
-  "Reply now with ONLY the raw JSON object(s). No other text whatsoever.",
-  "",
-  "Rules:",
-  "- The very first character of your response MUST be `{`.",
-  "- Do NOT include reasoning, chain-of-thought, commentary, markdown fences, or code snippets.",
-  "- Do NOT call any tools.",
-  "- Just output the JSON matching the schema from the system prompt.",
-].join("\n");
-const JSON_RETRY_TIMEOUT_SECONDS = 60;
+const BENCHMARK_SUBMIT_FOLLOWUP_PROMPT =
+  "The exploration turn is over. The only tool you may use on this turn is `submit_benchmark_result`. Call it once with your final result (schema-enforced). Do not use any other tools. Base your answer on the prior transcript and tool results.";
+const BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS = 120;
 
 export class BenchmarkRunOrchestrator {
   private readonly dataset: BenchmarkDatasetService;
@@ -191,15 +184,10 @@ export class BenchmarkRunOrchestrator {
         return completedRun;
       }
 
-      const agentForOutput = await withDORetry(() =>
-        getAgentByName(this.env.SESSION_AGENT, sessionId)
-      );
-      const rawOutput = await this.readAssistantOutput(agentForOutput);
-      const { candidates, finalRawOutput } = await this.parseOrRetry({
-        rawOutput,
+      const { candidates, finalRawOutput } = await this.resolveAgentOutput(
         runId,
-        sessionId,
-      });
+        sessionId
+      );
       const best = scoreBestCandidate(record.task, candidates);
       const result = await this.runs.putResult({
         agentOutput: best.output,
@@ -469,15 +457,10 @@ export class BenchmarkRunOrchestrator {
 
     const record = this.dataset.getTaskRecord(run.taskId);
     const sessionId = run.sessionId;
-    const agentForOutput = await withDORetry(() =>
-      getAgentByName(this.env.SESSION_AGENT, sessionId)
-    );
-    const rawOutput = await this.readAssistantOutput(agentForOutput);
-    const { candidates, finalRawOutput } = await this.parseOrRetry({
-      rawOutput,
+    const { candidates, finalRawOutput } = await this.resolveAgentOutput(
       runId,
-      sessionId,
-    });
+      sessionId
+    );
     const best = scoreBestCandidate(record.task, candidates);
     const result = await this.runs.putResult({
       agentOutput: best.output,
@@ -540,71 +523,103 @@ export class BenchmarkRunOrchestrator {
     return this.requireRun(run.id);
   }
 
-  private async parseOrRetry(input: {
-    rawOutput: string;
-    runId: string;
-    sessionId: string;
-  }): Promise<{ candidates: AgentOutput[]; finalRawOutput: string }> {
+  private async resolveAgentOutput(
+    runId: string,
+    sessionId: string
+  ): Promise<{ candidates: AgentOutput[]; finalRawOutput: string }> {
+    const getAgent = async () =>
+      withDORetry(() => getAgentByName(this.env.SESSION_AGENT, sessionId));
+
+    let agent = await getAgent();
+    const fromTool0 = await withDORetry(() =>
+      agent.popPendingBenchmarkOutput()
+    );
+    if (fromTool0) {
+      return {
+        candidates: [fromTool0],
+        finalRawOutput: JSON.stringify(fromTool0, null, 2),
+      };
+    }
+
+    const raw0 = await this.readAssistantOutput(agent);
+    let firstError: Error | undefined;
     try {
       return {
-        candidates: parseAgentOutputs(input.rawOutput),
-        finalRawOutput: input.rawOutput,
+        candidates: parseAgentOutputs(raw0),
+        finalRawOutput: raw0,
       };
-    } catch (firstError) {
-      const firstMessage =
-        firstError instanceof Error ? firstError.message : String(firstError);
+    } catch (error) {
+      firstError = error instanceof Error ? error : new Error(String(error));
+    }
 
-      await this.runs.addEvent({
-        details: {
-          error: firstMessage,
-          rawOutputLength: input.rawOutput.length,
-        },
-        kind: "result_parse_failed",
-        message: "Agent output did not parse; requesting JSON-only retry",
-        runId: input.runId,
-      });
-
-      const retryAgent = await withDORetry(() =>
-        getAgentByName(this.env.SESSION_AGENT, input.sessionId)
+    if (!sessionId.startsWith("bench-")) {
+      throw new ParseFailureError(
+        firstError?.message ?? "parse failed",
+        raw0,
+        firstError
       );
+    }
 
-      try {
-        const retryResult = await withTimeout(
-          retryAgent.requestFollowUp(JSON_RETRY_PROMPT),
-          JSON_RETRY_TIMEOUT_SECONDS * 1000,
-          `JSON-only retry did not complete within ${JSON_RETRY_TIMEOUT_SECONDS}s`
-        );
+    await this.runs.addEvent({
+      details: { error: firstError?.message, rawOutputLength: raw0.length },
+      kind: "result_parse_failed",
+      message:
+        "Agent text did not parse; requesting submit_benchmark_result turn",
+      runId,
+    });
 
-        if (retryResult.status !== "completed") {
-          throw new Error(`JSON-only retry ${retryResult.status}`);
-        }
-      } catch (retryError) {
-        throw new ParseFailureError(
-          firstMessage,
-          input.rawOutput,
-          retryError instanceof Error ? retryError : undefined
-        );
-      }
-
-      const retriedAgent = await withDORetry(() =>
-        getAgentByName(this.env.SESSION_AGENT, input.sessionId)
+    await withDORetry(() => agent.enableBenchmarkSubmitMode());
+    agent = await getAgent();
+    let submitResult: SaveMessagesResult;
+    try {
+      submitResult = await withTimeout(
+        withDORetry(() =>
+          agent.requestFollowUp(BENCHMARK_SUBMIT_FOLLOWUP_PROMPT)
+        ),
+        BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS * 1000,
+        `Benchmark submission turn did not complete within ${BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS}s`
       );
-      const retriedRaw = await this.readAssistantOutput(retriedAgent);
+    } catch (retryError) {
+      throw new ParseFailureError(
+        firstError?.message ?? "parse failed",
+        raw0,
+        retryError instanceof Error ? retryError : undefined
+      );
+    }
 
-      try {
-        return {
-          candidates: parseAgentOutputs(retriedRaw),
-          finalRawOutput: retriedRaw,
-        };
-      } catch (secondError) {
-        throw new ParseFailureError(
-          secondError instanceof Error
-            ? secondError.message
-            : String(secondError),
-          retriedRaw || input.rawOutput,
-          secondError instanceof Error ? secondError : undefined
-        );
-      }
+    if (submitResult.status !== "completed") {
+      throw new ParseFailureError(
+        firstError?.message ?? "parse failed",
+        raw0,
+        new Error(`Submission turn ${submitResult.status}`)
+      );
+    }
+
+    agent = await getAgent();
+    const fromTool1 = await withDORetry(() =>
+      agent.popPendingBenchmarkOutput()
+    );
+    if (fromTool1) {
+      return {
+        candidates: [fromTool1],
+        finalRawOutput: JSON.stringify(fromTool1, null, 2),
+      };
+    }
+
+    const raw1 = await this.readAssistantOutput(agent);
+    try {
+      return {
+        candidates: parseAgentOutputs(raw1),
+        finalRawOutput: raw1,
+      };
+    } catch (secondError) {
+      throw new ParseFailureError(
+        secondError instanceof Error
+          ? secondError.message
+          : String(secondError),
+        raw1 || raw0,
+        secondError instanceof Error ? secondError : undefined
+      );
     }
   }
 

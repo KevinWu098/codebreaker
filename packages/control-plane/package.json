@@ -68,6 +68,10 @@
       "types": "./src/tools/builtins.ts",
       "default": "./src/tools/builtins.ts"
     },
+    "./tools/benchmark-submit": {
+      "types": "./src/tools/benchmark-submit.ts",
+      "default": "./src/tools/benchmark-submit.ts"
+    },
     "./tools/deepwiki": {
       "types": "./src/tools/deepwiki.ts",
       "default": "./src/tools/deepwiki.ts"

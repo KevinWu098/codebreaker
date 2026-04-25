@@ -12,9 +12,14 @@ import {
   type TurnConfig,
   type TurnContext,
 } from "@cloudflare/think";
+import type { AgentOutput } from "@codebreaker/benchmark-runner/schemas";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { selectModel } from "@codebreaker/control-plane/session/model";
+import {
+  BENCHMARK_SUBMIT_TOOL_NAME,
+  createBenchmarkSubmitTool,
+} from "@codebreaker/control-plane/tools/benchmark-submit";
 import {
   activeBuiltinToolNames,
   createBuiltinTools,
@@ -37,6 +42,7 @@ import { generateText, type ToolSet } from "ai";
 export interface SessionAgentState {
   artifact?: BenchmarkArtifactState;
   control?: {
+    benchmarkSubmitMode?: boolean;
     finalizing?: boolean;
     inputTokens?: number;
     outputTokens?: number;
@@ -45,6 +51,8 @@ export interface SessionAgentState {
     toolCalls?: number;
     turns?: number;
   };
+  /** Populated when `submit_benchmark_result` runs. */
+  pendingBenchmarkOutput?: AgentOutput;
   sessionId?: string;
   status: SessionStatus;
 }
@@ -100,7 +108,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       return {};
     }
 
-    return createBuiltinTools({
+    const { tools: builtinTools } = createBuiltinTools({
       env: this.env,
       policy: config.extensionPolicy,
       sessionId: this.sessionId,
@@ -109,7 +117,18 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       ...(config.sandbox?.profile
         ? { defaultSandboxProfile: config.sandbox.profile }
         : {}),
-    }).tools;
+    });
+
+    if (!this.isBenchmarkSession()) {
+      return builtinTools;
+    }
+
+    return {
+      ...builtinTools,
+      ...createBenchmarkSubmitTool((output: AgentOutput) => {
+        this.recordBenchmarkOutput(output);
+      }).tools,
+    };
   }
 
   override configureSession(session: Session): Session {
@@ -197,6 +216,10 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       );
     }
 
+    if (this.state.control?.benchmarkSubmitMode) {
+      return this.submitBenchmarkTurnConfig(ctx);
+    }
+
     if (this.state.control?.stopReason) {
       return this.finalTurnConfig(ctx, this.state.control.stopReason);
     }
@@ -266,6 +289,17 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   override beforeToolCall(ctx: ToolCallContext): ToolCallDecision | undefined {
+    if (this.state.control?.benchmarkSubmitMode) {
+      if (ctx.toolName === BENCHMARK_SUBMIT_TOOL_NAME) {
+        this.recordToolCall(ctx.toolName);
+        return;
+      }
+      return {
+        action: "block",
+        reason: `This turn only allows the ${BENCHMARK_SUBMIT_TOOL_NAME} tool. Use that tool to submit the benchmark result.`,
+      };
+    }
+
     const stopReason =
       this.timeoutStopReason(this.readConfig()) ??
       this.budgetStopReason(this.state.control);
@@ -276,6 +310,13 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       return {
         action: "block",
         reason: `${stopReason}. Stop calling tools and return the best valid final answer using the evidence already present in the transcript.`,
+      };
+    }
+
+    if (ctx.toolName === BENCHMARK_SUBMIT_TOOL_NAME) {
+      return {
+        action: "block",
+        reason: `The ${BENCHMARK_SUBMIT_TOOL_NAME} tool is only available on the dedicated submission turn after exploration.`,
       };
     }
 
@@ -340,6 +381,18 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
         control: {
           ...this.state.control,
           finalizing: false,
+        },
+      });
+    }
+    if (
+      this.state.control?.benchmarkSubmitMode &&
+      result.status !== "aborted"
+    ) {
+      this.setState({
+        ...this.state,
+        control: {
+          ...this.state.control,
+          benchmarkSubmitMode: false,
         },
       });
     }
@@ -509,6 +562,35 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   @callable()
+  enableBenchmarkSubmitMode(): SessionAgentState {
+    this.setState({
+      ...this.state,
+      control: {
+        ...this.state.control,
+        benchmarkSubmitMode: true,
+      },
+    });
+
+    return this.state;
+  }
+
+  /**
+   * Returns and clears a benchmark result from `submit_benchmark_result` if one was stored.
+   */
+  @callable()
+  popPendingBenchmarkOutput(): AgentOutput | null {
+    const pending = this.state.pendingBenchmarkOutput;
+
+    if (!pending) {
+      return null;
+    }
+
+    const { pendingBenchmarkOutput: _removed, ...rest } = this.state;
+    this.setState({ ...rest });
+    return pending;
+  }
+
+  @callable()
   async continuePreviousTurn(
     body?: Record<string, unknown>
   ): Promise<SaveMessagesResult> {
@@ -666,6 +748,24 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       activeTools: [],
       maxSteps: 1,
       system: `${ctx.system}\n\nYou are finalizing a stopped run. Do not call tools. Answer from the transcript only. Stop reason: ${reason}`,
+    };
+  }
+
+  private isBenchmarkSession(): boolean {
+    return this.state.sessionId?.startsWith(BENCHMARK_SESSION_PREFIX) ?? false;
+  }
+
+  private recordBenchmarkOutput(output: AgentOutput): void {
+    this.setState({ ...this.state, pendingBenchmarkOutput: output });
+  }
+
+  private submitBenchmarkTurnConfig(ctx: TurnContext): TurnConfig {
+    return {
+      activeTools: [BENCHMARK_SUBMIT_TOOL_NAME],
+      maxSteps: 2,
+      system: `${ctx.system}
+
+You are on the submission turn. You must call the tool \`${BENCHMARK_SUBMIT_TOOL_NAME}\` exactly once with your final result. The tool arguments enforce the JSON contract. Do not use any other tools. Base your result only on the transcript and tool output from earlier turns.`,
     };
   }
 

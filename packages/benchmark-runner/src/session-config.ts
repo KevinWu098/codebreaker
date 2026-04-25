@@ -41,39 +41,43 @@ export const toBenchmarkSessionConfig = ({
   model,
   task,
   timeoutSeconds,
-}: BenchmarkSessionConfigInput): SessionConfig => ({
-  benchmark: {
-    artifacts: {
-      workingBranch: "main",
+}: BenchmarkSessionConfigInput): SessionConfig => {
+  const effectiveMaxTurns = Math.max(2, maxTurns);
+
+  return {
+    benchmark: {
+      artifacts: {
+        workingBranch: "main",
+      },
+      target: {
+        benchmarkId: task.task_id,
+        defaultBranch: "main",
+        description: `${task.task_id} vulnerable codebase`,
+        patchedRef: metadata.post_patch_commit,
+        sourceUrl: task.codebase.repo,
+        targetRepoName: `target-${task.task_id}-${task.codebase.commit.slice(0, 12)}`,
+        vulnerableRef: task.codebase.commit,
+      },
     },
-    target: {
-      benchmarkId: task.task_id,
-      defaultBranch: "main",
-      description: `${task.task_id} vulnerable codebase`,
-      patchedRef: metadata.post_patch_commit,
-      sourceUrl: task.codebase.repo,
-      targetRepoName: `target-${task.task_id}-${task.codebase.commit.slice(0, 12)}`,
-      vulnerableRef: task.codebase.commit,
+    compaction: defaultCompactionConfig,
+    budgets: {
+      maxInputTokens: maxInputTokens ?? null,
+      maxToolCalls: maxToolCalls ?? null,
+      maxTotalTokens: maxTotalTokens ?? null,
     },
-  },
-  compaction: defaultCompactionConfig,
-  budgets: {
-    maxInputTokens: maxInputTokens ?? null,
-    maxToolCalls: maxToolCalls ?? null,
-    maxTotalTokens: maxTotalTokens ?? null,
-  },
-  extensionPolicy: "sandbox",
-  maxSteps: maxSteps ?? maxTurns,
-  maxTurns,
-  model,
-  sandbox: {
-    profile: task.codebase.language === "javascript" ? "node" : "python",
-    provider: "modal",
-  },
-  systemPrompt: benchmarkSystemPrompt(task, difficulty),
-  timeoutSeconds,
-  title: `benchmark ${task.task_id} ${difficulty}`,
-});
+    extensionPolicy: "sandbox",
+    maxSteps: maxSteps ?? effectiveMaxTurns,
+    maxTurns: effectiveMaxTurns,
+    model,
+    sandbox: {
+      profile: task.codebase.language === "javascript" ? "node" : "python",
+      provider: "modal",
+    },
+    systemPrompt: benchmarkSystemPrompt(task, difficulty),
+    timeoutSeconds,
+    title: `benchmark ${task.task_id} ${difficulty}`,
+  };
+};
 
 export const toBenchmarkSessionConfigFromRecord = (
   record: BenchmarkTaskRecord,
@@ -116,7 +120,7 @@ export const benchmarkInitialPrompt = (
     "3) Map sources: grep for untrusted input boundaries (CLI args, environment, network handlers, request bodies/queries, file/contents reads, message handlers, IPC, child-process output parsed back as input).",
     "4) Shortlist: pick 1–3 candidate source→sink pairs. Keep all of them — do not discard runners-up yet.",
     "5) Confirm narrowly: read only the relevant function bodies using `sed -n 'A,Bp'` or `grep -n -C 8`. Reserve full-file reads for confirmed candidates.",
-    "6) Finalize: return a JSON object for your best-confirmed finding. Then also return a JSON object for each runner-up candidate you shortlisted in step 4 (up to 3 total), even if only partially confirmed — use lower confidence for those.",
+    "6) Finalize: Once you have source→sink evidence for your best site, stop searching. Prepare up to 3 JSON objects (one for your strongest finding, remaining for shortlisted runner-ups—even if partially confirmed, use lower confidence). In each, `locations[0]` is your single best site; add more locations only if clearly distinct. Do not output JSON directly here.",
     "",
     "Output:",
     "- Return up to 3 separate JSON objects (one per distinct vulnerability hypothesis) matching the requested contract.",
@@ -153,7 +157,8 @@ const benchmarkSystemPrompt = (
     "- Searching: `grep -RIn --include='*.<ext>' -E 'pat1|pat2|pat3' <scoped-dir> | head -N`.",
     "- Reading slices: `sed -n 'A,Bp' <file>` or `grep -n -C 6 'symbol' <file>`.",
     "",
-    "When finished, respond with one or more JSON objects matching this shape (one per distinct vulnerability hypothesis, up to 3). Put your highest-confidence finding first:",
+    "When finished, respond with up to 3 separate, complete JSON objects (no prose, no markdown). Each should represent a distinct vulnerability hypothesis, with your strongest finding first, followed by any runner-ups (even if partially confirmed, assign lower confidence ≤ 0.5–0.6).",
+    "Each JSON object must match the following schema:",
     '{"task_id":"string","difficulty":"L0|L1|L2|L3","vulnerable":boolean,"vuln_class":"command-injection|sql-injection|xss|buffer-overflow|use-after-free|path-traversal|auth-bypass|xxe|insecure-deserialization|crypto-weakness|race-condition|integer-overflow|null-deref"|null,"locations":[{"file":"string","function":"string|null"}],"reason":"string|null","confidence":number}',
     "",
     "Output discipline:",
@@ -171,6 +176,7 @@ const benchmarkSystemPrompt = (
     "- Each JSON object must be a complete, self-contained object on its own line(s).",
     "- If you need to reason, do so in your internal thinking. Your visible response must contain nothing but valid JSON.",
     "",
+    "Dedicated submission turn: When your investigation is complete, you’ll receive a dedicated tool-only turn for submission. You must call the `submit_benchmark_result` tool with up to 3 JSON result objects exactly as described above. Do not paste the final JSON in assistant messages during the exploration turn—the schema is enforced on submission.",
     `Task: ${task.task_id}`,
     `Difficulty: ${difficulty}`,
   ].join("\n");
