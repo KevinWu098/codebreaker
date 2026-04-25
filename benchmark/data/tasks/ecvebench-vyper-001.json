@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-vyper-001",
+  "ghsa_id": "GHSA-j2x6-9323-fp7h",
+  "codebase": {
+    "repo": "https://github.com/vyperlang/vyper",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "228b5bd920e9d56a8cb1a3262d7d60554cde265d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Compiler code generation and runtime type validation pipeline"
+    },
+    "L2": {
+      "description": "An integer bounds validation vulnerability exists in the smart contract compiler where return values from calls to other contracts are not validated to fall within the declared type's bounds when used in complex expressions such as type conversions or concatenations. In simple assignment expressions the runtime correctly clamps return values, but compound expressions bypass the bounds checks entirely. An attacker could deploy a malicious contract that returns out-of-range values, leading to integer overflow or buffer overrun in the calling contract."
+    },
+    "L3": {
+      "area": "Compiler code generation and runtime type validation pipeline",
+      "description": "An integer bounds validation vulnerability exists in the smart contract compiler where return values from calls to other contracts are not validated to fall within the declared type's bounds when used in complex expressions such as type conversions or concatenations. In simple assignment expressions the runtime correctly clamps return values, but compound expressions bypass the bounds checks entirely. An attacker could deploy a malicious contract that returns out-of-range values, leading to integer overflow or buffer overrun in the calling contract."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 8.8,
+    "reason": "Return data from external contract calls in complex expressions bypasses the compiler's runtime integer bounds validation, allowing out-of-range values to be used without clamping, leading to integer overflow or buffer overrun.",
+    "locations": [
+      {
+        "file": "vyper/codegen/external_call.py",
+        "function": "_unpack_returndata"
+      },
+      {
+        "file": "vyper/codegen/core.py",
+        "function": "needs_clamp"
+      }
+    ]
+  }
+}
