@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-49gm-hh7w-wfvf",
+  "post_patch_commit": "4bbd2eab153287dc744ad061c58af7693f0c3ddc",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. Vector 1: checkShellArgumentSafety in arguments.go was missing 'password' from the unsafe types map. Vector 2: handleShellBranch in executor.go did not block webhook-tagged requests from using shell execution, and executeAction in handler.go passed unfiltered webhook-extracted JSON arguments directly to the execution request. Three non-test source files were changed (arguments.go, executor.go, handler.go), so the patch is not noisy.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
