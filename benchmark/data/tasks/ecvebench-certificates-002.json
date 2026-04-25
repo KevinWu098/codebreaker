@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-certificates-002",
+  "ghsa_id": "GHSA-h8cp-697h-8c8p",
+  "codebase": {
+    "repo": "https://github.com/smallstep/certificates",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "48ed3a5d17d1224377d3a36d8e1a67575340c493"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Certificate authority provisioner and request authorization infrastructure"
+    },
+    "L2": {
+      "description": "An authorization bypass vulnerability exists where the token validation logic silently ignores errors from provisioner types that do not support token-based authentication flows, effectively disabling token reuse protection. This allows an attacker to bypass authorization checks entirely for certain provisioner configurations. Additionally, the certificate revocation path does not verify that the serial number in the request matches the serial number in the authentication credential, enabling unauthorized revocation of arbitrary certificates."
+    },
+    "L3": {
+      "area": "Certificate authority provisioner and request authorization infrastructure",
+      "description": "An authorization bypass vulnerability exists where the token validation logic silently ignores errors from provisioner types that do not support token-based authentication flows, effectively disabling token reuse protection. This allows an attacker to bypass authorization checks entirely for certain provisioner configurations. Additionally, the certificate revocation path does not verify that the serial number in the request matches the serial number in the authentication credential, enabling unauthorized revocation of arbitrary certificates."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 10.0,
+    "reason": "The UseToken function silently ignores all errors from GetTokenID, so ACME and SCEP provisioners (which do not support token flows) have their authorization checks completely bypassed. Additionally, the revocation endpoint does not verify serial number consistency between the request and the authentication credential.",
+    "locations": [
+      {
+        "file": "authority/authorize.go",
+        "function": "UseToken"
+      },
+      {
+        "file": "authority/provisioner/acme.go",
+        "function": "GetTokenID"
+      },
+      {
+        "file": "authority/provisioner/scep.go",
+        "function": "GetTokenID"
+      },
+      {
+        "file": "authority/tls.go",
+        "function": "Revoke"
+      }
+    ]
+  }
+}

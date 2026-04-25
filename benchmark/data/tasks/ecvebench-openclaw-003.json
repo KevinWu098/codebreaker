@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-openclaw-003",
+  "ghsa_id": "GHSA-rqpp-rjj8-7wv8",
+  "codebase": {
+    "repo": "https://github.com/openclaw/openclaw",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "55f47e5ce658bf3bdcb3eac3a2a5b4ed4aa9f5ce"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Gateway WebSocket connection and session initialization"
+    },
+    "L2": {
+      "description": "An authorization bypass vulnerability exists where certain authenticated WebSocket connections could self-declare elevated privilege scopes. A logic flaw in the scope validation path allowed shared-authentication connections to preserve client-supplied scopes that were not bound to a device identity or explicitly trusted connection type, enabling unauthorized access to administrative operations."
+    },
+    "L3": {
+      "area": "Gateway WebSocket connection and session initialization",
+      "description": "An authorization bypass vulnerability exists where certain authenticated WebSocket connections could self-declare elevated privilege scopes. A logic flaw in the scope validation path allowed shared-authentication connections to preserve client-supplied scopes that were not bound to a device identity or explicitly trusted connection type, enabling unauthorized access to administrative operations."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 10.0,
+    "reason": "The gateway WebSocket connection handler did not clear client-declared scopes for shared-token and shared-password authenticated connections, allowing device-less operators to self-declare elevated scopes such as operator.admin and perform administrative operations.",
+    "locations": [
+      {
+        "file": "src/gateway/server/ws-connection/message-handler.ts",
+        "function": "clearUnboundScopes"
+      },
+      {
+        "file": "src/gateway/server/ws-connection/message-handler.ts",
+        "function": "handleMissingDeviceIdentity"
+      }
+    ]
+  }
+}

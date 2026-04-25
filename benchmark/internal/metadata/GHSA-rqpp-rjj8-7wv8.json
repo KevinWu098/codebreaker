@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-rqpp-rjj8-7wv8",
   "post_patch_commit": "5e389d5e7c9233ec91026ab2fea299ebaf3249f6",
   "noisy_patch": false,
-  "curation_notes": "The patch modifies a single source file (src/gateway/server/ws-connection/message-handler.ts) plus two test files and CHANGELOG.md. The vulnerability is in the clearUnboundScopes inner function within attachGatewayWsMessageHandler: the original condition (scopes.length > 0 && !controlUiAuthPolicy.allowBypass && !sharedAuthOk) exempted shared-auth connections from scope stripping. The fix simplifies the condition to always clear scopes (scopes.length > 0) and moves the clearUnboundScopes() call to after the auth decision, guarded by (!device && (!isControlUi || decision.kind !== 'allow')). Locations derived from the patch diff as the advisory does not name specific files or functions.",
+  "curation_notes": "Locations derived from the patch diff. The patch modified a single source file (src/gateway/server/ws-connection/message-handler.ts). The clearUnboundScopes function had a condition (!controlUiAuthPolicy.allowBypass && !sharedAuthOk) that allowed shared-auth connections to bypass scope clearing. The handleMissingDeviceIdentity function called clearUnboundScopes too early, before the trusted proxy auth decision. The fix simplified clearUnboundScopes to always clear scopes and moved its invocation to after the proxy auth check, preserving scopes only for explicitly allowed Control UI connections.",
   "dataset_version": "0.1.0",
   "snapshot_date": "2026-04-25"
 }

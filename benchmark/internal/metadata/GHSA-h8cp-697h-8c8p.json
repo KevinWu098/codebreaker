@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-h8cp-697h-8c8p",
   "post_patch_commit": "1011f5f5408b470a636f583bf74c0d7bbaf75d72",
   "noisy_patch": true,
-  "curation_notes": "Locations derived from the patch diff and advisory description. The advisory names ACME and SCEP provisioners as affected. The core vulnerability is in UseToken (authority/authorize.go), which silently skipped token reuse checks when GetTokenID returned an error. ACME and SCEP provisioners always returned errors from GetTokenID, so authorization was never enforced for these provisioner types. The patch also adds serial number verification in the Revoke flow (authority/tls.go). 15 non-test source files were changed, many propagating new sentinel error types and adding context propagation, so the patch is noisy.",
+  "curation_notes": "Locations derived from the patch diff. The core vulnerability is in authority/authorize.go UseToken, which silently ignored all errors from GetTokenID — meaning ACME and SCEP provisioners (which always return errors from GetTokenID because they don't use token-based flows) had their entire token reuse protection skipped. The ACME and SCEP GetTokenID methods returned generic errors instead of typed sentinel errors, contributing to the silent bypass. Additionally, authority/tls.go Revoke was missing a check that the serial number in the token matches the serial in the request. The patch is noisy (15 non-test source files changed) due to additional hardening across multiple provisioners, error handling improvements, and the introduction of new sentinel error types.",
   "dataset_version": "0.1.0",
   "snapshot_date": "2026-04-25"
 }
