@@ -34,7 +34,7 @@ pnpm --dir packages/benchmark-runner benchmark list
 CODEBREAKER_API_URL=http://localhost:8787 \
 CODEBREAKER_TOKEN=<jwt> \
 pnpm --dir packages/benchmark-runner benchmark run \
-  --task ecvebench-electerm-001 \
+  --task ecvebench-filebrowser-001 \
   --difficulty L1 \
   --model anthropic/claude-sonnet-4-5
 ```

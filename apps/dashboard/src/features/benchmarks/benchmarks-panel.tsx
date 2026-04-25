@@ -260,6 +260,424 @@ const locHintDetailSuffix = (b: BenchmarkRunScoreBreakdown): string => {
   return `, ${b.correctLocations} ground-truth location(s) correct`;
 };
 
+interface ParsedCandidate {
+  confidence: number;
+  locations: { file: string; function: string | null }[];
+  vuln_class: string | null;
+  vulnerable: boolean;
+}
+
+const MAX_CANDIDATES_SHOWN = 3;
+
+const skipJsonString = (value: string, i: number): number => {
+  let pos = i + 1;
+  while (pos < value.length) {
+    if (value[pos] === "\\" && pos + 1 < value.length) {
+      pos += 2;
+    } else if (value[pos] === '"') {
+      return pos + 1;
+    } else {
+      pos++;
+    }
+  }
+  return pos;
+};
+
+const extractJsonObjects = (value: string): string[] => {
+  const results: string[] = [];
+  let depth = 0;
+  let start = -1;
+
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+
+    if (ch === '"' && depth > 0) {
+      i = skipJsonString(value, i) - 1;
+      continue;
+    }
+
+    if (ch === "{") {
+      if (depth === 0) {
+        start = i;
+      }
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        results.push(value.slice(start, i + 1));
+        start = -1;
+      }
+      if (depth < 0) {
+        depth = 0;
+      }
+    }
+  }
+
+  return results;
+};
+
+const parseRawCandidates = (rawOutput: string): ParsedCandidate[] => {
+  const candidates: ParsedCandidate[] = [];
+
+  for (const jsonString of extractJsonObjects(rawOutput)) {
+    if (candidates.length >= MAX_CANDIDATES_SHOWN) {
+      break;
+    }
+    try {
+      const parsed = JSON.parse(jsonString) as Record<string, unknown>;
+      if (!Array.isArray(parsed.locations)) {
+        continue;
+      }
+      candidates.push({
+        confidence: Number(parsed.confidence ?? 0),
+        locations: (parsed.locations as Record<string, unknown>[]).map(
+          (loc) => ({
+            file: String(loc.file ?? ""),
+            function: typeof loc.function === "string" ? loc.function : null,
+          })
+        ),
+        vuln_class:
+          typeof parsed.vuln_class === "string" ? parsed.vuln_class : null,
+        vulnerable: Boolean(parsed.vulnerable),
+      });
+    } catch {
+      /* not valid JSON */
+    }
+  }
+
+  return candidates;
+};
+
+const candidateMatchesOutput = (
+  candidate: ParsedCandidate,
+  agentOutput: {
+    confidence: number;
+    locations: Array<{ file: string; function: string | null }>;
+  }
+): boolean => {
+  if (candidate.locations.length !== agentOutput.locations.length) {
+    return false;
+  }
+  if (candidate.confidence !== agentOutput.confidence) {
+    return false;
+  }
+  return candidate.locations.every(
+    (loc, i) =>
+      loc.file === agentOutput.locations[i]?.file &&
+      loc.function === (agentOutput.locations[i]?.function ?? null)
+  );
+};
+
+const computeLocationIou = (
+  gtLocations: { file: string; function: string | null }[],
+  predLocations: { file: string; function?: string | null }[]
+): { fileIou: number; funcIou: number | null } => {
+  const gtFileSet = new Set(gtLocations.map((loc) => loc.file));
+  const predFileSet = new Set(predLocations.map((loc) => loc.file));
+
+  const fileIntersection = new Set(
+    [...predFileSet].filter((f) => gtFileSet.has(f))
+  );
+  const fileUnion = new Set([...predFileSet, ...gtFileSet]);
+  const fileIou =
+    fileUnion.size > 0 ? fileIntersection.size / fileUnion.size : 1;
+
+  const pairKey = (file: string, fn: string) => `${file}::${fn}`;
+  const gtFuncPairs = new Set(
+    gtLocations
+      .filter((loc) => fileIntersection.has(loc.file) && loc.function != null)
+      .map((loc) => pairKey(loc.file, loc.function as string))
+  );
+  const predFuncPairs = new Set(
+    predLocations
+      .filter((loc) => fileIntersection.has(loc.file) && loc.function != null)
+      .map((loc) => pairKey(loc.file, loc.function as string))
+  );
+  const funcIntersection = new Set(
+    [...predFuncPairs].filter((p) => gtFuncPairs.has(p))
+  );
+  const funcUnion = new Set([...predFuncPairs, ...gtFuncPairs]);
+  const funcIou =
+    funcUnion.size > 0 ? funcIntersection.size / funcUnion.size : null;
+
+  return { fileIou, funcIou };
+};
+
+const funcBadgeStyle = (
+  fileMatch: boolean,
+  funcMatch: boolean
+): { className: string; label: string } => {
+  if (funcMatch) {
+    return {
+      className:
+        "shrink-0 rounded bg-green-500/15 px-1 font-medium text-[9px] text-green-500",
+      label: "fn match",
+    };
+  }
+  if (fileMatch) {
+    return {
+      className:
+        "shrink-0 rounded bg-red-500/15 px-1 font-medium text-[9px] text-red-400",
+      label: "fn miss",
+    };
+  }
+  return {
+    className:
+      "shrink-0 rounded bg-bg-raised px-1 font-medium text-[9px] text-fg-muted",
+    label: "—",
+  };
+};
+
+const GroundTruthLocationRow = ({
+  agentMatchedFile,
+  loc,
+}: {
+  agentMatchedFile: boolean;
+  loc: { file: string; function: string | null };
+}): React.JSX.Element => (
+  <div className="flex items-start gap-2 rounded bg-bg px-2 py-1">
+    <span
+      className={`shrink-0 text-[11px] ${agentMatchedFile ? "text-green-500" : "text-fg-muted"}`}
+    >
+      {agentMatchedFile ? "✓" : "·"}
+    </span>
+    <div className="min-w-0">
+      <div className="break-all font-mono text-[11px]">{loc.file}</div>
+      {loc.function != null && (
+        <div className="font-mono text-[10px] text-fg-muted">
+          {loc.function}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const CandidateLocationRow = ({
+  fileMatch,
+  funcMatch,
+  loc,
+}: {
+  fileMatch: boolean;
+  funcMatch: boolean;
+  loc: { file: string; function: string | null };
+}): React.JSX.Element => {
+  const borderBg = fileMatch
+    ? "border-green-500/30 bg-green-500/5"
+    : "border-red-500/30 bg-red-500/5";
+  const iconColor = fileMatch ? "text-green-500" : "text-red-400";
+  const fileBadgeCls = fileMatch
+    ? "shrink-0 rounded bg-green-500/15 px-1 font-medium text-[9px] text-green-500"
+    : "shrink-0 rounded bg-red-500/15 px-1 font-medium text-[9px] text-red-400";
+  const badge = funcBadgeStyle(fileMatch, funcMatch);
+
+  return (
+    <div
+      className={`flex items-start gap-2 rounded border px-2 py-1.5 ${borderBg}`}
+    >
+      <span className={`shrink-0 font-medium text-[11px] ${iconColor}`}>
+        {fileMatch ? "✓" : "✗"}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="break-all font-mono text-[11px]">{loc.file}</span>
+          <span className={fileBadgeCls}>
+            file {fileMatch ? "match" : "miss"}
+          </span>
+        </div>
+        {loc.function != null && (
+          <div className="mt-0.5 flex items-center gap-2">
+            <span className="font-mono text-[10px] text-fg-muted">
+              {loc.function}
+            </span>
+            <span className={badge.className}>{badge.label}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CandidateCard = ({
+  candidate,
+  gtFileSet,
+  gtFunctionPairs,
+  gtLocations,
+  index,
+  isWinner,
+}: {
+  candidate: ParsedCandidate;
+  gtFileSet: Set<string>;
+  gtFunctionPairs: Set<string>;
+  gtLocations: Array<{ file: string; function: string | null }>;
+  index: number;
+  isWinner: boolean;
+}): React.JSX.Element => {
+  const { fileIou, funcIou } = computeLocationIou(
+    gtLocations,
+    candidate.locations
+  );
+  const confidencePercent = Math.round(candidate.confidence * 100);
+
+  return (
+    <div
+      className={`space-y-2 rounded border p-3 ${
+        isWinner
+          ? "border-green-500/30 bg-green-500/5"
+          : "border-border bg-bg-raised"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-[10px] text-fg-muted uppercase tracking-wide">
+          candidate {index + 1}
+        </span>
+        {isWinner && (
+          <span className="rounded bg-green-500/15 px-1.5 py-0.5 font-medium text-[9px] text-green-500">
+            scored
+          </span>
+        )}
+        <span className="text-[10px] text-fg-muted">
+          {candidate.vuln_class ?? "—"} · {confidencePercent}%
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        {candidate.locations.map((loc) => {
+          const fileMatch = gtFileSet.has(loc.file);
+          const funcKey = `${loc.file}::${loc.function ?? ""}`;
+          const funcMatch =
+            loc.function != null && gtFunctionPairs.has(funcKey);
+          return (
+            <CandidateLocationRow
+              fileMatch={fileMatch}
+              funcMatch={funcMatch}
+              key={funcKey}
+              loc={loc}
+            />
+          );
+        })}
+        {candidate.locations.length === 0 && (
+          <p className="text-[11px] text-fg-muted">no locations predicted</p>
+        )}
+      </div>
+
+      <div className="flex gap-3 text-[10px]">
+        <span>
+          <span className="text-fg-muted">file IoU</span>{" "}
+          <span className="num font-medium">{fileIou.toFixed(2)}</span>
+        </span>
+        {funcIou != null && (
+          <span>
+            <span className="text-fg-muted">fn IoU</span>{" "}
+            <span className="num font-medium">{funcIou.toFixed(2)}</span>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const LocationComparisonDetail = ({
+  result,
+  task,
+}: {
+  locations: BenchmarkRunLocation[];
+  result: BenchmarkRunResult | null;
+  task: TaskInstance | null;
+}): React.JSX.Element | null => {
+  const gtLocations = task?.ground_truth.locations ?? [];
+  const agentOutput = result?.agentOutput;
+
+  const candidates: ParsedCandidate[] = result?.rawOutput
+    ? parseRawCandidates(result.rawOutput)
+    : [];
+
+  const hasCandidates = candidates.length > 0;
+
+  const fallbackCandidate: ParsedCandidate | null =
+    !hasCandidates && agentOutput
+      ? {
+          confidence: agentOutput.confidence,
+          locations: agentOutput.locations,
+          vuln_class: agentOutput.vuln_class,
+          vulnerable: agentOutput.vulnerable,
+        }
+      : null;
+
+  let displayCandidates: ParsedCandidate[];
+  if (hasCandidates) {
+    displayCandidates = candidates;
+  } else if (fallbackCandidate) {
+    displayCandidates = [fallbackCandidate];
+  } else {
+    displayCandidates = [];
+  }
+
+  if (gtLocations.length === 0 && displayCandidates.length === 0) {
+    return null;
+  }
+
+  const gtFileSet = new Set(gtLocations.map((loc) => loc.file));
+  const gtFunctionPairs = new Set(
+    gtLocations
+      .filter((loc) => loc.function != null)
+      .map((loc) => `${loc.file}::${loc.function}`)
+  );
+
+  const allPredFiles = new Set(
+    displayCandidates.flatMap((c) => c.locations.map((loc) => loc.file))
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="font-medium text-[11px] text-fg-muted uppercase tracking-wide">
+        location comparison
+      </div>
+
+      <div className="space-y-2 rounded border border-border bg-bg-raised p-3">
+        <div className="font-medium text-[10px] text-fg-muted uppercase tracking-wide">
+          ground truth ({gtLocations.length})
+        </div>
+        {gtLocations.length === 0 ? (
+          <p className="text-[11px] text-fg-muted">no ground truth locations</p>
+        ) : (
+          <div className="space-y-1">
+            {gtLocations.map((loc) => (
+              <GroundTruthLocationRow
+                agentMatchedFile={allPredFiles.has(loc.file)}
+                key={`${loc.file}::${loc.function ?? ""}`}
+                loc={loc}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {displayCandidates.length === 0 ? (
+        <p className="text-[11px] text-fg-muted">
+          no agent predictions available
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {displayCandidates.map((candidate, idx) => (
+            <CandidateCard
+              candidate={candidate}
+              gtFileSet={gtFileSet}
+              gtFunctionPairs={gtFunctionPairs}
+              gtLocations={gtLocations}
+              index={idx}
+              isWinner={
+                agentOutput != null &&
+                candidateMatchesOutput(candidate, agentOutput)
+              }
+              key={`candidate-${candidate.confidence}-${candidate.locations.length}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BenchmarkRunScoringDetail = ({
   locations,
   result,
@@ -325,33 +743,11 @@ const BenchmarkRunScoringDetail = ({
           {locationCountSummary(result.correctLocations, expectedLocCount)}
         </dd>
       </dl>
-      {locations.length > 0 && (
-        <div className="space-y-1">
-          <div className="text-fg-muted">predicted locations</div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>file</th>
-                <th>function</th>
-                <th className="num">ground truth</th>
-              </tr>
-            </thead>
-            <tbody>
-              {locations.map((loc) => (
-                <tr key={loc.id}>
-                  <td className="max-w-[12rem] break-all font-mono text-[11px]">
-                    {loc.file}
-                  </td>
-                  <td className="font-mono text-[11px] text-fg-muted">
-                    {loc.function ?? "—"}
-                  </td>
-                  <td className="num">{formatMatch(loc.matchedGroundTruth)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <LocationComparisonDetail
+        locations={locations}
+        result={result}
+        task={task}
+      />
     </div>
   );
 };

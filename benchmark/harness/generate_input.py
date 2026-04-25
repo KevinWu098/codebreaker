@@ -8,13 +8,13 @@ contains exactly one hint and no ground truth.
 Usage as a library:
 
     from benchmark.harness import generate_input, load_task
-    task = load_task(Path("benchmark/data/tasks"), "ecvebench-electerm-001")
+    task = load_task(Path("benchmark/data/tasks"), "ecvebench-filebrowser-001")
     agent_input = generate_input(task, "L1")
 
 Usage as a script:
 
     python benchmark/harness/generate_input.py \\
-        --task-id ecvebench-electerm-001 --difficulty L1
+        --task-id ecvebench-filebrowser-001 --difficulty L1
 """
 
 from __future__ import annotations

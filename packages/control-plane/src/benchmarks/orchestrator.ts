@@ -813,38 +813,85 @@ const skipJsonString = (value: string, i: number): number => {
 };
 
 /**
- * Extract all top-level JSON objects from a string by matching balanced
- * braces. Skips braces inside JSON string literals so that values like
- * `"reason": "a } char"` don't break the count. Returns raw JSON strings
- * in the order they appear.
+ * True when the character after `{` (ignoring whitespace) is `"` or `}`,
+ * indicating the block is likely a real JSON object rather than a JS-like
+ * block with unquoted keys (e.g. `{type:"reasoning", ...}`).
  */
-const extractJsonObjects = (value: string): string[] => {
-  const results: string[] = [];
+const looksLikeJsonObjectStart = (
+  value: string,
+  openBraceIdx: number
+): boolean => {
+  for (let j = openBraceIdx + 1; j < value.length; j++) {
+    const c = value[j];
+    if (c === " " || c === "\t" || c === "\n" || c === "\r") {
+      continue;
+    }
+    return c === '"' || c === "}";
+  }
+  return false;
+};
+
+/**
+ * From an opening `{`, find the matching `}` by tracking balanced braces.
+ * Skips JSON string literals so that braces inside them don't affect depth.
+ * Returns the index of the closing brace, or -1 if unmatched.
+ */
+const findMatchingBrace = (value: string, openIdx: number): number => {
   let depth = 0;
-  let start = -1;
-
-  for (let i = 0; i < value.length; i++) {
+  for (let i = openIdx; i < value.length; i++) {
     const ch = value[i];
-
     if (ch === '"' && depth > 0) {
       i = skipJsonString(value, i) - 1;
       continue;
     }
-
     if (ch === "{") {
-      if (depth === 0) {
-        start = i;
-      }
       depth++;
     } else if (ch === "}") {
       depth--;
-      if (depth === 0 && start !== -1) {
-        results.push(value.slice(start, i + 1));
-        start = -1;
+      if (depth === 0) {
+        return i;
       }
-      if (depth < 0) {
-        depth = 0;
+    }
+  }
+  return -1;
+};
+
+/**
+ * Extract top-level JSON objects from a string. Only considers blocks that
+ * start with `{"` (a quoted first key), which filters out non-JSON blocks
+ * like `{type:"reasoning", text:"..."}` whose unquoted keys and unescaped
+ * inner quotes would corrupt brace-depth tracking. Each candidate is
+ * validated with `JSON.parse` so the scanner can recover from false matches.
+ */
+const extractJsonObjects = (value: string): string[] => {
+  const results: string[] = [];
+  let searchFrom = 0;
+
+  while (searchFrom < value.length) {
+    let start = -1;
+    for (let i = searchFrom; i < value.length; i++) {
+      if (value[i] === "{" && looksLikeJsonObjectStart(value, i)) {
+        start = i;
+        break;
       }
+    }
+    if (start === -1) {
+      break;
+    }
+
+    const end = findMatchingBrace(value, start);
+    if (end === -1) {
+      searchFrom = start + 1;
+      continue;
+    }
+
+    const candidate = value.slice(start, end + 1);
+    try {
+      JSON.parse(candidate);
+      results.push(candidate);
+      searchFrom = end + 1;
+    } catch {
+      searchFrom = start + 1;
     }
   }
 

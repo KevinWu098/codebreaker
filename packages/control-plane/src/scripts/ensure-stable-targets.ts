@@ -1,8 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { GitHubGitTreeStore } from "@codebreaker/control-plane/artifacts/github";
-import type { Env } from "@codebreaker/control-plane/types";
 import {
   loadBenchmarkTasks,
   loadInternalMetadata,
@@ -11,6 +9,8 @@ import type {
   InternalMetadata,
   TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
+import { GitHubGitTreeStore } from "@codebreaker/control-plane/artifacts/github";
+import type { Env } from "@codebreaker/control-plane/types";
 import type { BenchmarkTargetConfig } from "@codebreaker/shared/schemas/artifacts";
 
 const NEWLINE_RE = /\r?\n/;
@@ -93,7 +93,7 @@ const parseArgs = (argv: string[]): { filter: Set<string> | null } => {
     if (arg === "--task" || arg === "-t") {
       const value = argv[i + 1];
       if (!value) {
-        throw new Error("--task requires a task id (e.g. ecvebench-deno-001)");
+        throw new Error("--task requires a task id (e.g. ecvebench-deno-002)");
       }
       filter.add(value);
       i += 1;

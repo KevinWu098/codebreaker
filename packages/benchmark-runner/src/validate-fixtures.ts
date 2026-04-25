@@ -13,15 +13,16 @@ import {
   TaskInstanceSchema,
 } from "@codebreaker/benchmark-runner/schemas";
 
-const EXAMPLE_TASK_PATH = "benchmark/examples/ecvebench-electerm-001.task.json";
+const EXAMPLE_TASK_PATH =
+  "benchmark/examples/ecvebench-filebrowser-001.task.json";
 const EXAMPLE_L0_INPUT_PATH =
-  "benchmark/examples/ecvebench-electerm-001-L0.input.json";
+  "benchmark/examples/ecvebench-filebrowser-001-L0.input.json";
 const EXAMPLE_L1_INPUT_PATH =
-  "benchmark/examples/ecvebench-electerm-001-L1.input.json";
+  "benchmark/examples/ecvebench-filebrowser-001-L1.input.json";
 const EXAMPLE_L2_INPUT_PATH =
-  "benchmark/examples/ecvebench-electerm-001-L2.input.json";
+  "benchmark/examples/ecvebench-filebrowser-001-L2.input.json";
 const EXAMPLE_L3_INPUT_PATH =
-  "benchmark/examples/ecvebench-electerm-001-L3.input.json";
+  "benchmark/examples/ecvebench-filebrowser-001-L3.input.json";
 
 const readJsonFixture = async (
   workspaceRoot: string,
@@ -73,7 +74,7 @@ const validateOutputContract = (): void => {
     ],
     reason:
       "The runLinux() function appends attacker-controlled strings into a shell command.",
-    task_id: "ecvebench-electerm-001",
+    task_id: "ecvebench-filebrowser-001",
     vuln_class: "command-injection",
     vulnerable: true,
   });
