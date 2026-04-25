@@ -26,13 +26,7 @@ import {
   useSessionQuery,
   useSessionStateQuery,
 } from "@/hooks/queries";
-import { cn } from "@/lib/cn";
-import {
-  formatNumber,
-  formatRelativeTime,
-  formatRepo,
-  truncateId,
-} from "@/lib/format";
+import { formatNumber, formatRelativeTime, formatRepo } from "@/lib/format";
 
 const TAB_IDS = ["overview", "config", "messages", "chat", "sandbox"] as const;
 
