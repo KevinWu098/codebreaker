@@ -127,7 +127,7 @@ const SessionHeader = ({
           )}
         </div>
       </div>
-      <ErrorState error={archive.error ?? undefined} title="archive failed" />
+      <ErrorState error={archive.error} title="archive failed" />
     </div>
   );
 };
@@ -233,10 +233,7 @@ export const SessionDetail = ({
 
         <TabsContent className="mt-4 outline-none" value="overview">
           <div className="space-y-4">
-            <ErrorState
-              error={session.error ?? undefined}
-              title="load failed"
-            />
+            <ErrorState error={session.error} title="load failed" />
             {row && <SessionRowCard row={row} />}
             <Card
               actions={
@@ -247,10 +244,7 @@ export const SessionDetail = ({
               }
               title="durable object state"
             >
-              <ErrorState
-                error={state.error ?? undefined}
-                title="state unavailable"
-              />
+              <ErrorState error={state.error} title="state unavailable" />
               {state.data ? (
                 <JsonView maxHeight={420} value={state.data.state} />
               ) : (
@@ -270,10 +264,7 @@ export const SessionDetail = ({
             }
             title="session config (from agent)"
           >
-            <ErrorState
-              error={config.error ?? undefined}
-              title="config unavailable"
-            />
+            <ErrorState error={config.error} title="config unavailable" />
             {config.data ? (
               <JsonView maxHeight={520} value={config.data.config} />
             ) : (

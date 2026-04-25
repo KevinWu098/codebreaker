@@ -175,10 +175,7 @@ export const CreateSessionDialog = ({
           </header>
 
           <form className="space-y-3 p-3" onSubmit={onSubmit}>
-            <ErrorState
-              error={mutation.error ?? undefined}
-              title="create failed"
-            />
+            <ErrorState error={mutation.error} title="create failed" />
 
             <FormField
               error={errors.title?.message}

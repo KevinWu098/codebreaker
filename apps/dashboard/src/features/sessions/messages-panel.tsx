@@ -57,10 +57,7 @@ export const MessagesPanel = ({
       }
       title={titleText}
     >
-      <ErrorState
-        error={messages.error ?? undefined}
-        title="messages unavailable"
-      />
+      <ErrorState error={messages.error} title="messages unavailable" />
 
       {messages.isLoading && (
         <div className="flex justify-center py-6">
