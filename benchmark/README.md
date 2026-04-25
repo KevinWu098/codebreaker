@@ -15,7 +15,7 @@ ECVEBench follows CyberGYM's pattern: **difficulty is a runtime parameter, not a
 
 | Layer        | What it is                                                   | Schema                           | Lives in                                            |
 | ------------ | ------------------------------------------------------------ | -------------------------------- | --------------------------------------------------- |
-| Task         | Canonical record per GHSA. All hint variants + ground truth. | `schema/task.schema.json`        | `data/tasks.jsonl`                                  |
+| Task         | Canonical record per GHSA. All hint variants + ground truth. | `schema/task.schema.json`        | `data/tasks/{task_id}.json`                         |
 | Agent input  | Difficulty-specific projection of a task. No ground truth.   | `schema/agent_input.schema.json` | Generated at runtime by `harness/generate_input.py` |
 | Agent output | Agent's verdict, class, locations, confidence, difficulty.   | `schema/output.schema.json`      | Returned by the agent, consumed by the scorer       |
 
@@ -117,7 +117,7 @@ The harness projects a task record into an agent input at a given difficulty. Th
 
 | Field               | Type            | Description                                                 |
 | ------------------- | --------------- | ----------------------------------------------------------- |
-| `task_id`           | string          | GHSA-level identifier (matches `task_id` in `tasks.jsonl`). |
+| `task_id`           | string          | GHSA-level identifier (matches `task_id` in task file).     |
 | `difficulty`        | `"L0"` | `"L1"` | Difficulty level this input was rendered at.                |
 | `codebase.repo`     | string          | GitHub repository URL                                       |
 | `codebase.language` | string          | Primary language                                            |
@@ -172,6 +172,8 @@ See `schema/output.schema.json` for the formal schema.
 ```
 benchmark/
 ├── README.md
+├── docs/
+│   └── curation.md                # data sourcing, filtering, and curation process
 ├── schema/
 │   ├── task.schema.json           # JSON Schema for TaskInstance (one per GHSA)
 │   ├── agent_input.schema.json    # JSON Schema for AgentInput (runtime projection)
@@ -194,6 +196,10 @@ benchmark/
     ├── __init__.py
     └── score.py                   # evaluation harness
 ```
+
+## Documentation
+
+- **[Data Curation](docs/curation.md)** — How tasks are sourced, filtered, curated, and validated.
 
 ## Dataset
 
