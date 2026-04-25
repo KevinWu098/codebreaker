@@ -1,0 +1,28 @@
+{
+  "task_id": "ecvebench-openvpn-auth-oauth2-001",
+  "ghsa_id": "GHSA-246w-jgmq-88fg",
+  "codebase": {
+    "repo": "https://github.com/jkroepke/openvpn-auth-oauth2",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "d6f018487df14c2a56443a687dc458866a86a2dc"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "description": "An authentication bypass vulnerability exists in the experimental plugin mode of the VPN authentication proxy. When a client that does not support the expected single-sign-on mechanism connects, the authentication logic correctly issues a deny decision internally, but the plugin return code sent back to the VPN server incorrectly signals success. Because the VPN server only consults the deferred authentication result file when the plugin signals a deferred decision, a synchronous success return is interpreted as immediate approval — granting the unauthenticated client full network access."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 10.0,
+    "reason": "The plugin's client-deny handler returns a success status code to OpenVPN instead of an error, causing OpenVPN to grant full VPN access to unauthenticated clients that do not support WebAuth/SSO.",
+    "locations": [
+      {
+        "file": "lib/openvpn-auth-oauth2/openvpn/handle.go",
+        "function": "handleAuthUserPassVerify"
+      }
+    ]
+  }
+}

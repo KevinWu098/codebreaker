@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-246w-jgmq-88fg",
+  "post_patch_commit": "36f69a6c67c1054da7cbfa04ced3f0555127c8f2",
+  "noisy_patch": false,
+  "curation_notes": "Location derived directly from the advisory description which explicitly names the file and function. The patch modifies only one non-test source file, changing the return value in the ClientAuthDeny case from OpenVPNPluginFuncSuccess to OpenVPNPluginFuncError.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2025-04-25"
+}
