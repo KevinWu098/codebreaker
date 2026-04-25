@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wrh9-cjv3-2hpw",
+  "post_patch_commit": "ccaa3996047fe00048d5993ab2dd43ebadd4f78b",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff. The primary vulnerability is in src/sequelize.js in the query method, which called Utils.format and Utils.formatNamedParameters to perform naive string-based replacement of positional (?) and named (:name) parameters. These utility functions in src/utils.js did not parse SQL structure (strings, comments, column identifiers), so user values containing replacement markers could trigger a second substitution pass. The patch replaced these calls with a new injectReplacements function in src/utils/sql.ts that properly parses SQL token boundaries before substituting. Five non-test source files were changed (including type definitions and deprecation comments), making this a noisy patch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
