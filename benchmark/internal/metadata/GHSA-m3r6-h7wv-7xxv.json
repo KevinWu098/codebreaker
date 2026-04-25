@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-m3r6-h7wv-7xxv",
+  "post_patch_commit": "c82ace1296850847bcbdebe7a8af627f58eae41b",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff. The old `sub` function in executor/oci/spec.go performed naive path resolution via fs.RootPath without TOCTOU protection, allowing a race between path validation and mount. The `subMount` method in the same file called `sub` without caching submount references, so parallel build steps could trigger the race repeatedly. The patch moved `sub` to platform-specific files with fd-based verification and retry logic (Linux), added submount caching in `subMount`, and introduced a `ForceRemount` option in the snapshot package. 7 non-test source files were changed, so noisy_patch is true.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
