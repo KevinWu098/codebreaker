@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gv46-4xfq-jv58",
+  "post_patch_commit": "0af76f5f0e93540efbdf054895216c398692afcd",
+  "noisy_patch": true,
+  "curation_notes": "The fix spans 4 commits (318379c, a7af646, c159462, 0af76f5) touching 9 non-test source files. The primary vulnerable location is src/gateway/server-methods/nodes.ts where the node.invoke handler forwarded user-controlled params directly to node hosts without sanitizing approval control fields (approved, approvalDecision). The patch introduces a sanitization layer that strips these fields and only re-attaches them when a valid exec.approval.request record exists and matches the requesting client identity. Location derived from the patch diff: the key change replaces direct p.params forwarding with sanitizeNodeInvokeParamsForForwarding().",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
