@@ -55,10 +55,7 @@ export const AdminPanel = (): React.JSX.Element => {
         }
         title="shim health"
       >
-        <ErrorState
-          error={health.error ?? undefined}
-          title="shim health failed"
-        />
+        <ErrorState error={health.error} title="shim health failed" />
         {health.data && <JsonView maxHeight={320} value={health.data.health} />}
         {!health.data && enabled && health.isLoading && <Spinner />}
       </Card>
@@ -76,7 +73,7 @@ export const AdminPanel = (): React.JSX.Element => {
       >
         <ErrorState
           className="m-3"
-          error={sandboxes.error ?? undefined}
+          error={sandboxes.error}
           title="sandboxes failed"
         />
         {sandboxes.data?.sandboxes.length === 0 && (

@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 
 interface ErrorStateProps {
   className?: string;
-  error: Error | undefined;
+  error: Error | null | undefined;
   title?: string;
 }
 
