@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-excel-streaming-reader-001",
+  "ghsa_id": "GHSA-xvm2-9xvc-hx7f",
+  "codebase": {
+    "repo": "https://github.com/monitorjbl/excel-streaming-reader",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "b1645d776c21b113f2c10057c91dddbe80df2d06"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Spreadsheet file parsing and data extraction logic"
+    },
+    "L2": {
+      "description": "An XML External Entity (XXE) and XML Entity Expansion vulnerability exists where the XML parser used during spreadsheet processing does not disable doctype declarations, external entity resolution, or entity reference expansion. A crafted input file could trigger XML entity expansion, leading to denial of service, information disclosure, or server-side request forgery."
+    },
+    "L3": {
+      "area": "Spreadsheet file parsing and data extraction logic",
+      "description": "An XML External Entity (XXE) and XML Entity Expansion vulnerability exists where the XML parser used during spreadsheet processing does not disable doctype declarations, external entity resolution, or entity reference expansion. A crafted input file could trigger XML entity expansion, leading to denial of service, information disclosure, or server-side request forgery."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML parser in the document utility method creates a DocumentBuilderFactory without disabling external entity resolution or doctype declarations, allowing XML Entity Expansion and XXE attacks via crafted spreadsheet files.",
+    "locations": [
+      {
+        "file": "src/main/java/com/monitorjbl/xlsx/XmlUtils.java",
+        "function": "document"
+      }
+    ]
+  }
+}

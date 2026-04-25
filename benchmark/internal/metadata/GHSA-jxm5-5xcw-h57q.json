@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jxm5-5xcw-h57q",
+  "post_patch_commit": "1c3f0aec14d00bdbca175713af70cb7c7b868e9f",
+  "noisy_patch": true,
+  "curation_notes": "The advisory explicitly names the REST Server's XML parser as the vulnerable component. The patch commit (1c3f0ae) modifies 35 files (26 non-test source files) to secure XMLReader processing across the entire codebase by switching from ad-hoc SAXParserFactory usage to a centralized XMLReaderPool with secure defaults. The location was derived from the advisory description ('XML Parser for REST Server') and confirmed by the patch diff, which shows the parseXML method in RESTServer.java replacing an unsecured SAXParserFactory.newInstance() with the secure XMLReaderPool from BrokerPool. PR #2243 merged this fix into the develop branch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
