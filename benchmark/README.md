@@ -55,6 +55,15 @@ Derived from the MITRE CWE Top 25, bucketed into coarse categories:
 | `null-deref`               | Null pointer dereferenced without check            |
 
 
+### Multi-Candidate Scoring (Oracle Best)
+
+An agent may return up to **3** candidate vulnerability hypotheses per task. The scorer evaluates each candidate independently and keeps the **oracle-best** — the one with the highest composite score. This reduces noise from agents that find a real but unrelated vulnerability alongside the target one.
+
+- **Online (TS) scorer**: the agent's raw output is scanned for up to 3 valid JSON objects matching the `AgentOutput` schema. Each is scored; the best is persisted as the run result.
+- **Offline (Python) scorer**: multiple JSONL lines with the same `(task_id, difficulty)` are treated as candidates for the same task. Up to 3 per group are scored; the best is kept.
+
+Single-candidate outputs work identically to before — no changes needed for agents that return one response.
+
 ### Scoring
 
 The following fields are scored:

@@ -5,10 +5,10 @@ const GHSA_ID_PATTERN = /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/;
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const DATASET_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 400_000;
+const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 300_000;
 const DEFAULT_BENCHMARK_MAX_STEPS = 50;
 const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
-const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
+const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 400_000;
 const DEFAULT_BENCHMARK_MAX_TURNS = 1;
 const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 
@@ -460,4 +460,36 @@ export const scoreAgentOutput = (
     vulnClassMatched,
     vulnerableMatched,
   });
+};
+
+const MAX_CANDIDATES = 3;
+
+/**
+ * Score up to {@link MAX_CANDIDATES} agent outputs and return the
+ * oracle-best (highest composite score) along with the winning output.
+ *
+ * If `candidates` is empty the function throws.
+ */
+export const scoreBestCandidate = (
+  task: TaskInstance,
+  candidates: AgentOutput[]
+): { output: AgentOutput; score: BenchmarkRunScore } => {
+  if (candidates.length === 0) {
+    throw new Error("scoreBestCandidate requires at least one candidate");
+  }
+
+  const capped = candidates.slice(0, MAX_CANDIDATES);
+  let bestOutput = capped[0] as AgentOutput;
+  let bestScore = scoreAgentOutput(task, bestOutput);
+
+  for (let i = 1; i < capped.length; i++) {
+    const candidate = capped[i] as AgentOutput;
+    const candidateScore = scoreAgentOutput(task, candidate);
+    if (candidateScore.score > bestScore.score) {
+      bestOutput = candidate;
+      bestScore = candidateScore;
+    }
+  }
+
+  return { output: bestOutput, score: bestScore };
 };

@@ -1,10 +1,16 @@
 import autheliaTask from "../../../../benchmark/data/tasks/ecvebench-authelia-001.json" with {
   type: "json",
 };
-import certificatesTask from "../../../../benchmark/data/tasks/ecvebench-certificates-001.json" with {
+import certificates001Task from "../../../../benchmark/data/tasks/ecvebench-certificates-001.json" with {
   type: "json",
 };
-import denoTask from "../../../../benchmark/data/tasks/ecvebench-deno-001.json" with {
+import certificates002Task from "../../../../benchmark/data/tasks/ecvebench-certificates-002.json" with {
+  type: "json",
+};
+import deno001Task from "../../../../benchmark/data/tasks/ecvebench-deno-001.json" with {
+  type: "json",
+};
+import deno002Task from "../../../../benchmark/data/tasks/ecvebench-deno-002.json" with {
   type: "json",
 };
 import dompdfTask from "../../../../benchmark/data/tasks/ecvebench-dompdf-001.json" with {
@@ -16,13 +22,22 @@ import electermTask from "../../../../benchmark/data/tasks/ecvebench-electerm-00
 import filebrowserTask from "../../../../benchmark/data/tasks/ecvebench-filebrowser-001.json" with {
   type: "json",
 };
-import fuxaTask from "../../../../benchmark/data/tasks/ecvebench-fuxa-001.json" with {
+import fuxa001Task from "../../../../benchmark/data/tasks/ecvebench-fuxa-001.json" with {
   type: "json",
 };
-import jujuTask from "../../../../benchmark/data/tasks/ecvebench-juju-001.json" with {
+import fuxa002Task from "../../../../benchmark/data/tasks/ecvebench-fuxa-002.json" with {
   type: "json",
 };
-import onefuzzTask from "../../../../benchmark/data/tasks/ecvebench-onefuzz-001.json" with {
+import juju001Task from "../../../../benchmark/data/tasks/ecvebench-juju-001.json" with {
+  type: "json",
+};
+import juju002Task from "../../../../benchmark/data/tasks/ecvebench-juju-002.json" with {
+  type: "json",
+};
+import onefuzz001Task from "../../../../benchmark/data/tasks/ecvebench-onefuzz-001.json" with {
+  type: "json",
+};
+import onefuzz002Task from "../../../../benchmark/data/tasks/ecvebench-onefuzz-002.json" with {
   type: "json",
 };
 import oneuptimeTask from "../../../../benchmark/data/tasks/ecvebench-oneuptime-001.json" with {
@@ -37,7 +52,13 @@ import openclaw001Task from "../../../../benchmark/data/tasks/ecvebench-openclaw
 import openclaw002Task from "../../../../benchmark/data/tasks/ecvebench-openclaw-002.json" with {
   type: "json",
 };
-import openvpnTask from "../../../../benchmark/data/tasks/ecvebench-openvpn-auth-oauth2-001.json" with {
+import openclaw003Task from "../../../../benchmark/data/tasks/ecvebench-openclaw-003.json" with {
+  type: "json",
+};
+import openvpn001Task from "../../../../benchmark/data/tasks/ecvebench-openvpn-auth-oauth2-001.json" with {
+  type: "json",
+};
+import openvpn002Task from "../../../../benchmark/data/tasks/ecvebench-openvpn-auth-oauth2-002.json" with {
   type: "json",
 };
 import parseDashboardTask from "../../../../benchmark/data/tasks/ecvebench-parse-dashboard-001.json" with {
@@ -59,6 +80,9 @@ import xwikiPlatform002Task from "../../../../benchmark/data/tasks/ecvebench-xwi
   type: "json",
 };
 import xwikiPlatform003Task from "../../../../benchmark/data/tasks/ecvebench-xwiki-platform-003.json" with {
+  type: "json",
+};
+import xwikiPlatform004Task from "../../../../benchmark/data/tasks/ecvebench-xwiki-platform-004.json" with {
   type: "json",
 };
 import yeswikiTask from "../../../../benchmark/data/tasks/ecvebench-yeswiki-001.json" with {
@@ -154,19 +178,26 @@ export const benchmarkDatasetFixtures = {
   ],
   tasks: [
     autheliaTask,
-    certificatesTask,
-    denoTask,
+    certificates001Task,
+    certificates002Task,
+    deno001Task,
+    deno002Task,
     dompdfTask,
     electermTask,
     filebrowserTask,
-    fuxaTask,
-    jujuTask,
-    onefuzzTask,
+    fuxa001Task,
+    fuxa002Task,
+    juju001Task,
+    juju002Task,
+    onefuzz001Task,
+    onefuzz002Task,
     oneuptimeTask,
     ontrackPluginTask,
     openclaw001Task,
     openclaw002Task,
-    openvpnTask,
+    openclaw003Task,
+    openvpn001Task,
+    openvpn002Task,
     parseDashboardTask,
     pixelfedTask,
     sealosTask,
@@ -174,6 +205,7 @@ export const benchmarkDatasetFixtures = {
     xwikiPlatform001Task,
     xwikiPlatform002Task,
     xwikiPlatform003Task,
+    xwikiPlatform004Task,
     yeswikiTask,
   ],
 } as const;

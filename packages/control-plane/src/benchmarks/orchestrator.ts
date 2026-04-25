@@ -5,7 +5,7 @@ import type {
 } from "@codebreaker/benchmark-runner/schemas";
 import {
   AgentOutputSchema,
-  scoreAgentOutput,
+  scoreBestCandidate,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
   benchmarkInitialPrompt,
@@ -25,10 +25,10 @@ import type {
 import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 import { getAgentByName } from "agents";
 
-const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 400_000;
+const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 300_000;
 const DEFAULT_BENCHMARK_MAX_STEPS = 50;
 const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
-const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
+const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 400_000;
 const DEFAULT_BENCHMARK_MAX_TURNS = 1;
 const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
@@ -178,7 +178,47 @@ export class BenchmarkRunOrchestrator {
         runId,
       });
 
-      await this.completeRunFromSession(runId);
+      const completedRun = await this.requireRun(runId);
+      if (completedRun.status === "cancelled") {
+        return completedRun;
+      }
+
+      const agentForOutput = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, sessionId)
+      );
+      const rawOutput = await this.readAssistantOutput(agentForOutput);
+      const { candidates, finalRawOutput } = await this.parseOrRetry({
+        rawOutput,
+        runId,
+        sessionId,
+      });
+      const best = scoreBestCandidate(record.task, candidates);
+      const result = await this.runs.putResult({
+        agentOutput: best.output,
+        rawOutput: finalRawOutput,
+        runId,
+        score: best.score,
+        task: record.task,
+      });
+      await this.runs.update({
+        artifactCommitSha: null,
+        artifactPath: result.artifactPath,
+        completedAt: new Date().toISOString(),
+        id: runId,
+        score: best.score.score,
+        status: "completed",
+      });
+      await this.runs.addEvent({
+        kind: "result_parsed",
+        message: "Benchmark result parsed and scored",
+        runId,
+      });
+
+      const finalRun = await this.requireRun(runId);
+
+      if (finalRun.cleanupPolicy !== "retain") {
+        await this.cleanup(runId);
+      }
     } catch (error) {
       const currentRun = await this.requireRun(runId);
       if (currentRun.status === "cancelled") {
@@ -425,17 +465,17 @@ export class BenchmarkRunOrchestrator {
       getAgentByName(this.env.SESSION_AGENT, sessionId)
     );
     const rawOutput = await this.readAssistantOutput(agentForOutput);
-    const { agentOutput, finalRawOutput } = await this.parseOrRetry({
+    const { candidates, finalRawOutput } = await this.parseOrRetry({
       rawOutput,
       runId,
       sessionId,
     });
-    const score = scoreAgentOutput(record.task, agentOutput);
+    const best = scoreBestCandidate(record.task, candidates);
     const result = await this.runs.putResult({
-      agentOutput,
+      agentOutput: best.output,
       rawOutput: finalRawOutput,
       runId,
-      score,
+      score: best.score,
       task: record.task,
     });
 
@@ -445,7 +485,7 @@ export class BenchmarkRunOrchestrator {
       artifactPath: result.artifactPath,
       completedAt: new Date().toISOString(),
       id: runId,
-      score: score.score,
+      score: best.score.score,
       status: "completed",
     });
     await this.runs.addEvent({
@@ -496,10 +536,10 @@ export class BenchmarkRunOrchestrator {
     rawOutput: string;
     runId: string;
     sessionId: string;
-  }): Promise<{ agentOutput: AgentOutput; finalRawOutput: string }> {
+  }): Promise<{ candidates: AgentOutput[]; finalRawOutput: string }> {
     try {
       return {
-        agentOutput: parseAgentOutput(input.rawOutput),
+        candidates: parseAgentOutputs(input.rawOutput),
         finalRawOutput: input.rawOutput,
       };
     } catch (firstError) {
@@ -545,7 +585,7 @@ export class BenchmarkRunOrchestrator {
 
       try {
         return {
-          agentOutput: parseAgentOutput(retriedRaw),
+          candidates: parseAgentOutputs(retriedRaw),
           finalRawOutput: retriedRaw,
         };
       } catch (secondError) {
@@ -669,28 +709,34 @@ const describeFailure = (
   };
 };
 
-const parseAgentOutput = (rawOutput: string): AgentOutput => {
-  const candidates = jsonObjectCandidates(rawOutput);
+const MAX_CANDIDATES = 3;
 
-  if (candidates.length === 0) {
-    throw new Error("Agent did not return a JSON benchmark result");
-  }
+/**
+ * Extract up to {@link MAX_CANDIDATES} valid AgentOutput JSON objects from
+ * the raw assistant text. Each object is independently validated against
+ * {@link AgentOutputSchema}. At least one must parse successfully.
+ */
+const parseAgentOutputs = (rawOutput: string): AgentOutput[] => {
+  const jsonStrings = extractJsonObjects(rawOutput);
 
-  let lastError: unknown;
-
-  for (const candidate of candidates) {
+  const outputs: AgentOutput[] = [];
+  for (const json of jsonStrings) {
+    if (outputs.length >= MAX_CANDIDATES) {
+      break;
+    }
     try {
-      const parsed = JSON.parse(candidate) as unknown;
-
-      return AgentOutputSchema.parse(parsed);
-    } catch (error) {
-      lastError = error;
+      const parsed = JSON.parse(json) as unknown;
+      outputs.push(AgentOutputSchema.parse(parsed));
+    } catch {
+      // skip malformed candidates
     }
   }
 
-  const reason = lastError instanceof Error ? lastError.message : "unknown";
+  if (outputs.length === 0) {
+    throw new Error("Agent did not return a valid JSON benchmark result");
+  }
 
-  throw new Error(`Agent did not return a JSON benchmark result: ${reason}`);
+  return outputs;
 };
 
 const withTimeout = async <T>(
@@ -712,43 +758,60 @@ const withTimeout = async <T>(
   }
 };
 
-const FENCE_RE = /```(?:json|JSON)?\s*([\s\S]*?)\s*```/g;
-
-// Returns plausible JSON-object substrings to try, in order of likelihood:
-// 1. The string itself (covers the common "ONLY JSON" case).
-// 2. Any ```...``` fenced blocks (the model sometimes ignores the no-fence rule).
-// 3. The widest brace span (`indexOf('{')` … `lastIndexOf('}')`) as a fallback.
-//
-// Callers are expected to try `JSON.parse` on each in order.
-const jsonObjectCandidates = (value: string): string[] => {
-  const trimmed = value.trim();
-  const seen = new Set<string>();
-  const candidates: string[] = [];
-  const push = (candidate: string): void => {
-    const normalized = candidate.trim();
-
-    if (
-      normalized.startsWith("{") &&
-      normalized.endsWith("}") &&
-      !seen.has(normalized)
-    ) {
-      seen.add(normalized);
-      candidates.push(normalized);
+/**
+ * Starting at index `i` (which must point to an opening `"`), advance past
+ * the closing `"`, handling `\"` escapes. Returns the index of the character
+ * immediately after the closing quote.
+ */
+const skipJsonString = (value: string, i: number): number => {
+  let pos = i + 1;
+  while (pos < value.length) {
+    if (value[pos] === "\\" && pos + 1 < value.length) {
+      pos += 2;
+    } else if (value[pos] === '"') {
+      return pos + 1;
+    } else {
+      pos++;
     }
-  };
+  }
+  return pos;
+};
 
-  push(trimmed);
+/**
+ * Extract all top-level JSON objects from a string by matching balanced
+ * braces. Skips braces inside JSON string literals so that values like
+ * `"reason": "a } char"` don't break the count. Returns raw JSON strings
+ * in the order they appear.
+ */
+const extractJsonObjects = (value: string): string[] => {
+  const results: string[] = [];
+  let depth = 0;
+  let start = -1;
 
-  for (const match of trimmed.matchAll(FENCE_RE)) {
-    push(match[1] ?? "");
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+
+    if (ch === '"' && depth > 0) {
+      i = skipJsonString(value, i) - 1;
+      continue;
+    }
+
+    if (ch === "{") {
+      if (depth === 0) {
+        start = i;
+      }
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        results.push(value.slice(start, i + 1));
+        start = -1;
+      }
+      if (depth < 0) {
+        depth = 0;
+      }
+    }
   }
 
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
-
-  if (start !== -1 && end !== -1 && end > start) {
-    push(trimmed.slice(start, end + 1));
-  }
-
-  return candidates;
+  return results;
 };

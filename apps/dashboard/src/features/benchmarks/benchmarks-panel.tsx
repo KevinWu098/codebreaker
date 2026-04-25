@@ -42,10 +42,10 @@ import { isAuthorized, useConnection } from "@/lib/connection";
 import { formatNumber, formatRelativeTime, formatUsd } from "@/lib/format";
 
 const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.kimi[0];
-const BENCHMARK_MAX_INPUT_TOKENS = 400_000;
+const BENCHMARK_MAX_INPUT_TOKENS = 300_000;
 const BENCHMARK_MAX_STEPS = 50;
 const BENCHMARK_MAX_TOOL_CALLS = 40;
-const BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
+const BENCHMARK_MAX_TOTAL_TOKENS = 400_000;
 const BENCHMARK_MAX_TURNS = 1;
 const BENCHMARK_TIMEOUT_SECONDS = 600;
 const DEFAULT_BATCH_REPEAT_COUNT = 1;

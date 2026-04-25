@@ -6,6 +6,12 @@ against at most one agent output per (task_id, difficulty) pair. Difficulty
 is read from the agent output's self-described ``difficulty`` field, since
 the dataset stores one row per GHSA and projects difficulty at runtime.
 
+When multiple outputs share the same ``(task_id, difficulty)`` key the
+scorer treats them as alternative candidate hypotheses (up to 3). Each
+candidate is scored independently and the oracle-best — the one that
+maximises a lexicographic ranking of (verdict_correct, vuln_class_score,
+file_iou, function_iou) — is kept as the task's result.
+
 Scoring axes (see benchmark/README.md for the authoritative spec):
 
 * ``vulnerable``       - exact match boolean; reported as precision/recall/F1.
@@ -38,11 +44,16 @@ from typing import Any, Iterable, Literal
 Difficulty = Literal["L0", "L1", "L2", "L3"]
 DIFFICULTIES: tuple[Difficulty, ...] = ("L0", "L1", "L2", "L3")
 ECE_BIN_COUNT = 10
+MAX_CANDIDATES = 3
 
 DEFAULT_TASKS_PATH = (
     Path(__file__).resolve().parent.parent / "data" / "tasks"
 )
 DEFAULT_RESULTS_PATH = Path("results.json")
+
+
+def _emit_warning(message: str) -> None:
+    print(f"warning: {message}", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
@@ -158,24 +169,21 @@ def _function_pairs(
 # ---------------------------------------------------------------------------
 
 
-def score_one(task: dict[str, Any], output: dict[str, Any]) -> dict[str, Any]:
-    """Compute per-task scores for a single (task, output) pair.
+def _score_candidate(
+    task: dict[str, Any], candidate: dict[str, Any]
+) -> dict[str, Any]:
+    """Score a single candidate against ground truth.
 
-    Returns a dict with the raw signals consumed by ``aggregate``. Score
-    fields that are excluded from a particular metric's denominator are set
-    to ``None``; metrics that count the task with a zero contribution use
-    ``0.0``.
+    Returns a dict with the raw signals consumed by ``aggregate``.
     """
     ground_truth = task["ground_truth"]
     gt_vulnerable = bool(ground_truth["vulnerable"])
-    pred_vulnerable = bool(output["vulnerable"])
+    pred_vulnerable = bool(candidate.get("vulnerable", False))
     verdict_correct = gt_vulnerable == pred_vulnerable
 
-    confidence = float(output.get("confidence", 0.0))
+    confidence = float(candidate.get("confidence", 0.0))
 
     score: dict[str, Any] = {
-        "task_id": output.get("task_id"),
-        "difficulty": output.get("difficulty"),
         "ground_truth_vulnerable": gt_vulnerable,
         "predicted_vulnerable": pred_vulnerable,
         "verdict_correct": verdict_correct,
@@ -189,19 +197,18 @@ def score_one(task: dict[str, Any], output: dict[str, Any]) -> dict[str, Any]:
         return score
 
     if not pred_vulnerable:
-        # Correct verdict but agent declined to localize. Per spec, vuln_class
-        # and location contributions are 0 (no credit) but still in the mean
-        # denominators conditional on correct verdict.
         score["vuln_class_score"] = 0.0
         score["file_iou"] = 0.0
         return score
 
     score["vuln_class_score"] = (
-        1.0 if output.get("vuln_class") == ground_truth.get("vuln_class") else 0.0
+        1.0
+        if candidate.get("vuln_class") == ground_truth.get("vuln_class")
+        else 0.0
     )
 
     gt_locations = ground_truth.get("locations") or []
-    pred_locations = output.get("locations") or []
+    pred_locations = candidate.get("locations") or []
     gt_files = _file_set(gt_locations)
     pred_files = _file_set(pred_locations)
     score["file_iou"] = set_iou(pred_files, gt_files)
@@ -210,13 +217,45 @@ def score_one(task: dict[str, Any], output: dict[str, Any]) -> dict[str, Any]:
     if common_files:
         gt_pairs = _function_pairs(gt_locations, common_files)
         pred_pairs = _function_pairs(pred_locations, common_files)
-        # If null functions on both sides leave nothing to compare, skip
-        # this task from the function IoU mean rather than awarding a vacuous
-        # 1.0 (per "Null functions on either side are excluded from comparison").
         if gt_pairs or pred_pairs:
             score["function_iou"] = set_iou(pred_pairs, gt_pairs)
 
     return score
+
+
+def _candidate_rank_key(score: dict[str, Any]) -> tuple[int, float, float, float]:
+    """Lexicographic key for picking the oracle-best candidate.
+
+    Priority: verdict correct > vuln_class > file IoU > function IoU.
+    ``None`` values are treated as 0 for ranking purposes.
+    """
+    return (
+        int(score["verdict_correct"]),
+        score["vuln_class_score"] or 0.0,
+        score["file_iou"] or 0.0,
+        score["function_iou"] or 0.0,
+    )
+
+
+def score_one(
+    task: dict[str, Any], candidates: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Score one or more candidate outputs for a single task, keeping the best.
+
+    Each candidate is scored independently against ground truth. The one
+    with the highest ``_candidate_rank_key`` is returned.
+    """
+    if not candidates:
+        raise ValueError("score_one requires at least one candidate")
+
+    scored = [_score_candidate(task, c) for c in candidates]
+    best = max(scored, key=_candidate_rank_key)
+
+    best["task_id"] = candidates[0].get("task_id")
+    best["difficulty"] = candidates[0].get("difficulty")
+    best["n_candidates"] = len(candidates)
+
+    return best
 
 
 # ---------------------------------------------------------------------------
@@ -458,16 +497,11 @@ def _format_summary(summary: dict[str, dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _emit_warning(message: str) -> None:
-    print(f"warning: {message}", file=sys.stderr)
-
-
-def _validate_outputs(
+def _group_outputs(
     outputs: list[dict[str, Any]], tasks: dict[str, dict[str, Any]]
-) -> list[dict[str, Any]]:
-    """Filter outputs to those with a known task id and unique (task_id, difficulty)."""
-    seen_keys: set[tuple[Any, Any]] = set()
-    valid: list[dict[str, Any]] = []
+) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    """Group outputs by ``(task_id, difficulty)``, keeping up to MAX_CANDIDATES per group."""
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for output in outputs:
         task_id = output.get("task_id")
         difficulty = output.get("difficulty")
@@ -477,15 +511,15 @@ def _validate_outputs(
             )
             continue
         key = (task_id, difficulty)
-        if key in seen_keys:
+        group = groups.setdefault(key, [])
+        if len(group) >= MAX_CANDIDATES:
             _emit_warning(
-                f"duplicate (task_id={task_id!r}, difficulty={difficulty!r}); "
-                "using first occurrence"
+                f"(task_id={task_id!r}, difficulty={difficulty!r}) has more "
+                f"than {MAX_CANDIDATES} candidates; extras ignored"
             )
             continue
-        seen_keys.add(key)
-        valid.append(output)
-    return valid
+        group.append(output)
+    return groups
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -525,16 +559,20 @@ def main(argv: list[str] | None = None) -> int:
 
     tasks = index_tasks(load_records(args.tasks))
     outputs = load_records(args.outputs)
-    valid_outputs = _validate_outputs(outputs, tasks)
+    groups = _group_outputs(outputs, tasks)
 
-    scores = [score_one(tasks[o["task_id"]], o) for o in valid_outputs]
+    scores = [
+        score_one(tasks[task_id], candidates)
+        for (task_id, _difficulty), candidates in sorted(groups.items())
+    ]
     summary = aggregate_by_difficulty(scores)
 
+    n_tasks_scored = len(groups)
     results = {
         "tasks_path": str(args.tasks),
         "outputs_path": str(args.outputs),
         "n_outputs_in_file": len(outputs),
-        "n_outputs_scored": len(valid_outputs),
+        "n_tasks_scored": n_tasks_scored,
         "ece_bin_count": ECE_BIN_COUNT,
         "overall": summary["overall"],
         "by_difficulty": summary["by_difficulty"],
@@ -548,7 +586,9 @@ def main(argv: list[str] | None = None) -> int:
 
     print(_format_summary(summary))
     print()
-    print(f"Scored {len(valid_outputs)} of {len(outputs)} output(s).")
+    print(
+        f"Scored {n_tasks_scored} task(s) from {len(outputs)} output(s)."
+    )
     print(f"Wrote results to {args.results}")
     return 0
 
