@@ -1,43 +1,34 @@
 import hashlib
 import json
+from pathlib import Path
 
 import modal
 
 from codebreaker_modal_shim.schemas import SandboxProfile, SandboxProfileName
 
-PROFILES: dict[SandboxProfileName, SandboxProfile] = {
-    "node": SandboxProfile(
-        name="node",
-        image="debian_slim",
-        install_commands=[
-            "apt-get update",
-            "apt-get install -y nodejs npm git ca-certificates",
-        ],
-        memory_mb=1024,
-        timeout_seconds=300,
-    ),
-    "python": SandboxProfile(
-        name="python",
-        image="debian_slim",
-        install_commands=[
-            "apt-get update",
-            "apt-get install -y python3 python3-pip git ca-certificates",
-        ],
-        memory_mb=1024,
-        timeout_seconds=300,
-    ),
-    "recon": SandboxProfile(
-        name="recon",
-        image="debian_slim",
-        install_commands=[
-            "apt-get update",
-            "apt-get install -y curl dnsutils iproute2 nmap python3 python3-pip whois",
-        ],
-        cpu=2,
-        memory_mb=2048,
-        timeout_seconds=600,
-    ),
-}
+_PROFILES_FILENAME = "sandbox-profiles.json"
+
+_SEARCH_PATHS = [
+    Path("/app") / _PROFILES_FILENAME,
+    Path(__file__).resolve().parents[4] / "shared" / "src" / "data" / _PROFILES_FILENAME,
+]
+
+
+def _load_profiles() -> dict[SandboxProfileName, SandboxProfile]:
+    for path in _SEARCH_PATHS:
+        if path.exists():
+            raw: dict[str, dict] = json.loads(path.read_text())
+            return {
+                name: SandboxProfile.model_validate(profile)  # type: ignore[misc]
+                for name, profile in raw.items()
+            }
+
+    raise FileNotFoundError(
+        f"Cannot find {_PROFILES_FILENAME}; searched {_SEARCH_PATHS}"
+    )
+
+
+PROFILES: dict[SandboxProfileName, SandboxProfile] = _load_profiles()
 
 
 def resolve_profile(name: SandboxProfileName) -> SandboxProfile:
