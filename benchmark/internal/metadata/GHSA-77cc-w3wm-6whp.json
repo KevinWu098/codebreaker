@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-77cc-w3wm-6whp",
+  "post_patch_commit": "ec4238349691ec66dd30b416ec6eaab02d722302",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit ec42383 modified 2 source files (no test files). Both files had the same fix: adding documentBuilderFactory.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true) to prevent XXE. In SignResponseVerifier.java, the DOM parsing was also moved before JAXB unmarshalling so the secure DocumentBuilder validates the XML first. In DigitalSignatureServiceMetadata.java, the constructor was changed to parse metadata through a secure DocumentBuilder before passing to JAXB. Locations derived directly from the patch diff and confirmed by the advisory description which names the checkSignResponse function.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
