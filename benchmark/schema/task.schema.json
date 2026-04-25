@@ -7,7 +7,7 @@
   "properties": {
     "task_id": {
       "type": "string",
-      "description": "Unique task identifier. Format: ecvebench-{project}-{n}-{level}"
+      "description": "Unique task identifier. Format: ecvebench-{project}-{n}-{L0|L1}"
     },
     "ghsa_id": {
       "type": "string",
@@ -21,7 +21,7 @@
     },
     "codebase": {
       "type": "object",
-      "required": ["repo", "language", "pre_patch_commit", "post_patch_commit"],
+      "required": ["repo", "language", "commit"],
       "additionalProperties": false,
       "properties": {
         "repo": {
@@ -33,15 +33,10 @@
           "type": "string",
           "description": "Primary language of the repository"
         },
-        "pre_patch_commit": {
+        "commit": {
           "type": "string",
           "pattern": "^[0-9a-f]{40}$",
-          "description": "Full 40-character SHA of the vulnerable version"
-        },
-        "post_patch_commit": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{40}$",
-          "description": "Full 40-character SHA of the fixed version"
+          "description": "Full 40-character pre-patch SHA served to the agent"
         }
       }
     },
@@ -70,26 +65,21 @@
           "type": "boolean"
         },
         "vuln_class": {
-          "oneOf": [
-            { "type": "null" },
-            {
-              "type": "string",
-              "enum": [
-                "command-injection",
-                "sql-injection",
-                "xss",
-                "buffer-overflow",
-                "use-after-free",
-                "path-traversal",
-                "auth-bypass",
-                "xxe",
-                "insecure-deserialization",
-                "crypto-weakness",
-                "race-condition",
-                "integer-overflow",
-                "null-deref"
-              ]
-            }
+          "type": "string",
+          "enum": [
+            "command-injection",
+            "sql-injection",
+            "xss",
+            "buffer-overflow",
+            "use-after-free",
+            "path-traversal",
+            "auth-bypass",
+            "xxe",
+            "insecure-deserialization",
+            "crypto-weakness",
+            "race-condition",
+            "integer-overflow",
+            "null-deref"
           ]
         },
         "cvss": {
@@ -99,14 +89,12 @@
           ]
         },
         "reason": {
-          "oneOf": [
-            { "type": "null" },
-            { "type": "string" }
-          ],
+          "type": "string",
           "description": "Unscored. Human-readable explanation of the vulnerability."
         },
         "locations": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "object",
             "required": ["file", "function"],

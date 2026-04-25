@@ -48,8 +48,7 @@
         "additionalProperties": false,
         "properties": {
           "file": {
-            "type": "string",
-            "description": "Relative path from repo root"
+            "type": "string"
           },
           "function": {
             "oneOf": [
