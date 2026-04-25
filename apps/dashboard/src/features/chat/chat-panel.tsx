@@ -17,6 +17,7 @@ import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
+import { type MessagePart, ToolCallPart } from "@/components/tool-call-part";
 import { useConnection } from "@/lib/connection";
 
 interface ChatPanelProps {
@@ -26,15 +27,6 @@ interface ChatPanelProps {
 interface AgentHost {
   host: string;
   secure: boolean;
-}
-
-interface MessagePart {
-  input?: unknown;
-  output?: unknown;
-  state?: string;
-  text?: string;
-  toolName?: string;
-  type?: string;
 }
 
 const DEFAULT_HOST: AgentHost = { host: "localhost:8787", secure: false };
@@ -80,29 +72,20 @@ const renderPart = (
     const state = part.state ?? "running";
 
     return (
-      <div
-        className="rounded border border-border bg-bg-overlay p-2 text-xs"
+      <ToolCallPart
+        header={
+          <>
+            <Badge status={state === "result" ? "completed" : "running"}>
+              tool · {state}
+            </Badge>
+            <span className="font-mono text-fg">{name}</span>
+          </>
+        }
+        input={part.input}
+        jsonMaxHeight={140}
         key={key}
-      >
-        <div className="flex items-center gap-2">
-          <Badge status={state === "result" ? "completed" : "running"}>
-            tool · {state}
-          </Badge>
-          <span className="font-mono text-fg">{name}</span>
-        </div>
-        {part.input !== undefined && (
-          <div className="mt-2 space-y-1">
-            <span className="field-label">input</span>
-            <JsonView maxHeight={140} value={part.input} />
-          </div>
-        )}
-        {part.output !== undefined && (
-          <div className="mt-2 space-y-1">
-            <span className="field-label">output</span>
-            <JsonView maxHeight={140} value={part.output} />
-          </div>
-        )}
-      </div>
+        output={part.output}
+      />
     );
   }
 

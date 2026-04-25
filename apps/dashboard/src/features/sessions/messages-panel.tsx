@@ -4,18 +4,11 @@ import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
+import { type MessagePart, ToolCallPart } from "@/components/tool-call-part";
 import { useSessionMessagesQuery } from "@/hooks/queries";
 
 interface MessagesPanelProps {
   sessionId: string;
-}
-
-interface MessagePart {
-  input?: unknown;
-  output?: unknown;
-  text?: string;
-  toolName?: string;
-  type?: string;
 }
 
 interface Message {
@@ -54,31 +47,21 @@ const renderPart = (part: MessagePart, key: string): React.JSX.Element => {
 
   if (typeof part.type === "string" && part.type.startsWith("tool")) {
     return (
-      <div
-        className="rounded border border-border bg-bg-overlay p-2 text-xs"
+      <ToolCallPart
+        header={
+          <>
+            <span className="text-[10px] text-fg-muted uppercase tracking-wider">
+              tool
+            </span>
+            <span className="font-mono text-fg">
+              {part.toolName ?? part.type}
+            </span>
+          </>
+        }
+        input={part.input}
         key={key}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-fg-muted uppercase tracking-wider">
-            tool
-          </span>
-          <span className="font-mono text-fg">
-            {part.toolName ?? part.type}
-          </span>
-        </div>
-        {part.input !== undefined && (
-          <div className="mt-2 space-y-1">
-            <span className="field-label">input</span>
-            <JsonView maxHeight={160} value={part.input} />
-          </div>
-        )}
-        {part.output !== undefined && (
-          <div className="mt-2 space-y-1">
-            <span className="field-label">output</span>
-            <JsonView maxHeight={160} value={part.output} />
-          </div>
-        )}
-      </div>
+        output={part.output}
+      />
     );
   }
 
