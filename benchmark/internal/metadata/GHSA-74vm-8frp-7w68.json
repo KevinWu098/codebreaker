@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-74vm-8frp-7w68",
+  "post_patch_commit": "3fff9151494c7dbc72073830b734f0a7e550e385",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit (3fff915) modifies only epyt_flow/serialization.py. The vulnerable code is in my_load_from_json's inner __object_hook function, which used importlib.import_module to dynamically import and instantiate any class specified via the __type__ field in JSON. The patch replaces this with an allowlist (JSON_SERIALIZABLE dict) that only permits pre-registered JsonSerializable subclasses. Location derived directly from the patch diff — the advisory description also confirms the my_load_from_json deserializer as the vulnerable component.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
