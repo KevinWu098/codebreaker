@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qw28-g63m-jxqv",
+  "post_patch_commit": "7f0f806c18fdd6043103d848ba4c813cb805dd85",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit found directly from advisory reference (jenkinsci/ontrack-plugin@7f0f806). The patch modifies 2 source files (AbstractDSLLauncher.java and SandboxDSLLauncher.java) plus pom.xml (dependency version bump). Locations derived from the patch diff: the run() method in AbstractDSLLauncher parsed scripts before sandboxing, and the overridden run() in SandboxDSLLauncher passed the pre-parsed Script object to GroovySandbox.run() instead of the raw source string, allowing sandbox bypass.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2025-04-25"
+}
