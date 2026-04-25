@@ -9,9 +9,6 @@ import {
   SessionConfigSchema,
 } from "@codebreaker/shared/schemas/session";
 
-const MAX_RETRIES = 3;
-const RETRY_BASE_MS = 25;
-
 interface SessionRowRecord {
   completed_at: string | null;
   created_at: string;
@@ -45,46 +42,44 @@ export class SessionIndexStore {
     const config = SessionConfigSchema.parse(input.config);
     const timestamp = nowIso();
 
-    await this.withRetry(async () => {
-      await this.db
-        .prepare(
-          `insert into sessions (
-            id,
-            status,
-            title,
-            model_provider,
-            model_id,
-            repo_owner,
-            repo_name,
-            input_tokens,
-            output_tokens,
-            turn_count,
-            created_at,
-            updated_at,
-            completed_at
-          ) values (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, null)
-          on conflict(id) do update set
-            status = excluded.status,
-            title = excluded.title,
-            model_provider = excluded.model_provider,
-            model_id = excluded.model_id,
-            repo_owner = excluded.repo_owner,
-            repo_name = excluded.repo_name,
-            updated_at = excluded.updated_at`
-        )
-        .bind(
-          input.id,
-          input.status ?? "pending",
-          config.title ?? null,
-          config.model.provider,
-          config.model.id,
-          config.repo?.owner ?? null,
-          config.repo?.name ?? null,
-          timestamp,
-          timestamp
-        )
-        .run();
-    });
+    await this.db
+      .prepare(
+        `insert into sessions (
+          id,
+          status,
+          title,
+          model_provider,
+          model_id,
+          repo_owner,
+          repo_name,
+          input_tokens,
+          output_tokens,
+          turn_count,
+          created_at,
+          updated_at,
+          completed_at
+        ) values (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, null)
+        on conflict(id) do update set
+          status = excluded.status,
+          title = excluded.title,
+          model_provider = excluded.model_provider,
+          model_id = excluded.model_id,
+          repo_owner = excluded.repo_owner,
+          repo_name = excluded.repo_name,
+          updated_at = excluded.updated_at`
+      )
+      .bind(
+        input.id,
+        input.status ?? "pending",
+        config.title ?? null,
+        config.model.provider,
+        config.model.id,
+        config.repo?.owner ?? null,
+        config.repo?.name ?? null,
+        timestamp,
+        timestamp
+      )
+      .run();
 
     const session = await this.get(input.id);
 
@@ -117,18 +112,16 @@ export class SessionIndexStore {
           )
           .bind(options.limit, options.offset);
 
-    const result = await this.withRetry(() => query.all<SessionRowRecord>());
+    const result = await query.all<SessionRowRecord>();
 
     return result.results.map((row) => this.toSessionRow(row));
   }
 
   async get(id: string): Promise<SessionRow | null> {
-    const row = await this.withRetry(() =>
-      this.db
-        .prepare("select * from sessions where id = ?")
-        .bind(id)
-        .first<SessionRowRecord>()
-    );
+    const row = await this.db
+      .prepare("select * from sessions where id = ?")
+      .bind(id)
+      .first<SessionRowRecord>();
 
     return row ? this.toSessionRow(row) : null;
   }
@@ -139,26 +132,36 @@ export class SessionIndexStore {
     id: string;
     status: SessionStatus;
   }): Promise<void> {
-    const shouldApply = await this.recordEventOnce({
-      eventId: input.eventId ?? `${input.status}:${nowIso()}`,
-      kind: "status",
-      sessionId: input.id,
-    });
+    const eventId = input.eventId ?? `${input.status}:${nowIso()}`;
+    const timestamp = nowIso();
 
-    if (!shouldApply) {
-      return;
-    }
-
-    await this.withRetry(() =>
+    await this.db.batch([
+      this.recordEventStatement({
+        eventId,
+        kind: "status",
+        sessionId: input.id,
+        timestamp,
+      }),
       this.db
         .prepare(
           `update sessions
           set status = ?, completed_at = coalesce(?, completed_at), updated_at = ?
-          where id = ?`
+          where id = ?
+            and exists (
+              select 1 from processed_events
+              where session_id = ? and kind = 'status' and event_id = ? and created_at = ?
+            )`
         )
-        .bind(input.status, input.completedAt ?? null, nowIso(), input.id)
-        .run()
-    );
+        .bind(
+          input.status,
+          input.completedAt ?? null,
+          timestamp,
+          input.id,
+          input.id,
+          eventId,
+          timestamp
+        ),
+    ]);
   }
 
   async addTokenUsage(input: {
@@ -167,71 +170,76 @@ export class SessionIndexStore {
     inputTokens: number;
     outputTokens: number;
   }): Promise<void> {
-    const shouldApply = await this.recordEventOnce({
-      eventId: input.eventId,
-      kind: "token_usage",
-      sessionId: input.id,
-    });
+    const timestamp = nowIso();
 
-    if (!shouldApply) {
-      return;
-    }
-
-    await this.withRetry(() =>
+    await this.db.batch([
+      this.recordEventStatement({
+        eventId: input.eventId,
+        kind: "token_usage",
+        sessionId: input.id,
+        timestamp,
+      }),
       this.db
         .prepare(
           `update sessions
           set input_tokens = input_tokens + ?,
             output_tokens = output_tokens + ?,
             updated_at = ?
-          where id = ?`
+          where id = ?
+            and exists (
+              select 1 from processed_events
+              where session_id = ? and kind = 'token_usage' and event_id = ? and created_at = ?
+            )`
         )
-        .bind(input.inputTokens, input.outputTokens, nowIso(), input.id)
-        .run()
-    );
+        .bind(
+          input.inputTokens,
+          input.outputTokens,
+          timestamp,
+          input.id,
+          input.id,
+          input.eventId,
+          timestamp
+        ),
+    ]);
   }
 
   async incrementTurn(input: { eventId: string; id: string }): Promise<void> {
-    const shouldApply = await this.recordEventOnce({
-      eventId: input.eventId,
-      kind: "turn",
-      sessionId: input.id,
-    });
+    const timestamp = nowIso();
 
-    if (!shouldApply) {
-      return;
-    }
-
-    await this.withRetry(() =>
+    await this.db.batch([
+      this.recordEventStatement({
+        eventId: input.eventId,
+        kind: "turn",
+        sessionId: input.id,
+        timestamp,
+      }),
       this.db
         .prepare(
           `update sessions
           set turn_count = turn_count + 1, updated_at = ?
-          where id = ?`
+          where id = ?
+            and exists (
+              select 1 from processed_events
+              where session_id = ? and kind = 'turn' and event_id = ? and created_at = ?
+            )`
         )
-        .bind(nowIso(), input.id)
-        .run()
-    );
+        .bind(timestamp, input.id, input.id, input.eventId, timestamp),
+    ]);
   }
 
-  private async recordEventOnce(input: {
+  private recordEventStatement(input: {
     eventId: string;
     kind: string;
     sessionId: string;
-  }): Promise<boolean> {
-    const result = await this.withRetry(() =>
-      this.db
-        .prepare(
-          `insert into processed_events (session_id, kind, event_id, created_at)
-          values (?, ?, ?, ?)
-          on conflict(session_id, kind, event_id) do nothing
-          returning event_id`
-        )
-        .bind(input.sessionId, input.kind, input.eventId, nowIso())
-        .first<{ event_id: string }>()
-    );
-
-    return Boolean(result);
+    timestamp: string;
+  }): D1PreparedStatement {
+    return this.db
+      .prepare(
+        `insert into processed_events (session_id, kind, event_id, created_at)
+        values (?, ?, ?, ?)
+        on conflict(session_id, kind, event_id) do nothing`
+      )
+      .bind(input.sessionId, input.kind, input.eventId, input.timestamp);
   }
 
   private toSessionRow(row: SessionRowRecord): SessionRow {
@@ -250,25 +258,5 @@ export class SessionIndexStore {
       turnCount: row.turn_count,
       updatedAt: row.updated_at,
     });
-  }
-
-  private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
-    let lastError: unknown;
-
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
-      try {
-        return await operation();
-      } catch (error) {
-        lastError = error;
-
-        if (attempt < MAX_RETRIES - 1) {
-          await new Promise((resolve) => {
-            setTimeout(resolve, RETRY_BASE_MS * 2 ** attempt);
-          });
-        }
-      }
-    }
-
-    throw lastError;
   }
 }
