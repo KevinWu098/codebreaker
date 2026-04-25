@@ -47,6 +47,7 @@ interface AgentHost {
 
 const DEFAULT_HOST: AgentHost = { host: "localhost:8787", secure: false };
 const COPIED_RESET_MS = 2000;
+const EMPTY_CHAT_MESSAGES: UIMessage[] = [];
 
 const parseHost = (baseUrl: string): AgentHost => {
   try {
@@ -241,7 +242,11 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
 
   const agent = useAgent(agentOptions);
 
-  const chat = useAgentChat({ agent });
+  const chat = useAgentChat({
+    agent,
+    getInitialMessages: null,
+    messages: EMPTY_CHAT_MESSAGES,
+  });
 
   const send = useCallback(
     (message: PromptInputMessage): void => {

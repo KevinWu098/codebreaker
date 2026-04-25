@@ -41,7 +41,13 @@ const SessionsView = ({
     );
   }
 
-  return <SessionsList onSelect={onSelect} selectedId={selectedId} />;
+  return (
+    <SessionsList
+      onOpenBenchmarkRun={onOpenBenchmarkRun}
+      onSelect={onSelect}
+      selectedId={selectedId}
+    />
+  );
 };
 
 export const App = (): React.JSX.Element => {

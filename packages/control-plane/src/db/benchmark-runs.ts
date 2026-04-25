@@ -30,8 +30,10 @@ interface BenchmarkRunRecord {
   difficulty: Difficulty;
   error: string | null;
   id: string;
+  input_tokens: number | null;
   model_id: string;
   model_provider: ModelProvider;
+  output_tokens: number | null;
   score: number | null;
   session_id: string | null;
   status: BenchmarkRunStatus;
@@ -152,7 +154,30 @@ export class BenchmarkRunStore {
 
   async list(): Promise<BenchmarkRunRow[]> {
     const result = await this.db
-      .prepare("select * from benchmark_runs order by created_at desc")
+      .prepare(
+        `select
+          br.artifact_commit_sha,
+          br.artifact_path,
+          br.cleanup_completed_at,
+          br.cleanup_policy,
+          br.completed_at,
+          br.created_at,
+          br.difficulty,
+          br.error,
+          br.id,
+          s.input_tokens as input_tokens,
+          br.model_id,
+          br.model_provider,
+          s.output_tokens as output_tokens,
+          br.score,
+          br.session_id,
+          br.status,
+          br.task_id,
+          br.updated_at
+        from benchmark_runs br
+        left join sessions s on s.id = br.session_id
+        order by br.created_at desc`
+      )
       .all<BenchmarkRunRecord>();
 
     return result.results.map((row) => this.toRun(row));
@@ -160,7 +185,30 @@ export class BenchmarkRunStore {
 
   async get(id: string): Promise<BenchmarkRunRow | null> {
     const row = await this.db
-      .prepare("select * from benchmark_runs where id = ?")
+      .prepare(
+        `select
+          br.artifact_commit_sha,
+          br.artifact_path,
+          br.cleanup_completed_at,
+          br.cleanup_policy,
+          br.completed_at,
+          br.created_at,
+          br.difficulty,
+          br.error,
+          br.id,
+          s.input_tokens as input_tokens,
+          br.model_id,
+          br.model_provider,
+          s.output_tokens as output_tokens,
+          br.score,
+          br.session_id,
+          br.status,
+          br.task_id,
+          br.updated_at
+        from benchmark_runs br
+        left join sessions s on s.id = br.session_id
+        where br.id = ?`
+      )
       .bind(id)
       .first<BenchmarkRunRecord>();
 
@@ -472,8 +520,10 @@ export class BenchmarkRunStore {
       difficulty: row.difficulty,
       error: row.error,
       id: row.id,
+      inputTokens: row.input_tokens,
       modelId: row.model_id,
       modelProvider: row.model_provider,
+      outputTokens: row.output_tokens,
       score: row.score,
       sessionId: row.session_id,
       status: row.status,

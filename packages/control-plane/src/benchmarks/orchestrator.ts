@@ -24,6 +24,13 @@ import type {
 import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 import { getAgentByName } from "agents";
 
+const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 400_000;
+const DEFAULT_BENCHMARK_MAX_STEPS = 50;
+const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
+const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
+const DEFAULT_BENCHMARK_MAX_TURNS = 1;
+const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
+
 export class BenchmarkRunOrchestrator {
   private readonly dataset: BenchmarkDatasetService;
   private readonly env: Env;
@@ -60,26 +67,29 @@ export class BenchmarkRunOrchestrator {
       id: run.modelId,
       provider: run.modelProvider,
     };
-    const maxTurns = request?.maxTurns ?? 20;
-    const timeoutSeconds = request?.timeoutSeconds ?? 900;
+    const maxInputTokens =
+      request?.maxInputTokens ?? DEFAULT_BENCHMARK_MAX_INPUT_TOKENS;
+    const maxSteps = request?.maxSteps ?? DEFAULT_BENCHMARK_MAX_STEPS;
+    const maxToolCalls =
+      request?.maxToolCalls ?? DEFAULT_BENCHMARK_MAX_TOOL_CALLS;
+    const maxTotalTokens =
+      request?.maxTotalTokens ?? DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS;
+    const maxTurns = request?.maxTurns ?? DEFAULT_BENCHMARK_MAX_TURNS;
+    const timeoutSeconds =
+      request?.timeoutSeconds ?? DEFAULT_BENCHMARK_TIMEOUT_SECONDS;
 
     await this.runs.update({ id: runId, status: "running" });
 
     try {
       const sessionConfig = toBenchmarkSessionConfig({
         difficulty: run.difficulty,
+        maxSteps,
         maxTurns,
         metadata: record.metadata,
         model,
-        ...(request?.maxInputTokens
-          ? { maxInputTokens: request.maxInputTokens }
-          : {}),
-        ...(request?.maxToolCalls
-          ? { maxToolCalls: request.maxToolCalls }
-          : {}),
-        ...(request?.maxTotalTokens
-          ? { maxTotalTokens: request.maxTotalTokens }
-          : {}),
+        maxInputTokens,
+        maxToolCalls,
+        maxTotalTokens,
         task: record.task,
         timeoutSeconds,
       });
@@ -138,13 +148,20 @@ export class BenchmarkRunOrchestrator {
       await agent.requestFollowUp(
         benchmarkInitialPrompt(record.task, run.difficulty)
       );
+
       await this.runs.addEvent({
         kind: "agent_started",
         message: "Agent turn started",
         runId,
       });
-      await agent.continuePreviousTurn();
+      const turnResult = await agent.requestFollowUp(
+        benchmarkInitialPrompt(record.task, run.difficulty)
+      );
+      if (turnResult.status !== "completed") {
+        throw new Error(`Agent turn ${turnResult.status}`);
+      }
       await this.runs.addEvent({
+        details: turnResult,
         kind: "agent_completed",
         message: "Agent turn completed",
         runId,
@@ -155,11 +172,12 @@ export class BenchmarkRunOrchestrator {
         return completedRun;
       }
 
-      const rawOutput = await this.readAssistantOutput(agent);
+      const agentForOutput = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, sessionId)
+      );
+      const rawOutput = await this.readAssistantOutput(agentForOutput);
       const agentOutput = parseAgentOutput(rawOutput);
-      const score = agentOutput
-        ? scoreAgentOutput(record.task, agentOutput)
-        : null;
+      const score = scoreAgentOutput(record.task, agentOutput);
       const result = await this.runs.putResult({
         agentOutput,
         rawOutput,
@@ -395,11 +413,11 @@ export class BenchmarkRunOrchestrator {
   }
 }
 
-const parseAgentOutput = (rawOutput: string): AgentOutput | null => {
+const parseAgentOutput = (rawOutput: string): AgentOutput => {
   const json = extractJsonObject(rawOutput);
 
   if (!json) {
-    return null;
+    throw new Error("Agent did not return a JSON benchmark result");
   }
 
   const parsed = JSON.parse(json) as unknown;

@@ -17,7 +17,16 @@ const ExecRemoteInputSchema = z.object({
   timeoutSeconds: z.number().int().positive().optional(),
 });
 
+const REMOTE_READ_DEFAULT_MAX_BYTES = 24_000;
+const REMOTE_READ_HARD_MAX_BYTES = 96_000;
+
 const RemoteReadInputSchema = z.object({
+  maxBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(REMOTE_READ_HARD_MAX_BYTES)
+    .optional(),
   path: z.string().min(1),
 });
 
@@ -28,12 +37,14 @@ const RemoteWriteInputSchema = z.object({
 
 export interface ModalToolOptions {
   defaultProfile?: SandboxProfileName;
+  defaultTimeoutSeconds?: () => number | undefined;
   executor: ModalExecutor;
   sessionId: string;
 }
 
 export const createModalTools = ({
   defaultProfile,
+  defaultTimeoutSeconds,
   executor,
   sessionId,
 }: ModalToolOptions): TieredToolSet => ({
@@ -48,6 +59,7 @@ export const createModalTools = ({
         "Run a command in the session's configured remote Modal sandbox. Requires sandbox policy.",
       inputSchema: ExecRemoteInputSchema,
       execute: ({ command, cwd, timeoutSeconds }) => {
+        const fallbackTimeoutSeconds = defaultTimeoutSeconds?.();
         const options: ExecRemoteOptions = {
           command,
           sessionId,
@@ -61,8 +73,13 @@ export const createModalTools = ({
           options.cwd = cwd;
         }
 
-        if (timeoutSeconds) {
-          options.timeoutSeconds = timeoutSeconds;
+        const effectiveTimeoutSeconds =
+          timeoutSeconds && fallbackTimeoutSeconds
+            ? Math.min(timeoutSeconds, fallbackTimeoutSeconds)
+            : (timeoutSeconds ?? fallbackTimeoutSeconds);
+
+        if (effectiveTimeoutSeconds) {
+          options.timeoutSeconds = effectiveTimeoutSeconds;
         }
 
         return executor.exec(options);
@@ -70,9 +87,9 @@ export const createModalTools = ({
     }),
     remote_read: tool({
       description:
-        "Read a file from the session's configured remote Modal sandbox and return base64 content.",
+        "Read a file from the session's configured remote Modal sandbox and return base64 content. Output is truncated to a budget-friendly window; for larger reads use exec_remote with `sed -n 'A,Bp'`, `head`, `tail`, or `grep -n -C`.",
       inputSchema: RemoteReadInputSchema,
-      execute: async ({ path }) => {
+      execute: async ({ maxBytes, path }) => {
         const input: {
           path: string;
           profile?: SandboxProfileName;
@@ -87,11 +104,32 @@ export const createModalTools = ({
         }
 
         const content = await executor.readFile(input);
+        const limit = Math.min(
+          maxBytes ?? REMOTE_READ_DEFAULT_MAX_BYTES,
+          REMOTE_READ_HARD_MAX_BYTES
+        );
+        const totalBytes = content.byteLength;
+        const truncated = totalBytes > limit;
+        const slice = truncated ? content.subarray(0, limit) : content;
 
-        return {
-          contentBase64: bytesToBase64(content),
+        const result: {
+          contentBase64: string;
+          path: string;
+          totalBytes: number;
+          truncated: boolean;
+          hint?: string;
+        } = {
+          contentBase64: bytesToBase64(slice),
           path,
+          totalBytes,
+          truncated,
         };
+
+        if (truncated) {
+          result.hint = `File is ${totalBytes} bytes; only the first ${limit} bytes are returned. To inspect more, use exec_remote with sed -n 'A,Bp', head, tail, or grep -n -C against this path.`;
+        }
+
+        return result;
       },
     }),
     remote_write: tool({

@@ -30,6 +30,7 @@ import {
   useSessionQuery,
   useSessionStateQuery,
 } from "@/hooks/queries";
+import { getBenchmarkRunIdFromSessionId } from "@/lib/benchmark-session";
 import {
   formatNumber,
   formatRelativeTime,
@@ -53,17 +54,6 @@ const TABS: readonly TabDef[] = [
   { id: "chat", label: "chat" },
   { id: "sandbox", label: "sandbox" },
 ];
-
-const BENCHMARK_SESSION_PREFIX = "bench-";
-
-const getBenchmarkRunId = (sessionId: string): string | null => {
-  if (!sessionId.startsWith(BENCHMARK_SESSION_PREFIX)) {
-    return null;
-  }
-
-  const runId = sessionId.slice(BENCHMARK_SESSION_PREFIX.length);
-  return runId || null;
-};
 
 const formatSessionRepo = (
   session: Pick<
@@ -89,6 +79,7 @@ interface HeaderProps {
   loading: boolean;
   onArchived: () => void;
   onBack: () => void;
+  onOpenBenchmarkRun?: (runId: string) => void;
   onRefresh: () => void;
   row: SessionRow | undefined;
   sessionId: string;
@@ -98,10 +89,12 @@ const SessionHeader = ({
   loading,
   onArchived,
   onBack,
+  onOpenBenchmarkRun,
   onRefresh,
   row,
   sessionId,
 }: HeaderProps): React.JSX.Element => {
+  const benchmarkRunId = getBenchmarkRunIdFromSessionId(sessionId);
   const [confirming, setConfirming] = useState(false);
   const archive = useArchiveSessionMutation(sessionId);
   const finalize = useFinalizeSessionMutation(sessionId);
@@ -140,6 +133,18 @@ const SessionHeader = ({
               </>
             )}
           </div>
+          {benchmarkRunId && onOpenBenchmarkRun ? (
+            <div className="text-xs">
+              <span className="text-fg-muted">benchmark run </span>
+              <button
+                className="id-link font-mono"
+                onClick={() => onOpenBenchmarkRun(benchmarkRunId)}
+                type="button"
+              >
+                {benchmarkRunId.slice(0, 8)}
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -214,7 +219,7 @@ const SessionRowCard = ({
     modelProvider: row.modelProvider,
     outputTokens: row.outputTokens,
   });
-  const benchmarkRunId = getBenchmarkRunId(row.id);
+  const benchmarkRunId = getBenchmarkRunIdFromSessionId(row.id);
   const idValue =
     benchmarkRunId && onOpenBenchmarkRun ? (
       <button
@@ -239,6 +244,9 @@ const SessionRowCard = ({
           <Badge status={row.status} />
         </DefinitionField>
         <DefinitionField label="title">{row.title ?? "—"}</DefinitionField>
+        <DefinitionField label="task" mono>
+          {row.benchmarkId ?? "—"}
+        </DefinitionField>
         <DefinitionField label="model" mono>
           {row.modelProvider}/{row.modelId}
         </DefinitionField>
@@ -300,6 +308,7 @@ export const SessionDetail = ({
         loading={session.isFetching || state.isFetching}
         onArchived={onArchived}
         onBack={onBack}
+        {...(onOpenBenchmarkRun ? { onOpenBenchmarkRun } : {})}
         onRefresh={() => {
           session.refetch();
           state.refetch();

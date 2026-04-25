@@ -10,6 +10,10 @@ import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
 import { useSessionsQuery } from "@/hooks/queries";
+import {
+  getBenchmarkRunIdFromSessionId,
+  isBenchmarkHarnessSession,
+} from "@/lib/benchmark-session";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import { formatNumber, formatRelativeTime, formatRepo } from "@/lib/format";
 
@@ -27,11 +31,13 @@ const formatSessionRepo = (session: {
 };
 
 interface SessionsListProps {
+  onOpenBenchmarkRun?: (runId: string) => void;
   onSelect: (id: string) => void;
   selectedId: string | null;
 }
 
 export const SessionsList = ({
+  onOpenBenchmarkRun,
   onSelect,
   selectedId,
 }: SessionsListProps): React.JSX.Element => {
@@ -100,6 +106,7 @@ export const SessionsList = ({
               <tr>
                 <th>id</th>
                 <th>title</th>
+                <th>task</th>
                 <th>status</th>
                 <th>model</th>
                 <th>repo</th>
@@ -112,6 +119,10 @@ export const SessionsList = ({
               {rows.map((session) => {
                 const tokens = session.inputTokens + session.outputTokens;
                 const repo = formatSessionRepo(session);
+                const benchmarkRunId = getBenchmarkRunIdFromSessionId(
+                  session.id
+                );
+                const harness = isBenchmarkHarnessSession(session.id);
 
                 return (
                   <tr
@@ -132,6 +143,29 @@ export const SessionsList = ({
                       </button>
                     </td>
                     <td className="truncate">{session.title ?? "—"}</td>
+                    <td className="max-w-36">
+                      <div className="flex flex-col gap-0.5 font-mono text-fg-muted text-xs">
+                        <span
+                          className="truncate"
+                          title={session.benchmarkId ?? undefined}
+                        >
+                          {session.benchmarkId ?? "—"}
+                        </span>
+                        {harness && benchmarkRunId && onOpenBenchmarkRun ? (
+                          <button
+                            className="id-link w-fit truncate text-left"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onOpenBenchmarkRun(benchmarkRunId);
+                            }}
+                            title={`open benchmark run ${benchmarkRunId}`}
+                            type="button"
+                          >
+                            run {benchmarkRunId.slice(0, 8)}
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
                     <td>
                       <Badge status={session.status} />
                     </td>

@@ -196,13 +196,17 @@ export const createRouter = (): Hono<{
         autoStart: false,
         cleanupPolicy: run.cleanupPolicy,
         difficulty: run.difficulty,
-        maxTurns: 20,
+        maxInputTokens: 400_000,
+        maxSteps: 50,
+        maxToolCalls: 40,
+        maxTotalTokens: 500_000,
+        maxTurns: 1,
         model: {
           id: run.modelId,
           provider: run.modelProvider,
         },
         taskId: run.taskId,
-        timeoutSeconds: 900,
+        timeoutSeconds: 600,
       };
       context.executionCtx.waitUntil(
         new BenchmarkRunOrchestrator(context.env)

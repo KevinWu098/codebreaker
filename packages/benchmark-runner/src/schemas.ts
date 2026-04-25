@@ -5,6 +5,12 @@ const GHSA_ID_PATTERN = /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/;
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const DATASET_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 400_000;
+const DEFAULT_BENCHMARK_MAX_STEPS = 50;
+const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
+const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
+const DEFAULT_BENCHMARK_MAX_TURNS = 1;
+const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 
 export const GhsaIdSchema = z.string().regex(GHSA_ID_PATTERN);
 export type GhsaId = z.infer<typeof GhsaIdSchema>;
@@ -167,13 +173,30 @@ export const CreateBenchmarkRunRequestSchema = z
     cleanupPolicy: BenchmarkCleanupPolicySchema.default("retain"),
     difficulty: DifficultySchema,
     id: z.string().min(1).optional(),
-    maxTurns: z.number().int().positive().default(20),
-    maxInputTokens: z.number().int().positive().optional(),
+    maxSteps: z.number().int().positive().default(DEFAULT_BENCHMARK_MAX_STEPS),
+    maxTurns: z.number().int().positive().default(DEFAULT_BENCHMARK_MAX_TURNS),
+    maxInputTokens: z
+      .number()
+      .int()
+      .positive()
+      .default(DEFAULT_BENCHMARK_MAX_INPUT_TOKENS),
     model: BenchmarkRunModelSchema,
-    maxToolCalls: z.number().int().positive().optional(),
-    maxTotalTokens: z.number().int().positive().optional(),
+    maxToolCalls: z
+      .number()
+      .int()
+      .positive()
+      .default(DEFAULT_BENCHMARK_MAX_TOOL_CALLS),
+    maxTotalTokens: z
+      .number()
+      .int()
+      .positive()
+      .default(DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS),
     taskId: z.string().min(1),
-    timeoutSeconds: z.number().int().positive().default(900),
+    timeoutSeconds: z
+      .number()
+      .int()
+      .positive()
+      .default(DEFAULT_BENCHMARK_TIMEOUT_SECONDS),
   })
   .strict();
 export type CreateBenchmarkRunRequest = z.infer<
@@ -191,8 +214,10 @@ export const BenchmarkRunRowSchema = z
     difficulty: DifficultySchema,
     error: z.string().nullable(),
     id: z.string().min(1),
+    inputTokens: z.number().int().nonnegative().nullable(),
     modelId: z.string().min(1),
     modelProvider: ModelProviderSchema,
+    outputTokens: z.number().int().nonnegative().nullable(),
     score: z.number().min(0).max(1).nullable(),
     sessionId: z.string().nullable(),
     status: BenchmarkRunStatusSchema,
@@ -364,9 +389,12 @@ export const scoreAgentOutput = (
   const expectedLocations = new Set(
     task.ground_truth.locations.map((location) => location.file)
   );
-  const correctLocations = output.locations.filter((location) =>
-    expectedLocations.has(location.file)
-  ).length;
+  const matchedFiles = new Set(
+    output.locations
+      .filter((location) => expectedLocations.has(location.file))
+      .map((location) => location.file)
+  );
+  const correctLocations = matchedFiles.size;
   const vulnerableMatched = output.vulnerable === task.ground_truth.vulnerable;
   const vulnClassMatched = output.vuln_class === task.ground_truth.vuln_class;
   const locationScore =

@@ -1,5 +1,6 @@
 import type { BenchmarkRunRow } from "@codebreaker/benchmark-runner/schemas";
 import {
+  estimateTokenUsageCost,
   MODEL_OPTIONS,
   MODEL_OPTIONS_BY_PROVIDER,
   MODEL_PROVIDERS,
@@ -27,14 +28,53 @@ import {
   useBenchmarkTasksQuery,
 } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
-import { formatRelativeTime } from "@/lib/format";
+import { formatNumber, formatRelativeTime, formatUsd } from "@/lib/format";
 
-const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.anthropic[0];
+const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.kimi[0];
+const BENCHMARK_MAX_INPUT_TOKENS = 400_000;
+const BENCHMARK_MAX_STEPS = 50;
+const BENCHMARK_MAX_TOOL_CALLS = 40;
+const BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
+const BENCHMARK_MAX_TURNS = 1;
+const BENCHMARK_TIMEOUT_SECONDS = 600;
 const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
   `${model.provider}/${model.id}`;
 const DEFAULT_MODEL_VALUE = modelValue(DEFAULT_MODEL);
 
 const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => status;
+
+const benchmarkRunTokensLine = (run: BenchmarkRunRow): React.ReactNode => {
+  if (run.inputTokens == null || run.outputTokens == null || !run.sessionId) {
+    return "—";
+  }
+
+  const total = run.inputTokens + run.outputTokens;
+  const tokenCost = estimateTokenUsageCost({
+    inputTokens: run.inputTokens,
+    modelId: run.modelId,
+    modelProvider: run.modelProvider,
+    outputTokens: run.outputTokens,
+  });
+
+  return (
+    <span>
+      {formatNumber(run.inputTokens)} / {formatNumber(run.outputTokens)} /{" "}
+      {formatNumber(total)}
+      {tokenCost ? (
+        <span
+          className="ml-1 text-fg-muted"
+          title={`${formatUsd(tokenCost.pricing.inputUsdPerMillionTokens)} input / ${formatUsd(tokenCost.pricing.outputUsdPerMillionTokens)} output per 1M tokens`}
+        >
+          ({formatUsd(tokenCost.inputUsd)} / {formatUsd(tokenCost.outputUsd)} /{" "}
+          <strong className="font-semibold text-fg">
+            {formatUsd(tokenCost.totalUsd)}
+          </strong>
+          )
+        </span>
+      ) : null}
+    </span>
+  );
+};
 
 export interface BenchmarksPanelProps {
   onOpenSession?: (sessionId: string) => void;
@@ -56,7 +96,7 @@ export const BenchmarksPanel = ({
     null
   );
   const [selectedTaskId, setSelectedTaskId] = useState("");
-  const [difficulty, setDifficulty] = useState<"L0" | "L1">("L1");
+  const [difficulty, setDifficulty] = useState<"L0" | "L1">("L0");
   const [model, setModel] = useState(DEFAULT_MODEL_VALUE);
   const activeRunId = selectedRunId ?? localSelectedRunId;
   const selectRun = (runId: string): void => {
@@ -84,13 +124,17 @@ export const BenchmarksPanel = ({
         autoStart: true,
         cleanupPolicy: "retain",
         difficulty,
-        maxTurns: 20,
+        maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
+        maxSteps: BENCHMARK_MAX_STEPS,
+        maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
+        maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
+        maxTurns: BENCHMARK_MAX_TURNS,
         model: {
           id: selectedModel.id,
           provider: selectedModel.provider,
         },
         taskId: selectedTaskId,
-        timeoutSeconds: 900,
+        timeoutSeconds: BENCHMARK_TIMEOUT_SECONDS,
       },
       {
         onSuccess: (response) => selectRun(response.run.id),
@@ -229,6 +273,7 @@ const BenchmarkRunsTable = ({
             <th>task</th>
             <th>status</th>
             <th className="num">score</th>
+            <th title="input / output / total (USD est.)">tokens</th>
             <th>updated</th>
           </tr>
         </thead>
@@ -253,6 +298,9 @@ const BenchmarkRunsTable = ({
                 <Badge status={badgeStatusForRun(run.status)} />
               </td>
               <td className="num">{run.score?.toFixed(2) ?? "—"}</td>
+              <td className="max-w-[14rem] whitespace-normal text-fg-muted text-xs">
+                {benchmarkRunTokensLine(run)}
+              </td>
               <td className="text-fg-muted">
                 {formatRelativeTime(run.updatedAt)}
               </td>
@@ -352,6 +400,9 @@ const BenchmarkRunDetail = ({
           </DefinitionField>
           <DefinitionField label="score" numeric>
             {run.score?.toFixed(2) ?? "—"}
+          </DefinitionField>
+          <DefinitionField label="tokens (in/out/total)" numeric>
+            {benchmarkRunTokensLine(run)}
           </DefinitionField>
           <DefinitionField label="artifact" mono>
             {run.artifactPath ?? "—"}

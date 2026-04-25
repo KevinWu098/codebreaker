@@ -16,6 +16,7 @@ import type { ExtensionPolicy } from "@codebreaker/shared/schemas/primitives";
 import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 
 export interface BuiltinToolOptions {
+  defaultRemoteTimeoutSeconds?: () => number | undefined;
   defaultSandboxProfile?: SandboxProfileName;
   env: Env;
   policy: ExtensionPolicy;
@@ -40,6 +41,7 @@ const SESSION_TOOL_TIERS = {
 } as const;
 
 export const createBuiltinTools = ({
+  defaultRemoteTimeoutSeconds,
   defaultSandboxProfile,
   env,
   policy,
@@ -48,6 +50,9 @@ export const createBuiltinTools = ({
 }: BuiltinToolOptions): TieredToolSet => {
   const httpTools = createHttpTools();
   const modalTools = createModalTools({
+    ...(defaultRemoteTimeoutSeconds
+      ? { defaultTimeoutSeconds: defaultRemoteTimeoutSeconds }
+      : {}),
     executor: ModalExecutor.fromEnv(env),
     sessionId,
     ...(defaultSandboxProfile ? { defaultProfile: defaultSandboxProfile } : {}),

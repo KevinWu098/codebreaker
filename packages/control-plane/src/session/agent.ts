@@ -7,6 +7,8 @@ import {
   type Session,
   type StepContext,
   Think,
+  type ToolCallContext,
+  type ToolCallDecision,
   type TurnConfig,
   type TurnContext,
 } from "@cloudflare/think";
@@ -38,8 +40,10 @@ export interface SessionAgentState {
     finalizing?: boolean;
     inputTokens?: number;
     outputTokens?: number;
+    startedAt?: number;
     stopReason?: string;
     toolCalls?: number;
+    turns?: number;
   };
   sessionId?: string;
   status: SessionStatus;
@@ -56,6 +60,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     status: "pending",
   };
   override messageConcurrency: MessageConcurrency = "queue";
+  private sessionReadyPromise: Promise<void> | undefined;
 
   override async onStart(props?: Record<string, unknown>): Promise<void> {
     await super.onStart(props);
@@ -94,6 +99,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       policy: config.extensionPolicy,
       sessionId: this.sessionId,
       workspace: this.workspace,
+      defaultRemoteTimeoutSeconds: () => this.remainingTimeoutSeconds(config),
       ...(config.sandbox?.profile
         ? { defaultSandboxProfile: config.sandbox.profile }
         : {}),
@@ -147,9 +153,16 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
   override beforeTurn(ctx: TurnContext): TurnConfig | undefined {
     const config = this.readConfig();
+    const startedAt = this.state.control?.startedAt ?? Date.now();
+    const turns = (this.state.control?.turns ?? 0) + 1;
 
     this.setState({
       ...this.state,
+      control: {
+        ...this.state.control,
+        startedAt,
+        turns,
+      },
       status: "running",
     });
     const eventId = `running:${crypto.randomUUID()}`;
@@ -172,15 +185,41 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     }
 
     if (this.state.control?.finalizing) {
-      return {
-        activeTools: [],
-        maxSteps: 1,
-        system: `${ctx.system}\n\nYou are finalizing a stopped run. Do not call tools. Answer from the transcript only.`,
-      };
+      return this.finalTurnConfig(
+        ctx,
+        this.state.control.stopReason ?? "Run is finalizing"
+      );
+    }
+
+    if (this.state.control?.stopReason) {
+      return this.finalTurnConfig(ctx, this.state.control.stopReason);
+    }
+
+    const stopReason =
+      this.timeoutStopReason(config, startedAt) ??
+      (turns > config.maxTurns
+        ? `Turn budget reached (${turns - 1}/${config.maxTurns})`
+        : null);
+
+    if (stopReason) {
+      this.setState({
+        ...this.state,
+        control: {
+          ...this.state.control,
+          finalizing: true,
+          startedAt,
+          stopReason,
+          turns,
+        },
+        status: "running",
+      });
+
+      return this.finalTurnConfig(ctx, stopReason);
     }
 
     const turnConfig: TurnConfig = {
       activeTools: activeBuiltinToolNames(config.extensionPolicy),
+      maxSteps: config.maxSteps,
     };
 
     if (config.model.provider === "openai" && config.model.reasoningEffort) {
@@ -197,26 +236,44 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   override onStepFinish(ctx: StepContext): void {
     const inputTokens = ctx.usage.inputTokens ?? 0;
     const outputTokens = ctx.usage.outputTokens ?? 0;
-    const toolCalls = ctx.toolCalls?.length ?? 0;
 
     const control = this.recordUsage({
       inputTokens,
       outputTokens,
-      toolCalls,
     });
-    const stopReason = this.budgetStopReason(control);
+    const stopReason =
+      this.timeoutStopReason(this.readConfig()) ??
+      this.budgetStopReason(control);
+
+    if (stopReason) {
+      this.recordStopReason(stopReason);
+    }
 
     this.ctx.waitUntil(
-      Promise.all([
-        this.sessionIndex.addTokenUsage({
-          eventId: `${ctx.response.id}:${ctx.stepNumber}`,
-          id: this.sessionId,
-          inputTokens,
-          outputTokens,
-        }),
-        stopReason ? this.stopAndFinalize(stopReason) : Promise.resolve(),
-      ]).then(() => undefined)
+      this.sessionIndex.addTokenUsage({
+        eventId: `${ctx.response.id}:${ctx.stepNumber}`,
+        id: this.sessionId,
+        inputTokens,
+        outputTokens,
+      })
     );
+  }
+
+  override beforeToolCall(ctx: ToolCallContext): ToolCallDecision | undefined {
+    const stopReason =
+      this.timeoutStopReason(this.readConfig()) ??
+      this.budgetStopReason(this.state.control);
+
+    if (stopReason) {
+      this.recordStopReason(stopReason);
+
+      return {
+        action: "block",
+        reason: `${stopReason}. Stop calling tools and return the best valid final answer using the evidence already present in the transcript.`,
+      };
+    }
+
+    this.recordToolCall(ctx.toolName);
   }
 
   override onChatResponse(result: ChatResponseResult): void {
@@ -313,11 +370,11 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   @callable()
-  init(
+  async init(
     sessionId: string,
     configInput: SessionConfig,
     artifactInput?: BenchmarkArtifactState
-  ): SessionAgentState {
+  ): Promise<SessionAgentState> {
     const config = SessionConfigSchema.parse(configInput);
     const artifact = artifactInput
       ? BenchmarkArtifactStateSchema.parse(artifactInput)
@@ -330,6 +387,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       sessionId,
       status: "idle",
     });
+    await this.ensureSessionReady();
 
     return this.state;
   }
@@ -346,6 +404,8 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   async stopAndFinalize(
     reason = "Operator requested stop"
   ): Promise<SaveMessagesResult> {
+    await this.ensureSessionReady();
+
     if (this.state.control?.finalizing) {
       return {
         requestId: "already-finalizing",
@@ -397,7 +457,9 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   @callable()
-  requestFollowUp(content: string): Promise<SaveMessagesResult> {
+  async requestFollowUp(content: string): Promise<SaveMessagesResult> {
+    await this.ensureSessionReady();
+
     return this.saveMessages([
       {
         id: crypto.randomUUID(),
@@ -408,10 +470,12 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   @callable()
-  continuePreviousTurn(
+  async continuePreviousTurn(
     body?: Record<string, unknown>
   ): Promise<SaveMessagesResult> {
-    return this.continueLastTurn(body);
+    await this.ensureSessionReady();
+
+    return await this.continueLastTurn(body);
   }
 
   private requireConfig(): SessionConfig {
@@ -436,6 +500,18 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const artifact = props?.artifact;
 
     return artifact ? BenchmarkArtifactStateSchema.parse(artifact) : null;
+  }
+
+  private async ensureSessionReady(): Promise<void> {
+    if (this.session) {
+      return;
+    }
+
+    this.sessionReadyPromise ??= this.onStart().finally(() => {
+      this.sessionReadyPromise = undefined;
+    });
+
+    await this.sessionReadyPromise;
   }
 
   private get sessionId(): string {
@@ -470,14 +546,14 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   private recordUsage(input: {
     inputTokens: number;
     outputTokens: number;
-    toolCalls: number;
+    toolCalls?: number;
   }): NonNullable<SessionAgentState["control"]> {
     const control = {
       ...this.state.control,
       inputTokens: (this.state.control?.inputTokens ?? 0) + input.inputTokens,
       outputTokens:
         (this.state.control?.outputTokens ?? 0) + input.outputTokens,
-      toolCalls: (this.state.control?.toolCalls ?? 0) + input.toolCalls,
+      toolCalls: (this.state.control?.toolCalls ?? 0) + (input.toolCalls ?? 0),
     };
 
     this.setState({
@@ -488,10 +564,40 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     return control;
   }
 
+  private recordToolCall(
+    _toolName: string
+  ): NonNullable<SessionAgentState["control"]> {
+    const control = {
+      ...this.state.control,
+      toolCalls: (this.state.control?.toolCalls ?? 0) + 1,
+    };
+
+    this.setState({
+      ...this.state,
+      control,
+    });
+
+    return control;
+  }
+
+  private recordStopReason(reason: string): void {
+    if (this.state.control?.stopReason) {
+      return;
+    }
+
+    this.setState({
+      ...this.state,
+      control: {
+        ...this.state.control,
+        stopReason: reason,
+      },
+    });
+  }
+
   private budgetStopReason(
-    control: NonNullable<SessionAgentState["control"]>
+    control: SessionAgentState["control"] | undefined
   ): string | null {
-    if (control.finalizing) {
+    if (!control || control.finalizing) {
       return null;
     }
 
@@ -514,6 +620,44 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     }
 
     return null;
+  }
+
+  private finalTurnConfig(ctx: TurnContext, reason: string): TurnConfig {
+    return {
+      activeTools: [],
+      maxSteps: 1,
+      system: `${ctx.system}\n\nYou are finalizing a stopped run. Do not call tools. Answer from the transcript only. Stop reason: ${reason}`,
+    };
+  }
+
+  private remainingTimeoutSeconds(config: SessionConfig): number | undefined {
+    const startedAt = this.state.control?.startedAt;
+
+    if (!startedAt) {
+      return config.timeoutSeconds;
+    }
+
+    const remainingMs = startedAt + config.timeoutSeconds * 1000 - Date.now();
+
+    return Math.max(1, Math.ceil(remainingMs / 1000));
+  }
+
+  private timeoutStopReason(
+    config: SessionConfig | null,
+    startedAt = this.state.control?.startedAt
+  ): string | null {
+    if (!(config && startedAt)) {
+      return null;
+    }
+
+    const elapsedMs = Date.now() - startedAt;
+    const timeoutMs = config.timeoutSeconds * 1000;
+
+    if (elapsedMs < timeoutMs) {
+      return null;
+    }
+
+    return `Timeout reached (${config.timeoutSeconds}s)`;
   }
 
   private getBenchmarkRunId(): string | null {
