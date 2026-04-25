@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5gg9-5g7w-hm73",
+  "post_patch_commit": "a63573b67eb302167b4c4f218361a2d0c138deab",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from both the advisory description (which explicitly names the affected file and function) and the patch diff. The patch adds a single guard (user.Perm.Admin = false) after applying default settings in the signup handler. Only one source file was modified, so the patch is not noisy.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2025-04-25"
+}
