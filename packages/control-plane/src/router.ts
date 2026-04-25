@@ -155,9 +155,15 @@ export const createRouter = (): Hono<{
         return jsonError("Benchmark run not found", "run_not_found", 404);
       }
 
+      const result = await store.getLatestResult(id);
+
       return context.json({
         events: await store.listEvents(id),
-        result: await store.getLatestResult(id),
+        locations: await store.listLocations({
+          ...(result ? { resultId: result.id } : {}),
+          runId: id,
+        }),
+        result,
         run,
         task: dataset.getTask(run.taskId),
       });

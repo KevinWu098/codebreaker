@@ -23,8 +23,6 @@ import type {
 } from "@codebreaker/shared/schemas/artifacts";
 import { getAgentByName } from "agents";
 
-const RESULT_PATH = "codebreaker-result.json";
-
 export class BenchmarkRunOrchestrator {
   private readonly dataset: BenchmarkDatasetService;
   private readonly env: Env;
@@ -109,7 +107,7 @@ export class BenchmarkRunOrchestrator {
         runId,
       });
 
-      const checkout = await this.checkoutArtifact({
+      await this.checkoutArtifact({
         artifact,
         ref: record.task.codebase.commit,
         runId,
@@ -136,43 +134,16 @@ export class BenchmarkRunOrchestrator {
       const score = agentOutput
         ? scoreAgentOutput(record.task, agentOutput)
         : null;
-      const artifactPath = `${checkout.repoPath}/${RESULT_PATH}`;
-
-      await new ModalExecutor({
-        secret: this.env.MODAL_SHIM_SECRET,
-        url: this.env.MODAL_SHIM_URL,
-      }).writeFile({
-        content: new TextEncoder().encode(
-          JSON.stringify(
-            {
-              agentOutput,
-              rawOutput,
-              score,
-            },
-            null,
-            2
-          )
-        ),
-        path: artifactPath,
-        sessionId,
-      });
-
-      const commit = await this.commitArtifact({
-        artifact,
-        artifactPath,
-        runId,
-        sessionId,
-      });
-      await this.runs.putResult({
+      const result = await this.runs.putResult({
         agentOutput,
-        artifactPath,
         rawOutput,
         runId,
         score,
+        task: record.task,
       });
       await this.runs.update({
-        artifactCommitSha: commit.commitSha ?? checkout.commitSha ?? null,
-        artifactPath,
+        artifactCommitSha: null,
+        artifactPath: result.artifactPath,
         completedAt: new Date().toISOString(),
         id: runId,
         score: score?.score ?? null,
@@ -191,12 +162,14 @@ export class BenchmarkRunOrchestrator {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      await this.runs.putResult({
+      const result = await this.runs.putResult({
         error: message,
         rawOutput: null,
         runId,
+        task: record.task,
       });
       await this.runs.update({
+        artifactPath: result.artifactPath,
         completedAt: new Date().toISOString(),
         error: message,
         id: runId,
@@ -250,7 +223,10 @@ export class BenchmarkRunOrchestrator {
       );
       const state = await withDORetry(() => agent.inspectState());
 
-      if (state.artifact) {
+      if (
+        state.artifact &&
+        state.artifact.runRepoRemote !== state.artifact.targetRepoRemote
+      ) {
         await createGitTreeStore(this.env).archiveRunRepo({
           repo: {
             cloneUrl: state.artifact.runRepoRemote,
@@ -290,29 +266,17 @@ export class BenchmarkRunOrchestrator {
     const targetRepo = await store.ensureStableTarget({
       target: input.benchmark.target,
     });
-    const runRepo = await store.createRunRepo({
-      benchmarkId: input.benchmark.target.benchmarkId,
-      sessionId: input.sessionId,
-      sourceRepo: targetRepo,
-      workingBranch: input.benchmark.artifacts.workingBranch,
-      ...(input.benchmark.artifacts.agentId
-        ? { agentId: input.benchmark.artifacts.agentId }
-        : {}),
-      ...(input.benchmark.artifacts.runRepoName
-        ? { runRepoName: input.benchmark.artifacts.runRepoName }
-        : {}),
-    });
 
     return {
       benchmarkId: input.benchmark.target.benchmarkId,
       defaultBranch: targetRepo.defaultBranch,
-      provider: runRepo.provider,
-      runRepoName: runRepo.name,
-      runRepoRemote: runRepo.cloneUrl,
+      provider: targetRepo.provider,
+      runRepoName: targetRepo.name,
+      runRepoRemote: targetRepo.cloneUrl,
       status: "pending",
       targetRepoName: targetRepo.name,
       targetRepoRemote: targetRepo.cloneUrl,
-      workingBranch: runRepo.defaultBranch,
+      workingBranch: targetRepo.defaultBranch,
     };
   }
 
@@ -355,42 +319,6 @@ export class BenchmarkRunOrchestrator {
     });
 
     return checkout;
-  }
-
-  private async commitArtifact(input: {
-    artifact: BenchmarkArtifactState;
-    artifactPath: string;
-    runId: string;
-    sessionId: string;
-  }) {
-    const credential = await createGitTreeStore(this.env).mintCredential({
-      repo: {
-        cloneUrl: input.artifact.runRepoRemote,
-        defaultBranch: input.artifact.workingBranch,
-        fullName: input.artifact.runRepoName,
-        name: input.artifact.runRepoName,
-        provider: input.artifact.provider,
-      },
-      scope: "write",
-    });
-    const commit = await ModalExecutor.fromEnv(this.env).commitGitRepo({
-      branch: input.artifact.workingBranch,
-      credential,
-      message: `Record benchmark result ${input.runId}`,
-      path: `/workspace/${input.artifact.runRepoName}`,
-      paths: [RESULT_PATH],
-      remoteUrl: input.artifact.runRepoRemote,
-      sessionId: input.sessionId,
-    });
-
-    await this.runs.addEvent({
-      details: commit,
-      kind: "artifact_committed",
-      message: "Benchmark artifact committed",
-      runId: input.runId,
-    });
-
-    return commit;
   }
 
   private async readAssistantOutput(agent: {

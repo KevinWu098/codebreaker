@@ -43,6 +43,7 @@ export const toBenchmarkSessionConfig = ({
       description: `${task.task_id} vulnerable codebase`,
       patchedRef: metadata.post_patch_commit,
       sourceUrl: task.codebase.repo,
+      targetRepoName: `target-${task.task_id}-${task.codebase.commit.slice(0, 12)}`,
       vulnerableRef: task.codebase.commit,
     },
   },

@@ -14,6 +14,8 @@ import { RequestError } from "@octokit/request-error";
 import { Octokit, type RestEndpointMethodTypes } from "@octokit/rest";
 
 const TRAILING_SLASH_REGEX = /\/$/;
+const REF_CHECK_ATTEMPTS = 5;
+const REF_CHECK_DELAY_MS = 1000;
 
 type GitHubRepository =
   RestEndpointMethodTypes["repos"]["get"]["response"]["data"];
@@ -123,6 +125,7 @@ export class GitHubGitTreeStore implements GitTreeStore {
     const existing = await this.getRepoByName(name);
 
     if (existing) {
+      await this.ensureTargetRefsPresent(existing, input.target);
       return this.toRepoRef(existing, input.target.defaultBranch);
     }
 
@@ -139,6 +142,7 @@ export class GitHubGitTreeStore implements GitTreeStore {
         upstream,
       });
 
+      await this.ensureTargetRefsPresent(forked, input.target);
       return this.toRepoRef(forked, input.target.defaultBranch);
     }
 
@@ -207,6 +211,53 @@ export class GitHubGitTreeStore implements GitTreeStore {
     });
 
     return data;
+  }
+
+  private async ensureTargetRefsPresent(
+    repo: GitHubRepository,
+    target: EnsureStableTargetInput["target"]
+  ): Promise<void> {
+    const refs = [target.vulnerableRef, target.patchedRef].filter(
+      (ref): ref is string => Boolean(ref)
+    );
+
+    for (const ref of refs) {
+      await this.waitForCommitRef(repo, ref);
+    }
+  }
+
+  private async waitForCommitRef(
+    repo: GitHubRepository,
+    ref: string
+  ): Promise<void> {
+    const parsed = this.parseRepoRefOrThrow(repo.full_name, repo.clone_url);
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < REF_CHECK_ATTEMPTS; attempt += 1) {
+      try {
+        await this.octokit.repos.getCommit({
+          owner: parsed.owner,
+          ref,
+          repo: parsed.name,
+        });
+        return;
+      } catch (error) {
+        lastError = error;
+
+        if (!(error instanceof RequestError && error.status === 404)) {
+          throw error;
+        }
+
+        if (attempt < REF_CHECK_ATTEMPTS - 1) {
+          await delay(REF_CHECK_DELAY_MS);
+        }
+      }
+    }
+
+    throw new Error(
+      `Target repository ${repo.full_name} does not contain required ref ${ref}`,
+      { cause: lastError }
+    );
   }
 
   private parseUpstreamRefFromUrlOrThrow(sourceUrl: string): {
@@ -350,3 +401,8 @@ export class GitHubGitTreeStore implements GitTreeStore {
     };
   }
 }
+
+const delay = (durationMs: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, durationMs);
+  });

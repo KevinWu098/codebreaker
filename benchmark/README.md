@@ -20,7 +20,7 @@ ECVEBench follows CyberGYM's pattern: **difficulty is a runtime parameter, not a
 | Agent output | Agent's verdict, class, locations, confidence, difficulty.   | `schema/output.schema.json`      | Returned by the agent, consumed by the scorer       |
 
 
-The agent sees only the pre-patch commit and the difficulty-specific hint. It does not know whether a vulnerability exists — that is what it must determine. Negative validation is handled by the evaluation harness using the post-patch commit stored in `internal/metadata.jsonl`, following the same approach as CyberGYM.
+The agent sees only the pre-patch commit and the difficulty-specific hint. It does not know whether a vulnerability exists — that is what it must determine. Negative validation is handled by the evaluation harness using the post-patch commit stored in `internal/metadata/`, following the same approach as CyberGYM.
 
 ### Difficulty Levels
 

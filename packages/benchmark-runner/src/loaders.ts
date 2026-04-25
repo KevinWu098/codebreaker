@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   type GhsaId,
@@ -9,15 +9,8 @@ import {
 } from "@codebreaker/benchmark-runner/schemas";
 import type { ZodType, z } from "zod";
 
-const DEFAULT_TASKS_PATH = "benchmark/data/tasks.jsonl";
-const DEFAULT_METADATA_PATH = "benchmark/internal/metadata.jsonl";
-const JSONL_LINE_SEPARATOR = /\r?\n/;
-
-export interface JsonlRecord<T> {
-  line: number;
-  source: string;
-  value: T;
-}
+const DEFAULT_TASKS_DIR = "benchmark/data/tasks";
+const DEFAULT_METADATA_DIR = "benchmark/internal/metadata";
 
 export class BenchmarkValidationError extends Error {
   readonly details: string[];
@@ -75,27 +68,10 @@ const formatZodIssues = (error: z.ZodError): string[] =>
 const formatUnknownError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-const parseJsonValue = (
-  line: string,
-  lineNumber: number,
-  source: string
-): unknown => {
-  try {
-    return JSON.parse(line) as unknown;
-  } catch (error) {
-    throw new BenchmarkValidationError({
-      cause: error,
-      details: [`invalid JSON: ${formatUnknownError(error)}`],
-      line: lineNumber,
-      source,
-    });
-  }
-};
-
 const parseRecordValue = <T>(
   value: unknown,
   schema: ZodType<T>,
-  line: number,
+  line: number | undefined,
   source: string
 ): T => {
   const result = schema.safeParse(value);
@@ -104,7 +80,7 @@ const parseRecordValue = <T>(
     throw new BenchmarkValidationError({
       cause: result.error,
       details: formatZodIssues(result.error),
-      line,
+      ...(line === undefined ? {} : { line }),
       source,
     });
   }
@@ -112,68 +88,50 @@ const parseRecordValue = <T>(
   return result.data;
 };
 
-export const parseJsonlRecords = <T>(
-  contents: string,
-  schema: ZodType<T>,
-  source = "<jsonl>"
-): JsonlRecord<T>[] => {
-  const records: JsonlRecord<T>[] = [];
-  const lines = contents.split(JSONL_LINE_SEPARATOR);
+export const loadJsonFile = async <T>(
+  filePath: string,
+  schema: ZodType<T>
+): Promise<T> => {
+  const contents = await readFile(filePath, "utf8");
+  let parsed: unknown;
 
-  for (const [index, rawLine] of lines.entries()) {
-    const line = rawLine.trim();
-
-    if (line.length === 0) {
-      continue;
-    }
-
-    const lineNumber = index + 1;
-    const value = parseJsonValue(line, lineNumber, source);
-    records.push({
-      line: lineNumber,
-      source,
-      value: parseRecordValue(value, schema, lineNumber, source),
+  try {
+    parsed = JSON.parse(contents) as unknown;
+  } catch (error) {
+    throw new BenchmarkValidationError({
+      cause: error,
+      details: [`invalid JSON: ${formatUnknownError(error)}`],
+      source: filePath,
     });
   }
 
-  return records;
+  return parseRecordValue(parsed, schema, undefined, filePath);
 };
 
-export const parseJsonl = <T>(
-  contents: string,
-  schema: ZodType<T>,
-  source = "<jsonl>"
-): T[] =>
-  parseJsonlRecords(contents, schema, source).map((record) => record.value);
-
-export const loadJsonlFile = async <T>(
-  filePath: string,
+export const loadJsonDirectory = async <T>(
+  directoryPath: string,
   schema: ZodType<T>
 ): Promise<T[]> => {
-  const contents = await readFile(filePath, "utf8");
-  return parseJsonl(contents, schema, filePath);
+  const entries = await readdir(directoryPath);
+  const jsonFiles = entries
+    .filter((entry) => entry.endsWith(".json"))
+    .sort((a, b) => a.localeCompare(b));
+
+  return Promise.all(
+    jsonFiles.map((entry) => loadJsonFile(join(directoryPath, entry), schema))
+  );
 };
-
-export const parseBenchmarkTasksJsonl = (
-  contents: string,
-  source = DEFAULT_TASKS_PATH
-): TaskInstance[] => parseJsonl(contents, TaskInstanceSchema, source);
-
-export const parseInternalMetadataJsonl = (
-  contents: string,
-  source = DEFAULT_METADATA_PATH
-): InternalMetadata[] => parseJsonl(contents, InternalMetadataSchema, source);
 
 export const loadBenchmarkTasks = async (
   workspaceRoot = process.cwd()
 ): Promise<TaskInstance[]> =>
-  loadJsonlFile(join(workspaceRoot, DEFAULT_TASKS_PATH), TaskInstanceSchema);
+  loadJsonDirectory(join(workspaceRoot, DEFAULT_TASKS_DIR), TaskInstanceSchema);
 
 export const loadInternalMetadata = async (
   workspaceRoot = process.cwd()
 ): Promise<InternalMetadata[]> =>
-  loadJsonlFile(
-    join(workspaceRoot, DEFAULT_METADATA_PATH),
+  loadJsonDirectory(
+    join(workspaceRoot, DEFAULT_METADATA_DIR),
     InternalMetadataSchema
   );
 

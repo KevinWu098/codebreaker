@@ -3,14 +3,17 @@ import type {
   BenchmarkCleanupPolicy,
   BenchmarkRunEvent,
   BenchmarkRunEventKind,
+  BenchmarkRunLocation,
   BenchmarkRunResult,
   BenchmarkRunRow,
   BenchmarkRunScore,
   BenchmarkRunStatus,
   Difficulty,
+  TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
   BenchmarkRunEventSchema,
+  BenchmarkRunLocationSchema,
   BenchmarkRunResultSchema,
   BenchmarkRunRowSchema,
 } from "@codebreaker/benchmark-runner/schemas";
@@ -48,12 +51,31 @@ interface BenchmarkRunEventRecord {
 interface BenchmarkRunResultRecord {
   agent_output: string | null;
   artifact_path: string | null;
+  confidence: number | null;
+  correct_locations: number | null;
   created_at: string;
   error: string | null;
+  expected_vuln_class: string | null;
+  expected_vulnerable: number | null;
   id: string;
+  location_score: number | null;
+  predicted_vuln_class: string | null;
+  predicted_vulnerable: number | null;
   raw_output: string | null;
   run_id: string;
   score: string | null;
+  vuln_class_matched: number | null;
+  vulnerable_matched: number | null;
+}
+
+interface BenchmarkRunLocationRecord {
+  created_at: string;
+  file: string;
+  function_name: string | null;
+  id: string;
+  matched_ground_truth: number | null;
+  result_id: string;
+  run_id: string;
 }
 
 export interface CreateBenchmarkRunInput {
@@ -273,16 +295,37 @@ export class BenchmarkRunStore {
     rawOutput?: string | null;
     runId: string;
     score?: BenchmarkRunScore | null;
+    task?: TaskInstance | null;
   }): Promise<BenchmarkRunResult> {
+    const id = crypto.randomUUID();
+    const createdAt = nowIso();
+    const extracted = extractResultColumns(input);
     const result = BenchmarkRunResultSchema.parse({
       agentOutput: input.agentOutput ?? null,
-      artifactPath: input.artifactPath ?? null,
-      createdAt: nowIso(),
+      artifactPath:
+        input.artifactPath ??
+        `d1://benchmark-runs/${input.runId}/results/${id}`,
+      confidence: input.agentOutput?.confidence ?? null,
+      correctLocations: input.score?.correctLocations ?? null,
+      createdAt,
       error: input.error ?? null,
-      id: crypto.randomUUID(),
+      expectedVulnClass: input.task?.ground_truth.vuln_class ?? null,
+      expectedVulnerable:
+        input.score?.expectedVulnerable ??
+        input.task?.ground_truth.vulnerable ??
+        null,
+      id,
+      locationScore: input.score?.locationScore ?? null,
+      predictedVulnClass: input.agentOutput?.vuln_class ?? null,
+      predictedVulnerable:
+        input.score?.predictedVulnerable ??
+        input.agentOutput?.vulnerable ??
+        null,
       rawOutput: input.rawOutput ?? null,
       runId: input.runId,
       score: input.score ?? null,
+      vulnClassMatched: input.score?.vulnClassMatched ?? null,
+      vulnerableMatched: input.score?.vulnerableMatched ?? null,
     });
 
     await this.db
@@ -295,8 +338,17 @@ export class BenchmarkRunStore {
           score,
           artifact_path,
           error,
+          predicted_vulnerable,
+          expected_vulnerable,
+          vulnerable_matched,
+          predicted_vuln_class,
+          expected_vuln_class,
+          vuln_class_matched,
+          confidence,
+          location_score,
+          correct_locations,
           created_at
-        ) values (?, ?, ?, ?, ?, ?, ?, ?)`
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         result.id,
@@ -306,9 +358,26 @@ export class BenchmarkRunStore {
         result.score ? JSON.stringify(result.score) : null,
         result.artifactPath,
         result.error,
+        extracted.predictedVulnerable,
+        extracted.expectedVulnerable,
+        extracted.vulnerableMatched,
+        extracted.predictedVulnClass,
+        extracted.expectedVulnClass,
+        extracted.vulnClassMatched,
+        extracted.confidence,
+        extracted.locationScore,
+        extracted.correctLocations,
         result.createdAt
       )
       .run();
+
+    await this.putLocations({
+      agentOutput: input.agentOutput ?? null,
+      createdAt,
+      resultId: result.id,
+      runId: result.runId,
+      task: input.task ?? null,
+    });
 
     return result;
   }
@@ -325,6 +394,71 @@ export class BenchmarkRunStore {
       .first<BenchmarkRunResultRecord>();
 
     return row ? this.toResult(row) : null;
+  }
+
+  async listLocations(input: {
+    resultId?: string;
+    runId: string;
+  }): Promise<BenchmarkRunLocation[]> {
+    const query = input.resultId
+      ? this.db
+          .prepare(
+            `select * from benchmark_run_locations
+            where run_id = ? and result_id = ?
+            order by created_at asc, file asc`
+          )
+          .bind(input.runId, input.resultId)
+      : this.db
+          .prepare(
+            `select * from benchmark_run_locations
+            where run_id = ?
+            order by created_at asc, file asc`
+          )
+          .bind(input.runId);
+    const result = await query.all<BenchmarkRunLocationRecord>();
+
+    return result.results.map((row) => this.toLocation(row));
+  }
+
+  private async putLocations(input: {
+    agentOutput: AgentOutput | null;
+    createdAt: string;
+    resultId: string;
+    runId: string;
+    task: TaskInstance | null;
+  }): Promise<void> {
+    if (!input.agentOutput) {
+      return;
+    }
+
+    const expected = new Set(
+      input.task?.ground_truth.locations.map(locationKey) ?? []
+    );
+
+    for (const location of input.agentOutput.locations) {
+      await this.db
+        .prepare(
+          `insert into benchmark_run_locations (
+            id,
+            result_id,
+            run_id,
+            file,
+            function_name,
+            matched_ground_truth,
+            created_at
+          ) values (?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          crypto.randomUUID(),
+          input.resultId,
+          input.runId,
+          location.file,
+          location.function,
+          input.task ? booleanToDb(expected.has(locationKey(location))) : null,
+          input.createdAt
+        )
+        .run();
+    }
   }
 
   private toRun(row: BenchmarkRunRecord): BenchmarkRunRow {
@@ -363,12 +497,74 @@ export class BenchmarkRunStore {
     return BenchmarkRunResultSchema.parse({
       agentOutput: row.agent_output ? JSON.parse(row.agent_output) : null,
       artifactPath: row.artifact_path,
+      confidence: row.confidence,
+      correctLocations: row.correct_locations,
       createdAt: row.created_at,
       error: row.error,
+      expectedVulnClass: row.expected_vuln_class,
+      expectedVulnerable: dbToBoolean(row.expected_vulnerable),
       id: row.id,
+      locationScore: row.location_score,
+      predictedVulnClass: row.predicted_vuln_class,
+      predictedVulnerable: dbToBoolean(row.predicted_vulnerable),
       rawOutput: row.raw_output,
       runId: row.run_id,
       score: row.score ? JSON.parse(row.score) : null,
+      vulnClassMatched: dbToBoolean(row.vuln_class_matched),
+      vulnerableMatched: dbToBoolean(row.vulnerable_matched),
+    });
+  }
+
+  private toLocation(row: BenchmarkRunLocationRecord): BenchmarkRunLocation {
+    return BenchmarkRunLocationSchema.parse({
+      createdAt: row.created_at,
+      file: row.file,
+      function: row.function_name,
+      id: row.id,
+      matchedGroundTruth: dbToBoolean(row.matched_ground_truth),
+      resultId: row.result_id,
+      runId: row.run_id,
     });
   }
 }
+
+const extractResultColumns = (input: {
+  agentOutput?: AgentOutput | null;
+  score?: BenchmarkRunScore | null;
+  task?: TaskInstance | null;
+}) => ({
+  confidence: input.agentOutput?.confidence ?? null,
+  correctLocations: input.score?.correctLocations ?? null,
+  expectedVulnClass: input.task?.ground_truth.vuln_class ?? null,
+  expectedVulnerable: booleanToDb(
+    input.score?.expectedVulnerable ??
+      input.task?.ground_truth.vulnerable ??
+      null
+  ),
+  locationScore: input.score?.locationScore ?? null,
+  predictedVulnClass: input.agentOutput?.vuln_class ?? null,
+  predictedVulnerable: booleanToDb(
+    input.score?.predictedVulnerable ?? input.agentOutput?.vulnerable ?? null
+  ),
+  vulnClassMatched: booleanToDb(input.score?.vulnClassMatched ?? null),
+  vulnerableMatched: booleanToDb(input.score?.vulnerableMatched ?? null),
+});
+
+const locationKey = (location: { file: string; function: string | null }) =>
+  `${location.file}\0${location.function ?? ""}`;
+
+const booleanToDb = (value: boolean | null): number | null => {
+  if (value === null) {
+    return null;
+  }
+
+  return value ? 1 : 0;
+};
+
+const dbToBoolean = (value: number | null): boolean | null => {
+  if (value === null) {
+    return null;
+  }
+
+  return value === 1;
+};

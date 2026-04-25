@@ -1,21 +1,22 @@
 # GitHub Benchmark Artifact Flow
 
-Codebreaker stores benchmark artifacts in Git-backed repositories managed on GitHub. The implementation uses the GitHub REST API (create repositories + fork upstream repos) through the `GitTreeStore` interface. A Cloudflare Artifacts provider remains a future option behind the same interface.
+Codebreaker stores benchmark target snapshots in GitHub and benchmark run output in D1. The GitHub implementation uses the REST API to create or reuse durable target repositories through the `GitTreeStore` interface.
 
 ## Storage Boundaries
 
-- GitHub owns canonical Git repository storage (object database + server-side metadata).
+- GitHub owns canonical target source snapshots.
 - The control plane owns repository provisioning, short-lived operation credentials, and D1 metadata.
 - `SessionAgent` owns durable agent state and exposes the current artifact state to the model as Think context.
 - Modal sandboxes only hold working checkouts under `/workspace`; they are not canonical storage.
+- D1 owns per-run benchmark output and queryable evidence.
 
 ## Repository Lifecycle
 
-Each benchmark target has a stable target repository. The control plane creates or reuses it from `config.benchmark.target`. If `sourceUrl` points at a public GitHub repository, the stable target is created by forking that upstream into the configured GitHub user/org.
+Each benchmark target commit has a stable target repository. The control plane creates or reuses it from `config.benchmark.target`. Target repo names include the benchmark ID and vulnerable commit prefix so a run can check whether the required snapshot already exists.
 
-Each session gets a per-run repository. The run repo is created by forking the stable target repository, which preserves history and default branches without using GitHub’s legacy “source import” API.
+If `sourceUrl` points at a public GitHub repository, the stable target is created by forking that upstream into the configured GitHub user/org. Before reusing an existing target repo, the provider verifies that the required vulnerable and patched refs are present.
 
-Agents write exploit code, validation scripts, reports, and evidence only to the per-run checkout. Final paths, run command, commit SHA, and status are mirrored into `SessionAgent` state and D1.
+Benchmark agents inspect the target checkout read-only. Parsed results, raw output, score components, and predicted locations are written to D1. A writable per-run repository is only needed for future tasks that require generated code, patches, repro scripts, or reviewable evidence files.
 
 ## Credential Flow
 
@@ -27,12 +28,11 @@ Modal receives the credential in the `/git/checkout` or `/git/commit` request. T
 
 1. `POST /sessions` validates `config.benchmark`.
 2. The control plane ensures the stable target repo exists.
-3. The control plane creates or reuses the per-run repo.
+3. The control plane creates or reuses the stable target repo for the vulnerable commit.
 4. The initial `BenchmarkArtifactState` is stored in the agent and D1.
-5. `POST /sessions/:id/artifacts/checkout` clones or refreshes the run repo in Modal.
-6. The agent writes benchmark artifacts in that checkout.
-7. `POST /sessions/:id/artifacts/commit` commits and pushes generated files.
-8. The control plane records the latest commit SHA and artifact status.
+5. Modal clones or refreshes the target repo in Modal at the vulnerable commit.
+6. The agent inspects the checkout and returns benchmark JSON.
+7. The control plane records result JSON, extracted columns, score components, and predicted locations in D1.
 
 ## Local Configuration
 
@@ -51,47 +51,3 @@ GITHUB_GIT_USERNAME=x-access-token
 ```
 
 The token must be able to create private repositories, fork upstream repositories, archive repositories, and read/write `git` over HTTPS.
-# Artifacts Benchmark Flow
-
-Cloudflare Artifacts is the durable Git-backed storage layer for benchmark code and work product. Agents and sandboxes do not own the canonical files.
-
-## Storage Boundaries
-
-- Artifacts stores stable target repos, per-run repos, exploit files, validation scripts, evidence, reports, and Git history.
-- Think/Agents stores orchestration state: repo names, remotes, branches, commit SHAs, artifact paths, run commands, and validation status.
-- Modal sandboxes are disposable execution environments. They clone a per-run repo into `/workspace/<repo>`, execute commands, then push results back.
-- D1 stores only searchable/indexable metadata for listing sessions and benchmark results.
-
-## Repository Lifecycle
-
-1. Import or create a stable target repo for each benchmark target.
-2. Treat the stable target repo as the reviewed baseline for source, vulnerable/patched refs, setup notes, and validation criteria.
-3. On session creation, fork or reuse a per-run Artifacts repo for the specific benchmark/session/agent.
-4. The control plane records the per-run repo metadata in the agent state and D1.
-5. The sandbox checks out the per-run repo before execution.
-6. The agent writes exploit artifacts and evidence into the checkout.
-7. The sandbox commits and pushes the result back to Artifacts.
-8. The agent records final paths, commands, status, and commit SHA.
-
-## Token Lifecycle
-
-Artifacts Git tokens are repo-scoped and short-lived. They are not Cloudflare API tokens and should not be persisted.
-
-- Use read tokens for clone/fetch/review operations.
-- Use write tokens for checkout/update and commit/push operations.
-- Mint tokens just in time from the Worker binding.
-- If a long-running agent needs Git access after a token expires, mint a fresh token and retry the operation.
-- Do not store tokens in D1, Think context, model-visible prompts, Artifacts files, or persistent logs.
-
-## Reproducing A Result
-
-A completed benchmark should be reproducible from:
-
-- `runRepoName`
-- `runRepoRemote`
-- `artifactWorkingBranch`
-- `artifactLatestCommitSha`
-- `artifactPath`
-- `runCommand`
-
-Clone the run repo with a fresh read token, check out the recorded commit SHA, and run the recorded command in the expected sandbox profile.

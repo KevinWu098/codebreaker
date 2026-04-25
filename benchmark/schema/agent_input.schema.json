@@ -8,7 +8,7 @@
   "properties": {
     "task_id": {
       "type": "string",
-      "description": "GHSA-level task identifier. Matches the task_id in tasks.jsonl."
+      "description": "GHSA-level task identifier. Matches the task_id in the task file."
     },
     "difficulty": {
       "type": "string",

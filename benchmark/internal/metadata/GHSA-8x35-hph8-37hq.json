@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8x35-hph8-37hq",
+  "post_patch_commit": "59708b38c8a52f5db59d7d4eff98e31d573128ee",
+  "noisy_patch": false,
+  "curation_notes": "Patched in electerm/electerm#4287 (merge 59708b38c8a52f5db59d7d4eff98e31d573128ee). Pre-patch snapshot: 9590d7933c4021bbc006c3a0ccd366091b008e09.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

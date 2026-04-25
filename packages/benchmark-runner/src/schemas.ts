@@ -35,6 +35,7 @@ export type VulnClass = z.infer<typeof VulnClassSchema>;
 export const CodebaseSchema = z
   .object({
     commit: CommitShaSchema,
+    ecosystem: z.string(),
     language: z.string(),
     repo: z.string().url(),
   })
@@ -223,16 +224,38 @@ export const BenchmarkRunScoreSchema = z
   .strict();
 export type BenchmarkRunScore = z.infer<typeof BenchmarkRunScoreSchema>;
 
+export const BenchmarkRunLocationSchema = z
+  .object({
+    createdAt: z.string().datetime(),
+    file: z.string(),
+    function: z.string().nullable(),
+    id: z.string().min(1),
+    matchedGroundTruth: z.boolean().nullable(),
+    resultId: z.string().min(1),
+    runId: z.string().min(1),
+  })
+  .strict();
+export type BenchmarkRunLocation = z.infer<typeof BenchmarkRunLocationSchema>;
+
 export const BenchmarkRunResultSchema = z
   .object({
     agentOutput: AgentOutputSchema.nullable(),
     artifactPath: z.string().nullable(),
+    confidence: z.number().min(0).max(1).nullable(),
+    correctLocations: z.number().int().nonnegative().nullable(),
     createdAt: z.string().datetime(),
     error: z.string().nullable(),
+    expectedVulnClass: VulnClassSchema.nullable(),
+    expectedVulnerable: z.boolean().nullable(),
     id: z.string().min(1),
+    locationScore: z.number().min(0).max(1).nullable(),
+    predictedVulnClass: VulnClassSchema.nullable(),
+    predictedVulnerable: z.boolean().nullable(),
     rawOutput: z.string().nullable(),
     runId: z.string().min(1),
     score: BenchmarkRunScoreSchema.nullable(),
+    vulnClassMatched: z.boolean().nullable(),
+    vulnerableMatched: z.boolean().nullable(),
   })
   .strict();
 export type BenchmarkRunResult = z.infer<typeof BenchmarkRunResultSchema>;
@@ -270,6 +293,7 @@ export type ListBenchmarkRunsResponse = z.infer<
 export const BenchmarkRunDetailResponseSchema = z
   .object({
     events: z.array(BenchmarkRunEventSchema),
+    locations: z.array(BenchmarkRunLocationSchema),
     result: BenchmarkRunResultSchema.nullable(),
     run: BenchmarkRunRowSchema,
     task: TaskInstanceSchema.nullable(),

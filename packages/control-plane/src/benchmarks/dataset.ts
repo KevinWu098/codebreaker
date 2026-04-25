@@ -10,10 +10,7 @@ import {
   TaskInstanceSchema,
 } from "@codebreaker/benchmark-runner/schemas";
 import type { BenchmarkTaskRecord } from "@codebreaker/benchmark-runner/session-config";
-import type { ZodType, z } from "zod";
 import { benchmarkDatasetFixtures } from "./fixtures.js";
-
-const JSONL_LINE_SEPARATOR = /\r?\n/;
 
 export class BenchmarkDatasetService {
   listTasks(): BenchmarkTaskSummary[] {
@@ -37,49 +34,16 @@ export class BenchmarkDatasetService {
   }
 
   private loadDataset(): BenchmarkTaskRecord[] {
-    const tasks = parseJsonl(
-      benchmarkDatasetFixtures.tasksJsonl,
-      TaskInstanceSchema,
-      "benchmark/data/tasks.jsonl"
+    const tasks = benchmarkDatasetFixtures.tasks.map((task) =>
+      TaskInstanceSchema.parse(task)
     );
-    const metadata = parseJsonl(
-      benchmarkDatasetFixtures.metadataJsonl,
-      InternalMetadataSchema,
-      "benchmark/internal/metadata.jsonl"
+    const metadata = benchmarkDatasetFixtures.metadata.map((entry) =>
+      InternalMetadataSchema.parse(entry)
     );
 
     return joinTasksWithMetadata(tasks, metadata);
   }
 }
-
-const parseJsonl = <T>(
-  contents: string,
-  schema: ZodType<T>,
-  source: string
-): T[] => {
-  const records: T[] = [];
-
-  for (const [index, rawLine] of contents
-    .split(JSONL_LINE_SEPARATOR)
-    .entries()) {
-    const line = rawLine.trim();
-
-    if (!line) {
-      continue;
-    }
-
-    const parsed = JSON.parse(line) as unknown;
-    const result = schema.safeParse(parsed);
-
-    if (!result.success) {
-      throw new Error(formatZodError(result.error, source, index + 1));
-    }
-
-    records.push(result.data);
-  }
-
-  return records;
-};
 
 const joinTasksWithMetadata = (
   tasks: TaskInstance[],
@@ -107,16 +71,4 @@ const joinTasksWithMetadata = (
       task,
     };
   });
-};
-
-const formatZodError = (
-  error: z.ZodError,
-  source: string,
-  line: number
-): string => {
-  const details = error.issues
-    .map((issue) => `${issue.path.join(".") || "<root>"}: ${issue.message}`)
-    .join("; ");
-
-  return `Invalid benchmark JSONL at ${source}:${line}: ${details}`;
 };
