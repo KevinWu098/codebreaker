@@ -3,6 +3,7 @@ import json
 import os
 import posixpath
 import re
+import shlex
 import time
 from collections.abc import AsyncIterator, Callable
 from typing import Any
@@ -369,7 +370,7 @@ class ModalSandboxManager:
 
 
 def shell_quote(value: str) -> str:
-    return "'" + value.replace("'", "'\"'\"'") + "'"
+    return shlex.quote(value)
 
 
 def git_auth_args(request: GitCheckoutRequest | GitCommitRequest) -> str:
