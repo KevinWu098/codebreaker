@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-amazon-redshift-jdbc-driver-001",
+  "ghsa_id": "GHSA-x3wm-hffr-chwm",
+  "codebase": {
+    "repo": "https://github.com/aws/amazon-redshift-jdbc-driver",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "2e36f69046b8553516d6bf02401c2928c35e8aa2"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "JDBC query execution and parameter handling"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists in the JDBC driver when using a non-default query mode. Parameter values are directly interpolated into SQL statements without proper escaping or quoting, allowing an attacker to break out of the intended SQL context and inject arbitrary SQL commands via specially crafted input values."
+    },
+    "L3": {
+      "area": "JDBC query execution and parameter handling",
+      "description": "A SQL injection vulnerability exists in the JDBC driver when using a non-default query mode. Parameter values are directly interpolated into SQL statements without proper escaping or quoting, allowing an attacker to break out of the intended SQL context and inject arbitrary SQL commands via specially crafted input values."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 10.0,
+    "reason": "The SimpleParameterList class serializes query parameters into SQL text without properly escaping or quoting the values when using simple query mode, allowing SQL injection via crafted parameter values that exploit line comment generation through negation.",
+    "locations": [
+      {
+        "file": "src/main/java/com/amazon/redshift/core/v3/SimpleParameterList.java",
+        "function": "toString"
+      }
+    ]
+  }
+}
