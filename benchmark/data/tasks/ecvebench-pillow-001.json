@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-pillow-001",
+  "ghsa_id": "GHSA-r7rm-8j6h-r933",
+  "codebase": {
+    "repo": "https://github.com/python-pillow/Pillow",
+    "language": "c",
+    "ecosystem": "pip",
+    "commit": "93b22b846e0269ee9594ff71a72bec02d2bea8fd"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Image format decoding and decompression routines"
+    },
+    "L2": {
+      "description": "A buffer overflow vulnerability exists in an image format's run-length encoding (RLE) decompression routine. The RLE-encoded data specifies a repeat count that is not validated against the output buffer dimensions, allowing a crafted image file to cause writes beyond allocated buffer boundaries."
+    },
+    "L3": {
+      "area": "Image format decoding and decompression routines",
+      "description": "A buffer overflow vulnerability exists in an image format's run-length encoding (RLE) decompression routine. The RLE-encoded data specifies a repeat count that is not validated against the output buffer dimensions, allowing a crafted image file to cause writes beyond allocated buffer boundaries."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.8,
+    "reason": "The RLE row expansion functions do not validate the run-length count against the image row size, allowing a crafted SGI image with an oversized count value to overflow the destination buffer.",
+    "locations": [
+      {
+        "file": "src/libImaging/SgiRleDecode.c",
+        "function": "expandrow"
+      },
+      {
+        "file": "src/libImaging/SgiRleDecode.c",
+        "function": "expandrow2"
+      }
+    ]
+  }
+}

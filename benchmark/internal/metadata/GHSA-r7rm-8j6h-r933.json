@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r7rm-8j6h-r933",
+  "post_patch_commit": "a79b65c47c7dc6fe623aadf09aa6192fc54548f3",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit a79b65c adds bounds checking (count > xsize) to both expandrow and expandrow2 functions in SgiRleDecode.c. Only one non-test source file was changed. Locations derived directly from the patch diff — the advisory explicitly names the file and the patch modifies exactly these two functions. The vulnerability class buffer-overflow matches the CWE-120 (Buffer Copy without Checking Size of Input) assigned to this CVE.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
