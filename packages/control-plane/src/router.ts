@@ -43,10 +43,21 @@ const BenchmarkRunParamsSchema = z.object({
   id: z.string().min(1),
 });
 
-export const createRouter = (): Hono<{ Bindings: Env }> => {
-  const app = new Hono<{ Bindings: Env }>();
+interface RouterVariables {
+  executor: ModalExecutor;
+  sessionStore: SessionIndexStore;
+}
+
+export const createRouter = (): Hono<{
+  Bindings: Env;
+  Variables: RouterVariables;
+}> => {
+  const app = new Hono<{ Bindings: Env; Variables: RouterVariables }>();
 
   app.use("*", (context, next) => {
+    context.set("sessionStore", new SessionIndexStore(context.env.DB));
+    context.set("executor", ModalExecutor.fromEnv(context.env));
+
     const allowedOrigins = parseAllowedOrigins(context.env.ALLOWED_ORIGINS);
 
     if (allowedOrigins.length === 0) {
@@ -85,8 +96,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("query", ListSessionsQuerySchema),
     async (context) => {
       const query = context.req.valid("query");
-      const store = new SessionIndexStore(context.env.DB);
-      const sessions = await store.list(query);
+      const sessions = await context.get("sessionStore").list(query);
 
       return context.json({
         limit: query.limit,
@@ -215,7 +225,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     async (context) => {
       const request = context.req.valid("json");
       const id = request.id ?? crypto.randomUUID();
-      const store = new SessionIndexStore(context.env.DB);
+      const store = context.get("sessionStore");
       const artifact = request.config.benchmark
         ? await provisionArtifactState({
             benchmark: request.config.benchmark,
@@ -256,8 +266,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const store = new SessionIndexStore(context.env.DB);
-      const session = await store.get(id);
+      const session = await context.get("sessionStore").get(id);
 
       if (!session) {
         return jsonError("Session not found", "session_not_found", 404);
@@ -275,10 +284,9 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
       const agent = await withDORetry(() =>
         getAgentByName(context.env.SESSION_AGENT, id)
       );
-      const store = new SessionIndexStore(context.env.DB);
 
       await withDORetry(() => agent.archive());
-      await store.setStatus({
+      await context.get("sessionStore").setStatus({
         completedAt: new Date().toISOString(),
         eventId: `archive:${id}`,
         id,
@@ -339,10 +347,9 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const executor = ModalExecutor.fromEnv(context.env);
 
       return context.json({
-        sandbox: await executor.getSandbox(id),
+        sandbox: await context.get("executor").getSandbox(id),
       });
     }
   );
@@ -354,7 +361,6 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     async (context) => {
       const { id } = context.req.valid("param");
       const request = context.req.valid("json");
-      const executor = ModalExecutor.fromEnv(context.env);
       const execOptions: ExecRemoteOptions = {
         command: request.command,
         sessionId: id,
@@ -373,7 +379,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
       }
 
       return context.json({
-        result: await executor.exec(execOptions),
+        result: await context.get("executor").exec(execOptions),
       });
     }
   );
@@ -442,8 +448,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
         },
         scope: "read",
       });
-      const executor = ModalExecutor.fromEnv(context.env);
-      const result = await executor.checkoutGitRepo({
+      const result = await context.get("executor").checkoutGitRepo({
         branch: artifact.workingBranch,
         credential,
         path: request.path ?? `/workspace/${artifact.runRepoName}`,
@@ -494,8 +499,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
         },
         scope: "write",
       });
-      const executor = ModalExecutor.fromEnv(context.env);
-      const result = await executor.commitGitRepo({
+      const result = await context.get("executor").commitGitRepo({
         branch: artifact.workingBranch,
         credential,
         message: request.message,
@@ -520,21 +524,17 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     }
   );
 
-  app.get("/admin/shim/health", async (context) => {
-    const executor = ModalExecutor.fromEnv(context.env);
+  app.get("/admin/shim/health", async (context) =>
+    context.json({
+      health: await context.get("executor").health(),
+    })
+  );
 
-    return context.json({
-      health: await executor.health(),
-    });
-  });
-
-  app.get("/admin/shim/sandboxes", async (context) => {
-    const executor = ModalExecutor.fromEnv(context.env);
-
-    return context.json({
-      sandboxes: await executor.listSandboxes(),
-    });
-  });
+  app.get("/admin/shim/sandboxes", async (context) =>
+    context.json({
+      sandboxes: await context.get("executor").listSandboxes(),
+    })
+  );
 
   app.notFound(() => jsonError("Not found", "not_found", 404));
 
