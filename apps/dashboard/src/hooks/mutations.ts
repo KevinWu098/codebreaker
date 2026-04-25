@@ -1,7 +1,9 @@
 import type {
   BenchmarkRunActionResponse,
+  BenchmarkRunDetailResponse,
   CreateBenchmarkRunRequest,
   CreateBenchmarkRunResponse,
+  ListBenchmarkRunsResponse,
 } from "@codebreaker/benchmark-runner/schemas";
 import type {
   ArtifactCheckoutRequest,
@@ -10,6 +12,7 @@ import type {
   ArtifactCommitResponse,
   CreateSessionRequest,
   CreateSessionResponse,
+  FinalizeSessionRequest,
   InspectExecRequest,
   InspectExecResponse,
   SessionArtifactResponse,
@@ -31,6 +34,35 @@ const messageFor = (error: unknown, fallback: string): string => {
   }
 
   return fallback;
+};
+
+const replaceBenchmarkRun = (
+  data: ListBenchmarkRunsResponse | undefined,
+  response: BenchmarkRunActionResponse
+): ListBenchmarkRunsResponse | undefined => {
+  if (!data) {
+    return data;
+  }
+
+  return {
+    runs: data.runs.map((run) =>
+      run.id === response.run.id ? response.run : run
+    ),
+  };
+};
+
+const replaceBenchmarkRunDetail = (
+  data: BenchmarkRunDetailResponse | undefined,
+  response: BenchmarkRunActionResponse
+): BenchmarkRunDetailResponse | undefined => {
+  if (!data) {
+    return data;
+  }
+
+  return {
+    ...data,
+    run: response.run,
+  };
 };
 
 export const useCreateSessionMutation = () => {
@@ -87,6 +119,33 @@ export const useCleanupBenchmarkRunMutation = (runId: string) => {
   });
 };
 
+export const useCancelBenchmarkRunMutation = (runId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<BenchmarkRunActionResponse, Error, void>({
+    mutationFn: () => api.cancelBenchmarkRun(runId),
+    onError: (error) => {
+      toast.error(messageFor(error, "benchmark stop failed"));
+    },
+    onSuccess: (response) => {
+      toast.success(`benchmark ${runId.slice(0, 8)}… stopped`);
+      queryClient.setQueryData<ListBenchmarkRunsResponse>(
+        qk.benchmarkRuns(connection),
+        (data) => replaceBenchmarkRun(data, response)
+      );
+      queryClient.setQueryData<BenchmarkRunDetailResponse>(
+        qk.benchmarkRun(connection, runId),
+        (data) => replaceBenchmarkRunDetail(data, response)
+      );
+      queryClient.invalidateQueries({ queryKey: qk.benchmarkRuns(connection) });
+      queryClient.invalidateQueries({
+        queryKey: qk.benchmarkRun(connection, runId),
+      });
+    },
+  });
+};
+
 export const useStartBenchmarkRunMutation = (runId: string) => {
   const connection = useConnection();
   const queryClient = useQueryClient();
@@ -121,6 +180,31 @@ export const useArchiveSessionMutation = (sessionId: string) => {
       queryClient.invalidateQueries({
         queryKey: qk.session.detail(connection, sessionId),
       });
+    },
+  });
+};
+
+export const useFinalizeSessionMutation = (sessionId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<{ result: unknown }, Error, FinalizeSessionRequest>({
+    mutationFn: (body) => api.finalizeSession(sessionId, body),
+    onError: (error) => {
+      toast.error(messageFor(error, "finalize failed"));
+    },
+    onSuccess: () => {
+      toast.success(`session ${sessionId.slice(0, 8)}… finalizing`);
+      queryClient.invalidateQueries({
+        queryKey: qk.session.detail(connection, sessionId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.session.messages(connection, sessionId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.session.state(connection, sessionId),
+      });
+      queryClient.invalidateQueries({ queryKey: qk.sessions(connection) });
     },
   });
 };

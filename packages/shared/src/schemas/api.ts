@@ -28,6 +28,13 @@ export const CreateSessionRequestSchema = z.object({
 });
 export type CreateSessionRequest = z.infer<typeof CreateSessionRequestSchema>;
 
+export const FinalizeSessionRequestSchema = z.object({
+  reason: z.string().min(1).max(500).optional(),
+});
+export type FinalizeSessionRequest = z.infer<
+  typeof FinalizeSessionRequestSchema
+>;
+
 export const SessionRowSchema = z.object({
   artifactLatestCommitSha: z.string().nullable(),
   artifactPath: z.string().nullable(),
@@ -160,6 +167,15 @@ export type SessionConfigResponse = z.infer<typeof SessionConfigResponseSchema>;
 
 export const SessionAgentStateSchema = z.object({
   artifact: BenchmarkArtifactStateSchema.optional(),
+  control: z
+    .object({
+      finalizing: z.boolean().optional(),
+      inputTokens: z.number().int().nonnegative().optional(),
+      outputTokens: z.number().int().nonnegative().optional(),
+      stopReason: z.string().optional(),
+      toolCalls: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
   sessionId: z.string().min(1).optional(),
   status: SessionStatusSchema,
 });

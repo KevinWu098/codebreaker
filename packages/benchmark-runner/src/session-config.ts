@@ -18,6 +18,9 @@ export interface BenchmarkTaskRecord {
 
 export interface BenchmarkSessionConfigInput {
   difficulty: Difficulty;
+  maxInputTokens?: number;
+  maxToolCalls?: number;
+  maxTotalTokens?: number;
   maxTurns: number;
   metadata: InternalMetadata;
   model: BenchmarkRunModel;
@@ -27,6 +30,9 @@ export interface BenchmarkSessionConfigInput {
 
 export const toBenchmarkSessionConfig = ({
   difficulty,
+  maxInputTokens,
+  maxToolCalls,
+  maxTotalTokens,
   maxTurns,
   metadata,
   model,
@@ -48,6 +54,11 @@ export const toBenchmarkSessionConfig = ({
     },
   },
   compaction: defaultCompactionConfig,
+  budgets: {
+    maxInputTokens: maxInputTokens ?? null,
+    maxToolCalls: maxToolCalls ?? null,
+    maxTotalTokens: maxTotalTokens ?? null,
+  },
   extensionPolicy: "sandbox",
   maxSteps: defaultSessionRuntimeConfig.maxSteps,
   maxTurns,

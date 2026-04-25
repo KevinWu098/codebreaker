@@ -2,7 +2,10 @@ import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
-import { MessagePartRenderer } from "@/components/message-part-renderer";
+import {
+  isRenderableMessagePart,
+  MessagePartRenderer,
+} from "@/components/message-part-renderer";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import type { MessagePart } from "@/components/tool-call-part";
@@ -79,6 +82,9 @@ export const MessagesPanel = ({
 
           const role = raw.role ?? "assistant";
           const isUser = role === "user";
+          const renderableParts = raw.parts?.filter((part) =>
+            isRenderableMessagePart(part)
+          );
 
           return (
             <article
@@ -98,7 +104,7 @@ export const MessagesPanel = ({
                 ) : null}
               </header>
               <div className="mt-1 space-y-2">
-                {raw.parts?.map((part, partIndex) =>
+                {renderableParts?.map((part, partIndex) =>
                   renderPart(part, partKey(raw, fallbackId, partIndex))
                 )}
               </div>

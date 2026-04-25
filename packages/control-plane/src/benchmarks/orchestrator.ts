@@ -70,6 +70,15 @@ export class BenchmarkRunOrchestrator {
         maxTurns,
         metadata: record.metadata,
         model,
+        ...(request?.maxInputTokens
+          ? { maxInputTokens: request.maxInputTokens }
+          : {}),
+        ...(request?.maxToolCalls
+          ? { maxToolCalls: request.maxToolCalls }
+          : {}),
+        ...(request?.maxTotalTokens
+          ? { maxTotalTokens: request.maxTotalTokens }
+          : {}),
         task: record.task,
         timeoutSeconds,
       });
@@ -129,6 +138,11 @@ export class BenchmarkRunOrchestrator {
         runId,
       });
 
+      const completedRun = await this.requireRun(runId);
+      if (completedRun.status === "cancelled") {
+        return completedRun;
+      }
+
       const rawOutput = await this.readAssistantOutput(agent);
       const agentOutput = parseAgentOutput(rawOutput);
       const score = agentOutput
@@ -161,6 +175,11 @@ export class BenchmarkRunOrchestrator {
         await this.cleanup(runId);
       }
     } catch (error) {
+      const currentRun = await this.requireRun(runId);
+      if (currentRun.status === "cancelled") {
+        return currentRun;
+      }
+
       const message = error instanceof Error ? error.message : String(error);
       const result = await this.runs.putResult({
         error: message,
@@ -186,11 +205,20 @@ export class BenchmarkRunOrchestrator {
   }
 
   async cancel(runId: string) {
+    const run = await this.requireRun(runId);
+
     await this.runs.addEvent({
       kind: "cancelled",
       message: "Benchmark run cancelled",
       runId,
     });
+
+    if (run.sessionId) {
+      const agent = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, run.sessionId as string)
+      );
+      await withDORetry(() => agent.stopAndFinalize("Benchmark run cancelled"));
+    }
 
     return this.runs.update({
       completedAt: new Date().toISOString(),

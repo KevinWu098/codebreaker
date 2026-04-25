@@ -16,6 +16,7 @@ import type {
   ArtifactCommitResponse,
   CreateSessionRequest,
   CreateSessionResponse,
+  FinalizeSessionRequest,
   InspectExecRequest,
   InspectExecResponse,
   ListSessionsQuery,
@@ -166,6 +167,14 @@ export const api = {
       }
     ),
 
+  cancelBenchmarkRun: (id: string): Promise<BenchmarkRunActionResponse> =>
+    request<BenchmarkRunActionResponse>(
+      `/benchmark-runs/${encodeURIComponent(id)}/cancel`,
+      {
+        method: "POST",
+      }
+    ),
+
   cleanupBenchmarkRun: (id: string): Promise<BenchmarkRunActionResponse> =>
     request<BenchmarkRunActionResponse>(
       `/benchmark-runs/${encodeURIComponent(id)}/cleanup`,
@@ -187,6 +196,18 @@ export const api = {
     request<{ ok: boolean }>(`/sessions/${encodeURIComponent(id)}`, {
       method: "DELETE",
     }),
+
+  finalizeSession: (
+    id: string,
+    body: FinalizeSessionRequest = {}
+  ): Promise<{ result: unknown }> =>
+    request<{ result: unknown }>(
+      `/sessions/${encodeURIComponent(id)}/finalize`,
+      {
+        body: JSON.stringify(body),
+        method: "POST",
+      }
+    ),
 
   getMessages: (id: string): Promise<SessionMessagesResponse> =>
     request<SessionMessagesResponse>(

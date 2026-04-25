@@ -63,13 +63,19 @@ const ensureRenderable = (value: unknown): object | unknown[] => {
   return { value };
 };
 
+const isTransientStepStart = (value: unknown): boolean =>
+  typeof value === "object" &&
+  value !== null &&
+  "type" in value &&
+  value.type === "step-start";
+
 export const JsonView = ({
   className,
   collapsedDepth = 2,
   maxHeight,
   showCopy = true,
   value,
-}: JsonViewProps): React.JSX.Element => {
+}: JsonViewProps): React.ReactNode => {
   const copyText = useMemo(() => valueToCopyString(value), [value]);
   const data = useMemo(() => ensureRenderable(value), [value]);
   const outerStyle = useMemo(
@@ -80,6 +86,10 @@ export const JsonView = ({
     (level: number) => level < collapsedDepth,
     [collapsedDepth]
   );
+
+  if (isTransientStepStart(value)) {
+    return null;
+  }
 
   return (
     <div className={cn("json-view", className)} style={outerStyle}>
