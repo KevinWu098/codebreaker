@@ -1,5 +1,5 @@
 {
-  "task_id": "ecvebench-electerm-001",
+  "task_id": "ecvebench-electerm-smoke-001",
   "ghsa_id": "GHSA-8x35-hph8-37hq",
   "codebase": {
     "repo": "https://github.com/electerm/electerm",
