@@ -1,3 +1,4 @@
+import { verifyRequestJwt } from "@codebreaker/control-plane/http/auth";
 import {
   handlePreflight,
   withCorsHeaders,
@@ -16,22 +17,45 @@ const isAgentRoute = (request: Request): boolean => {
   return url.pathname.startsWith("/agents/");
 };
 
+const unauthorized = (origin: string | null, env: Env): Response =>
+  withCorsHeaders(
+    new Response(
+      JSON.stringify({ code: "unauthorized", message: "Unauthorized" }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 401,
+      }
+    ),
+    origin,
+    env
+  );
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get("origin");
 
-    // CORS preflight for agent routes (Hono handles its own routes).
     if (isAgentRoute(request)) {
-      const preflight = handlePreflight(request);
+      const preflight = handlePreflight(request, env);
 
       if (preflight) {
         return preflight;
       }
 
-      const agentResponse = await routeAgentRequest(request, env);
+      const agentResponse = await routeAgentRequest(request, env, {
+        onBeforeConnect: async (req) => {
+          if (!(await verifyRequestJwt(req, env.JWT_SECRET))) {
+            return unauthorized(origin, env);
+          }
+        },
+        onBeforeRequest: async (req) => {
+          if (!(await verifyRequestJwt(req, env.JWT_SECRET))) {
+            return unauthorized(origin, env);
+          }
+        },
+      });
 
       if (agentResponse) {
-        return withCorsHeaders(agentResponse, origin);
+        return withCorsHeaders(agentResponse, origin, env);
       }
     }
 

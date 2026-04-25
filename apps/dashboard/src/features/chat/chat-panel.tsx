@@ -138,6 +138,9 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
     host,
     name: sessionId,
     protocol: secure ? "wss" : "ws",
+    ...(connection.token
+      ? { query: { token: connection.token }, queryDeps: [connection.token] }
+      : {}),
   });
 
   const chat = useAgentChat({ agent });
@@ -257,8 +260,8 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
           </span>
           <span>·</span>
           <span>
-            websocket connection bypasses the jwt middleware — only safe for
-            trusted local dev.
+            websocket auth uses the configured token via ?token= query (the only
+            way to authenticate a browser WS upgrade).
           </span>
         </div>
       </div>

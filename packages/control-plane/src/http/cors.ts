@@ -2,35 +2,106 @@
  * CORS support for routes that bypass the Hono router (e.g. `/agents/...`
  * handled directly by `routeAgentRequest`).
  *
- * Reflects the `Origin` header so the credentialed `useAgentChat` fetch from
- * the dashboard works in dev without forcing a wildcard. The Hono router
- * applies its own `cors()` middleware for all other routes.
+ * Origins are gated on the `ALLOWED_ORIGINS` env var (comma-separated). If the
+ * var is empty, no CORS headers are emitted at all and browser cross-origin
+ * requests will be blocked by the user agent. Use `*` to allow everything
+ * (not recommended in prod).
  */
 
-const DEFAULT_ALLOWED_HEADERS =
+import type { Env } from "@codebreaker/control-plane/types";
+
+const ORIGIN_SEPARATOR = /\s*,\s*/;
+
+const ALLOWED_HEADERS =
   "authorization,content-type,x-requested-with,x-partykit-room";
 
-const DEFAULT_ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
+const ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 
-export const buildCorsHeaders = (origin: string | null): Headers => {
+export const parseAllowedOrigins = (raw: string | undefined): string[] => {
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(ORIGIN_SEPARATOR)
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+};
+
+export const isOriginAllowed = (
+  origin: string | null,
+  allowedOrigins: readonly string[]
+): boolean => {
+  if (allowedOrigins.includes("*")) {
+    return true;
+  }
+
+  if (!origin) {
+    return false;
+  }
+
+  return allowedOrigins.includes(origin);
+};
+
+const resolveAllowedOrigin = (
+  origin: string | null,
+  env: Env
+): string | null => {
+  const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS);
+
+  if (allowedOrigins.length === 0) {
+    return null;
+  }
+
+  if (!isOriginAllowed(origin, allowedOrigins)) {
+    return null;
+  }
+
+  if (origin && allowedOrigins.includes(origin)) {
+    return origin;
+  }
+
+  // At this point isOriginAllowed succeeded but the origin isn't an exact
+  // allowlist match, which only happens when the allowlist contains "*".
+  return origin ?? "*";
+};
+
+export const buildCorsHeaders = (
+  origin: string | null,
+  env: Env
+): Headers | null => {
+  const allowOrigin = resolveAllowedOrigin(origin, env);
+
+  if (!allowOrigin) {
+    return null;
+  }
+
   const headers = new Headers();
 
-  headers.set("access-control-allow-origin", origin ?? "*");
+  headers.set("access-control-allow-origin", allowOrigin);
   headers.set("access-control-allow-credentials", "true");
-  headers.set("access-control-allow-headers", DEFAULT_ALLOWED_HEADERS);
-  headers.set("access-control-allow-methods", DEFAULT_ALLOWED_METHODS);
+  headers.set("access-control-allow-headers", ALLOWED_HEADERS);
+  headers.set("access-control-allow-methods", ALLOWED_METHODS);
   headers.set("access-control-max-age", "600");
   headers.set("vary", "Origin");
 
   return headers;
 };
 
-export const handlePreflight = (request: Request): Response | undefined => {
+export const handlePreflight = (
+  request: Request,
+  env: Env
+): Response | undefined => {
   if (request.method !== "OPTIONS") {
     return;
   }
 
-  const headers = buildCorsHeaders(request.headers.get("origin"));
+  const headers = buildCorsHeaders(request.headers.get("origin"), env);
+
+  if (!headers) {
+    return new Response(null, { status: 403 });
+  }
+
   const requestedHeaders = request.headers.get(
     "access-control-request-headers"
   );
@@ -44,10 +115,16 @@ export const handlePreflight = (request: Request): Response | undefined => {
 
 export const withCorsHeaders = (
   response: Response,
-  origin: string | null
+  origin: string | null,
+  env: Env
 ): Response => {
+  const cors = buildCorsHeaders(origin, env);
+
+  if (!cors) {
+    return response;
+  }
+
   const headers = new Headers(response.headers);
-  const cors = buildCorsHeaders(origin);
 
   cors.forEach((value, name) => {
     headers.set(name, value);
