@@ -21,8 +21,8 @@ todos:
     content: Implement JWT-protected session/admin routes and typed error handling.
     status: completed
   - id: tool-policy
-    content: Add tiered tool registry, policy filtering, constrained HTTP fetch, Think execute/codemode integration, and reserved exploit tier.
-    status: pending
+    content: Add tiered tool registry, policy filtering, one constrained HTTP fetch example, and reserved tiers for later execute/remote tools.
+    status: completed
   - id: modal-shim
     content: Build the Modal FastAPI shim with sandbox lifecycle, exec/read/write/terminate endpoints, auth, idempotency, rate limits, and profile fingerprints.
     status: pending
@@ -140,7 +140,8 @@ Implement additive tool tiers:
 - `READ`, `WRITE_LOCAL`, `EXEC_LOCAL`, `NETWORK`, `EXEC_REMOTE`, `EXPLOIT`.
 - Map `readonly`, `workspace`, `local`, `network`, `sandbox`, and `unrestricted` policies to max tiers.
 - Materialize only allowed tools before passing them to Think so the model never sees disallowed tools.
-- Treat Think execute/codemode as local execution and Modal/recon wrappers as remote execution.
+- Keep the first pass minimal: implement only one representative custom tool, `http_fetch`, behind the `NETWORK` tier.
+- Reserve `EXEC_LOCAL` for later Think execute/codemode integration and `EXEC_REMOTE` for later Modal/recon wrappers.
 - Keep exploit-tier tools reserved until explicit policy and audit logging exist.
 
 Core files:
@@ -148,9 +149,6 @@ Core files:
 - `src/tools/tiers.ts`
 - `src/tools/builtins.ts`
 - `src/tools/http.ts`
-- `src/tools/modal.ts`
-- `src/tools/pentest/recon.ts`
-- `src/sandbox/modal.ts`
 
 ## Phase 5: Modal Shim
 

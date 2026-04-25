@@ -9,6 +9,10 @@ import {
 } from "@cloudflare/think";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { selectModel } from "@codebreaker/control-plane/session/model";
+import {
+  activeBuiltinToolNames,
+  createBuiltinTools,
+} from "@codebreaker/control-plane/tools/builtins";
 import type { Env } from "@codebreaker/control-plane/types";
 import { assertNever } from "@codebreaker/shared/lib/utils";
 import type { SessionStatus } from "@codebreaker/shared/schemas/primitives";
@@ -61,7 +65,15 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   override getTools(): ToolSet {
-    return {};
+    const config = this.readConfig();
+
+    if (!config) {
+      return {};
+    }
+
+    return createBuiltinTools({
+      policy: config.extensionPolicy,
+    }).tools;
   }
 
   override configureSession(session: Session): Session {
@@ -114,15 +126,23 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       })
     );
 
-    if (config?.model.provider === "openai" && config.model.reasoningEffort) {
-      return {
-        providerOptions: {
-          openai: {
-            reasoningEffort: config.model.reasoningEffort,
-          },
+    if (!config) {
+      return;
+    }
+
+    const turnConfig: TurnConfig = {
+      activeTools: activeBuiltinToolNames(config.extensionPolicy),
+    };
+
+    if (config.model.provider === "openai" && config.model.reasoningEffort) {
+      turnConfig.providerOptions = {
+        openai: {
+          reasoningEffort: config.model.reasoningEffort,
         },
       };
     }
+
+    return turnConfig;
   }
 
   override onStepFinish(ctx: StepContext): void {
