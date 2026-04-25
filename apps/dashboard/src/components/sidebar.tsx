@@ -48,7 +48,7 @@ export const Sidebar = ({
           <span className="font-semibold text-sm lowercase">codebreaker</span>
         </div>
         <span className="text-[10px] text-fg-muted uppercase tracking-widest">
-          control plane
+          control plane dashboard
         </span>
       </div>
 
