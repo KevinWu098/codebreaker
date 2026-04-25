@@ -32,6 +32,13 @@ const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
 const DEFAULT_BENCHMARK_MAX_TURNS = 1;
 const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
+// Hard ceiling, in seconds, on how long any benchmark run is allowed to stay
+// in the `running` state before the watchdog finalizes it. Sized to comfortably
+// exceed the largest configured `timeoutSeconds + AGENT_TURN_COMPLETION_GRACE`.
+const WATCHDOG_MAX_RUNNING_SECONDS = 900;
+const JSON_RETRY_PROMPT =
+  "Your previous reply did not contain a parseable JSON benchmark result. Reply now with ONLY the JSON object matching the contract from the system prompt — no prose, no markdown fences, no commentary. Do not call any tools.";
+const JSON_RETRY_TIMEOUT_SECONDS = 60;
 
 export class BenchmarkRunOrchestrator {
   private readonly dataset: BenchmarkDatasetService;
@@ -178,8 +185,8 @@ export class BenchmarkRunOrchestrator {
         return currentRun;
       }
 
-      const message = error instanceof Error ? error.message : String(error);
-      await this.failRun(currentRun, message);
+      const { message, rawOutput } = describeFailure(error);
+      await this.failRun(currentRun, message, rawOutput);
     }
 
     return this.requireRun(runId);
@@ -220,9 +227,9 @@ export class BenchmarkRunOrchestrator {
         return currentRun;
       }
 
-      const message = error instanceof Error ? error.message : String(error);
+      const { message, rawOutput } = describeFailure(error);
 
-      return this.failRun(currentRun, message);
+      return this.failRun(currentRun, message, rawOutput);
     }
   }
 
@@ -413,15 +420,20 @@ export class BenchmarkRunOrchestrator {
     }
 
     const record = this.dataset.getTaskRecord(run.taskId);
+    const sessionId = run.sessionId;
     const agentForOutput = await withDORetry(() =>
-      getAgentByName(this.env.SESSION_AGENT, run.sessionId as string)
+      getAgentByName(this.env.SESSION_AGENT, sessionId)
     );
     const rawOutput = await this.readAssistantOutput(agentForOutput);
-    const agentOutput = parseAgentOutput(rawOutput);
+    const { agentOutput, finalRawOutput } = await this.parseOrRetry({
+      rawOutput,
+      runId,
+      sessionId,
+    });
     const score = scoreAgentOutput(record.task, agentOutput);
     const result = await this.runs.putResult({
       agentOutput,
-      rawOutput,
+      rawOutput: finalRawOutput,
       runId,
       score,
       task: record.task,
@@ -453,12 +465,13 @@ export class BenchmarkRunOrchestrator {
 
   private async failRun(
     run: BenchmarkRunRow,
-    message: string
+    message: string,
+    rawOutput?: string | null
   ): Promise<BenchmarkRunRow> {
     const record = this.dataset.getTaskRecord(run.taskId);
     const result = await this.runs.putResult({
       error: message,
-      rawOutput: null,
+      rawOutput: rawOutput ?? null,
       runId: run.id,
       task: record.task,
     });
@@ -477,6 +490,108 @@ export class BenchmarkRunOrchestrator {
     });
 
     return this.requireRun(run.id);
+  }
+
+  private async parseOrRetry(input: {
+    rawOutput: string;
+    runId: string;
+    sessionId: string;
+  }): Promise<{ agentOutput: AgentOutput; finalRawOutput: string }> {
+    try {
+      return {
+        agentOutput: parseAgentOutput(input.rawOutput),
+        finalRawOutput: input.rawOutput,
+      };
+    } catch (firstError) {
+      const firstMessage =
+        firstError instanceof Error ? firstError.message : String(firstError);
+
+      await this.runs.addEvent({
+        details: {
+          error: firstMessage,
+          rawOutputLength: input.rawOutput.length,
+        },
+        kind: "result_parse_failed",
+        message: "Agent output did not parse; requesting JSON-only retry",
+        runId: input.runId,
+      });
+
+      const retryAgent = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, input.sessionId)
+      );
+
+      try {
+        const retryResult = await withTimeout(
+          retryAgent.requestFollowUp(JSON_RETRY_PROMPT),
+          JSON_RETRY_TIMEOUT_SECONDS * 1000,
+          `JSON-only retry did not complete within ${JSON_RETRY_TIMEOUT_SECONDS}s`
+        );
+
+        if (retryResult.status !== "completed") {
+          throw new Error(`JSON-only retry ${retryResult.status}`);
+        }
+      } catch (retryError) {
+        throw new ParseFailureError(
+          firstMessage,
+          input.rawOutput,
+          retryError instanceof Error ? retryError : undefined
+        );
+      }
+
+      const retriedAgent = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, input.sessionId)
+      );
+      const retriedRaw = await this.readAssistantOutput(retriedAgent);
+
+      try {
+        return {
+          agentOutput: parseAgentOutput(retriedRaw),
+          finalRawOutput: retriedRaw,
+        };
+      } catch (secondError) {
+        throw new ParseFailureError(
+          secondError instanceof Error
+            ? secondError.message
+            : String(secondError),
+          retriedRaw || input.rawOutput,
+          secondError instanceof Error ? secondError : undefined
+        );
+      }
+    }
+  }
+
+  /**
+   * Watchdog used by the cron handler. Finds runs that have been stuck in
+   * `running` past `WATCHDOG_MAX_RUNNING_SECONDS` and finalizes them, so a
+   * Worker invocation that died mid-`start()` can no longer leak rows.
+   */
+  async watchdogScan(): Promise<{ finalized: string[] }> {
+    const cutoffMs = Date.now() - WATCHDOG_MAX_RUNNING_SECONDS * 1000;
+    const cutoffIso = new Date(cutoffMs).toISOString();
+    const runs = await this.runs.list();
+    const stuck = runs.filter(
+      (run) => run.status === "running" && run.createdAt < cutoffIso
+    );
+    const finalized: string[] = [];
+
+    for (const run of stuck) {
+      const reconciled = await this.reconcile(run.id).catch(() => run);
+
+      if (reconciled.status !== "running") {
+        finalized.push(run.id);
+        continue;
+      }
+
+      const elapsedSeconds = Math.round(
+        (Date.now() - new Date(run.createdAt).getTime()) / 1000
+      );
+      const message = `Watchdog timeout: run was in 'running' for ${elapsedSeconds}s (max ${WATCHDOG_MAX_RUNNING_SECONDS}s) without a terminal event`;
+
+      await this.failRun(reconciled, message);
+      finalized.push(run.id);
+    }
+
+    return { finalized };
   }
 
   private async addAgentCompletedEventIfMissing(runId: string): Promise<void> {
@@ -528,16 +643,54 @@ export class BenchmarkRunOrchestrator {
   }
 }
 
-const parseAgentOutput = (rawOutput: string): AgentOutput => {
-  const json = extractJsonObject(rawOutput);
+class ParseFailureError extends Error {
+  readonly rawOutput: string;
 
-  if (!json) {
+  constructor(message: string, rawOutput: string, cause?: Error) {
+    super(message, cause ? { cause } : undefined);
+    this.name = "ParseFailureError";
+    this.rawOutput = rawOutput;
+  }
+}
+
+const describeFailure = (
+  error: unknown
+): { message: string; rawOutput: string | null } => {
+  if (error instanceof ParseFailureError) {
+    return {
+      message: `Agent did not return a JSON benchmark result (after one retry): ${error.message}`,
+      rawOutput: error.rawOutput,
+    };
+  }
+
+  return {
+    message: error instanceof Error ? error.message : String(error),
+    rawOutput: null,
+  };
+};
+
+const parseAgentOutput = (rawOutput: string): AgentOutput => {
+  const candidates = jsonObjectCandidates(rawOutput);
+
+  if (candidates.length === 0) {
     throw new Error("Agent did not return a JSON benchmark result");
   }
 
-  const parsed = JSON.parse(json) as unknown;
+  let lastError: unknown;
 
-  return AgentOutputSchema.parse(parsed);
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as unknown;
+
+      return AgentOutputSchema.parse(parsed);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const reason = lastError instanceof Error ? lastError.message : "unknown";
+
+  throw new Error(`Agent did not return a JSON benchmark result: ${reason}`);
 };
 
 const withTimeout = async <T>(
@@ -559,13 +712,43 @@ const withTimeout = async <T>(
   }
 };
 
-const extractJsonObject = (value: string): string | null => {
-  const start = value.indexOf("{");
-  const end = value.lastIndexOf("}");
+const FENCE_RE = /```(?:json|JSON)?\s*([\s\S]*?)\s*```/g;
 
-  if (start === -1 || end === -1 || end <= start) {
-    return null;
+// Returns plausible JSON-object substrings to try, in order of likelihood:
+// 1. The string itself (covers the common "ONLY JSON" case).
+// 2. Any ```...``` fenced blocks (the model sometimes ignores the no-fence rule).
+// 3. The widest brace span (`indexOf('{')` … `lastIndexOf('}')`) as a fallback.
+//
+// Callers are expected to try `JSON.parse` on each in order.
+const jsonObjectCandidates = (value: string): string[] => {
+  const trimmed = value.trim();
+  const seen = new Set<string>();
+  const candidates: string[] = [];
+  const push = (candidate: string): void => {
+    const normalized = candidate.trim();
+
+    if (
+      normalized.startsWith("{") &&
+      normalized.endsWith("}") &&
+      !seen.has(normalized)
+    ) {
+      seen.add(normalized);
+      candidates.push(normalized);
+    }
+  };
+
+  push(trimmed);
+
+  for (const match of trimmed.matchAll(FENCE_RE)) {
+    push(match[1] ?? "");
   }
 
-  return value.slice(start, end + 1);
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+
+  if (start !== -1 && end !== -1 && end > start) {
+    push(trimmed.slice(start, end + 1));
+  }
+
+  return candidates;
 };

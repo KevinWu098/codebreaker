@@ -175,6 +175,7 @@ export const BenchmarkRunEventKindSchema = z.enum([
   "agent_started",
   "agent_completed",
   "result_parsed",
+  "result_parse_failed",
   "artifact_committed",
   "cleanup_completed",
   "finalize_started",

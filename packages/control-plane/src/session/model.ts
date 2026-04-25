@@ -3,14 +3,14 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Env } from "@codebreaker/control-plane/types";
 import {
-  getModelTokenPricing,
   MODEL_PROVIDER_CONFIGS,
   type ModelProvider,
-  toCloudflareAiGatewayCustomCost,
 } from "@codebreaker/shared/lib/models";
 import { assertNever } from "@codebreaker/shared/lib/utils";
 import type { SessionConfig } from "@codebreaker/shared/schemas/session";
 import type { LanguageModel } from "ai";
+import { createAiGateway } from "ai-gateway-provider";
+import { createUnified } from "ai-gateway-provider/providers/unified";
 
 const TRAILING_SLASHES = /\/+$/;
 const WORKERS_AI_MODEL_PREFIX = "@cf/";
@@ -30,41 +30,6 @@ const requireEnv = (
 
 const trimTrailingSlash = (value: string): string =>
   value.replace(TRAILING_SLASHES, "");
-
-const cloudflareGatewayBaseUrl = (env: Env): string | undefined => {
-  if (!env.CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID) {
-    return;
-  }
-
-  const gatewayId = env.CLOUDFLARE_AI_GATEWAY_ID ?? "default";
-  return `https://gateway.ai.cloudflare.com/v1/${env.CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID}/${gatewayId}/compat`;
-};
-
-const cloudflareGatewayHeaders = (
-  config: SessionConfig,
-  env: Env,
-  providerApiKey: string | undefined
-): Record<string, string> | undefined => {
-  const pricing = getModelTokenPricing(config.model.provider, config.model.id);
-  const customCost = pricing
-    ? JSON.stringify(toCloudflareAiGatewayCustomCost(pricing))
-    : undefined;
-
-  if (!(env.CLOUDFLARE_AI_GATEWAY_TOKEN && providerApiKey)) {
-    return customCost ? { "cf-aig-custom-cost": customCost } : undefined;
-  }
-
-  if (!customCost) {
-    return {
-      "cf-aig-authorization": `Bearer ${env.CLOUDFLARE_AI_GATEWAY_TOKEN}`,
-    };
-  }
-
-  return {
-    "cf-aig-authorization": `Bearer ${env.CLOUDFLARE_AI_GATEWAY_TOKEN}`,
-    "cf-aig-custom-cost": customCost,
-  };
-};
 
 const cloudflareGatewayModelId = (
   provider: ModelProvider,
@@ -92,39 +57,30 @@ const cloudflareGatewayModelId = (
 const selectCloudflareGatewayModel = (
   config: SessionConfig,
   env: Env,
-  providerApiKey: string | undefined,
-  providerName: string,
-  preferGatewayToken = false
+  providerName: string
 ): LanguageModel | undefined => {
-  const baseURL = cloudflareGatewayBaseUrl(env);
   const modelId = cloudflareGatewayModelId(
     config.model.provider,
     config.model.id
   );
 
-  if (!(baseURL && modelId)) {
+  if (!(env.CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID && modelId)) {
     return;
   }
 
-  const apiKeyValue = preferGatewayToken
-    ? (env.CLOUDFLARE_AI_GATEWAY_TOKEN ?? providerApiKey)
-    : (providerApiKey ?? env.CLOUDFLARE_AI_GATEWAY_TOKEN);
   const apiKey = requireEnv(
-    apiKeyValue,
-    "provider API key or CLOUDFLARE_AI_GATEWAY_TOKEN",
+    env.CLOUDFLARE_AI_GATEWAY_TOKEN,
+    "CLOUDFLARE_AI_GATEWAY_TOKEN",
     providerName
   );
-  const headers = cloudflareGatewayHeaders(
-    config,
-    env,
-    apiKey === providerApiKey ? providerApiKey : undefined
-  );
-
-  return createOpenAI({
+  const gateway = createAiGateway({
+    accountId: env.CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID,
     apiKey,
-    baseURL,
-    ...(headers ? { headers } : {}),
-  }).chat(modelId);
+    gateway: env.CLOUDFLARE_AI_GATEWAY_ID ?? "default",
+  });
+  const unified = createUnified();
+
+  return gateway(unified(modelId)) as LanguageModel;
 };
 
 export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
@@ -133,9 +89,7 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
       const gatewayModel = selectCloudflareGatewayModel(
         config,
         env,
-        env.ANTHROPIC_API_KEY,
-        "Anthropic",
-        true
+        "Anthropic"
       );
 
       if (gatewayModel) {
@@ -155,12 +109,7 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
     }
     case "gemini": {
       const apiKey = env.GOOGLE_GENERATIVE_AI_API_KEY;
-      const gatewayModel = selectCloudflareGatewayModel(
-        config,
-        env,
-        apiKey,
-        "Gemini"
-      );
+      const gatewayModel = selectCloudflareGatewayModel(config, env, "Gemini");
 
       if (gatewayModel) {
         return gatewayModel;
@@ -174,12 +123,7 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
       })(config.model.id);
     }
     case "glm": {
-      const gatewayModel = selectCloudflareGatewayModel(
-        config,
-        env,
-        undefined,
-        "GLM"
-      );
+      const gatewayModel = selectCloudflareGatewayModel(config, env, "GLM");
 
       if (gatewayModel) {
         return gatewayModel;
@@ -193,12 +137,7 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
       }).chat(config.model.id);
     }
     case "kimi": {
-      const gatewayModel = selectCloudflareGatewayModel(
-        config,
-        env,
-        undefined,
-        "Kimi"
-      );
+      const gatewayModel = selectCloudflareGatewayModel(config, env, "Kimi");
 
       if (gatewayModel) {
         return gatewayModel;
@@ -212,13 +151,7 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
       }).chat(config.model.id);
     }
     case "openai": {
-      const gatewayModel = selectCloudflareGatewayModel(
-        config,
-        env,
-        env.OPENAI_API_KEY,
-        "OpenAI",
-        true
-      );
+      const gatewayModel = selectCloudflareGatewayModel(config, env, "OpenAI");
 
       if (gatewayModel) {
         return gatewayModel;

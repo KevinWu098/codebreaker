@@ -1,3 +1,4 @@
+import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
 import { verifyRequestJwt } from "@codebreaker/control-plane/http/auth";
 import {
   handlePreflight,
@@ -64,5 +65,13 @@ export default {
     }
 
     return router.fetch(request, env, context);
+  },
+
+  scheduled(
+    _event: ScheduledController,
+    env: Env,
+    context: ExecutionContext
+  ): void {
+    context.waitUntil(new BenchmarkRunOrchestrator(env).watchdogScan());
   },
 };

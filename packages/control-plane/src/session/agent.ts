@@ -55,6 +55,12 @@ const BENCHMARK_SESSION_PREFIX = "bench-";
 const FINALIZE_PROMPT = (reason: string) =>
   `Stop now. Do not call tools. Based only on the transcript and tool results so far, give your best final answer. If the original task required a specific output format, obey that format exactly. Stop reason: ${reason}`;
 
+// Detects shell commands that invoke `git clone`, including chained or piped
+// forms like `cd /workspace && git clone ...` or `git -C foo clone ...`.
+// The leading boundary covers start-of-line, whitespace, and the common
+// shell separators (`|`, `;`, `&`, `(`).
+const GIT_CLONE_RE = /(?:^|[\s|;&(])git(?:\s+-C\s+\S+)?\s+clone\b/;
+
 export class SessionAgent extends Think<Env, SessionAgentState> {
   initialState: SessionAgentState = {
     status: "pending",
@@ -273,7 +279,40 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       };
     }
 
+    const cloneBlock = this.detectRedundantClone(ctx);
+
+    if (cloneBlock) {
+      return cloneBlock;
+    }
+
     this.recordToolCall(ctx.toolName);
+  }
+
+  private detectRedundantClone(
+    ctx: ToolCallContext
+  ): ToolCallDecision | undefined {
+    if (ctx.toolName !== "exec_remote") {
+      return;
+    }
+
+    const artifact = this.state.artifact;
+
+    if (!artifact) {
+      return;
+    }
+
+    const command = (ctx.input as { command?: unknown } | undefined)?.command;
+
+    if (typeof command !== "string" || !GIT_CLONE_RE.test(command)) {
+      return;
+    }
+
+    const repoPath = `/workspace/${artifact.runRepoName}`;
+
+    return {
+      action: "block",
+      reason: `Refusing to run \`git clone\`: the benchmark target is already checked out at ${repoPath}. Use exec_remote against that path (e.g. \`git -C ${repoPath} log -1\`, \`grep -RIn ... ${repoPath}\`) or remote_read instead. Do not re-clone or download the repository.`,
+    };
   }
 
   override onChatResponse(result: ChatResponseResult): void {

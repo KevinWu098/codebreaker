@@ -11,6 +11,9 @@
   "placement": {
     "mode": "smart"
   },
+  "triggers": {
+    "crons": ["*/2 * * * *"]
+  },
   "durable_objects": {
     "bindings": [
       {
