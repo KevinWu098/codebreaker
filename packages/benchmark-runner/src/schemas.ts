@@ -229,6 +229,18 @@ export type CreateBenchmarkRunRequest = z.infer<
   typeof CreateBenchmarkRunRequestSchema
 >;
 
+export const BenchmarkRunScoreBreakdownSchema = z
+  .object({
+    correctLocations: z.number().int().nonnegative().nullable(),
+    locationScore: z.number().min(0).max(1).nullable(),
+    vulnClassMatched: z.boolean().nullable(),
+    vulnerableMatched: z.boolean().nullable(),
+  })
+  .strict();
+export type BenchmarkRunScoreBreakdown = z.infer<
+  typeof BenchmarkRunScoreBreakdownSchema
+>;
+
 export const BenchmarkRunRowSchema = z
   .object({
     artifactCommitSha: z.string().nullable(),
@@ -245,6 +257,7 @@ export const BenchmarkRunRowSchema = z
     modelProvider: ModelProviderSchema,
     outputTokens: z.number().int().nonnegative().nullable(),
     score: z.number().min(0).max(1).nullable(),
+    scoreBreakdown: BenchmarkRunScoreBreakdownSchema.nullable().optional(),
     sessionId: z.string().nullable(),
     status: BenchmarkRunStatusSchema,
     taskId: z.string().min(1),
