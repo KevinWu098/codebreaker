@@ -1,4 +1,5 @@
 import type {
+  AgentOutput,
   BenchmarkCleanupPolicy,
   BenchmarkRunEvent,
   BenchmarkRunLocation,
@@ -16,6 +17,7 @@ import type {
   Difficulty,
   TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
+import { AgentOutputSchema } from "@codebreaker/benchmark-runner/schemas";
 import {
   estimateTokenUsageCost,
   MODEL_OPTIONS,
@@ -272,6 +274,7 @@ const locHintDetailSuffix = (b: BenchmarkRunScoreBreakdown): string => {
 interface ParsedCandidate {
   confidence: number;
   locations: { file: string; function: string | null }[];
+  reason: string | null;
   vuln_class: string | null;
   vulnerable: boolean;
 }
@@ -292,33 +295,78 @@ const skipJsonString = (value: string, i: number): number => {
   return pos;
 };
 
-const extractJsonObjects = (value: string): string[] => {
-  const results: string[] = [];
+/**
+ * True when the character after `{` (ignoring whitespace) is `"` or `}`,
+ * indicating the block is likely a real JSON object rather than a JS-like
+ * block with unquoted keys (e.g. `{type:"reasoning", ...}`).
+ */
+const looksLikeJsonObjectStart = (
+  value: string,
+  openBraceIdx: number
+): boolean => {
+  for (let j = openBraceIdx + 1; j < value.length; j++) {
+    const c = value[j];
+    if (c === " " || c === "\t" || c === "\n" || c === "\r") {
+      continue;
+    }
+    return c === '"' || c === "}";
+  }
+  return false;
+};
+
+/**
+ * From an opening `{`, find the matching `}` by tracking balanced braces.
+ * Skips JSON string literals so that braces inside them don't affect depth.
+ */
+const findMatchingBrace = (value: string, openIdx: number): number => {
   let depth = 0;
-  let start = -1;
-
-  for (let i = 0; i < value.length; i++) {
+  for (let i = openIdx; i < value.length; i++) {
     const ch = value[i];
-
     if (ch === '"' && depth > 0) {
       i = skipJsonString(value, i) - 1;
       continue;
     }
-
     if (ch === "{") {
-      if (depth === 0) {
-        start = i;
-      }
       depth++;
     } else if (ch === "}") {
       depth--;
-      if (depth === 0 && start !== -1) {
-        results.push(value.slice(start, i + 1));
-        start = -1;
+      if (depth === 0) {
+        return i;
       }
-      if (depth < 0) {
-        depth = 0;
+    }
+  }
+  return -1;
+};
+
+const extractJsonObjects = (value: string): string[] => {
+  const results: string[] = [];
+  let searchFrom = 0;
+
+  while (searchFrom < value.length) {
+    let start = -1;
+    for (let i = searchFrom; i < value.length; i++) {
+      if (value[i] === "{" && looksLikeJsonObjectStart(value, i)) {
+        start = i;
+        break;
       }
+    }
+    if (start === -1) {
+      break;
+    }
+
+    const end = findMatchingBrace(value, start);
+    if (end === -1) {
+      searchFrom = start + 1;
+      continue;
+    }
+
+    const candidate = value.slice(start, end + 1);
+    try {
+      JSON.parse(candidate);
+      results.push(candidate);
+      searchFrom = end + 1;
+    } catch {
+      searchFrom = start + 1;
     }
   }
 
@@ -333,24 +381,16 @@ const parseRawCandidates = (rawOutput: string): ParsedCandidate[] => {
       break;
     }
     try {
-      const parsed = JSON.parse(jsonString) as Record<string, unknown>;
-      if (!Array.isArray(parsed.locations)) {
-        continue;
-      }
+      const parsed = AgentOutputSchema.parse(JSON.parse(jsonString));
       candidates.push({
-        confidence: Number(parsed.confidence ?? 0),
-        locations: (parsed.locations as Record<string, unknown>[]).map(
-          (loc) => ({
-            file: String(loc.file ?? ""),
-            function: typeof loc.function === "string" ? loc.function : null,
-          })
-        ),
-        vuln_class:
-          typeof parsed.vuln_class === "string" ? parsed.vuln_class : null,
-        vulnerable: Boolean(parsed.vulnerable),
+        confidence: parsed.confidence,
+        locations: parsed.locations,
+        reason: parsed.reason,
+        vuln_class: parsed.vuln_class,
+        vulnerable: parsed.vulnerable,
       });
     } catch {
-      /* not valid JSON */
+      /* does not conform to AgentOutput schema */
     }
   }
 
@@ -359,15 +399,18 @@ const parseRawCandidates = (rawOutput: string): ParsedCandidate[] => {
 
 const candidateMatchesOutput = (
   candidate: ParsedCandidate,
-  agentOutput: {
-    confidence: number;
-    locations: Array<{ file: string; function: string | null }>;
-  }
+  agentOutput: AgentOutput
 ): boolean => {
-  if (candidate.locations.length !== agentOutput.locations.length) {
+  if (candidate.vulnerable !== agentOutput.vulnerable) {
+    return false;
+  }
+  if (candidate.vuln_class !== agentOutput.vuln_class) {
     return false;
   }
   if (candidate.confidence !== agentOutput.confidence) {
+    return false;
+  }
+  if (candidate.locations.length !== agentOutput.locations.length) {
     return false;
   }
   return candidate.locations.every(
@@ -545,6 +588,7 @@ const CandidateCard = ({
           </span>
         )}
         <span className="text-[10px] text-fg-muted">
+          {candidate.vulnerable ? "vuln" : "safe"} ·{" "}
           {candidate.vuln_class ?? "—"} · {confidencePercent}%
         </span>
       </div>
@@ -570,17 +614,25 @@ const CandidateCard = ({
       </div>
 
       <div className="flex gap-3 text-[10px]">
-        <span>
+        <span title="intersection / union of predicted vs ground-truth files (differs from the recall-based location subscore)">
           <span className="text-fg-muted">file IoU</span>{" "}
           <span className="num font-medium">{fileIou.toFixed(2)}</span>
         </span>
         {funcIou != null && (
-          <span>
+          <span title="intersection / union of predicted vs ground-truth functions">
             <span className="text-fg-muted">fn IoU</span>{" "}
             <span className="num font-medium">{funcIou.toFixed(2)}</span>
           </span>
         )}
       </div>
+      {candidate.reason != null && (
+        <details className="text-[10px]">
+          <summary className="cursor-pointer text-fg-muted">reason</summary>
+          <p className="mt-1 whitespace-pre-wrap break-words text-fg-muted">
+            {candidate.reason}
+          </p>
+        </details>
+      )}
     </div>
   );
 };
@@ -607,6 +659,7 @@ const LocationComparisonDetail = ({
       ? {
           confidence: agentOutput.confidence,
           locations: agentOutput.locations,
+          reason: agentOutput.reason,
           vuln_class: agentOutput.vuln_class,
           vulnerable: agentOutput.vulnerable,
         }
