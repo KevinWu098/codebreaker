@@ -97,6 +97,7 @@ export type InspectExecResponse = z.infer<typeof InspectExecResponseSchema>;
 export const ArtifactCheckoutRequestSchema = z.object({
   path: z.string().min(1).optional(),
   profile: SandboxProfileNameSchema.optional(),
+  ref: z.string().min(1).optional(),
 });
 export type ArtifactCheckoutRequest = z.infer<
   typeof ArtifactCheckoutRequestSchema

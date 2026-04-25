@@ -1,4 +1,9 @@
 import type {
+  BenchmarkRunDetailResponse,
+  ListBenchmarkRunsResponse,
+  ListBenchmarkTasksResponse,
+} from "@codebreaker/benchmark-runner/schemas";
+import type {
   AdminShimHealthResponse,
   AdminShimSandboxesResponse,
   ListSessionsQuery,
@@ -24,6 +29,47 @@ export const useSessionsQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.listSessions(query),
     queryKey: [...qk.sessions(connection), query],
+    refetchInterval: 5000,
+  });
+};
+
+export const useBenchmarkTasksQuery = (): UseQueryResult<
+  ListBenchmarkTasksResponse,
+  Error
+> => {
+  const connection = useConnection();
+
+  return useQuery({
+    enabled: isAuthorized(connection),
+    queryFn: () => api.listBenchmarkTasks(),
+    queryKey: qk.benchmarkTasks(connection),
+    refetchInterval: 30_000,
+  });
+};
+
+export const useBenchmarkRunsQuery = (): UseQueryResult<
+  ListBenchmarkRunsResponse,
+  Error
+> => {
+  const connection = useConnection();
+
+  return useQuery({
+    enabled: isAuthorized(connection),
+    queryFn: () => api.listBenchmarkRuns(),
+    queryKey: qk.benchmarkRuns(connection),
+    refetchInterval: 5000,
+  });
+};
+
+export const useBenchmarkRunQuery = (
+  id: string
+): UseQueryResult<BenchmarkRunDetailResponse, Error> => {
+  const connection = useConnection();
+
+  return useQuery({
+    enabled: isAuthorized(connection),
+    queryFn: () => api.getBenchmarkRun(id),
+    queryKey: qk.benchmarkRun(connection, id),
     refetchInterval: 5000,
   });
 };
@@ -99,7 +145,7 @@ export const useSessionArtifactsQuery = (
   const connection = useConnection();
 
   return useQuery({
-    enabled: isAuthorized(connection.token),
+    enabled: isAuthorized(connection),
     queryFn: () => api.getArtifacts(id),
     queryKey: qk.session.artifacts(connection, id),
     refetchInterval: 5000,

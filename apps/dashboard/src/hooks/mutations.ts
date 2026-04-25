@@ -1,4 +1,9 @@
 import type {
+  BenchmarkRunActionResponse,
+  CreateBenchmarkRunRequest,
+  CreateBenchmarkRunResponse,
+} from "@codebreaker/benchmark-runner/schemas";
+import type {
   ArtifactCheckoutRequest,
   ArtifactCheckoutResponse,
   ArtifactCommitRequest,
@@ -40,6 +45,44 @@ export const useCreateSessionMutation = () => {
     onSuccess: (response) => {
       toast.success(`session ${response.session.id.slice(0, 8)}… created`);
       queryClient.invalidateQueries({ queryKey: qk.sessions(connection) });
+    },
+  });
+};
+
+export const useCreateBenchmarkRunMutation = () => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    CreateBenchmarkRunResponse,
+    Error,
+    CreateBenchmarkRunRequest
+  >({
+    mutationFn: (body) => api.createBenchmarkRun(body),
+    onError: (error) => {
+      toast.error(messageFor(error, "benchmark run failed"));
+    },
+    onSuccess: (response) => {
+      toast.success(`benchmark ${response.run.id.slice(0, 8)}… started`);
+      queryClient.invalidateQueries({ queryKey: qk.benchmarkRuns(connection) });
+    },
+  });
+};
+
+export const useCleanupBenchmarkRunMutation = (runId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<BenchmarkRunActionResponse, Error, void>({
+    mutationFn: () => api.cleanupBenchmarkRun(runId),
+    onError: (error) => {
+      toast.error(messageFor(error, "benchmark cleanup failed"));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.benchmarkRuns(connection) });
+      queryClient.invalidateQueries({
+        queryKey: qk.benchmarkRun(connection, runId),
+      });
     },
   });
 };

@@ -2,11 +2,12 @@ import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useCallback } from "react";
 import { Sidebar, type ViewId } from "@/components/sidebar";
 import { AdminPanel } from "@/features/admin/admin-panel";
+import { BenchmarksPanel } from "@/features/benchmarks/benchmarks-panel";
 import { SessionDetail } from "@/features/sessions/session-detail";
 import { SessionsList } from "@/features/sessions/sessions-list";
 import { useThemeSync } from "@/hooks/use-theme";
 
-const VIEW_IDS: readonly ViewId[] = ["sessions", "admin"];
+const VIEW_IDS: readonly ViewId[] = ["sessions", "benchmarks", "admin"];
 
 const searchParams = {
   view: parseAsStringLiteral(VIEW_IDS).withDefault("sessions"),
@@ -70,6 +71,7 @@ export const App = (): React.JSX.Element => {
             selectedId={selectedId}
           />
         )}
+        {view === "benchmarks" && <BenchmarksPanel />}
         {view === "admin" && <AdminPanel />}
       </main>
     </div>

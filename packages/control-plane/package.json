@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./benchmarks/dataset": {
+      "types": "./src/benchmarks/dataset.ts",
+      "default": "./src/benchmarks/dataset.ts"
+    },
+    "./benchmarks/orchestrator": {
+      "types": "./src/benchmarks/orchestrator.ts",
+      "default": "./src/benchmarks/orchestrator.ts"
+    },
     "./artifacts/forgejo": {
       "types": "./src/artifacts/forgejo.ts",
       "default": "./src/artifacts/forgejo.ts"
@@ -15,6 +23,10 @@
     "./db/d1-schema": {
       "types": "./src/db/d1-schema.ts",
       "default": "./src/db/d1-schema.ts"
+    },
+    "./db/benchmark-runs": {
+      "types": "./src/db/benchmark-runs.ts",
+      "default": "./src/db/benchmark-runs.ts"
     },
     "./db/session-index": {
       "types": "./src/db/session-index.ts",
@@ -79,6 +91,7 @@
     "@cloudflare/codemode": "0.3.4",
     "@cloudflare/shell": "0.3.3",
     "@cloudflare/think": "0.4.0",
+    "@codebreaker/benchmark-runner": "workspace:*",
     "@codebreaker/shared": "workspace:*",
     "@hono/zod-validator": "0.7.6",
     "agents": "0.11.5",

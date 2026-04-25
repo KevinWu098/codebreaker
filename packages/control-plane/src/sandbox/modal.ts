@@ -64,6 +64,7 @@ export interface GitCheckoutOptions {
   credential: GitCredentialOptions;
   path?: string | undefined;
   profile?: SandboxProfileName | undefined;
+  ref?: string | undefined;
   remoteUrl: string;
   sessionId: string;
 }
@@ -288,6 +289,7 @@ const toShimGitCheckoutRequest = (options: GitCheckoutOptions) => ({
   credential: options.credential,
   path: options.path,
   profile: options.profile,
+  ref: options.ref,
   remote_url: options.remoteUrl,
   session_id: options.sessionId,
 });

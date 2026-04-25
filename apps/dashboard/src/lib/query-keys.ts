@@ -10,6 +10,12 @@ export const qk = {
     sandboxes: (connection: Connection) =>
       ["admin", "sandboxes", ...scope(connection)] as const,
   },
+  benchmarkRun: (connection: Connection, id: string) =>
+    ["benchmark-run", id, ...scope(connection)] as const,
+  benchmarkRuns: (connection: Connection) =>
+    ["benchmark-runs", ...scope(connection)] as const,
+  benchmarkTasks: (connection: Connection) =>
+    ["benchmark-tasks", ...scope(connection)] as const,
   health: (connection: Connection) => ["health", ...scope(connection)] as const,
   session: {
     artifacts: (connection: Connection, id: string) =>

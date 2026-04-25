@@ -72,6 +72,7 @@ class GitCheckoutRequest(BaseModel):
     credential: GitCredential
     path: str | None = None
     profile: SandboxProfileName = "python"
+    ref: str | None = None
 
 
 class GitCheckoutResponse(BaseModel):

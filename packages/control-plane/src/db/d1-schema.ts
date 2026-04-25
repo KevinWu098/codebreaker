@@ -49,3 +49,42 @@ export const processedEvents = sqliteTable(
     ),
   ]
 );
+
+export const benchmarkRuns = sqliteTable("benchmark_runs", {
+  artifactCommitSha: text("artifact_commit_sha"),
+  artifactPath: text("artifact_path"),
+  cleanupCompletedAt: text("cleanup_completed_at"),
+  cleanupPolicy: text("cleanup_policy").notNull(),
+  completedAt: text("completed_at"),
+  createdAt: text("created_at").notNull(),
+  difficulty: text("difficulty").notNull(),
+  error: text("error"),
+  id: text("id").primaryKey(),
+  modelId: text("model_id").notNull(),
+  modelProvider: text("model_provider").notNull(),
+  score: integer("score"),
+  sessionId: text("session_id"),
+  status: text("status").notNull(),
+  taskId: text("task_id").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const benchmarkRunEvents = sqliteTable("benchmark_run_events", {
+  createdAt: text("created_at").notNull(),
+  details: text("details"),
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  message: text("message").notNull(),
+  runId: text("run_id").notNull(),
+});
+
+export const benchmarkRunResults = sqliteTable("benchmark_run_results", {
+  agentOutput: text("agent_output"),
+  artifactPath: text("artifact_path"),
+  createdAt: text("created_at").notNull(),
+  error: text("error"),
+  id: text("id").primaryKey(),
+  rawOutput: text("raw_output"),
+  runId: text("run_id").notNull(),
+  score: text("score"),
+});

@@ -4,6 +4,7 @@ const GHSA_ID_PATTERN = /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/;
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const DATASET_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const MODEL_PROVIDER_VALUES = ["openai", "anthropic"] as const;
 
 export const GhsaIdSchema = z.string().regex(GHSA_ID_PATTERN);
 export type GhsaId = z.infer<typeof GhsaIdSchema>;
@@ -114,6 +115,188 @@ export const AgentOutputSchema = z
   .strict();
 export type AgentOutput = z.infer<typeof AgentOutputSchema>;
 
+export const BenchmarkRunStatusSchema = z.enum([
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+  "cleaning_up",
+  "cleaned",
+]);
+export type BenchmarkRunStatus = z.infer<typeof BenchmarkRunStatusSchema>;
+
+export const BenchmarkCleanupPolicySchema = z.enum([
+  "retain",
+  "terminate_sandbox",
+  "archive_repo",
+  "archive_repo_and_terminate",
+]);
+export type BenchmarkCleanupPolicy = z.infer<
+  typeof BenchmarkCleanupPolicySchema
+>;
+
+export const BenchmarkRunEventKindSchema = z.enum([
+  "created",
+  "session_created",
+  "checkout_started",
+  "checkout_completed",
+  "agent_started",
+  "agent_completed",
+  "result_parsed",
+  "artifact_committed",
+  "cleanup_completed",
+  "failed",
+  "cancelled",
+]);
+export type BenchmarkRunEventKind = z.infer<typeof BenchmarkRunEventKindSchema>;
+
+export const BenchmarkRunModelSchema = z
+  .object({
+    id: z.string().min(1),
+    provider: z.enum(MODEL_PROVIDER_VALUES),
+    reasoningEffort: z.enum(["minimal", "low", "medium", "high"]).optional(),
+  })
+  .strict();
+export type BenchmarkRunModel = z.infer<typeof BenchmarkRunModelSchema>;
+
+export const CreateBenchmarkRunRequestSchema = z
+  .object({
+    autoStart: z.boolean().default(true),
+    cleanupPolicy: BenchmarkCleanupPolicySchema.default("retain"),
+    difficulty: DifficultySchema,
+    id: z.string().min(1).optional(),
+    maxTurns: z.number().int().positive().default(20),
+    model: BenchmarkRunModelSchema,
+    taskId: z.string().min(1),
+    timeoutSeconds: z.number().int().positive().default(1800),
+  })
+  .strict();
+export type CreateBenchmarkRunRequest = z.infer<
+  typeof CreateBenchmarkRunRequestSchema
+>;
+
+export const BenchmarkRunRowSchema = z
+  .object({
+    artifactCommitSha: z.string().nullable(),
+    artifactPath: z.string().nullable(),
+    cleanupCompletedAt: z.string().datetime().nullable(),
+    cleanupPolicy: BenchmarkCleanupPolicySchema,
+    completedAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime(),
+    difficulty: DifficultySchema,
+    error: z.string().nullable(),
+    id: z.string().min(1),
+    modelId: z.string().min(1),
+    modelProvider: z.enum(MODEL_PROVIDER_VALUES),
+    score: z.number().min(0).max(1).nullable(),
+    sessionId: z.string().nullable(),
+    status: BenchmarkRunStatusSchema,
+    taskId: z.string().min(1),
+    updatedAt: z.string().datetime(),
+  })
+  .strict();
+export type BenchmarkRunRow = z.infer<typeof BenchmarkRunRowSchema>;
+
+export const BenchmarkRunEventSchema = z
+  .object({
+    createdAt: z.string().datetime(),
+    details: z.unknown().nullable(),
+    id: z.string().min(1),
+    kind: BenchmarkRunEventKindSchema,
+    message: z.string().min(1),
+    runId: z.string().min(1),
+  })
+  .strict();
+export type BenchmarkRunEvent = z.infer<typeof BenchmarkRunEventSchema>;
+
+export const BenchmarkRunScoreSchema = z
+  .object({
+    correctLocations: z.number().int().nonnegative(),
+    expectedVulnerable: z.boolean(),
+    locationScore: z.number().min(0).max(1),
+    predictedVulnerable: z.boolean(),
+    score: z.number().min(0).max(1),
+    vulnClassMatched: z.boolean(),
+    vulnerableMatched: z.boolean(),
+  })
+  .strict();
+export type BenchmarkRunScore = z.infer<typeof BenchmarkRunScoreSchema>;
+
+export const BenchmarkRunResultSchema = z
+  .object({
+    agentOutput: AgentOutputSchema.nullable(),
+    artifactPath: z.string().nullable(),
+    createdAt: z.string().datetime(),
+    error: z.string().nullable(),
+    id: z.string().min(1),
+    rawOutput: z.string().nullable(),
+    runId: z.string().min(1),
+    score: BenchmarkRunScoreSchema.nullable(),
+  })
+  .strict();
+export type BenchmarkRunResult = z.infer<typeof BenchmarkRunResultSchema>;
+
+export const BenchmarkTaskSummarySchema = z
+  .object({
+    difficulties: z.array(DifficultySchema),
+    ghsaId: GhsaIdSchema,
+    language: z.string(),
+    repo: z.string().url(),
+    taskId: z.string().min(1),
+    vulnClass: VulnClassSchema,
+  })
+  .strict();
+export type BenchmarkTaskSummary = z.infer<typeof BenchmarkTaskSummarySchema>;
+
+export const ListBenchmarkTasksResponseSchema = z
+  .object({
+    tasks: z.array(BenchmarkTaskSummarySchema),
+  })
+  .strict();
+export type ListBenchmarkTasksResponse = z.infer<
+  typeof ListBenchmarkTasksResponseSchema
+>;
+
+export const ListBenchmarkRunsResponseSchema = z
+  .object({
+    runs: z.array(BenchmarkRunRowSchema),
+  })
+  .strict();
+export type ListBenchmarkRunsResponse = z.infer<
+  typeof ListBenchmarkRunsResponseSchema
+>;
+
+export const BenchmarkRunDetailResponseSchema = z
+  .object({
+    events: z.array(BenchmarkRunEventSchema),
+    result: BenchmarkRunResultSchema.nullable(),
+    run: BenchmarkRunRowSchema,
+    task: TaskInstanceSchema.nullable(),
+  })
+  .strict();
+export type BenchmarkRunDetailResponse = z.infer<
+  typeof BenchmarkRunDetailResponseSchema
+>;
+
+export const CreateBenchmarkRunResponseSchema = z
+  .object({
+    run: BenchmarkRunRowSchema,
+  })
+  .strict();
+export type CreateBenchmarkRunResponse = z.infer<
+  typeof CreateBenchmarkRunResponseSchema
+>;
+
+export const BenchmarkRunActionResponseSchema = z
+  .object({
+    run: BenchmarkRunRowSchema,
+  })
+  .strict();
+export type BenchmarkRunActionResponse = z.infer<
+  typeof BenchmarkRunActionResponseSchema
+>;
+
 export const parseTaskInstance = (value: unknown): TaskInstance =>
   TaskInstanceSchema.parse(value);
 
@@ -136,3 +319,45 @@ export const renderAgentInput = (
     hint: task.hints[difficulty],
     task_id: task.task_id,
   });
+
+export const summarizeTask = (task: TaskInstance): BenchmarkTaskSummary =>
+  BenchmarkTaskSummarySchema.parse({
+    difficulties: ["L0", "L1"],
+    ghsaId: task.ghsa_id,
+    language: task.codebase.language,
+    repo: task.codebase.repo,
+    taskId: task.task_id,
+    vulnClass: task.ground_truth.vuln_class,
+  });
+
+export const scoreAgentOutput = (
+  task: TaskInstance,
+  output: AgentOutput
+): BenchmarkRunScore => {
+  const expectedLocations = new Set(
+    task.ground_truth.locations.map((location) => location.file)
+  );
+  const correctLocations = output.locations.filter((location) =>
+    expectedLocations.has(location.file)
+  ).length;
+  const vulnerableMatched = output.vulnerable === task.ground_truth.vulnerable;
+  const vulnClassMatched = output.vuln_class === task.ground_truth.vuln_class;
+  const locationScore =
+    expectedLocations.size === 0
+      ? 0
+      : correctLocations / expectedLocations.size;
+  const score =
+    Number(vulnerableMatched) * 0.5 +
+    Number(vulnClassMatched) * 0.25 +
+    locationScore * 0.25;
+
+  return BenchmarkRunScoreSchema.parse({
+    correctLocations,
+    expectedVulnerable: task.ground_truth.vulnerable,
+    locationScore,
+    predictedVulnerable: output.vulnerable,
+    score,
+    vulnClassMatched,
+    vulnerableMatched,
+  });
+};

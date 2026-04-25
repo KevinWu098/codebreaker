@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-sdk/react": "3.0.170",
     "@cloudflare/ai-chat": "0.5.1",
+    "@codebreaker/benchmark-runner": "workspace:*",
     "@codebreaker/shared": "workspace:*",
     "@hookform/resolvers": "5.2.2",
     "@radix-ui/react-dialog": "1.1.15",

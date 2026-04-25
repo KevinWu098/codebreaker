@@ -3,21 +3,34 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "benchmark-runner": "./src/cli.ts"
+  },
   "exports": {
     "./loaders": {
       "types": "./src/loaders.ts",
       "default": "./src/loaders.ts"
     },
+    "./api-client": {
+      "types": "./src/api-client.ts",
+      "default": "./src/api-client.ts"
+    },
     "./schemas": {
       "types": "./src/schemas.ts",
       "default": "./src/schemas.ts"
+    },
+    "./session-config": {
+      "types": "./src/session-config.ts",
+      "default": "./src/session-config.ts"
     }
   },
   "scripts": {
+    "benchmark": "node --experimental-strip-types src/cli.ts",
     "typecheck": "tsc --noEmit",
     "validate:fixtures": "node --experimental-strip-types src/validate-fixtures.ts"
   },
   "dependencies": {
+    "@codebreaker/shared": "workspace:*",
     "zod": "4.3.6"
   },
   "devDependencies": {

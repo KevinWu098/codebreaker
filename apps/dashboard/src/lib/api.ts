@@ -1,4 +1,12 @@
 import type {
+  BenchmarkRunActionResponse,
+  BenchmarkRunDetailResponse,
+  CreateBenchmarkRunRequest,
+  CreateBenchmarkRunResponse,
+  ListBenchmarkRunsResponse,
+  ListBenchmarkTasksResponse,
+} from "@codebreaker/benchmark-runner/schemas";
+import type {
   AdminShimHealthResponse,
   AdminShimSandboxesResponse,
   ApiError,
@@ -129,6 +137,33 @@ export const api = {
       "/sessions",
       {},
       query as Record<string, unknown>
+    ),
+
+  listBenchmarkTasks: (): Promise<ListBenchmarkTasksResponse> =>
+    request<ListBenchmarkTasksResponse>("/benchmark-tasks"),
+
+  listBenchmarkRuns: (): Promise<ListBenchmarkRunsResponse> =>
+    request<ListBenchmarkRunsResponse>("/benchmark-runs"),
+
+  createBenchmarkRun: (
+    body: CreateBenchmarkRunRequest
+  ): Promise<CreateBenchmarkRunResponse> =>
+    request<CreateBenchmarkRunResponse>("/benchmark-runs", {
+      body: JSON.stringify(body),
+      method: "POST",
+    }),
+
+  getBenchmarkRun: (id: string): Promise<BenchmarkRunDetailResponse> =>
+    request<BenchmarkRunDetailResponse>(
+      `/benchmark-runs/${encodeURIComponent(id)}`
+    ),
+
+  cleanupBenchmarkRun: (id: string): Promise<BenchmarkRunActionResponse> =>
+    request<BenchmarkRunActionResponse>(
+      `/benchmark-runs/${encodeURIComponent(id)}/cleanup`,
+      {
+        method: "POST",
+      }
     ),
 
   getSession: (id: string): Promise<SessionDetailResponse> =>

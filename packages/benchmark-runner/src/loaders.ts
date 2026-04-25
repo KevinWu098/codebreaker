@@ -154,6 +154,16 @@ export const loadJsonlFile = async <T>(
   return parseJsonl(contents, schema, filePath);
 };
 
+export const parseBenchmarkTasksJsonl = (
+  contents: string,
+  source = DEFAULT_TASKS_PATH
+): TaskInstance[] => parseJsonl(contents, TaskInstanceSchema, source);
+
+export const parseInternalMetadataJsonl = (
+  contents: string,
+  source = DEFAULT_METADATA_PATH
+): InternalMetadata[] => parseJsonl(contents, InternalMetadataSchema, source);
+
 export const loadBenchmarkTasks = async (
   workspaceRoot = process.cwd()
 ): Promise<TaskInstance[]> =>

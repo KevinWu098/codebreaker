@@ -1,10 +1,10 @@
-import { ServerCog, Settings2, Workflow } from "lucide-react";
+import { FlaskConical, ServerCog, Settings2, Workflow } from "lucide-react";
 import { ConnectionForm } from "@/components/connection-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/cn";
 import { isAuthorized, useConnection } from "@/lib/connection";
 
-export type ViewId = "sessions" | "admin";
+export type ViewId = "sessions" | "benchmarks" | "admin";
 
 interface SidebarProps {
   onSelectView: (view: ViewId) => void;
@@ -24,6 +24,12 @@ const NAV: readonly NavItem[] = [
     Icon: Workflow,
     id: "sessions",
     label: "sessions",
+  },
+  {
+    description: "benchmark tasks, runs, and results",
+    Icon: FlaskConical,
+    id: "benchmarks",
+    label: "benchmarks",
   },
   {
     description: "modal shim health, sandboxes",

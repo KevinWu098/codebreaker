@@ -1,4 +1,11 @@
+import {
+  type CreateBenchmarkRunRequest,
+  CreateBenchmarkRunRequestSchema,
+} from "@codebreaker/benchmark-runner/schemas";
 import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
+import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/dataset";
+import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
+import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { jwtAuth } from "@codebreaker/control-plane/http/auth";
 import { parseAllowedOrigins } from "@codebreaker/control-plane/http/cors";
@@ -28,6 +35,10 @@ import { cors } from "hono/cors";
 import { z } from "zod";
 
 const SessionParamsSchema = z.object({
+  id: z.string().min(1),
+});
+
+const BenchmarkRunParamsSchema = z.object({
   id: z.string().min(1),
 });
 
@@ -63,6 +74,9 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
   );
 
   app.use("/sessions/*", jwtAuth);
+  app.use("/benchmark-tasks", jwtAuth);
+  app.use("/benchmark-runs", jwtAuth);
+  app.use("/benchmark-runs/*", jwtAuth);
   app.use("/admin/*", jwtAuth);
 
   app.get(
@@ -78,6 +92,119 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
         offset: query.offset,
         sessions,
       });
+    }
+  );
+
+  app.get("/benchmark-tasks", (context) => {
+    const dataset = new BenchmarkDatasetService();
+
+    return context.json({
+      tasks: dataset.listTasks(),
+    });
+  });
+
+  app.get("/benchmark-runs", async (context) => {
+    const store = new BenchmarkRunStore(context.env.DB);
+
+    return context.json({
+      runs: await store.list(),
+    });
+  });
+
+  app.post(
+    "/benchmark-runs",
+    zValidator("json", CreateBenchmarkRunRequestSchema),
+    async (context) => {
+      const request = context.req.valid("json");
+      const orchestrator = new BenchmarkRunOrchestrator(context.env);
+      const run = await orchestrator.create(request);
+
+      if (!run) {
+        return jsonError(
+          "Benchmark run was not created",
+          "benchmark_run_not_created",
+          500
+        );
+      }
+
+      return context.json({ run }, 201);
+    }
+  );
+
+  app.get(
+    "/benchmark-runs/:id",
+    zValidator("param", BenchmarkRunParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const store = new BenchmarkRunStore(context.env.DB);
+      const dataset = new BenchmarkDatasetService();
+      const run = await store.get(id);
+
+      if (!run) {
+        return jsonError("Benchmark run not found", "run_not_found", 404);
+      }
+
+      return context.json({
+        events: await store.listEvents(id),
+        result: await store.getLatestResult(id),
+        run,
+        task: dataset.getTask(run.taskId),
+      });
+    }
+  );
+
+  app.post(
+    "/benchmark-runs/:id/start",
+    zValidator("param", BenchmarkRunParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const store = new BenchmarkRunStore(context.env.DB);
+      const run = await store.get(id);
+
+      if (!run) {
+        return jsonError("Benchmark run not found", "run_not_found", 404);
+      }
+
+      const request: CreateBenchmarkRunRequest = {
+        autoStart: false,
+        cleanupPolicy: run.cleanupPolicy,
+        difficulty: run.difficulty,
+        maxTurns: 20,
+        model: {
+          id: run.modelId,
+          provider: run.modelProvider,
+        },
+        taskId: run.taskId,
+        timeoutSeconds: 1800,
+      };
+      const nextRun = await new BenchmarkRunOrchestrator(context.env).start(
+        id,
+        request
+      );
+
+      return context.json({ run: nextRun });
+    }
+  );
+
+  app.post(
+    "/benchmark-runs/:id/cancel",
+    zValidator("param", BenchmarkRunParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const run = await new BenchmarkRunOrchestrator(context.env).cancel(id);
+
+      return context.json({ run });
+    }
+  );
+
+  app.post(
+    "/benchmark-runs/:id/cleanup",
+    zValidator("param", BenchmarkRunParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const run = await new BenchmarkRunOrchestrator(context.env).cleanup(id);
+
+      return context.json({ run });
     }
   );
 
@@ -304,6 +431,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
         credential,
         path: request.path ?? `/workspace/${artifact.runRepoName}`,
         profile: request.profile,
+        ref: request.ref,
         remoteUrl: artifact.runRepoRemote,
         sessionId: id,
       });
