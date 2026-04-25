@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-juju-002",
+  "ghsa_id": "GHSA-w5fq-8965-c969",
+  "codebase": {
+    "repo": "https://github.com/juju/juju",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "530924c75715eeea85ad37a3815a2df63047c11c"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Cloud infrastructure management and controller API services"
+    },
+    "L2": {
+      "description": "An authorization bypass vulnerability exists where any authenticated user with basic login permission can retrieve sensitive cloud infrastructure credentials by calling an API endpoint with a known model identifier. The endpoint does not verify that the caller has elevated privileges such as superuser or administrative permissions before returning confidential credential details in the response, allowing unauthorized access to bootstrap credentials."
+    },
+    "L3": {
+      "area": "Cloud infrastructure management and controller API services",
+      "description": "An authorization bypass vulnerability exists where any authenticated user with basic login permission can retrieve sensitive cloud infrastructure credentials by calling an API endpoint with a known model identifier. The endpoint does not verify that the caller has elevated privileges such as superuser or administrative permissions before returning confidential credential details in the response, allowing unauthorized access to bootstrap credentials."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 10.0,
+    "reason": "The cloud specification API endpoint returns cloud credentials to any authenticated client without verifying that the caller has superuser or model admin privileges, allowing unauthorized credential disclosure.",
+    "locations": [
+      {
+        "file": "apiserver/common/cloudspec/cloudspec.go",
+        "function": "CloudSpec"
+      }
+    ]
+  }
+}
