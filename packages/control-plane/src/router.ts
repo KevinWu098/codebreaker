@@ -66,10 +66,11 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
       const agent = await getAgentByName(context.env.SESSION_AGENT, id, {
         props: {
           config: request.config,
+          sessionId: id,
         },
       });
 
-      await agent.init(request.config);
+      await agent.init(id, request.config);
       await store.setStatus({
         eventId: `init:${id}`,
         id,

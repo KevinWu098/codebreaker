@@ -26,6 +26,7 @@ import { generateText, type ToolSet } from "ai";
 
 export interface SessionAgentState {
   config?: SessionConfig;
+  sessionId?: string;
   status: SessionStatus;
 }
 
@@ -39,6 +40,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
   override async onStart(props?: Record<string, unknown>): Promise<void> {
     const propsConfig = this.readPropsConfig(props);
+    const propsSessionId = this.readPropsSessionId(props);
 
     if (propsConfig) {
       this.configure<SessionConfig>(propsConfig);
@@ -50,7 +52,17 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
     if (config) {
       this.maxSteps = Math.max(1, config.maxTurns);
-      this.setState({ config, status: this.state.status });
+      const nextState: SessionAgentState = {
+        config,
+        status: this.state.status,
+      };
+      const sessionId = this.state.sessionId ?? propsSessionId;
+
+      if (sessionId) {
+        nextState.sessionId = sessionId;
+      }
+
+      this.setState(nextState);
     }
   }
 
@@ -219,12 +231,12 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   @callable()
-  init(configInput: SessionConfig): SessionAgentState {
+  init(sessionId: string, configInput: SessionConfig): SessionAgentState {
     const config = SessionConfigSchema.parse(configInput);
 
     this.configure<SessionConfig>(config);
     this.maxSteps = Math.max(1, config.maxTurns);
-    this.setState({ config, status: "idle" });
+    this.setState({ config, sessionId, status: "idle" });
 
     return this.state;
   }
@@ -271,8 +283,22 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     return parseResult.success ? parseResult.data : null;
   }
 
+  private readPropsSessionId(
+    props: Record<string, unknown> | undefined
+  ): string | null {
+    return typeof props?.sessionId === "string" && props.sessionId.length > 0
+      ? props.sessionId
+      : null;
+  }
+
   private get sessionId(): string {
-    return this.name;
+    if (!this.state.sessionId) {
+      throw new Error(
+        "SessionAgent has not been initialized with a session ID"
+      );
+    }
+
+    return this.state.sessionId;
   }
 
   private get sessionIndex(): SessionIndexStore {
