@@ -84,12 +84,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
         id,
         status: "pending",
       });
-      const agent = await getAgentByName(context.env.SESSION_AGENT, id, {
-        props: {
-          config: request.config,
-          sessionId: id,
-        },
-      });
+      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
 
       await agent.init(id, request.config);
       await store.setStatus({
