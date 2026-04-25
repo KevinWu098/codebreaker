@@ -11,10 +11,8 @@ import type {
 } from "@codebreaker/shared/schemas/api";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { ApiClientError, api } from "@/lib/api";
-import { useConnection } from "@/lib/connection";
+import { isAuthorized, useConnection } from "@/lib/connection";
 import { qk } from "@/lib/query-keys";
-
-const isAuthorized = (token: string): boolean => token.length > 0;
 
 export const useSessionsQuery = (
   query: Partial<ListSessionsQuery> = {}
@@ -22,7 +20,7 @@ export const useSessionsQuery = (
   const connection = useConnection();
 
   return useQuery({
-    enabled: isAuthorized(connection.token),
+    enabled: isAuthorized(connection),
     queryFn: () => api.listSessions(query),
     queryKey: [...qk.sessions(connection), query],
     refetchInterval: 5000,
@@ -35,7 +33,7 @@ export const useSessionQuery = (
   const connection = useConnection();
 
   return useQuery({
-    enabled: isAuthorized(connection.token),
+    enabled: isAuthorized(connection),
     queryFn: () => api.getSession(id),
     queryKey: qk.session.detail(connection, id),
     refetchInterval: 4000,
@@ -48,7 +46,7 @@ export const useSessionStateQuery = (
   const connection = useConnection();
 
   return useQuery({
-    enabled: isAuthorized(connection.token),
+    enabled: isAuthorized(connection),
     queryFn: () => api.getState(id),
     queryKey: qk.session.state(connection, id),
     refetchInterval: 4000,
@@ -62,7 +60,7 @@ export const useSessionConfigQuery = (
   const connection = useConnection();
 
   return useQuery({
-    enabled: enabled && isAuthorized(connection.token),
+    enabled: enabled && isAuthorized(connection),
     queryFn: () => api.getConfig(id),
     queryKey: qk.session.config(connection, id),
   });
@@ -74,7 +72,7 @@ export const useSessionMessagesQuery = (
   const connection = useConnection();
 
   return useQuery({
-    enabled: isAuthorized(connection.token),
+    enabled: isAuthorized(connection),
     queryFn: () => api.getMessages(id),
     queryKey: qk.session.messages(connection, id),
     refetchInterval: 5000,
@@ -87,7 +85,7 @@ export const useSandboxQuery = (
   const connection = useConnection();
 
   return useQuery({
-    enabled: isAuthorized(connection.token),
+    enabled: isAuthorized(connection),
     queryFn: () => api.getSandbox(id),
     queryKey: qk.session.sandbox(connection, id),
     refetchInterval: 5000,
@@ -101,7 +99,7 @@ export const useShimHealthQuery = (): UseQueryResult<
   const connection = useConnection();
 
   return useQuery({
-    enabled: isAuthorized(connection.token),
+    enabled: isAuthorized(connection),
     queryFn: () => api.shimHealth(),
     queryKey: qk.admin.health(connection),
     refetchInterval: 10_000,
@@ -115,7 +113,7 @@ export const useShimSandboxesQuery = (): UseQueryResult<
   const connection = useConnection();
 
   return useQuery({
-    enabled: isAuthorized(connection.token),
+    enabled: isAuthorized(connection),
     queryFn: () => api.shimSandboxes(),
     queryKey: qk.admin.sandboxes(connection),
     refetchInterval: 8000,

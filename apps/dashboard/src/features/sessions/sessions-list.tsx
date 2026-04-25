@@ -9,7 +9,7 @@ import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
 import { useSessionsQuery } from "@/hooks/queries";
-import { useConnection } from "@/lib/connection";
+import { isAuthorized, useConnection } from "@/lib/connection";
 import {
   formatNumber,
   formatRelativeTime,
@@ -28,7 +28,7 @@ export const SessionsList = ({
 }: SessionsListProps): React.JSX.Element => {
   const connection = useConnection();
   const [showCreate, setShowCreate] = useState(false);
-  const enabled = connection.token.length > 0;
+  const enabled = isAuthorized(connection);
 
   const sessions = useSessionsQuery({ limit: 100, offset: 0 });
   const rows = sessions.data?.sessions ?? [];
