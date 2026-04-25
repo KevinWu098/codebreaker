@@ -1,5 +1,6 @@
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { jwtAuth } from "@codebreaker/control-plane/http/auth";
+import { parseAllowedOrigins } from "@codebreaker/control-plane/http/cors";
 import { jsonError } from "@codebreaker/control-plane/http/errors";
 import {
   type ExecRemoteOptions,
@@ -24,7 +25,27 @@ const SessionParamsSchema = z.object({
 export const createRouter = (): Hono<{ Bindings: Env }> => {
   const app = new Hono<{ Bindings: Env }>();
 
-  app.use("*", cors());
+  app.use("*", (context, next) => {
+    const allowedOrigins = parseAllowedOrigins(context.env.ALLOWED_ORIGINS);
+
+    if (allowedOrigins.length === 0) {
+      return next();
+    }
+
+    return cors({
+      allowHeaders: ["Content-Type", "Authorization"],
+      allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
+      credentials: true,
+      maxAge: 86_400,
+      origin: (origin) => {
+        if (allowedOrigins.includes("*")) {
+          return origin;
+        }
+
+        return allowedOrigins.includes(origin) ? origin : null;
+      },
+    })(context, next);
+  });
 
   app.get("/health", (context) =>
     context.json({

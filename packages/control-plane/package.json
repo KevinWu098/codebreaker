@@ -20,6 +20,10 @@
       "types": "./src/http/auth.ts",
       "default": "./src/http/auth.ts"
     },
+    "./http/cors": {
+      "types": "./src/http/cors.ts",
+      "default": "./src/http/cors.ts"
+    },
     "./router": {
       "types": "./src/router.ts",
       "default": "./src/router.ts"

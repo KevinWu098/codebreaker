@@ -1,6 +1,7 @@
 import type { SessionAgent } from "@codebreaker/control-plane/session/agent";
 
 export interface Env {
+  ALLOWED_ORIGINS?: string;
   ANTHROPIC_API_KEY?: string;
   DB: D1Database;
   JWT_SECRET: string;
