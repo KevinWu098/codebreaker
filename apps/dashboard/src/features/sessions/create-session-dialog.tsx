@@ -58,11 +58,11 @@ const DEFAULT_MODELS: Record<ModelConfig["provider"], string> = {
 };
 
 const DEFAULT_VALUES: FormValues = {
-  extensionPolicy: "readonly",
+  extensionPolicy: "sandbox",
   maxSteps: defaultSessionRuntimeConfig.maxSteps,
   maxTurns: defaultSessionRuntimeConfig.maxTurns,
   modelId: DEFAULT_MODELS.openai,
-  profile: "none",
+  profile: "python",
   provider: "openai",
   systemPrompt: "",
   title: "",
