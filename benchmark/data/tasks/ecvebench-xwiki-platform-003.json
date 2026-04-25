@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-xwiki-platform-003",
+  "ghsa_id": "GHSA-36fm-j33w-c25f",
+  "codebase": {
+    "repo": "https://github.com/xwiki/xwiki-platform",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "1c3f22ac6596bece52dc4d474229b2bd948f99f3"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Document rendering and content inclusion pipeline"
+    },
+    "L2": {
+      "description": "A privilege escalation vulnerability exists where a low-privileged user can execute arbitrary scripting macros with the rights of a more privileged document author. The content inclusion mechanism does not properly enforce author-based access control, allowing user-supplied content to execute under an elevated author context rather than the actual content author's context."
+    },
+    "L3": {
+      "area": "Document rendering and content inclusion pipeline",
+      "description": "A privilege escalation vulnerability exists where a low-privileged user can execute arbitrary scripting macros with the rights of a more privileged document author. The content inclusion mechanism does not properly enforce author-based access control, allowing user-supplied content to execute under an elevated author context rather than the actual content author's context."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 10.0,
+    "reason": "The XWiki ClassSheet include macro executes included content with the rights of the ClassSheet author rather than the content's actual author, allowing any user to escalate privileges by binding the ClassSheet to their document and injecting scripting macros.",
+    "locations": [
+      {
+        "file": "xwiki-platform-core/xwiki-platform-xclass/xwiki-platform-xclass-ui/src/main/resources/XWiki/ClassSheet.xml",
+        "function": null
+      }
+    ]
+  }
+}
