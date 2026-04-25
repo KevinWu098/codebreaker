@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-f776-w9v2-7vfj",
+  "post_patch_commit": "7565e720117f73102f5a276239eabfe85e15cff4",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies a single XML UI template file, adding $services.rendering.escape() around $doc.title in a label element to prevent XSS. The location was derived directly from the patch diff, which changed only one file. The advisory description also explicitly references the ChangeRequestSheet document as the workaround target, confirming the location.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
