@@ -140,7 +140,7 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
       }
     >
       <div className="space-y-3">
-        <ErrorState error={chat.error ?? undefined} title="chat error" />
+        <ErrorState error={chat.error} title="chat error" />
 
         <Conversation className="max-h-[520px] overflow-y-auto">
           <ConversationContent>

@@ -114,10 +114,7 @@ export const SandboxPanel = ({
         }
         title="sandbox metadata · modal"
       >
-        <ErrorState
-          error={sandbox.error ?? undefined}
-          title="sandbox unavailable"
-        />
+        <ErrorState error={sandbox.error} title="sandbox unavailable" />
         {sandbox.isLoading && (
           <div className="flex justify-center py-4">
             <Spinner />

@@ -115,9 +115,9 @@ export const BenchmarksPanel = ({
         />
       )}
 
-      <ErrorState error={tasks.error ?? undefined} title="tasks unavailable" />
-      <ErrorState error={runs.error ?? undefined} title="runs unavailable" />
-      <ErrorState error={createRun.error ?? undefined} title="run failed" />
+      <ErrorState error={tasks.error} title="tasks unavailable" />
+      <ErrorState error={runs.error} title="runs unavailable" />
+      <ErrorState error={createRun.error} title="run failed" />
 
       <Card title="new benchmark run">
         <div className="grid gap-3 md:grid-cols-3">
@@ -286,11 +286,8 @@ const BenchmarkRunDetail = ({
       }
       title="run detail"
     >
-      <ErrorState
-        error={detail.error ?? undefined}
-        title="detail unavailable"
-      />
-      <ErrorState error={cleanup.error ?? undefined} title="cleanup failed" />
+      <ErrorState error={detail.error} title="detail unavailable" />
+      <ErrorState error={cleanup.error} title="cleanup failed" />
       {!detail.data && <Spinner />}
       {run && (
         <dl className="mb-4 grid grid-cols-[120px_1fr] gap-x-3 gap-y-2 text-xs">

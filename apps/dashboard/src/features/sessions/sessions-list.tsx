@@ -60,7 +60,7 @@ export const SessionsList = ({
         />
       )}
 
-      <ErrorState error={sessions.error ?? undefined} title="list failed" />
+      <ErrorState error={sessions.error} title="list failed" />
 
       {enabled && sessions.isLoading && (
         <div className="flex justify-center py-6">
