@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7qm7-455j-5p63",
+  "post_patch_commit": "ed8bc438b2cd6e6f0b5f2de321e5be6f0169b5a1",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from patch diff. The primary vulnerability is in createSafeError (safe-runtime.ts) which only shadowed __proto__ with a data property but did not call Object.setPrototypeOf(error, null) to actually sever the prototype chain. This allowed sandbox code to use native Object.getPrototypeOf or __lookupGetter__ to traverse the real prototype chain from Error to Function constructor. Secondary locations in vm-adapter.ts (createSafeConsole, createProtectedSandbox, createSafeObject) threw raw new Error() objects directly into the sandbox context without any prototype chain protection. The patch extracts createSafeError into a shared safe-error.ts module with the critical Object.setPrototypeOf(error, null) call and replaces all raw Error throws in vm-adapter.ts. 63 files changed total but most are docs, assets, and tests; 12 non-test source files changed making this a noisy patch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

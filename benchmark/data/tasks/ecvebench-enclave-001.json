@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-enclave-001",
+  "ghsa_id": "GHSA-7qm7-455j-5p63",
+  "codebase": {
+    "repo": "https://github.com/agentfront/enclave",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "f753d306cb178c46445af30ffd05dcfa4722cc00"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Sandbox runtime execution and security enforcement layer"
+    },
+    "L2": {
+      "description": "A code injection vulnerability exists where untrusted sandboxed code can escape the sandbox by exploiting incomplete isolation of host-realm objects. When certain operations fail, objects with intact prototype chains from the host environment are exposed to sandboxed code. An attacker can traverse these prototype chains to reach the host's code generation facilities and execute arbitrary JavaScript in the host Node.js runtime, bypassing all sandbox isolation guarantees."
+    },
+    "L3": {
+      "area": "Sandbox runtime execution and security enforcement layer",
+      "description": "A code injection vulnerability exists where untrusted sandboxed code can escape the sandbox by exploiting incomplete isolation of host-realm objects. When certain operations fail, objects with intact prototype chains from the host environment are exposed to sandboxed code. An attacker can traverse these prototype chains to reach the host's code generation facilities and execute arbitrary JavaScript in the host Node.js runtime, bypassing all sandbox isolation guarantees."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 10.0,
+    "reason": "Error objects exposed to sandboxed code had their prototype chain incompletely severed, allowing sandbox code to traverse to the host Function constructor and execute arbitrary JavaScript in the host runtime.",
+    "locations": [
+      {
+        "file": "libs/enclave-vm/src/safe-runtime.ts",
+        "function": "createSafeError"
+      },
+      {
+        "file": "libs/enclave-vm/src/adapters/vm-adapter.ts",
+        "function": "createSafeConsole"
+      },
+      {
+        "file": "libs/enclave-vm/src/adapters/vm-adapter.ts",
+        "function": "createProtectedSandbox"
+      },
+      {
+        "file": "libs/enclave-vm/src/adapters/vm-adapter.ts",
+        "function": "createSafeObject"
+      }
+    ]
+  }
+}
