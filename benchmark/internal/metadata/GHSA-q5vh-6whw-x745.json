@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q5vh-6whw-x745",
+  "post_patch_commit": "2fcb4998887959b4fa11894a068d689189742cb1",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff. The primary vulnerability is in the JWT token parsing logic which did not validate the issuer claim against allowed AAD tenants. Secondary locations are API endpoints (info and negotiate) that lacked user authorization checks. The patch modifies 7 non-test source files across API service, deployment scripts, and type definitions, making it noisy. The core fix adds tenant issuer validation in the token parsing path and wraps unprotected endpoints with authorization middleware.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

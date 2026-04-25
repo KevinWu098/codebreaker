@@ -1,0 +1,36 @@
+{
+  "task_id": "ecvebench-onefuzz-001",
+  "ghsa_id": "GHSA-q5vh-6whw-x745",
+  "codebase": {
+    "repo": "https://github.com/microsoft/onefuzz",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "ba3a6eab04ea049c712502ad593df25eb98e987e"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "description": "An authorization bypass exists in the API service's multi-tenant authentication flow. When configured for multi-tenant access, the service validates that a bearer token is properly signed but does not verify that the token's issuer belongs to an authorized tenant. This allows an authenticated user from any external identity provider tenant to make fully authorized API calls, resulting in unauthorized read/write access to private vulnerability data, security testing tools, proprietary code, and potential code execution on cloud compute resources."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 10.0,
+    "reason": "The API service does not validate the Azure AD tenant issuer claim in bearer tokens, allowing authenticated users from any tenant to bypass authorization and access all API endpoints in multi-tenant deployments.",
+    "locations": [
+      {
+        "file": "src/api-service/__app__/onefuzzlib/user_credentials.py",
+        "function": "parse_jwt_token"
+      },
+      {
+        "file": "src/api-service/__app__/info/__init__.py",
+        "function": "main"
+      },
+      {
+        "file": "src/api-service/__app__/negotiate/__init__.py",
+        "function": "main"
+      }
+    ]
+  }
+}
