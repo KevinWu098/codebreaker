@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-rand-001",
+  "ghsa_id": "GHSA-w7j2-35mf-95p7",
+  "codebase": {
+    "repo": "https://github.com/rust-random/rand",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "6ecbe2626b2cc6110a25c97b1702b347574febc7"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Core random number generation primitives and data conversion utilities"
+    },
+    "L2": {
+      "description": "An incorrect buffer length check in the random number generation library causes assertions to be too permissive. The size multiplier is applied to the wrong operand in the comparison, allowing destination buffers to not be fully populated. This means a random number generator may be seeded with too little data, weakening the quality of generated random values."
+    },
+    "L3": {
+      "area": "Core random number generation primitives and data conversion utilities",
+      "description": "An incorrect buffer length check in the random number generation library causes assertions to be too permissive. The size multiplier is applied to the wrong operand in the comparison, allowing destination buffers to not be fully populated. This means a random number generator may be seeded with too little data, weakening the quality of generated random values."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.8,
+    "reason": "The read_u32_into and read_u64_into functions have buffer length assertions with the size multiplier on the wrong side, making them too permissive and allowing random number generators to be seeded with insufficient data.",
+    "locations": [
+      {
+        "file": "rand_core/src/le.rs",
+        "function": "read_u32_into"
+      },
+      {
+        "file": "rand_core/src/le.rs",
+        "function": "read_u64_into"
+      }
+    ]
+  }
+}
