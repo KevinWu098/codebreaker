@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r54r-wmmq-mh84",
+  "post_patch_commit": "7dac9b05dd9d38dd3929637f26fa356fd8bdd107",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The primary vulnerability is in src/infra/archive.ts in openZipOutputFile, which validated output paths then opened files with O_TRUNC in a separate step, creating a TOCTOU race window. The secondary location is src/infra/fs-safe.ts in openWritableFileWithinRoot, which had a similar race between stat/lstat and realpath resolution. The fix hardens both paths by binding writes to opened file handle identity, deferring truncation until after boundary checks, and adding fd-based realpath verification. Advisory explicitly names both files. 2 non-test source files changed (not noisy).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

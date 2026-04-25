@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4fvx-h823-38v3",
+  "post_patch_commit": "e1285709f6f6a2277bd0075acf369f33cefd78f7",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references two patch commits: b5a8f93 (adds new password recovery methods to UserManager.php using proper password hasher) and e128570 (updates LostPasswordAction.php to use the new methods and removes the hard-coded salt). The pre-patch commit is the parent of the first patch. In the pre-patch code, the vulnerable sendPasswordRecoveryEmail function is in LostPasswordAction.php, which uses MD5 with a hard-coded salt (PW_SALT = 'FBcA') and a small random integer (0-10000) to generate password recovery keys. The advisory description incorrectly attributes the file locations to UserManager.php, but the actual vulnerable code at the pre-patch commit is in LostPasswordAction.php.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

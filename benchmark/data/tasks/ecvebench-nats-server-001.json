@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-nats-server-001",
+  "ghsa_id": "GHSA-hmm9-r2m2-qg9w",
+  "codebase": {
+    "repo": "https://github.com/nats-io/nats-server",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "53b5fa83021a2bbab67543b6daa5e21fa4ce8f30"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Account claims processing and token validation logic"
+    },
+    "L2": {
+      "description": "A nil pointer dereference vulnerability exists in JWT claim validation. When processing a maliciously crafted user JWT containing null fields in its claim structures, the validation routine attempts to dereference nil pointers, causing a panic and process termination. A remote attacker with the ability to issue account tokens can trigger a denial of service by submitting a specially crafted JWT."
+    },
+    "L3": {
+      "area": "Account claims processing and token validation logic",
+      "description": "A nil pointer dereference vulnerability exists in JWT claim validation. When processing a maliciously crafted user JWT containing null fields in its claim structures, the validation routine attempts to dereference nil pointers, causing a panic and process termination. A remote attacker with the ability to issue account tokens can trigger a denial of service by submitting a specially crafted JWT."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 7.5,
+    "reason": "The JWT validation routines lack nil checks for import and export entries in user claims. A maliciously crafted JWT with null import or export entries causes a nil pointer dereference during validation, resulting in a server panic and denial of service.",
+    "locations": [
+      {
+        "file": "vendor/github.com/nats-io/jwt/v2/exports.go",
+        "function": "Validate"
+      },
+      {
+        "file": "vendor/github.com/nats-io/jwt/v2/imports.go",
+        "function": "Validate"
+      },
+      {
+        "file": "server/accounts.go",
+        "function": "checkActivation"
+      },
+      {
+        "file": "server/server.go",
+        "function": "verifyAccountClaims"
+      }
+    ]
+  }
+}
