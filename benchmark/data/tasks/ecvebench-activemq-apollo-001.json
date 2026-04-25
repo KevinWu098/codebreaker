@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-activemq-apollo-001",
+  "ghsa_id": "GHSA-wmhw-hpwh-44pg",
+  "codebase": {
+    "repo": "https://github.com/apache/activemq-apollo",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "e29cfd509d8c5f871b140b1392797f7f39568cd1"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Message consumption and selector evaluation logic"
+    },
+    "L2": {
+      "description": "An XML external entity (XXE) vulnerability allows remote consumers to have unspecified impact via vectors involving an XPath-based selector when dequeuing XML messages. The XML parser used for selector processing does not disable external entity resolution, allowing attackers to craft malicious XML content that triggers external entity processing."
+    },
+    "L3": {
+      "area": "Message consumption and selector evaluation logic",
+      "description": "An XML external entity (XXE) vulnerability allows remote consumers to have unspecified impact via vectors involving an XPath-based selector when dequeuing XML messages. The XML parser used for selector processing does not disable external entity resolution, allowing attackers to craft malicious XML content that triggers external entity processing."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML parser in the XPath-based message selector evaluation creates a DocumentBuilderFactory without disabling external entity resolution, allowing remote consumers to exploit XXE via crafted XML messages.",
+    "locations": [
+      {
+        "file": "apollo-selector/src/main/java/org/apache/activemq/apollo/filter/XalanXPathEvaluator.java",
+        "function": "evaluate"
+      }
+    ]
+  }
+}

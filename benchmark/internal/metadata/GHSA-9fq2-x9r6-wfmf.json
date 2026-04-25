@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9fq2-x9r6-wfmf",
+  "post_patch_commit": "a4df7e51483c78853bb33814073498fb027aa9d4",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The patch changes the default value of allow_pickle from True to False in numpy.lib.npyio.load() and numpy.lib.format.read_array(). These are the two primary entry points for loading serialized array data. The NpzFile.__init__ constructor was also patched but is an internal implementation detail called by load(). Only 2 non-test source files were modified, so the patch is not noisy.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

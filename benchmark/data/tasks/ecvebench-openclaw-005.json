@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-openclaw-005",
+  "ghsa_id": "GHSA-f7ww-2725-qvw2",
+  "codebase": {
+    "repo": "https://github.com/openclaw/openclaw",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "611dff985d4ecc442633a740f0918d9eb5c6bf36"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Command execution approval and sandboxing infrastructure"
+    },
+    "L2": {
+      "description": "A race condition vulnerability exists in the command execution approval flow for node-hosted processes. Between the time a command execution request is approved and when it is actually executed, an attacker can rebind a mutable parent symlink in the working directory path, causing the approved command to execute from a different filesystem location than what was inspected at approval time. The visible working directory string remains unchanged, bypassing the approval context check."
+    },
+    "L3": {
+      "area": "Command execution approval and sandboxing infrastructure",
+      "description": "A race condition vulnerability exists in the command execution approval flow for node-hosted processes. Between the time a command execution request is approved and when it is actually executed, an attacker can rebind a mutable parent symlink in the working directory path, causing the approved command to execute from a different filesystem location than what was inspected at approval time. The visible working directory string remains unchanged, bypassing the approval context check."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 8.7,
+    "reason": "The command execution approval flow does not freeze immutable plan fields or reject mutable parent-symlink path components in the working directory, allowing an attacker to rebind a parent symlink between approval and execution to redirect command execution to an arbitrary filesystem location.",
+    "locations": [
+      {
+        "file": "src/node-host/invoke-system-run.ts",
+        "function": "hardenApprovedExecutionPaths"
+      },
+      {
+        "file": "src/gateway/node-invoke-system-run-approval.ts",
+        "function": "sanitizeSystemRunParamsForForwarding"
+      }
+    ]
+  }
+}

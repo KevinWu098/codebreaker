@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-f798-qm4r-23r5",
+  "post_patch_commit": "cf83dad4df26dd4a850622fe8a51ccab1471a5e7",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit cf83dad (PR #10330) adds a Windows drive-relative path check to the validate_path_is_safe function in mlflow/server/handlers.py. Only 1 non-test source file was changed. Location derived directly from the patch diff — the function is explicitly named in the commit and its docstring describes its path-traversal prevention purpose.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

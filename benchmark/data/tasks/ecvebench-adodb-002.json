@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-adodb-002",
+  "ghsa_id": "GHSA-vf2r-cxg9-p7rf",
+  "codebase": {
+    "repo": "https://github.com/ADOdb/ADOdb",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "a568bfeb72d6b5942df747adc36b95165a083e60"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Database driver layer and schema introspection logic"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where a crafted table name is interpolated directly into SQL query strings used by schema metadata retrieval methods, rather than being passed as a bound parameter. An attacker who can control the table name argument can execute arbitrary SQL statements against the database."
+    },
+    "L3": {
+      "area": "Database driver layer and schema introspection logic",
+      "description": "A SQL injection vulnerability exists where a crafted table name is interpolated directly into SQL query strings used by schema metadata retrieval methods, rather than being passed as a bound parameter. An attacker who can control the table name argument can execute arbitrary SQL statements against the database."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 10.0,
+    "reason": "The sqlite3 driver's MetaColumns(), metaForeignKeys(), and metaIndexes() methods directly interpolate the user-supplied table name into SQL query strings without parameterization, allowing arbitrary SQL injection.",
+    "locations": [
+      {
+        "file": "drivers/adodb-sqlite3.inc.php",
+        "function": "MetaColumns"
+      },
+      {
+        "file": "drivers/adodb-sqlite3.inc.php",
+        "function": "metaForeignKeys"
+      },
+      {
+        "file": "drivers/adodb-sqlite3.inc.php",
+        "function": "metaIndexes"
+      }
+    ]
+  }
+}

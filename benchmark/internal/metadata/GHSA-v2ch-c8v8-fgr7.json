@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-v2ch-c8v8-fgr7",
+  "post_patch_commit": "0972af078325ab5c6acd37abffe6bea345ac7db0",
+  "noisy_patch": false,
+  "curation_notes": "Location derived from the patch diff which modifies a single file (s3api/middlewares/body-reader.go) and a single function (wrapBodyReader). The patch adds a nil check for the body reader obtained from the request context, replacing it with an empty buffer when nil to prevent panics. The advisory description confirms the nil body reader is the root cause, triggered when chunked uploads arrive without Content-Length or Transfer-Encoding headers via a reverse proxy.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

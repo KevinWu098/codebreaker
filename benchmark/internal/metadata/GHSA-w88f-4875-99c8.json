@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w88f-4875-99c8",
+  "post_patch_commit": "142d319f0a20ce2be59707db0abf3c52dfa35d0f",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit from PR #18368. Only one non-test/non-doc source file changed: KerberosAuthenticator.java. The vulnerability is in the init() method where ThreadLocalRandom (non-crypto PRNG) was used as a fallback for the cookie signature secret, and in getInitParameters() where the secret was only conditionally passed. Locations derived directly from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

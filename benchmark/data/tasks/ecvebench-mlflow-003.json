@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-mlflow-003",
+  "ghsa_id": "GHSA-554w-xh4j-8w64",
+  "codebase": {
+    "repo": "https://github.com/mlflow/mlflow",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "9612ef043d7fe88f3ee899657a1d0fc2faf8ae0f"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Artifact management and tracking server infrastructure"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability exists where URL-encoded directory traversal sequences are not properly decoded before safety checks are applied. An attacker can use percent-encoded characters to traverse outside the intended directory, potentially accessing or modifying arbitrary files on the server."
+    },
+    "L3": {
+      "area": "Artifact management and tracking server infrastructure",
+      "description": "A path traversal vulnerability exists where URL-encoded directory traversal sequences are not properly decoded before safety checks are applied. An attacker can use percent-encoded characters to traverse outside the intended directory, potentially accessing or modifying arbitrary files on the server."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 10.0,
+    "reason": "The path validation function does not decode URL-encoded input before checking for traversal sequences, allowing attackers to bypass safety checks using percent-encoded characters like %2E%2E%2F to access arbitrary files.",
+    "locations": [
+      {
+        "file": "mlflow/utils/uri.py",
+        "function": "validate_path_is_safe"
+      }
+    ]
+  }
+}

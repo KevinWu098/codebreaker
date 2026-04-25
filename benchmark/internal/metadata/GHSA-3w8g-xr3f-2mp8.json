@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3w8g-xr3f-2mp8",
+  "post_patch_commit": "5bff5368bf38ddfa31416e4ae9897b163031a513",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit (PR #889) replaces the auto-derived Deserialize for VecStorage with a manual implementation that validates nrows * ncols == data.len(). Only one non-test source file (src/base/vec_storage.rs) was modified. The vulnerable code is the derive(Deserialize) attribute on the VecStorage struct, which generated a deserializer without bounds checking. Location derived from the patch diff since the advisory does not name specific files.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

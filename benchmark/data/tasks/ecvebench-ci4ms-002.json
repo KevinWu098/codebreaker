@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-ci4ms-002",
+  "ghsa_id": "GHSA-fhrf-q333-82fm",
+  "codebase": {
+    "repo": "https://github.com/ci4-cms-erp/ci4ms",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "f5b1fde0f82a8a77d24c5c02d49bcf856e26eba2"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Blog content management and frontend rendering"
+    },
+    "L2": {
+      "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled input in a content management field is persisted server-side without adequate sanitization. The stored payload is subsequently rendered across multiple public-facing and administrative pages without proper output encoding, allowing execution of arbitrary JavaScript in victims' browsers. This can lead to privilege escalation and full account takeover across all roles."
+    },
+    "L3": {
+      "area": "Blog content management and frontend rendering",
+      "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled input in a content management field is persisted server-side without adequate sanitization. The stored payload is subsequently rendered across multiple public-facing and administrative pages without proper output encoding, allowing execution of arbitrary JavaScript in victims' browsers. This can lead to privilege escalation and full account takeover across all roles."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 10.0,
+    "reason": "The blog category title field lacks sufficient input validation and output encoding, allowing an attacker to inject and persist a malicious JavaScript payload that executes when the category title is rendered in public and administrative views.",
+    "locations": [
+      {
+        "file": "modules/Blog/Controllers/Categories.php",
+        "function": "new"
+      },
+      {
+        "file": "modules/Blog/Controllers/Categories.php",
+        "function": "edit"
+      },
+      {
+        "file": "app/Views/templates/default/blog/list.php",
+        "function": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w877-jfw7-46rj",
+  "post_patch_commit": "f0e4e0cb01da614f7c3a9ba349536e7923fa8813",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff (PR #3075). The fix adds a removeLeadingFileSeparator() utility in ZipUtils.java and applies it to entry names in both untar() in TarUtils.java and unzip() in ZipUtils.java. Only 2 non-test source files were changed. The vulnerability allowed absolute path traversal via archive entries with leading file separators.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6vqw-3v5j-54x4",
+  "post_patch_commit": "97d231672763cdb5959a3b191e692a362f1b9e55",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit (97d2316) adds a NULL check after the PKCS12_create call in serialize_key_and_certificates_to_pkcs12. Only one non-test source file was changed (src/cryptography/hazmat/backends/openssl/backend.py). The location was derived directly from the patch diff, which shows the fix adding a check for p12 == self._ffi.NULL and raising a ValueError. The advisory explicitly describes the conditions: a mismatched key/certificate pair combined with an hmac_hash override triggers the NULL pointer dereference.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

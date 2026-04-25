@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-sr-feuser-register-001",
+  "ghsa_id": "GHSA-qfm8-78qf-p75j",
+  "codebase": {
+    "repo": "https://codeberg.org/sjbr/sr-feuser-register",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "1ac150cd4e72fc7bc7fd871e314e6104a13db960"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Frontend user registration form data processing and rendering"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where user-controlled form field data submitted during the frontend registration process is deserialized using PHP's native deserialization mechanism without any integrity protection or encryption. An attacker can craft a malicious serialized payload and submit it through the registration form, leading to remote code execution."
+    },
+    "L3": {
+      "area": "Frontend user registration form data processing and rendering",
+      "description": "An insecure deserialization vulnerability exists where user-controlled form field data submitted during the frontend registration process is deserialized using PHP's native deserialization mechanism without any integrity protection or encryption. An attacker can craft a malicious serialized payload and submit it through the registration form, leading to remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 10.0,
+    "reason": "The application deserializes user-controlled form data using PHP's native unserialize() function without integrity protection, allowing an attacker to submit crafted serialized payloads through the registration form to achieve remote code execution.",
+    "locations": [
+      {
+        "file": "Classes/Domain/Data.php",
+        "function": "modifyRow"
+      },
+      {
+        "file": "Classes/Hooks/FileUploadHooks.php",
+        "function": "processFiles"
+      },
+      {
+        "file": "Classes/View/Marker.php",
+        "function": "addHiddenFieldsMarkers"
+      }
+    ]
+  }
+}

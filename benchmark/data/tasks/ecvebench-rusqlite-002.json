@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-rusqlite-002",
+  "ghsa_id": "GHSA-28ph-f7gx-fqj8",
+  "codebase": {
+    "repo": "https://github.com/rusqlite/rusqlite",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "e85963852d0320c50686ecf70dbca124c600de4a"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Database extension and plugin module management"
+    },
+    "L2": {
+      "description": "A race condition vulnerability allows memory safety violations because the API for registering database extensions does not enforce that certain data structures remain valid for the required duration. References with insufficient lifetime guarantees can be freed while the underlying C library still holds pointers to them, leading to use-after-free conditions."
+    },
+    "L3": {
+      "area": "Database extension and plugin module management",
+      "description": "A race condition vulnerability allows memory safety violations because the API for registering database extensions does not enforce that certain data structures remain valid for the required duration. References with insufficient lifetime guarantees can be freed while the underlying C library still holds pointers to them, leading to use-after-free conditions."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 9.8,
+    "reason": "The virtual table module registration API accepted non-static references to Module structs, allowing them to be freed while SQLite still held raw pointers to the module's function table, creating a data race leading to potential use-after-free.",
+    "locations": [
+      {
+        "file": "src/vtab/mod.rs",
+        "function": "read_only_module"
+      },
+      {
+        "file": "src/vtab/mod.rs",
+        "function": "eponymous_only_module"
+      },
+      {
+        "file": "src/vtab/mod.rs",
+        "function": "create_module"
+      }
+    ]
+  }
+}

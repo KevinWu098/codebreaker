@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7q8p-9953-pxvr",
+  "post_patch_commit": "d08e25824ae9feaf0876adba9acd2938f34759b1",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit d08e258 is a merge commit on the 5.13 branch (included in v5.12.0 tag) that replaced the entire serialize_blacklist.txt with broader package-prefix entries (+174/-54 lines). Only 1 non-test source file was changed. The location is derived from the patch diff since the advisory description does not name specific files. The vulnerability is in the blacklist data being insufficient (specific class names instead of package prefixes), allowing a JDK-only gadget chain to bypass deserialization protection. A second related commit (42d19b1) on the same branch removes 2 entries as a follow-up cleanup.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

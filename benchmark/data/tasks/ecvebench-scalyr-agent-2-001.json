@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-scalyr-agent-2-001",
+  "ghsa_id": "GHSA-w6xv-mf6f-r5f6",
+  "codebase": {
+    "repo": "https://github.com/scalyr/scalyr-agent-2",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "bc71cc8ed308f4c3b618a733f8d3a8a6cfdd565d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Network connectivity and remote server communication"
+    },
+    "L2": {
+      "description": "The agent's TLS implementation fails to verify the hostname of the server's SSL certificate in certain code paths. Although the certificate chain is validated against trusted roots, the lack of hostname verification means an attacker who possesses a valid certificate for any domain could intercept and tamper with encrypted communications via a man-in-the-middle attack."
+    },
+    "L3": {
+      "area": "Network connectivity and remote server communication",
+      "description": "The agent's TLS implementation fails to verify the hostname of the server's SSL certificate in certain code paths. Although the certificate chain is validated against trusted roots, the lack of hostname verification means an attacker who possesses a valid certificate for any domain could intercept and tamper with encrypted communications via a man-in-the-middle attack."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.8,
+    "reason": "The Scalyr Agent before 2.1.10 does not verify the server hostname during SSL/TLS connections, allowing man-in-the-middle attacks even when certificate chain validation is enabled.",
+    "locations": [
+      {
+        "file": "scalyr_agent/connection.py",
+        "function": "connect"
+      },
+      {
+        "file": "scalyr_agent/connection.py",
+        "function": "_validate_chain_openssl"
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-outer-cgi-001",
+  "ghsa_id": "GHSA-6vmq-jh76-hq43",
+  "codebase": {
+    "repo": "https://github.com/SolraBizna/outer_cgi",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "a981e7e7d888c4ca4ca36f8a78732f75cc6f8224"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "CGI and FastCGI protocol data parsing and record processing"
+    },
+    "L2": {
+      "description": "A buffer is allocated with a specified capacity and then unsafely marked as having its full length without initializing its contents. This uninitialized buffer is subsequently passed to a user-provided reader implementation. When the reader processes this buffer, it may read from uninitialized memory, leading to undefined behavior and potential information disclosure."
+    },
+    "L3": {
+      "area": "CGI and FastCGI protocol data parsing and record processing",
+      "description": "A buffer is allocated with a specified capacity and then unsafely marked as having its full length without initializing its contents. This uninitialized buffer is subsequently passed to a user-provided reader implementation. When the reader processes this buffer, it may read from uninitialized memory, leading to undefined behavior and potential information disclosure."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.8,
+    "reason": "The key-value pair iterator creates uninitialized memory buffers using Vec::with_capacity followed by an unsafe set_len, then passes them to a user-provided Read implementation, exposing uninitialized heap memory.",
+    "locations": [
+      {
+        "file": "src/fcgi.rs",
+        "function": "next"
+      }
+    ]
+  }
+}

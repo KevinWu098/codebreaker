@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-safe-transmute-rs-001",
+  "ghsa_id": "GHSA-2v78-j59h-fmpf",
+  "codebase": {
+    "repo": "https://github.com/nabijaczleweli/safe-transmute-rs",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "c79ebfdb5858982af59a78df471c7cad7a78fd23"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data type conversion and raw memory manipulation routines"
+    },
+    "L2": {
+      "description": "A buffer overflow vulnerability exists due to incorrect ordering of size parameters when constructing a container from raw memory during type conversion operations. This can lead to heap memory corruption or data leakage."
+    },
+    "L3": {
+      "area": "Data type conversion and raw memory manipulation routines",
+      "description": "A buffer overflow vulnerability exists due to incorrect ordering of size parameters when constructing a container from raw memory during type conversion operations. This can lead to heap memory corruption or data leakage."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.8,
+    "reason": "The length and capacity arguments are swapped when constructing a vector from raw parts during type transmutation, leading to heap memory corruption or out-of-bounds access.",
+    "locations": [
+      {
+        "file": "src/lib.rs",
+        "function": "guarded_transmute_vec_permissive"
+      },
+      {
+        "file": "src/to_bytes.rs",
+        "function": "guarded_transmute_to_bytes_vec"
+      }
+    ]
+  }
+}

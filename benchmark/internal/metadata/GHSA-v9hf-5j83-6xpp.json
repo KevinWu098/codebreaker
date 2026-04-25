@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-v9hf-5j83-6xpp",
+  "post_patch_commit": "521e40050cb386a499f68f483fefd144c493053c",
+  "noisy_patch": false,
+  "curation_notes": "Location derived from the patch diff which modifies the escape_dict function in pymysql/converters.py. The function escaped dictionary values but not keys, enabling SQL injection via untrusted JSON input. Only one non-test source file was changed. The advisory description also confirms the vulnerability is in escape_dict's key handling.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

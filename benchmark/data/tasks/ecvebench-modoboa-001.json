@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-modoboa-001",
+  "ghsa_id": "GHSA-pqgm-9g82-wcm7",
+  "codebase": {
+    "repo": "https://github.com/modoboa/modoboa",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "1bf2932f666802df0911ca3a494ab7b2f09a8982"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Frontend templating and client-side form handling"
+    },
+    "L2": {
+      "description": "A DOM-based Cross-site Scripting (XSS) vulnerability exists where form validation error messages are rendered without proper HTML escaping. An attacker can inject malicious scripts through crafted input that, when rejected by form validation, gets reflected back to the user's browser unescaped, allowing arbitrary JavaScript execution."
+    },
+    "L3": {
+      "area": "Frontend templating and client-side form handling",
+      "description": "A DOM-based Cross-site Scripting (XSS) vulnerability exists where form validation error messages are rendered without proper HTML escaping. An attacker can inject malicious scripts through crafted input that, when rejected by form validation, gets reflected back to the user's browser unescaped, allowing arbitrary JavaScript execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.8,
+    "reason": "Form validation error messages are rendered using an unsafe template filter that bypasses HTML escaping, allowing attacker-controlled input to be reflected as executable script in the browser.",
+    "locations": [
+      {
+        "file": "modoboa/templates/common/generic_field.html",
+        "function": null
+      },
+      {
+        "file": "modoboa/static/js/twocols_nav.js",
+        "function": "listen"
+      }
+    ]
+  }
+}

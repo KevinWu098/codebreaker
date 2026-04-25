@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7jh9-6cpf-h4m7",
+  "post_patch_commit": "d6f5137f30de6e0ef7048191ee6ae575fdc2f669",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references commit d6f5137 which adds isValidUrl() check before location.assign() in the OAuth redirect handler. The vulnerable code is in src/hello.js in the responseHandler function where the oauth_redirect URL parameter was decoded and passed directly to location.assign() without validation, enabling javascript: URI XSS. Only one source file was changed in the patch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

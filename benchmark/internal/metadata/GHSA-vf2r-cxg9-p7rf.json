@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vf2r-cxg9-p7rf",
+  "post_patch_commit": "5b8bd52cdcffefb4ecded1b399c98cfa516afe03",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff which modified a single file (drivers/adodb-sqlite3.inc.php). The patch replaced direct string interpolation of the $table parameter with bound query parameters in three methods: MetaColumns(), metaForeignKeys(), and metaIndexes(). The advisory description explicitly names these three methods as affected. Only 1 source file was changed, so the patch is not noisy.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

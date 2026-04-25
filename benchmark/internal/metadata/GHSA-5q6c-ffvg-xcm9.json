@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5q6c-ffvg-xcm9",
+  "post_patch_commit": "400c226953b4568f4361bc0a0c223511652c2b9d",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 400c226 adds a _is_path() helper and a check in HTTPDatasetSource.load() to reject filenames containing path separators from the Content-Disposition header. Only one non-test source file (mlflow/data/http_dataset_source.py) was modified. Location derived directly from the patch diff — the vulnerable code is in the load() method where the basename variable is used without path traversal validation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

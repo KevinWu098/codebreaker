@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-scratchpad-001",
+  "ghsa_id": "GHSA-3qm2-rfqw-fmrw",
+  "codebase": {
+    "repo": "https://github.com/okready/scratchpad",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "0cc776fb47e5339259675eca5548dc524aa7c550"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Collection element ownership transfer and iteration utilities"
+    },
+    "L2": {
+      "description": "A use-after-free vulnerability exists in collection element move operations where elements read via raw pointer duplication are not properly guarded against panic unwinding. If a user-provided closure panics during element consumption, previously moved elements may be dropped twice, leading to undefined behavior including potential memory corruption."
+    },
+    "L3": {
+      "area": "Collection element ownership transfer and iteration utilities",
+      "description": "A use-after-free vulnerability exists in collection element move operations where elements read via raw pointer duplication are not properly guarded against panic unwinding. If a user-provided closure panics during element consumption, previously moved elements may be dropped twice, leading to undefined behavior including potential memory corruption."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 9.8,
+    "reason": "The SliceMoveSource and SliceMoveSourceCollection trait implementations for arrays and boxed slices use ptr::read to duplicate element ownership without inhibiting drops on the source, causing a double free if the user-provided closure panics during unwinding.",
+    "locations": [
+      {
+        "file": "src/traits.rs",
+        "function": "move_elements"
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-moodle-001",
+  "ghsa_id": "GHSA-6jhm-4vmx-mr76",
+  "codebase": {
+    "repo": "https://github.com/moodle/moodle",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "2ee27313cea0d7073f5a6a35eccdfddcb3a9adad"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Activity module external web service API layer"
+    },
+    "L2": {
+      "description": "An SQL injection vulnerability exists where a user-controlled sort order parameter passed through a web service API is directly incorporated into database queries without proper validation or sanitization, allowing an attacker to execute arbitrary SQL commands."
+    },
+    "L3": {
+      "area": "Activity module external web service API layer",
+      "description": "An SQL injection vulnerability exists where a user-controlled sort order parameter passed through a web service API is directly incorporated into database queries without proper validation or sanitization, allowing an attacker to execute arbitrary SQL commands."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "The h5p activity external web service accepts a sort order parameter and passes it directly into SQL queries without validation, enabling SQL injection by remote attackers.",
+    "locations": [
+      {
+        "file": "mod/h5pactivity/classes/external/get_user_attempts.php",
+        "function": "execute"
+      }
+    ]
+  }
+}
