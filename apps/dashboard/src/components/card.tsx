@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 interface CardProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   actions?: ReactNode;

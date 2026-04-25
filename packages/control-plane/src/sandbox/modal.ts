@@ -1,5 +1,6 @@
 import type { Env } from "@codebreaker/control-plane/types";
 import { base64ToBytes, bytesToBase64 } from "@codebreaker/shared/lib/base64";
+import { trimTrailingSlash } from "@codebreaker/shared/lib/utils";
 import {
   type ExecResult,
   ExecResultSchema,
@@ -8,7 +9,6 @@ import {
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 100;
-const TRAILING_SLASH_REGEX = /\/$/;
 const AUTH_BASIC_RE = /Authorization:\s*Basic\s+[A-Za-z0-9+/=]+/gi;
 const AUTH_BEARER_RE = /Authorization:\s*Bearer\s+[^\s'"`]+/gi;
 
@@ -102,7 +102,7 @@ export class ModalExecutor {
 
   constructor(options: ModalExecutorOptions) {
     this.secret = options.secret;
-    this.url = options.url.replace(TRAILING_SLASH_REGEX, "");
+    this.url = trimTrailingSlash(options.url);
   }
 
   static fromEnv(env: Env): ModalExecutor {

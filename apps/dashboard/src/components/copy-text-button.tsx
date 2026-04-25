@@ -1,7 +1,7 @@
 import { Check, Copy } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/button";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 const COPIED_RESET_MS = 2000;
 

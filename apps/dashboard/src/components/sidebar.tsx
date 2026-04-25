@@ -1,8 +1,8 @@
 import { FlaskConical, ServerCog, Settings2, Workflow } from "lucide-react";
 import { ConnectionForm } from "@/components/connection-form";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { cn } from "@/lib/cn";
 import { isAuthorized, useConnection } from "@/lib/connection";
+import { cn } from "@/lib/utils";
 
 export type ViewId = "sessions" | "benchmarks" | "admin";
 

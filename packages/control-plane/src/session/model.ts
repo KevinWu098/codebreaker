@@ -6,13 +6,12 @@ import {
   MODEL_PROVIDER_CONFIGS,
   type ModelProvider,
 } from "@codebreaker/shared/lib/models";
-import { assertNever } from "@codebreaker/shared/lib/utils";
+import { assertNever, trimTrailingSlash } from "@codebreaker/shared/lib/utils";
 import type { SessionConfig } from "@codebreaker/shared/schemas/session";
 import type { LanguageModel } from "ai";
 import { createAiGateway } from "ai-gateway-provider";
 import { createUnified } from "ai-gateway-provider/providers/unified";
 
-const TRAILING_SLASHES = /\/+$/;
 const WORKERS_AI_MODEL_PREFIX = "@cf/";
 const WORKERS_AI_GATEWAY_PROVIDER = "workers-ai";
 
@@ -27,9 +26,6 @@ const requireEnv = (
 
   return value;
 };
-
-const trimTrailingSlash = (value: string): string =>
-  value.replace(TRAILING_SLASHES, "");
 
 const cloudflareGatewayModelId = (
   provider: ModelProvider,

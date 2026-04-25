@@ -1,6 +1,6 @@
 import { RotateCw } from "lucide-react";
 import { Button } from "@/components/button";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 interface RefreshButtonProps {
   className?: string;

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { JsonView as RawJsonView } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { CopyTextButton } from "@/components/copy-text-button";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 export const valueToCopyString = (value: unknown): string => {
   if (typeof value === "string") {

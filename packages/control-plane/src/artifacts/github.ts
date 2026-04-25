@@ -10,10 +10,10 @@ import {
   stableTargetRepoName,
 } from "@codebreaker/control-plane/artifacts/repository";
 import type { Env } from "@codebreaker/control-plane/types";
+import { trimTrailingSlash } from "@codebreaker/shared/lib/utils";
 import { RequestError } from "@octokit/request-error";
 import { Octokit, type RestEndpointMethodTypes } from "@octokit/rest";
 
-const TRAILING_SLASH_REGEX = /\/$/;
 const REF_CHECK_ATTEMPTS = 5;
 const REF_CHECK_DELAY_MS = 1000;
 const FORK_IN_PROGRESS_ATTEMPTS = 30;
@@ -72,9 +72,9 @@ export class GitHubGitTreeStore implements GitTreeStore {
       );
     }
 
-    const baseUrl = (
+    const baseUrl = trimTrailingSlash(
       env.GITHUB_API_BASE_URL ?? "https://api.github.com"
-    ).replace(TRAILING_SLASH_REGEX, "");
+    );
     const apiVersion = env.GITHUB_API_VERSION ?? "2022-11-28";
     const userAgent =
       env.GITHUB_USER_AGENT ?? "codebreaker-control-plane (Octokit)";

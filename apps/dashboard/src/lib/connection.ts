@@ -1,8 +1,8 @@
+import { trimTrailingSlash } from "@codebreaker/shared/lib/utils";
 import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "codebreaker.connection";
 const DEFAULT_BASE_URL = "http://localhost:8787";
-const TRAILING_SLASH = /\/$/;
 
 export interface Connection {
   baseUrl: string;
@@ -52,7 +52,7 @@ const persist = (next: Connection): void => {
 export const connectionStore = {
   get: (): Connection => current,
   setBaseUrl: (baseUrl: string): void => {
-    persist({ ...current, baseUrl: baseUrl.replace(TRAILING_SLASH, "") });
+    persist({ ...current, baseUrl: trimTrailingSlash(baseUrl) });
   },
   setToken: (token: string): void => {
     persist({ ...current, token });
