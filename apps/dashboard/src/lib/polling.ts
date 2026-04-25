@@ -4,6 +4,7 @@ export const POLLING = {
     sandboxes: 8000,
   },
   benchmarks: {
+    cveFollowup: 5000,
     runDetail: 5000,
     runs: 5000,
     tasks: 30_000,

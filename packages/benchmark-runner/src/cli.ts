@@ -5,6 +5,8 @@ import { BenchmarkApiClient } from "@codebreaker/benchmark-runner/api-client";
 import {
   BenchmarkCleanupPolicySchema,
   CreateBenchmarkRunRequestSchema,
+  type CveFollowupStageKind,
+  CveFollowupStageKindSchema,
   DifficultySchema,
 } from "@codebreaker/benchmark-runner/schemas";
 
@@ -76,6 +78,7 @@ const usage = `Usage:
   benchmark-runner start <runId>
   benchmark-runner inspect <runId>
   benchmark-runner cleanup <runId>
+  benchmark-runner followup <runId> [--stage repro|fix|review-repro|review-fix] [--force]
 
 Environment:
   CODEBREAKER_API_URL  Control plane base URL (defaults to http://127.0.0.1:8787 for local)
@@ -156,9 +159,61 @@ const main = async (): Promise<void> => {
       process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
       return;
     }
+    case "followup": {
+      const runId = args.at(0);
+      if (!runId) {
+        throw new Error("followup requires a run id");
+      }
+      const followFlags = parseFollowupFlags(args.slice(1));
+      if (followFlags.stage) {
+        const response = await client.retryCveFollowupStage(
+          runId,
+          followFlags.stage
+        );
+        process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
+        return;
+      }
+      const response = await client.createCveFollowup(runId, {
+        force: followFlags.force,
+      });
+      process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
+      return;
+    }
     default:
       process.stdout.write(`${usage}\n`);
   }
+};
+
+const STAGE_ALIASES: Record<string, CveFollowupStageKind> = {
+  fix: "fix",
+  repro: "repro",
+  "review-fix": "review_fix",
+  "review-repro": "review_repro",
+};
+
+const parseFollowupFlags = (
+  rest: string[]
+): { force: boolean; stage: CveFollowupStageKind | null } => {
+  let force = false;
+  let stage: CveFollowupStageKind | null = null;
+  for (let i = 0; i < rest.length; i += 1) {
+    const arg = rest[i];
+    if (arg === "--force") {
+      force = true;
+    } else if (arg === "--stage" && rest[i + 1]) {
+      const key = rest[i + 1] as string;
+      const kind = STAGE_ALIASES[key];
+      if (kind) {
+        stage = CveFollowupStageKindSchema.parse(kind);
+      } else {
+        throw new Error(
+          "Unknown --stage value: use repro, fix, review-repro, or review-fix"
+        );
+      }
+      i += 1;
+    }
+  }
+  return { force, stage };
 };
 
 const createClient = (): BenchmarkApiClient => {

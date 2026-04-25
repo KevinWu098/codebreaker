@@ -88,3 +88,56 @@ export const benchmarkRunResults = sqliteTable("benchmark_run_results", {
   runId: text("run_id").notNull(),
   score: text("score"),
 });
+
+export const cveFollowups = sqliteTable("cve_followups", {
+  autoFired: integer("auto_fired").notNull(),
+  cancellationReason: text("cancellation_reason"),
+  completedAt: text("completed_at"),
+  createdAt: text("created_at").notNull(),
+  deepwikiContext: text("deepwiki_context"),
+  ghsaId: text("ghsa_id").notNull(),
+  id: text("id").primaryKey(),
+  runId: text("run_id").notNull(),
+  status: text("status").notNull(),
+  taskId: text("task_id").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const cveFollowupStages = sqliteTable("cve_followup_stages", {
+  attempts: integer("attempts").notNull().default(0),
+  branch: text("branch"),
+  createdAt: text("created_at").notNull(),
+  devinSessionId: text("devin_session_id"),
+  devinUrl: text("devin_url"),
+  followupId: text("followup_id").notNull(),
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  lastError: text("last_error"),
+  prUrl: text("pr_url"),
+  status: text("status").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  validationResultId: text("validation_result_id"),
+});
+
+export const cveFollowupValidations = sqliteTable("cve_followup_validations", {
+  createdAt: text("created_at").notNull(),
+  exitCode: integer("exit_code"),
+  id: text("id").primaryKey(),
+  manifestJson: text("manifest_json"),
+  markerSeen: integer("marker_seen"),
+  observationalFingerprintMatched: integer("observational_fingerprint_matched"),
+  passed: integer("passed").notNull(),
+  stageId: text("stage_id").notNull(),
+  stderrExcerpt: text("stderr_excerpt"),
+  stdoutExcerpt: text("stdout_excerpt"),
+  tier: text("tier"),
+});
+
+export const cveFollowupEvents = sqliteTable("cve_followup_events", {
+  createdAt: text("created_at").notNull(),
+  details: text("details"),
+  followupId: text("followup_id").notNull(),
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  message: text("message").notNull(),
+});

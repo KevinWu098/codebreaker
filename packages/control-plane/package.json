@@ -12,6 +12,10 @@
       "types": "./src/benchmarks/orchestrator.ts",
       "default": "./src/benchmarks/orchestrator.ts"
     },
+    "./cve-followup/constants": {
+      "types": "./src/cve-followup/constants.ts",
+      "default": "./src/cve-followup/constants.ts"
+    },
     "./cve-followup/orchestrator": {
       "types": "./src/cve-followup/orchestrator.ts",
       "default": "./src/cve-followup/orchestrator.ts"

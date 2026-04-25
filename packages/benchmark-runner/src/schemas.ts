@@ -389,6 +389,204 @@ export type BenchmarkRunActionResponse = z.infer<
   typeof BenchmarkRunActionResponseSchema
 >;
 
+export const ReproManifestTierSchema = z.enum([
+  "unit",
+  "integration",
+  "stack",
+  "observational",
+]);
+export type ReproManifestTier = z.infer<typeof ReproManifestTierSchema>;
+
+export const ReproManifestOutcomeSchema = z
+  .object({
+    expectedExitCode: z.number().int(),
+    expectedMarker: z.string().min(1),
+  })
+  .strict();
+export type ReproManifestOutcome = z.infer<typeof ReproManifestOutcomeSchema>;
+
+export const ReproManifestObservationalSchema = z
+  .object({
+    filePatterns: z.array(z.string().min(1)).min(1),
+    fingerprint: z.string().min(1),
+  })
+  .strict();
+export type ReproManifestObservational = z.infer<
+  typeof ReproManifestObservationalSchema
+>;
+
+export const ReproManifestSchema = z
+  .object({
+    command: z.string().min(1),
+    fixed: ReproManifestOutcomeSchema,
+    ghsaId: GhsaIdSchema,
+    language: z.string().min(1),
+    notes: z.string(),
+    setup: z.array(z.string().min(1)).default([]),
+    tier: ReproManifestTierSchema,
+    timeoutSeconds: z.number().int().positive(),
+    vulnerable: ReproManifestOutcomeSchema,
+    vulnClass: VulnClassSchema,
+    observational: ReproManifestObservationalSchema.optional(),
+  })
+  .strict();
+export type ReproManifest = z.infer<typeof ReproManifestSchema>;
+
+export const CveFollowupStatusSchema = z.enum([
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+]);
+export type CveFollowupStatus = z.infer<typeof CveFollowupStatusSchema>;
+
+export const CveFollowupStageKindSchema = z.enum([
+  "repro",
+  "fix",
+  "review_repro",
+  "review_fix",
+]);
+export type CveFollowupStageKind = z.infer<typeof CveFollowupStageKindSchema>;
+
+export const CveFollowupStageStatusSchema = z.enum([
+  "pending",
+  "dispatched",
+  "validating",
+  "succeeded",
+  "succeeded_weak",
+  "failed",
+  "skipped",
+  "cancelled",
+]);
+export type CveFollowupStageStatus = z.infer<
+  typeof CveFollowupStageStatusSchema
+>;
+
+export const CveFollowupEventKindSchema = z.enum([
+  "created",
+  "repro_dispatched",
+  "repro_validated",
+  "fix_dispatched",
+  "fix_validated",
+  "review_repro_done",
+  "review_fix_done",
+  "failed",
+  "cancelled",
+  "triage",
+  "deepwiki_prefetch",
+  "stage_retry",
+]);
+export type CveFollowupEventKind = z.infer<typeof CveFollowupEventKindSchema>;
+
+export const CveFollowupStageRowSchema = z
+  .object({
+    attempts: z.number().int().nonnegative(),
+    branch: z.string().nullable(),
+    createdAt: z.string().datetime(),
+    devinSessionId: z.string().nullable(),
+    devinUrl: z.string().nullable(),
+    id: z.string().min(1),
+    kind: CveFollowupStageKindSchema,
+    lastError: z.string().nullable(),
+    prUrl: z.string().nullable(),
+    status: CveFollowupStageStatusSchema,
+    updatedAt: z.string().datetime(),
+    validationResultId: z.string().nullable(),
+  })
+  .strict();
+export type CveFollowupStageRow = z.infer<typeof CveFollowupStageRowSchema>;
+
+export const CveFollowupValidationRowSchema = z
+  .object({
+    createdAt: z.string().datetime(),
+    exitCode: z.number().int().nullable(),
+    id: z.string().min(1),
+    manifestJson: z.string().nullable(),
+    markerSeen: z.boolean().nullable(),
+    observationalFingerprintMatched: z.boolean().nullable(),
+    passed: z.boolean(),
+    stageId: z.string().min(1),
+    stderrExcerpt: z.string().nullable(),
+    stdoutExcerpt: z.string().nullable(),
+    tier: ReproManifestTierSchema.nullable(),
+  })
+  .strict();
+export type CveFollowupValidationRow = z.infer<
+  typeof CveFollowupValidationRowSchema
+>;
+
+export const CveFollowupEventRowSchema = z
+  .object({
+    createdAt: z.string().datetime(),
+    details: z.unknown().nullable(),
+    id: z.string().min(1),
+    followupId: z.string().min(1),
+    kind: CveFollowupEventKindSchema,
+    message: z.string().min(1),
+  })
+  .strict();
+export type CveFollowupEventRow = z.infer<typeof CveFollowupEventRowSchema>;
+
+export const CveFollowupRowSchema = z
+  .object({
+    autoFired: z.boolean(),
+    cancellationReason: z.string().nullable(),
+    completedAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime(),
+    deepwikiContext: z.string().nullable(),
+    ghsaId: GhsaIdSchema,
+    id: z.string().min(1),
+    runId: z.string().min(1),
+    status: CveFollowupStatusSchema,
+    taskId: z.string().min(1),
+    updatedAt: z.string().datetime(),
+  })
+  .strict();
+export type CveFollowupRow = z.infer<typeof CveFollowupRowSchema>;
+
+export const CveFollowupDetailResponseSchema = z
+  .object({
+    events: z.array(CveFollowupEventRowSchema),
+    followup: CveFollowupRowSchema,
+    stages: z.array(CveFollowupStageRowSchema),
+    validations: z.array(CveFollowupValidationRowSchema),
+  })
+  .strict();
+export type CveFollowupDetailResponse = z.infer<
+  typeof CveFollowupDetailResponseSchema
+>;
+
+export const CreateCveFollowupRequestSchema = z
+  .object({
+    force: z.boolean().default(false),
+    stages: z.array(CveFollowupStageKindSchema).optional(),
+  })
+  .strict()
+  .default({ force: false });
+export type CreateCveFollowupRequest = z.infer<
+  typeof CreateCveFollowupRequestSchema
+>;
+
+export const CveFollowupActionResponseSchema = z
+  .object({
+    followup: CveFollowupRowSchema,
+  })
+  .strict();
+export type CveFollowupActionResponse = z.infer<
+  typeof CveFollowupActionResponseSchema
+>;
+
+export const CveFollowupStageRetryParamsSchema = z.object({
+  kind: CveFollowupStageKindSchema,
+});
+export type CveFollowupStageRetryParams = z.infer<
+  typeof CveFollowupStageRetryParamsSchema
+>;
+
+export const parseReproManifest = (value: unknown): ReproManifest =>
+  ReproManifestSchema.parse(value);
+
 export const parseTaskInstance = (value: unknown): TaskInstance =>
   TaskInstanceSchema.parse(value);
 

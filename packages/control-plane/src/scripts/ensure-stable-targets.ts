@@ -1,8 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { GitHubGitTreeStore } from "@codebreaker/control-plane/artifacts/github";
-import type { Env } from "@codebreaker/control-plane/types";
 import {
   loadBenchmarkTasks,
   loadInternalMetadata,
@@ -11,6 +9,8 @@ import type {
   InternalMetadata,
   TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
+import { GitHubGitTreeStore } from "@codebreaker/control-plane/artifacts/github";
+import type { Env } from "@codebreaker/control-plane/types";
 import type { BenchmarkTargetConfig } from "@codebreaker/shared/schemas/artifacts";
 
 const NEWLINE_RE = /\r?\n/;

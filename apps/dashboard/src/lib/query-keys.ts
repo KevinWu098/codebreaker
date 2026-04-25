@@ -12,6 +12,8 @@ export const qk = {
   },
   benchmarkRun: (connection: Connection, id: string) =>
     ["benchmark-run", id, ...scope(connection)] as const,
+  cveFollowup: (connection: Connection, runId: string) =>
+    ["cve-followup", runId, ...scope(connection)] as const,
   benchmarkRuns: (connection: Connection) =>
     ["benchmark-runs", ...scope(connection)] as const,
   benchmarkTasks: (connection: Connection) =>

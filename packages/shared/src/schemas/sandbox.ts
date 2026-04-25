@@ -3,7 +3,17 @@ import { z } from "zod";
 export const SandboxProviderSchema = z.enum(["modal"]);
 export type SandboxProvider = z.infer<typeof SandboxProviderSchema>;
 
-export const SandboxProfileNameSchema = z.enum(["python", "node", "recon"]);
+export const SandboxProfileNameSchema = z.enum([
+  "python",
+  "node",
+  "recon",
+  "java",
+  "java_stack",
+  "go",
+  "rust",
+  "ruby",
+  "fullstack",
+]);
 export type SandboxProfileName = z.infer<typeof SandboxProfileNameSchema>;
 
 export const SandboxProfileSchema = z.object({
