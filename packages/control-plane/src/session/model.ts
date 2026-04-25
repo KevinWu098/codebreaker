@@ -101,7 +101,7 @@ const selectCloudflareGatewayModel = (
     apiKey,
     baseURL,
     ...(headers ? { headers } : {}),
-  })(modelId);
+  }).chat(modelId);
 };
 
 export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
@@ -166,7 +166,7 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
         baseURL: trimTrailingSlash(
           env.GLM_BASE_URL ?? MODEL_PROVIDER_CONFIGS.glm.defaultBaseUrl
         ),
-      })(config.model.id);
+      }).chat(config.model.id);
     }
     case "kimi": {
       const gatewayModel = selectCloudflareGatewayModel(
@@ -185,7 +185,7 @@ export const selectModel = (config: SessionConfig, env: Env): LanguageModel => {
         baseURL: trimTrailingSlash(
           env.KIMI_BASE_URL ?? MODEL_PROVIDER_CONFIGS.kimi.defaultBaseUrl
         ),
-      })(config.model.id);
+      }).chat(config.model.id);
     }
     case "openai": {
       const gatewayModel = selectCloudflareGatewayModel(
