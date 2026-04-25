@@ -569,110 +569,6 @@ const BenchmarkResultsSummary = ({
   );
 };
 
-const BenchmarkImprovementQueue = ({
-  onSelect,
-  runs,
-}: {
-  onSelect: (id: string) => void;
-  runs: BenchmarkRunRow[];
-}): React.JSX.Element => {
-  const scoredRuns = [...runs]
-    .filter((run) => run.score != null)
-    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0))
-    .slice(0, 6);
-  const failedRuns = runs.filter(
-    (run) => run.status === "failed" || run.status === "cancelled"
-  );
-  const vulnMisses = runs.filter(
-    (run) => run.scoreBreakdown?.vulnerableMatched === false
-  ).length;
-  const classMisses = runs.filter(
-    (run) => run.scoreBreakdown?.vulnClassMatched === false
-  ).length;
-  const locationMisses = runs.filter((run) => {
-    const score = run.scoreBreakdown?.locationScore;
-    return score != null && score < 1;
-  }).length;
-
-  return (
-    <Card title="improvement queue">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <div className="space-y-2 text-xs">
-          <div className="field-label">patterns to inspect</div>
-          <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-3 gap-y-2">
-            <dt className="text-fg-muted">failed/cancelled</dt>
-            <dd className="num">{failedRuns.length}</dd>
-            <dt className="text-fg-muted">vulnerability misses</dt>
-            <dd className="num">{vulnMisses}</dd>
-            <dt className="text-fg-muted">class misses</dt>
-            <dd className="num">{classMisses}</dd>
-            <dt className="text-fg-muted">location misses</dt>
-            <dd className="num">{locationMisses}</dd>
-          </dl>
-          <p className="text-fg-muted">
-            Start with low-score runs, then compare predicted locations and
-            reasons against the ground truth in the detail pane.
-          </p>
-        </div>
-        <div>
-          <div className="field-label mb-2">lowest scored runs</div>
-          {scoredRuns.length === 0 ? (
-            <EmptyState
-              hint="completed runs with scores will appear here."
-              title="no scored runs"
-            />
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>run</th>
-                  <th>task</th>
-                  <th className="num">score</th>
-                  <th>misses</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scoredRuns.map((run) => (
-                  <tr key={run.id}>
-                    <td>
-                      <button
-                        className="id-link"
-                        onClick={() => onSelect(run.id)}
-                        type="button"
-                      >
-                        {run.id.slice(0, 8)}
-                      </button>
-                    </td>
-                    <td className="font-mono text-fg-muted">
-                      {taskWithDifficulty(run)}
-                    </td>
-                    <td className="num">{scoreText(run.score)}</td>
-                    <td className="text-fg-muted">
-                      {[
-                        run.scoreBreakdown?.vulnerableMatched === false
-                          ? "vuln"
-                          : null,
-                        run.scoreBreakdown?.vulnClassMatched === false
-                          ? "class"
-                          : null,
-                        (run.scoreBreakdown?.locationScore ?? 1) < 1
-                          ? "loc"
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(", ") || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-};
-
 export interface BenchmarksPanelProps {
   onOpenSession?: (sessionId: string) => void;
   onSelectRun?: (runId: string) => void;
@@ -893,10 +789,6 @@ export const BenchmarksPanel = ({
 
         <TabsContent className="mt-4 space-y-4 outline-none" value="results">
           <BenchmarkResultsSummary runs={runs.data?.runs ?? []} />
-          <BenchmarkImprovementQueue
-            onSelect={selectRun}
-            runs={runs.data?.runs ?? []}
-          />
           <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(500px,1fr)]">
             <BenchmarkRunsTable
               loading={runs.isLoading}
