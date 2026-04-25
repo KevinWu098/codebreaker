@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-36fm-j33w-c25f",
   "post_patch_commit": "de72760d4a3e1e9be64a10660a0c19e9534e2ec4",
   "noisy_patch": false,
-  "curation_notes": "Single-file patch adding author=\"target\" to an include macro call in the class sheet XML template. Location derived directly from the patch diff. No test files, docs, or configs were changed. The vulnerability class auth-bypass aligns with CWE-863 (Incorrect Authorization) — the include executed with the sheet author's elevated privileges instead of the target document's author.",
+  "curation_notes": "The patch modifies a single file (ClassSheet.xml) by adding author=\"target\" to the {{include}} macro, ensuring included content executes with the target document's author rights rather than the ClassSheet author's rights. Location derived directly from the patch diff. The vulnerability allows privilege escalation via DocumentSheetBinding to the ClassSheet.",
   "dataset_version": "0.1.0",
   "snapshot_date": "2026-04-25"
 }
