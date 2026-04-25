@@ -1,7 +1,8 @@
+import { MODEL_PROVIDERS } from "@codebreaker/shared/lib/models";
 import { z } from "zod";
 
-export const ModelProviderSchema = z.enum(["openai", "anthropic"]);
-export type ModelProvider = z.infer<typeof ModelProviderSchema>;
+export const ModelProviderSchema = z.enum(MODEL_PROVIDERS);
+export type { ModelProvider } from "@codebreaker/shared/lib/models";
 
 export const ReasoningEffortSchema = z.enum([
   "minimal",

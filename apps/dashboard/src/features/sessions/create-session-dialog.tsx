@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL_IDS } from "@codebreaker/shared/lib/models";
 import {
   ExtensionPolicySchema,
   ModelProviderSchema,
@@ -53,16 +54,11 @@ type FormValues = z.infer<typeof FormSchema>;
 const PROVIDERS = ModelProviderSchema.options;
 const POLICIES = ExtensionPolicySchema.options;
 const PROFILES = ["none", ...SandboxProfileNameSchema.options] as const;
-const DEFAULT_MODELS: Record<ModelConfig["provider"], string> = {
-  anthropic: "claude-3-5-sonnet-latest",
-  openai: "gpt-5-codex",
-};
-
 const DEFAULT_VALUES: FormValues = {
   extensionPolicy: "sandbox",
   maxSteps: defaultSessionRuntimeConfig.maxSteps,
   maxTurns: defaultSessionRuntimeConfig.maxTurns,
-  modelId: DEFAULT_MODELS.openai,
+  modelId: DEFAULT_MODEL_IDS.openai,
   profile: "python",
   provider: "openai",
   systemPrompt: "",
@@ -192,7 +188,7 @@ export const CreateSessionDialog = ({
                     onChange: (event) => {
                       const next = event.target
                         .value as ModelConfig["provider"];
-                      setValue("modelId", DEFAULT_MODELS[next], {
+                      setValue("modelId", DEFAULT_MODEL_IDS[next], {
                         shouldDirty: true,
                       });
                     },

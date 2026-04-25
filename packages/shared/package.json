@@ -9,6 +9,11 @@
       "import": "./src/lib/base64.ts",
       "default": "./src/lib/base64.ts"
     },
+    "./lib/models": {
+      "types": "./src/lib/models.ts",
+      "import": "./src/lib/models.ts",
+      "default": "./src/lib/models.ts"
+    },
     "./lib/sandbox-profiles": {
       "types": "./src/lib/sandbox-profiles.ts",
       "import": "./src/lib/sandbox-profiles.ts",
