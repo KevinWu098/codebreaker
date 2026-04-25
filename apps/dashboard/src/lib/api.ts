@@ -2,17 +2,23 @@ import type {
   AdminShimHealthResponse,
   AdminShimSandboxesResponse,
   ApiError,
+  ArtifactCheckoutRequest,
+  ArtifactCheckoutResponse,
+  ArtifactCommitRequest,
+  ArtifactCommitResponse,
   CreateSessionRequest,
   CreateSessionResponse,
   InspectExecRequest,
   InspectExecResponse,
   ListSessionsQuery,
   ListSessionsResponse,
+  SessionArtifactResponse,
   SessionConfigResponse,
   SessionDetailResponse,
   SessionMessagesResponse,
   SessionSandboxResponse,
   SessionStateResponse,
+  UpdateArtifactStateRequest,
 } from "@codebreaker/shared/schemas/api";
 import { connectionStore } from "@/lib/connection";
 
@@ -163,6 +169,47 @@ export const api = {
   ): Promise<InspectExecResponse> =>
     request<InspectExecResponse>(
       `/sessions/${encodeURIComponent(id)}/sandbox/exec`,
+      {
+        body: JSON.stringify(body),
+        method: "POST",
+      }
+    ),
+
+  getArtifacts: (id: string): Promise<SessionArtifactResponse> =>
+    request<SessionArtifactResponse>(
+      `/sessions/${encodeURIComponent(id)}/artifacts`
+    ),
+
+  updateArtifacts: (
+    id: string,
+    body: UpdateArtifactStateRequest
+  ): Promise<SessionArtifactResponse> =>
+    request<SessionArtifactResponse>(
+      `/sessions/${encodeURIComponent(id)}/artifacts`,
+      {
+        body: JSON.stringify(body),
+        method: "PATCH",
+      }
+    ),
+
+  checkoutArtifacts: (
+    id: string,
+    body: ArtifactCheckoutRequest
+  ): Promise<ArtifactCheckoutResponse> =>
+    request<ArtifactCheckoutResponse>(
+      `/sessions/${encodeURIComponent(id)}/artifacts/checkout`,
+      {
+        body: JSON.stringify(body),
+        method: "POST",
+      }
+    ),
+
+  commitArtifacts: (
+    id: string,
+    body: ArtifactCommitRequest
+  ): Promise<ArtifactCommitResponse> =>
+    request<ArtifactCommitResponse>(
+      `/sessions/${encodeURIComponent(id)}/artifacts/commit`,
       {
         body: JSON.stringify(body),
         method: "POST",

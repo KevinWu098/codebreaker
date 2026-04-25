@@ -12,6 +12,8 @@ export const qk = {
   },
   health: (connection: Connection) => ["health", ...scope(connection)] as const,
   session: {
+    artifacts: (connection: Connection, id: string) =>
+      ["session", id, "artifacts", ...scope(connection)] as const,
     config: (connection: Connection, id: string) =>
       ["session", id, "config", ...scope(connection)] as const,
     detail: (connection: Connection, id: string) =>

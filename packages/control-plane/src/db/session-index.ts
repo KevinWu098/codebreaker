@@ -3,6 +3,7 @@ import {
   type SessionRow,
   SessionRowSchema,
 } from "@codebreaker/shared/schemas/api";
+import type { BenchmarkArtifactState } from "@codebreaker/shared/schemas/artifacts";
 import type { SessionStatus } from "@codebreaker/shared/schemas/primitives";
 import {
   type SessionConfig,
@@ -10,6 +11,11 @@ import {
 } from "@codebreaker/shared/schemas/session";
 
 interface SessionRowRecord {
+  artifact_latest_commit_sha: string | null;
+  artifact_path: string | null;
+  artifact_status: string | null;
+  artifact_working_branch: string | null;
+  benchmark_id: string | null;
   completed_at: string | null;
   created_at: string;
   id: string;
@@ -17,12 +23,19 @@ interface SessionRowRecord {
   model_id: string;
   model_provider: string;
   output_tokens: number;
+  patched_evidence_path: string | null;
   repo_name: string | null;
   repo_owner: string | null;
+  run_command: string | null;
+  run_repo_name: string | null;
+  run_repo_remote: string | null;
   status: SessionStatus;
+  target_repo_name: string | null;
+  target_repo_remote: string | null;
   title: string | null;
   turn_count: number;
   updated_at: string;
+  vulnerable_evidence_path: string | null;
 }
 
 export interface UpsertSessionInput {
@@ -52,13 +65,14 @@ export class SessionIndexStore {
           model_id,
           repo_owner,
           repo_name,
+          benchmark_id,
           input_tokens,
           output_tokens,
           turn_count,
           created_at,
           updated_at,
           completed_at
-        ) values (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, null)
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, null)
         on conflict(id) do update set
           status = excluded.status,
           title = excluded.title,
@@ -66,6 +80,7 @@ export class SessionIndexStore {
           model_id = excluded.model_id,
           repo_owner = excluded.repo_owner,
           repo_name = excluded.repo_name,
+          benchmark_id = excluded.benchmark_id,
           updated_at = excluded.updated_at`
       )
       .bind(
@@ -76,6 +91,7 @@ export class SessionIndexStore {
         config.model.id,
         config.repo?.owner ?? null,
         config.repo?.name ?? null,
+        config.benchmark?.target.benchmarkId ?? null,
         timestamp,
         timestamp
       )
@@ -203,6 +219,65 @@ export class SessionIndexStore {
     ]);
   }
 
+  async setArtifactState(input: {
+    artifact: BenchmarkArtifactState;
+    eventId?: string;
+    id: string;
+  }): Promise<void> {
+    const eventId = input.eventId ?? `artifact:${nowIso()}`;
+    const timestamp = nowIso();
+
+    await this.db.batch([
+      this.recordEventStatement({
+        eventId,
+        kind: "artifact",
+        sessionId: input.id,
+        timestamp,
+      }),
+      this.db
+        .prepare(
+          `update sessions
+          set benchmark_id = ?,
+            target_repo_name = ?,
+            target_repo_remote = ?,
+            run_repo_name = ?,
+            run_repo_remote = ?,
+            artifact_working_branch = ?,
+            artifact_latest_commit_sha = ?,
+            artifact_path = ?,
+            run_command = ?,
+            vulnerable_evidence_path = ?,
+            patched_evidence_path = ?,
+            artifact_status = ?,
+            updated_at = ?
+          where id = ?
+            and exists (
+              select 1 from processed_events
+              where session_id = ? and kind = 'artifact' and event_id = ? and created_at = ?
+            )`
+        )
+        .bind(
+          input.artifact.benchmarkId,
+          input.artifact.targetRepoName,
+          input.artifact.targetRepoRemote,
+          input.artifact.runRepoName,
+          input.artifact.runRepoRemote,
+          input.artifact.workingBranch,
+          input.artifact.latestCommitSha ?? null,
+          input.artifact.artifactPath ?? null,
+          input.artifact.runCommand ?? null,
+          input.artifact.vulnerableEvidencePath ?? null,
+          input.artifact.patchedEvidencePath ?? null,
+          input.artifact.status,
+          timestamp,
+          input.id,
+          input.id,
+          eventId,
+          timestamp
+        ),
+    ]);
+  }
+
   async incrementTurn(input: { eventId: string; id: string }): Promise<void> {
     const timestamp = nowIso();
 
@@ -244,6 +319,11 @@ export class SessionIndexStore {
 
   private toSessionRow(row: SessionRowRecord): SessionRow {
     return SessionRowSchema.parse({
+      artifactLatestCommitSha: row.artifact_latest_commit_sha,
+      artifactPath: row.artifact_path,
+      artifactStatus: row.artifact_status,
+      artifactWorkingBranch: row.artifact_working_branch,
+      benchmarkId: row.benchmark_id,
       completedAt: row.completed_at,
       createdAt: row.created_at,
       id: row.id,
@@ -253,10 +333,17 @@ export class SessionIndexStore {
       outputTokens: row.output_tokens,
       repoName: row.repo_name,
       repoOwner: row.repo_owner,
+      runCommand: row.run_command,
+      runRepoName: row.run_repo_name,
+      runRepoRemote: row.run_repo_remote,
       status: row.status,
+      targetRepoName: row.target_repo_name,
+      targetRepoRemote: row.target_repo_remote,
       title: row.title,
       turnCount: row.turn_count,
       updatedAt: row.updated_at,
+      patchedEvidencePath: row.patched_evidence_path,
+      vulnerableEvidencePath: row.vulnerable_evidence_path,
     });
   }
 }

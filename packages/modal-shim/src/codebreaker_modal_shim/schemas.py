@@ -59,6 +59,43 @@ class WriteResponse(BaseModel):
     path: str
 
 
+class GitCredential(BaseModel):
+    username: str = Field(min_length=1)
+    password: str = Field(min_length=1)
+    type: Literal["basic", "token-header"] = "basic"
+
+
+class GitCheckoutRequest(BaseModel):
+    session_id: str = Field(min_length=1)
+    remote_url: str = Field(min_length=1)
+    branch: str = Field(min_length=1)
+    credential: GitCredential
+    path: str | None = None
+    profile: SandboxProfileName = "python"
+
+
+class GitCheckoutResponse(BaseModel):
+    repo_path: str
+    commit_sha: str | None = None
+
+
+class GitCommitRequest(BaseModel):
+    session_id: str = Field(min_length=1)
+    remote_url: str = Field(min_length=1)
+    branch: str = Field(min_length=1)
+    path: str = Field(min_length=1)
+    message: str = Field(min_length=1)
+    paths: list[str] = Field(default_factory=lambda: ["."])
+    credential: GitCredential
+    profile: SandboxProfileName = "python"
+
+
+class GitCommitResponse(BaseModel):
+    repo_path: str
+    pushed: bool
+    commit_sha: str | None = None
+
+
 class TerminateRequest(BaseModel):
     session_id: str = Field(min_length=1)
 

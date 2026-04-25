@@ -1,3 +1,4 @@
+import { BenchmarkConfigSchema } from "@codebreaker/shared/schemas/artifacts";
 import {
   ExtensionPolicySchema,
   ModelProviderSchema,
@@ -55,6 +56,7 @@ export const SessionSandboxConfigSchema = z.object({
 export type SessionSandboxConfig = z.infer<typeof SessionSandboxConfigSchema>;
 
 export const SessionConfigSchema = z.object({
+  benchmark: BenchmarkConfigSchema.optional(),
   compaction: CompactionConfigSchema.default(defaultCompactionConfig),
   extensionPolicy: ExtensionPolicySchema.default("readonly"),
   maxSteps: z

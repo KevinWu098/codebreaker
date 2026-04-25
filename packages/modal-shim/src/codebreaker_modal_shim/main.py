@@ -4,6 +4,8 @@ from fastapi import Depends, FastAPI, Request
 from codebreaker_modal_shim.runtime import ModalSandboxManager, with_idempotency
 from codebreaker_modal_shim.schemas import (
     ExecRequest,
+    GitCheckoutRequest,
+    GitCommitRequest,
     ReadRequest,
     SnapshotRequest,
     SnapshotResponse,
@@ -12,7 +14,7 @@ from codebreaker_modal_shim.schemas import (
 )
 
 app = modal.App("codebreaker-modal-shim")
-image = modal.Image.debian_slim().pip_install(
+image = modal.Image.debian_slim().apt_install("git").pip_install(
     "fastapi>=0.115.0",
     "pydantic>=2.9.2",
 ).add_local_python_source(
@@ -57,6 +59,22 @@ def create_fastapi_app() -> FastAPI:
             manager,
             request,
             lambda: manager.write_file(payload).model_dump(mode="json"),
+        )
+
+    @api.post("/git/checkout", dependencies=[Depends(require_auth)])
+    def checkout_git_repo(request: Request, payload: GitCheckoutRequest) -> dict:
+        return with_idempotency(
+            manager,
+            request,
+            lambda: manager.checkout_git_repo(payload).model_dump(mode="json"),
+        )
+
+    @api.post("/git/commit", dependencies=[Depends(require_auth)])
+    def commit_git_repo(request: Request, payload: GitCommitRequest) -> dict:
+        return with_idempotency(
+            manager,
+            request,
+            lambda: manager.commit_git_repo(payload).model_dump(mode="json"),
         )
 
     @api.post("/terminate", dependencies=[Depends(require_auth)])

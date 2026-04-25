@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./artifacts/forgejo": {
+      "types": "./src/artifacts/forgejo.ts",
+      "default": "./src/artifacts/forgejo.ts"
+    },
+    "./artifacts/repository": {
+      "types": "./src/artifacts/repository.ts",
+      "default": "./src/artifacts/repository.ts"
+    },
     "./db/d1-schema": {
       "types": "./src/db/d1-schema.ts",
       "default": "./src/db/d1-schema.ts"
