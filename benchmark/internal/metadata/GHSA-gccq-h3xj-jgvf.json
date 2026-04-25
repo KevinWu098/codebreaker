@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gccq-h3xj-jgvf",
+  "post_patch_commit": "7e47d6dccb0393a2e95c42813c562c854882b037",
+  "noisy_patch": true,
+  "curation_notes": "Patch is a merge commit touching 9 source files. The core vulnerability is in BearerTokenResponse.getExtraParams which hardcoded scopes to 'read write follow push' regardless of granted permissions, and across all API controllers (ApiV1Controller, AdminApiController, ApiV1Dot1Controller, ApiV2Controller, BaseApiController, DomainBlockController, TagsController) which lacked tokenCan() scope checks. AuthServiceProvider was also updated to register the new scopes. Locations derived primarily from the patch diff since the advisory description does not name specific files.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2025-04-25"
+}
