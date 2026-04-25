@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ECVEBench TaskInstance",
+  "type": "object",
+  "required": ["task_id", "ghsa_id", "difficulty", "codebase", "hint", "ground_truth"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Unique task identifier. Format: ecvebench-{project}-{n}-{level}"
+    },
+    "ghsa_id": {
+      "type": "string",
+      "description": "Source GitHub Security Advisory ID",
+      "pattern": "^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["L0", "L1"],
+      "description": "L0=no hint, L1=scrubbed description hint"
+    },
+    "codebase": {
+      "type": "object",
+      "required": ["repo", "language", "pre_patch_commit", "post_patch_commit"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": {
+          "type": "string",
+          "format": "uri",
+          "description": "GitHub repository URL"
+        },
+        "language": {
+          "type": "string",
+          "description": "Primary language of the repository"
+        },
+        "pre_patch_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Full 40-character SHA of the vulnerable version"
+        },
+        "post_patch_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Full 40-character SHA of the fixed version"
+        }
+      }
+    },
+    "hint": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["description"],
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "type": "string",
+              "description": "Scrubbed vulnerability description. No file or function references."
+            }
+          }
+        }
+      ]
+    },
+    "ground_truth": {
+      "type": "object",
+      "required": ["vulnerable", "vuln_class", "cvss", "reason", "locations"],
+      "additionalProperties": false,
+      "properties": {
+        "vulnerable": {
+          "type": "boolean"
+        },
+        "vuln_class": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "string",
+              "enum": [
+                "command-injection",
+                "sql-injection",
+                "xss",
+                "buffer-overflow",
+                "use-after-free",
+                "path-traversal",
+                "auth-bypass",
+                "xxe",
+                "insecure-deserialization",
+                "crypto-weakness",
+                "race-condition",
+                "integer-overflow",
+                "null-deref"
+              ]
+            }
+          ]
+        },
+        "cvss": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "number", "minimum": 0.0, "maximum": 10.0 }
+          ]
+        },
+        "reason": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string" }
+          ],
+          "description": "Unscored. Human-readable explanation of the vulnerability."
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["file", "function"],
+            "additionalProperties": false,
+            "properties": {
+              "file": {
+                "type": "string",
+                "description": "Relative path from repo root"
+              },
+              "function": {
+                "oneOf": [
+                  { "type": "null" },
+                  { "type": "string" }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

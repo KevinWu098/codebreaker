@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ECVEBench AgentOutput",
+  "type": "object",
+  "required": ["task_id", "vulnerable", "confidence", "vuln_class", "locations", "reason"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Must match the task being evaluated"
+    },
+    "vulnerable": {
+      "type": "boolean"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "vuln_class": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "enum": [
+            "command-injection",
+            "sql-injection",
+            "xss",
+            "buffer-overflow",
+            "use-after-free",
+            "path-traversal",
+            "auth-bypass",
+            "xxe",
+            "insecure-deserialization",
+            "crypto-weakness",
+            "race-condition",
+            "integer-overflow",
+            "null-deref"
+          ]
+        }
+      ]
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "function"],
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Relative path from repo root"
+          },
+          "function": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "string" }
+            ]
+          }
+        }
+      }
+    },
+    "reason": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string" }
+      ],
+      "description": "Unscored. Agent explanation of the vulnerability."
+    }
+  }
+}
