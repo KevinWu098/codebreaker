@@ -1,4 +1,8 @@
-import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
+import {
+  type ExecResult,
+  type SandboxProfileName,
+  SandboxProfileNameSchema,
+} from "@codebreaker/shared/schemas/sandbox";
 import { Play } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge } from "@/components/badge";
@@ -17,16 +21,6 @@ interface SandboxPanelProps {
   sessionId: string;
 }
 
-interface ExecResult {
-  durationMs: number;
-  exitCode: number;
-  stderr: string;
-  stderrTruncated: boolean;
-  stdout: string;
-  stdoutTruncated: boolean;
-  timedOut: boolean;
-}
-
 interface ExecRecord {
   command: string;
   error?: string;
@@ -35,7 +29,7 @@ interface ExecRecord {
   startedAt: number;
 }
 
-const PROFILES: readonly SandboxProfileName[] = ["python", "node", "recon"];
+const PROFILES = SandboxProfileNameSchema.options;
 
 const recordKey = (record: ExecRecord): string =>
   `${record.startedAt}-${record.command.length}`;

@@ -3,9 +3,11 @@ import {
   ModelProviderSchema,
 } from "@codebreaker/shared/schemas/primitives";
 import { SandboxProfileNameSchema } from "@codebreaker/shared/schemas/sandbox";
-import type {
-  ModelConfig,
-  SessionConfig,
+import {
+  defaultCompactionConfig,
+  defaultSessionRuntimeConfig,
+  type ModelConfig,
+  type SessionConfig,
 } from "@codebreaker/shared/schemas/session";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -36,8 +38,8 @@ const ProfileChoiceSchema = z.union([
 
 const FormSchema = z.object({
   extensionPolicy: ExtensionPolicySchema,
-  maxSteps: z.number().int().min(1).max(200),
-  maxTurns: z.number().int().min(1).max(500),
+  maxSteps: z.number().int().positive(),
+  maxTurns: z.number().int().positive(),
   modelId: z.string().trim().min(1, "model id is required"),
   profile: ProfileChoiceSchema,
   provider: ModelProviderSchema,
@@ -57,8 +59,8 @@ const DEFAULT_MODELS: Record<ModelConfig["provider"], string> = {
 
 const DEFAULT_VALUES: FormValues = {
   extensionPolicy: "readonly",
-  maxSteps: 50,
-  maxTurns: 200,
+  maxSteps: defaultSessionRuntimeConfig.maxSteps,
+  maxTurns: defaultSessionRuntimeConfig.maxTurns,
   modelId: DEFAULT_MODELS.openai,
   profile: "none",
   provider: "openai",
@@ -67,17 +69,12 @@ const DEFAULT_VALUES: FormValues = {
 };
 
 const buildSessionConfig = (values: FormValues): SessionConfig => ({
-  compaction: {
-    enabled: true,
-    maxContextTokens: 250_000,
-    preserveRecentMessages: 12,
-    summarizeAtTokens: 225_000,
-  },
+  compaction: defaultCompactionConfig,
   extensionPolicy: values.extensionPolicy,
   maxSteps: values.maxSteps,
   maxTurns: values.maxTurns,
   model: { id: values.modelId.trim(), provider: values.provider },
-  timeoutSeconds: 3600,
+  timeoutSeconds: defaultSessionRuntimeConfig.timeoutSeconds,
   ...(values.title.trim() ? { title: values.title.trim() } : {}),
   ...(values.systemPrompt.trim()
     ? { systemPrompt: values.systemPrompt.trim() }

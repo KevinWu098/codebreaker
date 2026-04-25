@@ -25,6 +25,7 @@
   --accent-muted: 74 140 161;
 
   --status-idle: 139 139 139;
+  --status-pending: 244 200 105;
   --status-running: 124 219 255;
   --status-completed: 93 208 124;
   --status-failed: 255 107 107;
@@ -50,6 +51,7 @@
   --accent-muted: 2 132 199;
 
   --status-idle: 107 114 128;
+  --status-pending: 180 83 9;
   --status-running: 2 132 199;
   --status-completed: 22 163 74;
   --status-failed: 220 38 38;
@@ -89,6 +91,7 @@
   --color-accent-muted: rgb(var(--accent-muted));
 
   --color-status-idle: rgb(var(--status-idle));
+  --color-status-pending: rgb(var(--status-pending));
   --color-status-running: rgb(var(--status-running));
   --color-status-completed: rgb(var(--status-completed));
   --color-status-failed: rgb(var(--status-failed));
@@ -194,6 +197,9 @@
 
   .badge-idle {
     @apply bg-status-idle/10 text-status-idle;
+  }
+  .badge-pending {
+    @apply bg-status-pending/15 text-status-pending;
   }
   .badge-running {
     @apply bg-status-running/15 text-status-running;

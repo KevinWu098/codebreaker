@@ -1,14 +1,22 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
-import { Send, Square, Trash2 } from "lucide-react";
+import { ArrowDownIcon, Send, Square, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Streamdown } from "streamdown";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from "@/components/ai-elements/message";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
-import { cn } from "@/lib/cn";
 import { useConnection } from "@/lib/connection";
 
 interface ChatPanelProps {
@@ -46,6 +54,16 @@ const partKey = (
   type: string | undefined
 ): string => `${messageId}:${type ?? "unknown"}:${partIndex}`;
 
+const TRANSIENT_PART_TYPES = new Set(["step-start"]);
+
+const isRenderablePart = (
+  part: MessagePart,
+  showTransientParts: boolean
+): boolean =>
+  typeof part.type !== "string" ||
+  !TRANSIENT_PART_TYPES.has(part.type) ||
+  showTransientParts;
+
 const renderPart = (
   part: MessagePart,
   messageId: string,
@@ -54,16 +72,7 @@ const renderPart = (
   const key = partKey(messageId, partIndex, part.type);
 
   if (part.type === "text" && typeof part.text === "string") {
-    return (
-      <Streamdown
-        className="md"
-        key={key}
-        mode="streaming"
-        parseIncompleteMarkdown
-      >
-        {part.text}
-      </Streamdown>
-    );
+    return <MessageResponse key={key}>{part.text}</MessageResponse>;
   }
 
   if (typeof part.type === "string" && part.type.startsWith("tool")) {
@@ -173,38 +182,45 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
       <div className="space-y-3">
         <ErrorState error={chat.error ?? undefined} title="chat error" />
 
-        <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
-          {chat.messages.length === 0 && (
-            <div className="py-6 text-center text-fg-muted text-xs">
-              no messages yet — say something below.
-            </div>
-          )}
-          {chat.messages.map((message) => {
-            const isUser = message.role === "user";
+        <Conversation className="max-h-[520px] overflow-y-auto">
+          <ConversationContent>
+            {chat.messages.length === 0 && (
+              <div className="py-6 text-center text-fg-muted text-xs">
+                no messages yet — say something below.
+              </div>
+            )}
+            {chat.messages.map((message) => {
+              const isUser = message.role === "user";
+              const isLatestMessage = message.id === chat.messages.at(-1)?.id;
+              const showTransientParts =
+                isStreaming && !isUser && isLatestMessage;
+              const renderableParts = message.parts.filter((part) =>
+                isRenderablePart(part as MessagePart, showTransientParts)
+              );
 
-            return (
-              <article
-                className={cn(
-                  "border-l-2 pl-3",
-                  isUser ? "border-accent" : "border-border"
-                )}
-                key={message.id}
-              >
-                <header className="mb-1 flex items-center gap-2 text-[10px] text-fg-muted uppercase tracking-wider">
-                  <span className={isUser ? "text-accent" : "text-fg"}>
-                    {message.role}
-                  </span>
-                  <span className="font-mono text-fg-subtle">{message.id}</span>
-                </header>
-                <div className="space-y-2">
-                  {message.parts.map((part, partIndex) =>
-                    renderPart(part as MessagePart, message.id, partIndex)
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
+              return (
+                <Message from={message.role} key={message.id}>
+                  <header className="mb-1 flex items-center gap-2 text-[10px] text-fg-muted uppercase tracking-wider">
+                    <span className={isUser ? "text-accent" : "text-fg"}>
+                      {message.role}
+                    </span>
+                    <span className="font-mono text-fg-subtle">
+                      {message.id}
+                    </span>
+                  </header>
+                  <MessageContent>
+                    {renderableParts.map((part, partIndex) =>
+                      renderPart(part as MessagePart, message.id, partIndex)
+                    )}
+                  </MessageContent>
+                </Message>
+              );
+            })}
+          </ConversationContent>
+          <ConversationScrollButton>
+            <ArrowDownIcon aria-hidden="true" size={14} />
+          </ConversationScrollButton>
+        </Conversation>
 
         <div className="composer">
           <textarea

@@ -1,15 +1,11 @@
+import type { SessionStatus } from "@codebreaker/shared/schemas/primitives";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-export type BadgeStatus =
-  | "idle"
-  | "running"
-  | "completed"
-  | "failed"
-  | "paused"
-  | "archived";
+export type BadgeStatus = SessionStatus | "paused";
 
 const KNOWN_STATUSES: readonly BadgeStatus[] = [
+  "pending",
   "idle",
   "running",
   "completed",
@@ -27,7 +23,18 @@ const STATUS_CLASS: Record<BadgeStatus, string> = {
   failed: "badge-failed",
   idle: "badge-idle",
   paused: "badge-paused",
+  pending: "badge-pending",
   running: "badge-running",
+};
+
+const STATUS_DOT_CLASS: Record<BadgeStatus, string> = {
+  archived: "bg-status-archived",
+  completed: "bg-status-completed",
+  failed: "bg-status-failed",
+  idle: "bg-status-idle",
+  paused: "bg-status-paused",
+  pending: "bg-status-pending",
+  running: "bg-status-running",
 };
 
 interface BadgeProps {
@@ -48,7 +55,7 @@ export const Badge = ({
   return (
     <span className={cn("badge", STATUS_CLASS[resolved], className)}>
       {withDot && (
-        <span className={cn("status-dot", `bg-status-${resolved}`)} />
+        <span className={cn("status-dot", STATUS_DOT_CLASS[resolved])} />
       )}
       {children ?? status}
     </span>

@@ -8,11 +8,11 @@ import type {
   InspectExecResponse,
   ListSessionsQuery,
   ListSessionsResponse,
-  SessionAgentState,
   SessionConfigResponse,
   SessionDetailResponse,
   SessionMessagesResponse,
   SessionSandboxResponse,
+  SessionStateResponse,
 } from "@codebreaker/shared/schemas/api";
 import { connectionStore } from "@/lib/connection";
 
@@ -149,10 +149,8 @@ export const api = {
       `/sessions/${encodeURIComponent(id)}/config`
     ),
 
-  getState: (id: string): Promise<{ state: SessionAgentState }> =>
-    request<{ state: SessionAgentState }>(
-      `/sessions/${encodeURIComponent(id)}/state`
-    ),
+  getState: (id: string): Promise<SessionStateResponse> =>
+    request<SessionStateResponse>(`/sessions/${encodeURIComponent(id)}/state`),
 
   getSandbox: (id: string): Promise<SessionSandboxResponse> =>
     request<SessionSandboxResponse>(

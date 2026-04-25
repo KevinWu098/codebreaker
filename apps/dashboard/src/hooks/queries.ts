@@ -3,11 +3,11 @@ import type {
   AdminShimSandboxesResponse,
   ListSessionsQuery,
   ListSessionsResponse,
-  SessionAgentState,
   SessionConfigResponse,
   SessionDetailResponse,
   SessionMessagesResponse,
   SessionSandboxResponse,
+  SessionStateResponse,
 } from "@codebreaker/shared/schemas/api";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { ApiClientError, api } from "@/lib/api";
@@ -44,7 +44,7 @@ export const useSessionQuery = (
 
 export const useSessionStateQuery = (
   id: string
-): UseQueryResult<{ state: SessionAgentState }, Error> => {
+): UseQueryResult<SessionStateResponse, Error> => {
   const connection = useConnection();
 
   return useQuery({
