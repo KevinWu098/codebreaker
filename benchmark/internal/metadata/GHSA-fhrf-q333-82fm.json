@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fhrf-q333-82fm",
+  "post_patch_commit": "954622ef3d8527cde0b66b8460c26cb5cd0bab15",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit is a merge (0.31.0.0 release tag) with 300 files changed across many features. The XSS fix is within the blog module: the Categories controller tightened input validation regex from /^[^<>{}]*$/u to /^[^<>{}=]+$/u and improved seflink validation. The public-facing blog list view rendered category titles via $category->title without esc() output encoding. Locations were derived from the advisory description (blog category creation/editing) cross-referenced with the patch diff showing changes to the Categories controller and blog view templates.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
