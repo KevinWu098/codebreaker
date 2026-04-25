@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7225-m954-23v7",
+  "post_patch_commit": "c6522a72a45c34897f9fc85d438c0b74d52f8862",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only math/dec.go (plus tests, changelog, and go.mod). The vulnerability is in the maxDecBitLen constant which was computed as MaxBitLen + decimalTruncateBits (256 + 59 = 315 bits), misaligned with the 256-bit MaxBitLen used for Int types. This allowed Dec values outside the valid Int range. The patch replaces all BitLen-based checks with explicit upper/lower limit comparisons based on 2^256 * 10^18. Locations derived from the patch diff identifying all functions that used the incorrect maxDecBitLen validation; representative subset chosen for the locations array.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
