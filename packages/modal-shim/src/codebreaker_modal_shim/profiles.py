@@ -10,7 +10,7 @@ _PROFILES_FILENAME = "sandbox-profiles.json"
 
 _SEARCH_PATHS = [
     Path("/app") / _PROFILES_FILENAME,
-    Path(__file__).resolve().parents[4] / "shared" / "src" / "data" / _PROFILES_FILENAME,
+    Path(__file__).resolve().parents[4] / "packages" / "shared" / "src" / "data" / _PROFILES_FILENAME,
 ]
 
 
