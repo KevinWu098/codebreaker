@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qwc3-h9mg-4582",
+  "post_patch_commit": "f92a9ef5246d57e51696bd881a15f3b133b2bb50",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit f92a9ef modified only one non-test source file (Parse-Dashboard/app.js) and added one new test file. The vulnerability is in the route registration for the AI agent endpoint (POST /apps/:appId/agent) which was defined without any authentication middleware. The patch extracts the handler into a named function and adds authentication and CSRF middleware. Location derived from the patch diff; the advisory description confirms the endpoint path but does not name specific functions.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

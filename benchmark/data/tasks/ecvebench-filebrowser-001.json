@@ -1,0 +1,28 @@
+{
+  "task_id": "ecvebench-filebrowser-001",
+  "ghsa_id": "GHSA-5gg9-5g7w-hm73",
+  "codebase": {
+    "repo": "https://github.com/filebrowser/filebrowser",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "4bd7d69c82163b201a987e99c0c50d7ecc6ee5f1"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "description": "An authorization bypass vulnerability exists in the self-registration endpoint where new user accounts inherit all default permissions — including administrative privileges — without any server-side restriction. When self-registration is enabled and the default user configuration includes administrator access, any unauthenticated visitor can create an account that is granted full administrative control over the application, including file management, user management, and server configuration."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 10.0,
+    "reason": "The signup handler blindly applies all default user settings, including the admin permission flag, to newly registered accounts without stripping elevated privileges, allowing any unauthenticated visitor to register as a full administrator.",
+    "locations": [
+      {
+        "file": "http/auth.go",
+        "function": "signupHandler"
+      }
+    ]
+  }
+}
