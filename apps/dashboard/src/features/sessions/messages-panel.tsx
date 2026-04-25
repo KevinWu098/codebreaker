@@ -1,4 +1,5 @@
 import { Card } from "@/components/card";
+import { CopyTextButton } from "@/components/copy-text-button";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
@@ -36,12 +37,14 @@ const messageKey = (message: Message, fallbackId: string): string =>
 const renderPart = (part: MessagePart, key: string): React.JSX.Element => {
   if (part.type === "text" && typeof part.text === "string") {
     return (
-      <p
-        className="whitespace-pre-wrap text-fg text-sm leading-relaxed"
-        key={key}
-      >
-        {part.text}
-      </p>
+      <div className="relative" key={key}>
+        <div className="absolute inset-e-0 top-0 z-10">
+          <CopyTextButton text={part.text} title="copy text" />
+        </div>
+        <p className="whitespace-pre-wrap pe-7 text-fg text-sm leading-relaxed">
+          {part.text}
+        </p>
+      </div>
     );
   }
 

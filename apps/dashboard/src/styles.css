@@ -222,7 +222,7 @@
   }
 
   .card-header {
-    @apply flex items-center justify-between gap-3 border-b border-border px-3 py-2 text-xs text-fg-muted;
+    @apply flex min-h-9 items-center justify-between gap-3 border-b border-border px-3 py-2 text-xs text-fg-muted;
   }
 
   .card-body {
@@ -359,7 +359,7 @@
 
   /* JSON view (react-json-view-lite). */
   .json-view {
-    @apply overflow-auto rounded border border-border bg-bg-overlay p-2 font-mono text-[11px] leading-relaxed text-fg;
+    @apply flex min-h-0 flex-col overflow-hidden rounded border border-border bg-bg-overlay font-mono text-[11px] leading-relaxed text-fg;
   }
   .json-view .rjv-container {
     @apply bg-transparent text-fg;

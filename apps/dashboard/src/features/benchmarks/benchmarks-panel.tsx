@@ -41,7 +41,13 @@ const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => {
   return "running";
 };
 
-export const BenchmarksPanel = (): React.JSX.Element => {
+export interface BenchmarksPanelProps {
+  onOpenSession?: (sessionId: string) => void;
+}
+
+export const BenchmarksPanel = ({
+  onOpenSession,
+}: BenchmarksPanelProps): React.JSX.Element => {
   const connection = useConnection();
   const enabled = isAuthorized(connection);
   const tasks = useBenchmarkTasksQuery();
@@ -52,7 +58,10 @@ export const BenchmarksPanel = (): React.JSX.Element => {
   const [difficulty, setDifficulty] = useState<"L0" | "L1">("L1");
   const [model, setModel] = useState(DEFAULT_MODEL);
   const selectedRun = selectedRunId ? (
-    <BenchmarkRunDetail runId={selectedRunId} />
+    <BenchmarkRunDetail
+      {...(onOpenSession ? { onOpenSession } : {})}
+      runId={selectedRunId}
+    />
   ) : null;
 
   const startRun = (): void => {
@@ -177,8 +186,12 @@ const BenchmarkRunsTable = ({
 }): React.JSX.Element => (
   <Card
     actions={
-      <span className="text-fg-muted text-xs">
-        <RefreshCw aria-hidden="true" className="inline" size={12} /> auto
+      <span
+        className="btn pointer-events-none select-none border-transparent bg-transparent text-fg-muted hover:border-transparent hover:bg-transparent"
+        title="this list updates automatically"
+      >
+        <RefreshCw aria-hidden="true" className="shrink-0" size={12} />
+        <span>auto</span>
       </span>
     }
     title="runs"
@@ -231,13 +244,33 @@ const BenchmarkRunsTable = ({
 );
 
 const BenchmarkRunDetail = ({
+  onOpenSession,
   runId,
 }: {
+  onOpenSession?: (sessionId: string) => void;
   runId: string;
 }): React.JSX.Element => {
   const detail = useBenchmarkRunQuery(runId);
   const cleanup = useCleanupBenchmarkRunMutation(runId);
   const run = detail.data?.run;
+
+  let sessionValue: React.ReactNode = "—";
+  if (run?.sessionId) {
+    if (onOpenSession) {
+      const sid = run.sessionId;
+      sessionValue = (
+        <button
+          className="id-link break-all text-left"
+          onClick={() => onOpenSession(sid)}
+          type="button"
+        >
+          {sid}
+        </button>
+      );
+    } else {
+      sessionValue = <span className="break-all">{run.sessionId}</span>;
+    }
+  }
 
   return (
     <Card
@@ -271,7 +304,7 @@ const BenchmarkRunDetail = ({
             <Badge status={badgeStatusForRun(run.status)} />
           </DefinitionField>
           <DefinitionField label="session" mono>
-            {run.sessionId ?? "—"}
+            {sessionValue}
           </DefinitionField>
           <DefinitionField label="score" numeric>
             {run.score?.toFixed(2) ?? "—"}

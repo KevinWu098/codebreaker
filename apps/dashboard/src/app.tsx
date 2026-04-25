@@ -71,7 +71,13 @@ export const App = (): React.JSX.Element => {
             selectedId={selectedId}
           />
         )}
-        {view === "benchmarks" && <BenchmarksPanel />}
+        {view === "benchmarks" && (
+          <BenchmarksPanel
+            onOpenSession={(sessionId) =>
+              setParams({ view: "sessions", session: sessionId, tab: null })
+            }
+          />
+        )}
         {view === "admin" && <AdminPanel />}
       </main>
     </div>

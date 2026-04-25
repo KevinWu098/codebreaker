@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
+import { CopyTextButton } from "@/components/copy-text-button";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
 import { type MessagePart, ToolCallPart } from "@/components/tool-call-part";
@@ -64,7 +65,14 @@ const renderPart = (
   const key = partKey(messageId, partIndex, part.type);
 
   if (part.type === "text" && typeof part.text === "string") {
-    return <MessageResponse key={key}>{part.text}</MessageResponse>;
+    return (
+      <div className="relative" key={key}>
+        <div className="absolute inset-e-0 top-0 z-10">
+          <CopyTextButton text={part.text} title="copy text" />
+        </div>
+        <MessageResponse className="pe-8!">{part.text}</MessageResponse>
+      </div>
+    );
   }
 
   if (typeof part.type === "string" && part.type.startsWith("tool")) {

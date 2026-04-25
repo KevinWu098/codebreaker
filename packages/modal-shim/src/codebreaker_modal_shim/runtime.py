@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import posixpath
+import re
 import time
 from collections.abc import AsyncIterator, Callable
 from typing import Any
@@ -34,6 +35,25 @@ RATE_LIMIT_REQUESTS = 60
 SANDBOXES = modal.Dict.from_name("codebreaker-sandboxes", create_if_missing=True)
 IDEMPOTENCY = modal.Dict.from_name("codebreaker-idempotency", create_if_missing=True)
 RATE_LIMITS = modal.Dict.from_name("codebreaker-ratelimits", create_if_missing=True)
+
+_REDACT_AUTH_BASIC = re.compile(
+    r"Authorization:\s*Basic\s+[A-Za-z0-9+/=]+", re.IGNORECASE
+)
+_REDACT_AUTH_BEARER = re.compile(
+    r"Authorization:\s*Bearer\s+[^\s'\"`]+", re.IGNORECASE
+)
+
+
+def redact_diagnostics_for_client(message: str) -> str:
+    """
+    Error strings can embed the full git command line, including
+    `http.extraHeader=... Authorization: Basic <base64(user:token)>` which must
+    never be returned in API responses or stored downstream.
+    """
+    if not message:
+        return message
+    out = _REDACT_AUTH_BASIC.sub("Authorization: Basic <redacted>", message)
+    return _REDACT_AUTH_BEARER.sub("Authorization: Bearer <redacted>", out)
 
 
 class ModalSandboxManager:
@@ -203,7 +223,9 @@ class ModalSandboxManager:
         )
 
         if result.exit_code != 0:
-            raise HTTPException(status_code=500, detail=result.stderr)
+            raise HTTPException(
+                status_code=500, detail=redact_diagnostics_for_client(result.stderr)
+            )
 
         return ReadResponse(
             content_base64=result.stdout.strip(),
@@ -232,7 +254,9 @@ class ModalSandboxManager:
         )
 
         if result.exit_code != 0:
-            raise HTTPException(status_code=500, detail=result.stderr)
+            raise HTTPException(
+                status_code=500, detail=redact_diagnostics_for_client(result.stderr)
+            )
 
         return WriteResponse(bytes_written=len(content), path=request.path)
 
@@ -278,7 +302,9 @@ class ModalSandboxManager:
         )
 
         if result.exit_code != 0:
-            raise HTTPException(status_code=500, detail=result.stderr)
+            raise HTTPException(
+                status_code=500, detail=redact_diagnostics_for_client(result.stderr)
+            )
 
         return GitCheckoutResponse(
             commit_sha=last_nonempty_line(result.stdout),
@@ -317,7 +343,9 @@ class ModalSandboxManager:
         )
 
         if result.exit_code != 0:
-            raise HTTPException(status_code=500, detail=result.stderr)
+            raise HTTPException(
+                status_code=500, detail=redact_diagnostics_for_client(result.stderr)
+            )
 
         return GitCommitResponse(
             commit_sha=last_nonempty_line(result.stdout),

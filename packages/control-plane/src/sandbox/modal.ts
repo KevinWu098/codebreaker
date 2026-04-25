@@ -9,6 +9,13 @@ import {
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 100;
 const TRAILING_SLASH_REGEX = /\/$/;
+const AUTH_BASIC_RE = /Authorization:\s*Basic\s+[A-Za-z0-9+/=]+/gi;
+const AUTH_BEARER_RE = /Authorization:\s*Bearer\s+[^\s'"`]+/gi;
+
+const redactHttpCredentialsInText = (message: string): string =>
+  message
+    .replace(AUTH_BASIC_RE, "Authorization: Basic <redacted>")
+    .replace(AUTH_BEARER_RE, "Authorization: Bearer <redacted>");
 
 interface ShimExecResult {
   command: string;
@@ -241,7 +248,8 @@ export class ModalExecutor {
         return response.json() as Promise<T>;
       }
 
-      lastError = new Error(await response.text());
+      const body = await response.text();
+      lastError = new Error(redactHttpCredentialsInText(body));
 
       if (!shouldRetry(response.status) || attempt === MAX_RETRIES - 1) {
         break;
