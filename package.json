@@ -1,11 +1,19 @@
 {
-    "name": "codebreaker",
-    "version": "1.0.0",
-    "private": true,
-    "scripts": {
-        "typecheck": "pnpm -r --parallel exec tsc --noEmit"
-    },
-    "engines": {
-        "node": ">=24"
-    }
+  "devDependencies": {
+    "@biomejs/biome": "2.4.12",
+    "lefthook": "2.1.6",
+    "ultracite": "7.6.1"
+  },
+  "name": "codebreaker",
+  "scripts": {
+    "check": "ultracite check",
+    "fix": "ultracite fix",
+    "prepare": "lefthook install",
+    "typecheck": "pnpm -r --parallel exec tsc --noEmit"
+  },
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  }
 }
