@@ -1,13 +1,21 @@
 [project]
-name = "codebreaker-modal-shim"
+name = "codebreaker-shim-shared"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-  "codebreaker-shim-shared",
   "fastapi>=0.115.0",
-  "modal>=0.67.0",
   "pydantic>=2.9.2",
 ]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pyright]
 pythonVersion = "3.12"

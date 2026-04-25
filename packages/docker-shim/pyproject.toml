@@ -3,6 +3,7 @@ name = "codebreaker-docker-shim"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
+  "codebreaker-shim-shared",
   "docker>=7.1.0",
   "fastapi>=0.115.0",
   "pydantic>=2.9.2",
