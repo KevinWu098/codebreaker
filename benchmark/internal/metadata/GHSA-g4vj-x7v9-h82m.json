@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g4vj-x7v9-h82m",
+  "post_patch_commit": "b525d5d318d9672a40250c1725fa1bb3156688b7",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit found via squash-merged PR #67 on paritytech/libsecp256k1. The patch renamed Signature::parse to parse_overflowing and added a new parse_standard function that validates R and S values against the curve order, returning an error on overflow. Only src/lib.rs was changed (plus test file tests/verify.rs). Locations derived directly from the patch diff: the vulnerable functions are Signature::parse (line 461) and Signature::parse_slice (line 472) in the pre-patch commit.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
