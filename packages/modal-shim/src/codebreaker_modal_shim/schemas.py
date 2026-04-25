@@ -1,11 +1,23 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+def _to_camel(name: str) -> str:
+    parts = name.split("_")
+    return parts[0] + "".join(p.capitalize() for p in parts[1:])
+
 
 SandboxProfileName = Literal["python", "node", "recon"]
 
 
 class SandboxProfile(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=_to_camel,
+        extra="ignore",
+        populate_by_name=True,
+    )
+
     name: SandboxProfileName
     image: str
     install_commands: list[str] = Field(default_factory=list)

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import modal
 from fastapi import Depends, FastAPI, Request
 
@@ -13,12 +15,19 @@ from codebreaker_modal_shim.schemas import (
     WriteRequest,
 )
 
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_PROFILES_JSON = (
+    _REPO_ROOT / "packages" / "shared" / "src" / "data" / "sandbox-profiles.json"
+)
+
 app = modal.App("codebreaker-modal-shim")
 image = modal.Image.debian_slim().apt_install("git").pip_install(
     "fastapi>=0.115.0",
     "pydantic>=2.9.2",
 ).add_local_python_source(
     "codebreaker_modal_shim",
+).add_local_file(
+    str(_PROFILES_JSON), remote_path="/app/sandbox-profiles.json",
 )
 
 
