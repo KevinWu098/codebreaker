@@ -3,6 +3,9 @@ import type {
   BenchmarkRunDetailResponse,
   CreateBenchmarkRunRequest,
   CreateBenchmarkRunResponse,
+  CreateCveFollowupRequest,
+  CveFollowupDetailResponse,
+  CveFollowupStageKind,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
 } from "@codebreaker/benchmark-runner/schemas";
@@ -181,6 +184,50 @@ export const api = {
       {
         method: "POST",
       }
+    ),
+
+  getCveFollowup: async (
+    runId: string
+  ): Promise<CveFollowupDetailResponse | null> => {
+    try {
+      return await request<CveFollowupDetailResponse>(
+        `/benchmark-runs/${encodeURIComponent(runId)}/followup`
+      );
+    } catch (error) {
+      if (error instanceof ApiClientError && error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  createCveFollowup: (
+    runId: string,
+    body: CreateCveFollowupRequest = { force: false }
+  ): Promise<CveFollowupDetailResponse> =>
+    request<CveFollowupDetailResponse>(
+      `/benchmark-runs/${encodeURIComponent(runId)}/followup`,
+      {
+        body: JSON.stringify(body),
+        method: "POST",
+      }
+    ),
+
+  cancelCveFollowup: (runId: string): Promise<CveFollowupDetailResponse> =>
+    request<CveFollowupDetailResponse>(
+      `/benchmark-runs/${encodeURIComponent(runId)}/followup/cancel`,
+      { method: "POST" }
+    ),
+
+  retryCveFollowupStage: (
+    runId: string,
+    kind: CveFollowupStageKind
+  ): Promise<CveFollowupDetailResponse> =>
+    request<CveFollowupDetailResponse>(
+      `/benchmark-runs/${encodeURIComponent(runId)}/followup/stages/${encodeURIComponent(
+        kind
+      )}/retry`,
+      { method: "POST" }
     ),
 
   getSession: (id: string): Promise<SessionDetailResponse> =>

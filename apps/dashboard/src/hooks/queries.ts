@@ -1,5 +1,6 @@
 import type {
   BenchmarkRunDetailResponse,
+  CveFollowupDetailResponse,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
 } from "@codebreaker/benchmark-runner/schemas";
@@ -72,6 +73,21 @@ export const useBenchmarkRunQuery = (
     queryFn: () => api.getBenchmarkRun(id),
     queryKey: qk.benchmarkRun(connection, id),
     refetchInterval: POLLING.benchmarks.runDetail,
+  });
+};
+
+export const useCveFollowupQuery = (
+  runId: string,
+  options?: { enabled?: boolean }
+): UseQueryResult<CveFollowupDetailResponse | null, Error> => {
+  const connection = useConnection();
+  const canFetch = options?.enabled ?? true;
+
+  return useQuery({
+    enabled: isAuthorized(connection) && canFetch,
+    queryFn: () => api.getCveFollowup(runId),
+    queryKey: qk.cveFollowup(connection, runId),
+    refetchInterval: POLLING.benchmarks.cveFollowup,
   });
 };
 

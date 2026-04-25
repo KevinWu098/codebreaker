@@ -25,7 +25,11 @@ import {
   createBuiltinTools,
 } from "@codebreaker/control-plane/tools/builtins";
 import type { Env } from "@codebreaker/control-plane/types";
-import { assertNever } from "@codebreaker/shared/lib/utils";
+import {
+  assertNever,
+  getBenchmarkRunIdFromSessionId,
+  isBenchmarkHarnessSession,
+} from "@codebreaker/shared/lib/utils";
 import {
   type BenchmarkArtifactState,
   BenchmarkArtifactStateSchema,
@@ -59,7 +63,6 @@ export interface SessionAgentState {
 
 const DEFAULT_SYSTEM_PROMPT =
   "You are Codebreaker, a background security and code workflow agent. Stay within the configured policy and explain tool limitations clearly.";
-const BENCHMARK_SESSION_PREFIX = "bench-";
 const FINALIZE_PROMPT = (reason: string) =>
   `Stop now. Do not call tools. Based only on the transcript and tool results so far, give your best final answer. If the original task required a specific output format, obey that format exactly. Stop reason: ${reason}`;
 
@@ -752,7 +755,9 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   private isBenchmarkSession(): boolean {
-    return this.state.sessionId?.startsWith(BENCHMARK_SESSION_PREFIX) ?? false;
+    return this.state.sessionId
+      ? isBenchmarkHarnessSession(this.state.sessionId)
+      : false;
   }
 
   private recordBenchmarkOutput(output: AgentOutput): void {
@@ -800,11 +805,9 @@ You are on the submission turn. You must call the tool \`${BENCHMARK_SUBMIT_TOOL
   }
 
   private getBenchmarkRunId(): string | null {
-    if (!this.state.sessionId?.startsWith(BENCHMARK_SESSION_PREFIX)) {
-      return null;
-    }
-
-    return this.state.sessionId.slice(BENCHMARK_SESSION_PREFIX.length) || null;
+    return this.state.sessionId
+      ? getBenchmarkRunIdFromSessionId(this.state.sessionId)
+      : null;
   }
 
   private async markBenchmarkRunFailed(message: string): Promise<void> {

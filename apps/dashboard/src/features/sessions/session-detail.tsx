@@ -1,5 +1,8 @@
 import { estimateTokenUsageCost } from "@codebreaker/shared/lib/models";
-import { truncateId } from "@codebreaker/shared/lib/utils";
+import {
+  getBenchmarkRunIdFromSessionId,
+  truncateId,
+} from "@codebreaker/shared/lib/utils";
 import type { SessionRow } from "@codebreaker/shared/schemas/api";
 import {
   Content as TabsContent,
@@ -30,7 +33,6 @@ import {
   useSessionQuery,
   useSessionStateQuery,
 } from "@/hooks/queries";
-import { getBenchmarkRunIdFromSessionId } from "@/lib/benchmark-session";
 import {
   formatNumber,
   formatRelativeTime,

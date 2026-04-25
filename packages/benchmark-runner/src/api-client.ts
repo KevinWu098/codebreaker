@@ -3,11 +3,13 @@ import type {
   BenchmarkRunDetailResponse,
   CreateBenchmarkRunRequest,
   CreateBenchmarkRunResponse,
+  CreateCveFollowupRequest,
+  CveFollowupDetailResponse,
+  CveFollowupStageKind,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
 } from "@codebreaker/benchmark-runner/schemas";
-
-const TRAILING_SLASH_REGEX = /\/$/;
+import { trimTrailingSlash } from "@codebreaker/shared/lib/utils";
 
 export interface BenchmarkApiClientOptions {
   baseUrl: string;
@@ -21,7 +23,7 @@ export class BenchmarkApiClient {
   private readonly token: string | undefined;
 
   constructor(options: BenchmarkApiClientOptions) {
-    this.baseUrl = options.baseUrl.replace(TRAILING_SLASH_REGEX, "");
+    this.baseUrl = trimTrailingSlash(options.baseUrl);
     this.fetchImpl = options.fetch ?? fetch;
     this.token = options.token;
   }
@@ -63,6 +65,42 @@ export class BenchmarkApiClient {
     return this.request(`/benchmark-runs/${encodeURIComponent(id)}/cleanup`, {
       method: "POST",
     });
+  }
+
+  getCveFollowup(runId: string): Promise<CveFollowupDetailResponse> {
+    return this.request(
+      `/benchmark-runs/${encodeURIComponent(runId)}/followup`
+    );
+  }
+
+  createCveFollowup(
+    runId: string,
+    body: CreateCveFollowupRequest = { force: false }
+  ): Promise<CveFollowupDetailResponse> {
+    return this.request(
+      `/benchmark-runs/${encodeURIComponent(runId)}/followup`,
+      {
+        body: JSON.stringify(body),
+        method: "POST",
+      }
+    );
+  }
+
+  cancelCveFollowup(runId: string): Promise<CveFollowupDetailResponse> {
+    return this.request(
+      `/benchmark-runs/${encodeURIComponent(runId)}/followup/cancel`,
+      { method: "POST" }
+    );
+  }
+
+  retryCveFollowupStage(
+    runId: string,
+    kind: CveFollowupStageKind
+  ): Promise<CveFollowupDetailResponse> {
+    return this.request(
+      `/benchmark-runs/${encodeURIComponent(runId)}/followup/stages/${encodeURIComponent(kind)}/retry`,
+      { method: "POST" }
+    );
   }
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {

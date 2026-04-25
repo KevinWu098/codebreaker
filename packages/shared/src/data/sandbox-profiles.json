@@ -46,5 +46,101 @@
     "provider": "modal",
     "timeoutSeconds": 600,
     "workdir": "/workspace"
+  },
+  "java": {
+    "cpu": 2,
+    "encryptedPorts": [],
+    "env": {},
+    "idleTimeoutSeconds": 300,
+    "image": "debian_slim",
+    "installCommands": [
+      "apt-get update",
+      "apt-get install -y openjdk-17-jdk-headless maven git ca-certificates"
+    ],
+    "memoryMb": 4096,
+    "name": "java",
+    "provider": "modal",
+    "timeoutSeconds": 600,
+    "workdir": "/workspace"
+  },
+  "java_stack": {
+    "cpu": 2,
+    "encryptedPorts": [],
+    "env": {},
+    "idleTimeoutSeconds": 300,
+    "image": "debian_slim",
+    "installCommands": [
+      "apt-get update",
+      "apt-get install -y openjdk-17-jdk-headless maven git ca-certificates build-essential curl"
+    ],
+    "memoryMb": 8192,
+    "name": "java_stack",
+    "provider": "modal",
+    "timeoutSeconds": 1200,
+    "workdir": "/workspace"
+  },
+  "go": {
+    "cpu": 2,
+    "encryptedPorts": [],
+    "env": {},
+    "idleTimeoutSeconds": 300,
+    "image": "debian_slim",
+    "installCommands": [
+      "apt-get update",
+      "apt-get install -y golang-go git ca-certificates"
+    ],
+    "memoryMb": 4096,
+    "name": "go",
+    "provider": "modal",
+    "timeoutSeconds": 600,
+    "workdir": "/workspace"
+  },
+  "rust": {
+    "cpu": 2,
+    "encryptedPorts": [],
+    "env": {},
+    "idleTimeoutSeconds": 300,
+    "image": "debian_slim",
+    "installCommands": [
+      "apt-get update",
+      "apt-get install -y cargo rustc build-essential git ca-certificates"
+    ],
+    "memoryMb": 4096,
+    "name": "rust",
+    "provider": "modal",
+    "timeoutSeconds": 600,
+    "workdir": "/workspace"
+  },
+  "ruby": {
+    "cpu": 2,
+    "encryptedPorts": [],
+    "env": {},
+    "idleTimeoutSeconds": 300,
+    "image": "debian_slim",
+    "installCommands": [
+      "apt-get update",
+      "apt-get install -y ruby-dev ruby-bundler build-essential git ca-certificates"
+    ],
+    "memoryMb": 4096,
+    "name": "ruby",
+    "provider": "modal",
+    "timeoutSeconds": 600,
+    "workdir": "/workspace"
+  },
+  "fullstack": {
+    "cpu": 2,
+    "encryptedPorts": [],
+    "env": {},
+    "idleTimeoutSeconds": 300,
+    "image": "debian_slim",
+    "installCommands": [
+      "apt-get update",
+      "apt-get install -y build-essential curl git ca-certificates default-jre-headless nodejs python3"
+    ],
+    "memoryMb": 8192,
+    "name": "fullstack",
+    "provider": "modal",
+    "timeoutSeconds": 1200,
+    "workdir": "/workspace"
   }
 }

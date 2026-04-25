@@ -82,6 +82,15 @@ export const createDeepWikiTools = (): TieredToolSet => ({
   },
 });
 
+export const askDeepWikiQuestion = async (input: {
+  question: string;
+  repoName: string | string[];
+}): Promise<{ result: string; truncated: boolean }> =>
+  callDeepWikiTool("ask_question", {
+    question: input.question,
+    repoName: input.repoName,
+  });
+
 const callDeepWikiTool = async (
   name: DeepWikiToolName,
   arguments_: Record<string, unknown>

@@ -8,6 +8,9 @@ export interface Env {
   CLOUDFLARE_AI_GATEWAY_ID?: string;
   CLOUDFLARE_AI_GATEWAY_TOKEN?: string;
   DB: D1Database;
+  DEVIN_API_KEY?: string;
+  DEVIN_ORG_ID?: string;
+  DEVIN_USER_ID?: string;
   GEMINI_BASE_URL?: string;
   GIT_TREE_PROVIDER?: "github" | "cloudflare-artifacts";
   GITHUB_API_BASE_URL?: string;

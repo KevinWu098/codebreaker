@@ -1,11 +1,15 @@
 import {
   type CreateBenchmarkRunRequest,
   CreateBenchmarkRunRequestSchema,
+  CreateCveFollowupRequestSchema,
+  CveFollowupStageKindSchema,
 } from "@codebreaker/benchmark-runner/schemas";
 import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
 import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/dataset";
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
+import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
+import { CveFollowupStore } from "@codebreaker/control-plane/db/cve-followups";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { withDORetry } from "@codebreaker/control-plane/do/retry";
 import { jwtAuth } from "@codebreaker/control-plane/http/auth";
@@ -42,6 +46,11 @@ const SessionParamsSchema = z.object({
 
 const BenchmarkRunParamsSchema = z.object({
   id: z.string().min(1),
+});
+
+const FollowupStageRetryParamsSchema = z.object({
+  id: z.string().min(1),
+  kind: CveFollowupStageKindSchema,
 });
 
 interface RouterVariables {
@@ -91,6 +100,20 @@ export const createRouter = (): Hono<{
   app.use("/benchmark-runs", jwtAuth);
   app.use("/benchmark-runs/*", jwtAuth);
   app.use("/admin/*", jwtAuth);
+
+  const cveFollowupDetail = async (env: Env, runId: string) => {
+    const cve = new CveFollowupStore(env.DB);
+    const f = await cve.getByRunId(runId);
+    if (!f) {
+      return null;
+    }
+    return {
+      events: await cve.listEvents(f.id),
+      followup: f,
+      stages: await cve.listStages(f.id),
+      validations: await cve.listValidationsForFollowup(f.id),
+    };
+  };
 
   app.get(
     "/sessions",
@@ -256,6 +279,125 @@ export const createRouter = (): Hono<{
       const run = await new BenchmarkRunOrchestrator(context.env).cleanup(id);
 
       return context.json({ run });
+    }
+  );
+
+  app.get(
+    "/benchmark-runs/:id/followup",
+    zValidator("param", BenchmarkRunParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const detail = await cveFollowupDetail(context.env, id);
+      if (!detail) {
+        return jsonError(
+          "No CVE follow-up for this run",
+          "cve_followup_not_found",
+          404
+        );
+      }
+      return context.json(detail);
+    }
+  );
+
+  app.post(
+    "/benchmark-runs/:id/followup",
+    zValidator("param", BenchmarkRunParamsSchema),
+    zValidator("json", CreateCveFollowupRequestSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const body = context.req.valid("json");
+      const outcome = await new CveFollowupOrchestrator(
+        context.env
+      ).createManualFollowupIfAbsent(id, { force: body.force });
+      if (outcome === "devin_unconfigured") {
+        return jsonError(
+          "Set DEVIN_API_KEY, DEVIN_ORG_ID, and DEVIN_USER_ID on the worker (e.g. packages/control-plane/.dev.vars) and restart wrangler dev.",
+          "devin_not_configured",
+          503
+        );
+      }
+      if (outcome === "run_ineligible") {
+        return jsonError(
+          "Benchmark run must exist and be completed before starting a CVE follow-up.",
+          "cve_followup_run_ineligible",
+          400
+        );
+      }
+      if (outcome === "no_agent_output") {
+        return jsonError(
+          "No scored agent output for this run; wait for the benchmark to finish scoring or fix result persistence.",
+          "cve_followup_no_agent_output",
+          400
+        );
+      }
+      const detail = await cveFollowupDetail(context.env, id);
+      if (!detail) {
+        return jsonError(
+          "Could not create follow-up",
+          "cve_followup_not_created",
+          400
+        );
+      }
+      context.executionCtx.waitUntil(
+        new CveFollowupOrchestrator(context.env)
+          .reconcileActiveFollowups()
+          .then(() => undefined)
+      );
+      return context.json(detail, outcome === "created" ? 201 : 200);
+    }
+  );
+
+  app.post(
+    "/benchmark-runs/:id/followup/stages/:kind/retry",
+    zValidator("param", FollowupStageRetryParamsSchema),
+    async (context) => {
+      const { id, kind } = context.req.valid("param");
+      try {
+        await new CveFollowupOrchestrator(context.env).retryStage(id, kind);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "retry failed";
+        if (message === "Devin is not configured") {
+          return jsonError(message, "devin_not_configured", 503);
+        }
+        if (message === "No CVE follow-up for this run") {
+          return jsonError(message, "cve_followup_not_found", 404);
+        }
+        return jsonError(message, "cve_followup_retry_failed", 400);
+      }
+      const detail = await cveFollowupDetail(context.env, id);
+      if (!detail) {
+        return jsonError(
+          "No CVE follow-up for this run",
+          "cve_followup_not_found",
+          404
+        );
+      }
+      context.executionCtx.waitUntil(
+        new CveFollowupOrchestrator(context.env)
+          .reconcileActiveFollowups()
+          .then(() => undefined)
+      );
+      return context.json(detail);
+    }
+  );
+
+  app.post(
+    "/benchmark-runs/:id/followup/cancel",
+    zValidator("param", BenchmarkRunParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const cve = new CveFollowupStore(context.env.DB);
+      const f = await cve.getByRunId(id);
+      if (!f) {
+        return jsonError(
+          "No CVE follow-up for this run",
+          "cve_followup_not_found",
+          404
+        );
+      }
+      await new CveFollowupOrchestrator(context.env).cancel(f.id);
+      const detail = await cveFollowupDetail(context.env, id);
+      return context.json(detail);
     }
   );
 

@@ -1,4 +1,8 @@
-import { truncateId } from "@codebreaker/shared/lib/utils";
+import {
+  getBenchmarkRunIdFromSessionId,
+  isBenchmarkHarnessSession,
+  truncateId,
+} from "@codebreaker/shared/lib/utils";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
@@ -10,10 +14,6 @@ import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
 import { useSessionsQuery } from "@/hooks/queries";
-import {
-  getBenchmarkRunIdFromSessionId,
-  isBenchmarkHarnessSession,
-} from "@/lib/benchmark-session";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import { formatNumber, formatRelativeTime, formatRepo } from "@/lib/format";
 

@@ -8,7 +8,17 @@ def _to_camel(name: str) -> str:
     return parts[0] + "".join(part.capitalize() for part in parts[1:])
 
 
-SandboxProfileName = Literal["python", "node", "recon"]
+SandboxProfileName = Literal[
+    "python",
+    "node",
+    "recon",
+    "java",
+    "java_stack",
+    "go",
+    "rust",
+    "ruby",
+    "fullstack",
+]
 
 
 class SandboxProfile(BaseModel):

@@ -3,6 +3,9 @@ import type {
   BenchmarkRunDetailResponse,
   CreateBenchmarkRunRequest,
   CreateBenchmarkRunResponse,
+  CreateCveFollowupRequest,
+  CveFollowupDetailResponse,
+  CveFollowupStageKind,
   ListBenchmarkRunsResponse,
 } from "@codebreaker/benchmark-runner/schemas";
 import type {
@@ -158,6 +161,74 @@ export const useStartBenchmarkRunMutation = (runId: string) => {
     onSuccess: () => {
       toast.success(`benchmark ${runId.slice(0, 8)}… started`);
       queryClient.invalidateQueries({ queryKey: qk.benchmarkRuns(connection) });
+      queryClient.invalidateQueries({
+        queryKey: qk.benchmarkRun(connection, runId),
+      });
+    },
+  });
+};
+
+export const useCreateCveFollowupMutation = (runId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    CveFollowupDetailResponse,
+    Error,
+    CreateCveFollowupRequest | undefined
+  >({
+    mutationFn: (body) =>
+      api.createCveFollowup(runId, body ?? { force: false }),
+    onError: (error) => {
+      toast.error(messageFor(error, "CVE follow-up failed"));
+    },
+    onSuccess: () => {
+      toast.success("CVE follow-up created");
+      queryClient.invalidateQueries({
+        queryKey: qk.cveFollowup(connection, runId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.benchmarkRun(connection, runId),
+      });
+    },
+  });
+};
+
+export const useCancelCveFollowupMutation = (runId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<CveFollowupDetailResponse, Error, void>({
+    mutationFn: () => api.cancelCveFollowup(runId),
+    onError: (error) => {
+      toast.error(messageFor(error, "CVE follow-up cancel failed"));
+    },
+    onSuccess: () => {
+      toast.success("CVE follow-up cancelled");
+      queryClient.invalidateQueries({
+        queryKey: qk.cveFollowup(connection, runId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.benchmarkRun(connection, runId),
+      });
+    },
+  });
+};
+
+export const useRetryCveFollowupStageMutation = (runId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<CveFollowupDetailResponse, Error, CveFollowupStageKind>({
+    mutationFn: (kind) => api.retryCveFollowupStage(runId, kind),
+    onError: (error) => {
+      toast.error(messageFor(error, "stage retry failed"));
+    },
+    onSuccess: () => {
+      toast.success("stage queued for retry");
+      queryClient.invalidateQueries({
+        queryKey: qk.cveFollowup(connection, runId),
+      });
       queryClient.invalidateQueries({
         queryKey: qk.benchmarkRun(connection, runId),
       });
