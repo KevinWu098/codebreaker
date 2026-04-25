@@ -21,6 +21,7 @@ import type {
   BenchmarkArtifactState,
   BenchmarkConfig,
 } from "@codebreaker/shared/schemas/artifacts";
+import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 import { getAgentByName } from "agents";
 
 export class BenchmarkRunOrchestrator {
@@ -60,7 +61,7 @@ export class BenchmarkRunOrchestrator {
       provider: run.modelProvider,
     };
     const maxTurns = request?.maxTurns ?? 20;
-    const timeoutSeconds = request?.timeoutSeconds ?? 1800;
+    const timeoutSeconds = request?.timeoutSeconds ?? 900;
 
     await this.runs.update({ id: runId, status: "running" });
 
@@ -121,6 +122,9 @@ export class BenchmarkRunOrchestrator {
         ref: record.task.codebase.commit,
         runId,
         sessionId,
+        ...(sessionConfig.sandbox?.profile
+          ? { profile: sessionConfig.sandbox.profile }
+          : {}),
       });
 
       await agent.requestFollowUp(
@@ -310,6 +314,7 @@ export class BenchmarkRunOrchestrator {
 
   private async checkoutArtifact(input: {
     artifact: BenchmarkArtifactState;
+    profile?: SandboxProfileName;
     ref: string;
     runId: string;
     sessionId: string;
@@ -330,14 +335,18 @@ export class BenchmarkRunOrchestrator {
       },
       scope: "read",
     });
-    const checkout = await ModalExecutor.fromEnv(this.env).checkoutGitRepo({
+    const checkoutOptions = {
       branch: input.artifact.workingBranch,
       credential,
       path: `/workspace/${input.artifact.runRepoName}`,
       ref: input.ref,
       remoteUrl: input.artifact.runRepoRemote,
       sessionId: input.sessionId,
-    });
+      ...(input.profile ? { profile: input.profile } : {}),
+    };
+    const checkout = await ModalExecutor.fromEnv(this.env).checkoutGitRepo(
+      checkoutOptions
+    );
 
     await this.runs.addEvent({
       details: checkout,

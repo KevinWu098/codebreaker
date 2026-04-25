@@ -90,7 +90,7 @@ export const BenchmarksPanel = ({
           provider: selectedModel.provider,
         },
         taskId: selectedTaskId,
-        timeoutSeconds: 1800,
+        timeoutSeconds: 900,
       },
       {
         onSuccess: (response) => selectRun(response.run.id),

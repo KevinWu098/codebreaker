@@ -13,8 +13,10 @@ import {
 } from "@codebreaker/control-plane/tools/tiers";
 import type { Env } from "@codebreaker/control-plane/types";
 import type { ExtensionPolicy } from "@codebreaker/shared/schemas/primitives";
+import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 
 export interface BuiltinToolOptions {
+  defaultSandboxProfile?: SandboxProfileName;
   env: Env;
   policy: ExtensionPolicy;
   sessionId: string;
@@ -38,6 +40,7 @@ const SESSION_TOOL_TIERS = {
 } as const;
 
 export const createBuiltinTools = ({
+  defaultSandboxProfile,
   env,
   policy,
   sessionId,
@@ -47,6 +50,7 @@ export const createBuiltinTools = ({
   const modalTools = createModalTools({
     executor: ModalExecutor.fromEnv(env),
     sessionId,
+    ...(defaultSandboxProfile ? { defaultProfile: defaultSandboxProfile } : {}),
   });
   const executeTools = createExecuteTools(env, workspace);
   const allTools = mergeTieredToolSets(httpTools, modalTools, executeTools);

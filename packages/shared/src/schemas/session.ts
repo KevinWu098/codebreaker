@@ -38,7 +38,7 @@ export const defaultCompactionConfig = {
 
 export const defaultSessionRuntimeConfig = {
   maxInputTokens: null,
-  maxSteps: 50,
+  maxSteps: 40,
   maxToolCalls: null,
   maxTotalTokens: null,
   maxTurns: 200,

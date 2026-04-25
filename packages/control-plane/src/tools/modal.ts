@@ -7,34 +7,33 @@ import {
   ToolTier,
 } from "@codebreaker/control-plane/tools/tiers";
 import { base64ToBytes, bytesToBase64 } from "@codebreaker/shared/lib/base64";
-import { SandboxProfileNameSchema } from "@codebreaker/shared/schemas/sandbox";
+import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 import { tool } from "ai";
 import { z } from "zod";
 
 const ExecRemoteInputSchema = z.object({
   command: z.string().min(1),
   cwd: z.string().min(1).optional(),
-  profile: SandboxProfileNameSchema.optional(),
   timeoutSeconds: z.number().int().positive().optional(),
 });
 
 const RemoteReadInputSchema = z.object({
   path: z.string().min(1),
-  profile: SandboxProfileNameSchema.optional(),
 });
 
 const RemoteWriteInputSchema = z.object({
   contentBase64: z.string().min(1),
   path: z.string().min(1),
-  profile: SandboxProfileNameSchema.optional(),
 });
 
 export interface ModalToolOptions {
+  defaultProfile?: SandboxProfileName;
   executor: ModalExecutor;
   sessionId: string;
 }
 
 export const createModalTools = ({
+  defaultProfile,
   executor,
   sessionId,
 }: ModalToolOptions): TieredToolSet => ({
@@ -46,20 +45,20 @@ export const createModalTools = ({
   tools: {
     exec_remote: tool({
       description:
-        "Run a command in the session's remote Modal sandbox. Requires sandbox policy.",
+        "Run a command in the session's configured remote Modal sandbox. Requires sandbox policy.",
       inputSchema: ExecRemoteInputSchema,
-      execute: ({ command, cwd, profile, timeoutSeconds }) => {
+      execute: ({ command, cwd, timeoutSeconds }) => {
         const options: ExecRemoteOptions = {
           command,
           sessionId,
         };
 
-        if (cwd) {
-          options.cwd = cwd;
+        if (defaultProfile) {
+          options.profile = defaultProfile;
         }
 
-        if (profile) {
-          options.profile = profile;
+        if (cwd) {
+          options.cwd = cwd;
         }
 
         if (timeoutSeconds) {
@@ -71,16 +70,20 @@ export const createModalTools = ({
     }),
     remote_read: tool({
       description:
-        "Read a file from the session's remote Modal sandbox and return base64 content.",
+        "Read a file from the session's configured remote Modal sandbox and return base64 content.",
       inputSchema: RemoteReadInputSchema,
-      execute: async ({ path, profile }) => {
-        const input = {
+      execute: async ({ path }) => {
+        const input: {
+          path: string;
+          profile?: SandboxProfileName;
+          sessionId: string;
+        } = {
           path,
           sessionId,
         };
 
-        if (profile) {
-          Object.assign(input, { profile });
+        if (defaultProfile) {
+          input.profile = defaultProfile;
         }
 
         const content = await executor.readFile(input);
@@ -93,17 +96,22 @@ export const createModalTools = ({
     }),
     remote_write: tool({
       description:
-        "Write base64 content to a file in the session's remote Modal sandbox.",
+        "Write base64 content to a file in the session's configured remote Modal sandbox.",
       inputSchema: RemoteWriteInputSchema,
-      execute: ({ contentBase64, path, profile }) => {
-        const input = {
+      execute: ({ contentBase64, path }) => {
+        const input: {
+          content: Uint8Array;
+          path: string;
+          profile?: SandboxProfileName;
+          sessionId: string;
+        } = {
           content: base64ToBytes(contentBase64),
           path,
           sessionId,
         };
 
-        if (profile) {
-          Object.assign(input, { profile });
+        if (defaultProfile) {
+          input.profile = defaultProfile;
         }
 
         return executor.writeFile(input);

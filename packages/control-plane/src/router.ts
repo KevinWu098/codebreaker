@@ -202,7 +202,7 @@ export const createRouter = (): Hono<{
           provider: run.modelProvider,
         },
         taskId: run.taskId,
-        timeoutSeconds: 1800,
+        timeoutSeconds: 900,
       };
       context.executionCtx.waitUntil(
         new BenchmarkRunOrchestrator(context.env)
