@@ -51,6 +51,7 @@ export type SessionSandboxConfig = z.infer<typeof SessionSandboxConfigSchema>;
 export const SessionConfigSchema = z.object({
   compaction: CompactionConfigSchema.default(defaultCompactionConfig),
   extensionPolicy: ExtensionPolicySchema.default("readonly"),
+  maxSteps: z.number().int().positive().default(10),
   maxTurns: z.number().int().positive().default(25),
   model: ModelConfigSchema,
   repo: RepoConfigSchema.optional(),

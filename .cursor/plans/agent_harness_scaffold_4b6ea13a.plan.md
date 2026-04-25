@@ -141,7 +141,8 @@ Implement additive tool tiers:
 - Map `readonly`, `workspace`, `local`, `network`, `sandbox`, and `unrestricted` policies to max tiers.
 - Materialize only allowed tools before passing them to Think so the model never sees disallowed tools.
 - Keep the first pass minimal: implement only one representative custom tool, `http_fetch`, behind the `NETWORK` tier.
-- Reserve `EXEC_LOCAL` for later Think execute/codemode integration and `EXEC_REMOTE` for later Modal/recon wrappers.
+- Expose Think `execute` behind `EXEC_LOCAL` for local Worker/codemode workspace operations.
+- Expose Modal sandbox tools behind `EXEC_REMOTE`: `exec_remote`, `remote_read`, and `remote_write`.
 - Keep exploit-tier tools reserved until explicit policy and audit logging exist.
 
 Core files:
@@ -149,6 +150,8 @@ Core files:
 - `src/tools/tiers.ts`
 - `src/tools/builtins.ts`
 - `src/tools/http.ts`
+- `src/tools/modal.ts`
+- `src/sandbox/modal.ts`
 
 ## Phase 5: Modal Shim
 

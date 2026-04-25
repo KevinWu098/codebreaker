@@ -2,6 +2,8 @@ import {
   type ChatRecoveryContext,
   type ChatRecoveryOptions,
   type ChatResponseResult,
+  type MessageConcurrency,
+  type SaveMessagesResult,
   type Session,
   type StepContext,
   Think,
@@ -25,7 +27,6 @@ import { createCompactFunction } from "agents/experimental/memory/utils";
 import { generateText, type ToolSet } from "ai";
 
 export interface SessionAgentState {
-  config?: SessionConfig;
   sessionId?: string;
   status: SessionStatus;
 }
@@ -37,6 +38,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   initialState: SessionAgentState = {
     status: "pending",
   };
+  override messageConcurrency: MessageConcurrency = "queue";
 
   override async onStart(props?: Record<string, unknown>): Promise<void> {
     const propsConfig = this.readPropsConfig(props);
@@ -51,9 +53,8 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const config = this.readConfig();
 
     if (config) {
-      this.maxSteps = Math.max(1, config.maxTurns);
+      this.maxSteps = config.maxSteps;
       const nextState: SessionAgentState = {
-        config,
         status: this.state.status,
       };
       const sessionId = this.state.sessionId ?? propsSessionId;
@@ -87,6 +88,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       env: this.env,
       policy: config.extensionPolicy,
       sessionId: this.sessionId,
+      workspace: this.workspace,
     }).tools;
   }
 
@@ -111,6 +113,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     return configuredSession
       .onCompaction(
         createCompactFunction({
+          tailTokenBudget: this.compactionTailTokenBudget(config),
           minTailMessages: config.compaction.preserveRecentMessages,
           summarize: async (prompt) => {
             const result = await generateText({
@@ -235,8 +238,8 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const config = SessionConfigSchema.parse(configInput);
 
     this.configure<SessionConfig>(config);
-    this.maxSteps = Math.max(1, config.maxTurns);
-    this.setState({ config, sessionId, status: "idle" });
+    this.maxSteps = config.maxSteps;
+    this.setState({ sessionId, status: "idle" });
 
     return this.state;
   }
@@ -257,6 +260,24 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   @callable()
   inspectState(): SessionAgentState {
     return this.state;
+  }
+
+  @callable()
+  requestFollowUp(content: string): Promise<SaveMessagesResult> {
+    return this.saveMessages([
+      {
+        id: crypto.randomUUID(),
+        parts: [{ text: content, type: "text" }],
+        role: "user",
+      },
+    ]);
+  }
+
+  @callable()
+  continuePreviousTurn(
+    body?: Record<string, unknown>
+  ): Promise<SaveMessagesResult> {
+    return this.continueLastTurn(body);
   }
 
   private requireConfig(): SessionConfig {
@@ -303,6 +324,13 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
   private get sessionIndex(): SessionIndexStore {
     return new SessionIndexStore(this.env.DB);
+  }
+
+  private compactionTailTokenBudget(config: SessionConfig): number {
+    return Math.max(
+      2000,
+      config.compaction.maxContextTokens - config.compaction.summarizeAtTokens
+    );
   }
 
   private toSessionStatus(status: ChatResponseResult["status"]): SessionStatus {
