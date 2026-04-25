@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-export const GitTreeProviderSchema = z.enum([
-  "forgejo",
-  "cloudflare-artifacts",
-]);
+export const GitTreeProviderSchema = z.enum(["github", "cloudflare-artifacts"]);
 export type GitTreeProvider = z.infer<typeof GitTreeProviderSchema>;
 
 export const ArtifactRepoKindSchema = z.enum(["stable_target", "per_run"]);

@@ -1,4 +1,5 @@
 import type { BenchmarkRunRow } from "@codebreaker/benchmark-runner/schemas";
+import type { ModelProvider } from "@codebreaker/shared/lib/models";
 import { Play, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
@@ -70,7 +71,7 @@ export const BenchmarksPanel = (): React.JSX.Element => {
         maxTurns: 20,
         model: {
           id,
-          provider: provider as "anthropic" | "openai",
+          provider: provider as ModelProvider,
         },
         taskId: selectedTaskId,
         timeoutSeconds: 1800,

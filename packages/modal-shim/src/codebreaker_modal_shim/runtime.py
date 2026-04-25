@@ -122,9 +122,13 @@ class ModalSandboxManager:
         )
         SANDBOXES[session_id] = metadata.model_dump(mode="json")
 
+        # New sandboxes have no /workspace yet. Modal needs an existing workdir
+        # before the process starts, so bootstrap mkdir from a path that always
+        # exists in the image (see checkout_git_repo -> exec with default cwd).
         self.exec(
             ExecRequest(
                 command=f"mkdir -p {shell_quote(profile.workdir)}",
+                cwd="/",
                 profile=profile.name,
                 session_id=session_id,
             )

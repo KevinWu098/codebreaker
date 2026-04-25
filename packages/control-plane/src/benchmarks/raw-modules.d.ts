@@ -1,4 +1,4 @@
-declare module "*.jsonl?raw" {
+declare module "*.jsonl" {
   const contents: string;
   export default contents;
 }

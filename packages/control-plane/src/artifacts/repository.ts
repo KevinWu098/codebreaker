@@ -1,4 +1,4 @@
-import { ForgejoGitTreeStore } from "@codebreaker/control-plane/artifacts/forgejo";
+import { GitHubGitTreeStore } from "@codebreaker/control-plane/artifacts/github";
 import type { Env } from "@codebreaker/control-plane/types";
 import type {
   ArtifactCredentialScope,
@@ -54,11 +54,11 @@ export interface GitTreeStore {
 }
 
 export const createGitTreeStore = (env: Env): GitTreeStore => {
-  const provider = env.GIT_TREE_PROVIDER ?? "forgejo";
+  const provider = env.GIT_TREE_PROVIDER ?? "github";
 
   switch (provider) {
-    case "forgejo":
-      return ForgejoGitTreeStore.fromEnv(env);
+    case "github":
+      return GitHubGitTreeStore.fromEnv(env);
     default:
       throw new Error(`Unsupported git tree provider: ${provider}`);
   }

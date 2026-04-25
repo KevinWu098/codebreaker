@@ -1,4 +1,7 @@
-import { DEFAULT_MODEL_IDS } from "@codebreaker/shared/lib/models";
+import {
+  DEFAULT_MODEL_IDS,
+  MODEL_OPTIONS_BY_PROVIDER,
+} from "@codebreaker/shared/lib/models";
 import {
   ExtensionPolicySchema,
   ModelProviderSchema,
@@ -38,16 +41,30 @@ const ProfileChoiceSchema = z.union([
   z.literal("none"),
 ]);
 
-const FormSchema = z.object({
-  extensionPolicy: ExtensionPolicySchema,
-  maxSteps: z.number().int().positive(),
-  maxTurns: z.number().int().positive(),
-  modelId: z.string().trim().min(1, "model id is required"),
-  profile: ProfileChoiceSchema,
-  provider: ModelProviderSchema,
-  systemPrompt: z.string(),
-  title: z.string(),
-});
+const FormSchema = z
+  .object({
+    extensionPolicy: ExtensionPolicySchema,
+    maxSteps: z.number().int().positive(),
+    maxTurns: z.number().int().positive(),
+    modelId: z.string().min(1, "model is required"),
+    profile: ProfileChoiceSchema,
+    provider: ModelProviderSchema,
+    systemPrompt: z.string(),
+    title: z.string(),
+  })
+  .superRefine((values, context) => {
+    const modelIsDefined = MODEL_OPTIONS_BY_PROVIDER[values.provider].some(
+      (option) => option.id === values.modelId
+    );
+
+    if (!modelIsDefined) {
+      context.addIssue({
+        code: "custom",
+        message: "select a documented model for this provider",
+        path: ["modelId"],
+      });
+    }
+  });
 
 type FormValues = z.infer<typeof FormSchema>;
 
@@ -113,6 +130,7 @@ export const CreateSessionDialog = ({
   });
 
   const provider = watch("provider");
+  const providerModels = MODEL_OPTIONS_BY_PROVIDER[provider];
 
   const onSubmit = handleSubmit((values) => {
     mutation.mutate(
@@ -188,9 +206,11 @@ export const CreateSessionDialog = ({
                     onChange: (event) => {
                       const next = event.target
                         .value as ModelConfig["provider"];
-                      setValue("modelId", DEFAULT_MODEL_IDS[next], {
-                        shouldDirty: true,
-                      });
+                      const nextModel =
+                        MODEL_OPTIONS_BY_PROVIDER[next][0]?.id ??
+                        DEFAULT_MODEL_IDS[next];
+
+                      setValue("modelId", nextModel, { shouldDirty: true });
                     },
                   })}
                 >
@@ -207,12 +227,22 @@ export const CreateSessionDialog = ({
                 id={modelId}
                 label="model id"
               >
-                <input
+                <select
                   className="input font-mono"
                   id={modelId}
                   key={provider}
                   {...register("modelId")}
-                />
+                >
+                  {providerModels.map((option) => (
+                    <option
+                      key={option.id}
+                      title={`Documented at ${option.documentationUrl}`}
+                      value={option.id}
+                    >
+                      {option.label} ({option.id})
+                    </option>
+                  ))}
+                </select>
               </FormField>
             </div>
 
