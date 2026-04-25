@@ -3,6 +3,7 @@ import type {
   AdminShimSandboxesResponse,
   ListSessionsQuery,
   ListSessionsResponse,
+  SessionArtifactResponse,
   SessionConfigResponse,
   SessionDetailResponse,
   SessionMessagesResponse,
@@ -88,6 +89,19 @@ export const useSandboxQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.getSandbox(id),
     queryKey: qk.session.sandbox(connection, id),
+    refetchInterval: 5000,
+  });
+};
+
+export const useSessionArtifactsQuery = (
+  id: string
+): UseQueryResult<SessionArtifactResponse, Error> => {
+  const connection = useConnection();
+
+  return useQuery({
+    enabled: isAuthorized(connection.token),
+    queryFn: () => api.getArtifacts(id),
+    queryKey: qk.session.artifacts(connection, id),
     refetchInterval: 5000,
   });
 };

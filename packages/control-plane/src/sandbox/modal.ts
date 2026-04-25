@@ -31,6 +31,15 @@ interface ShimWriteResponse {
   path: string;
 }
 
+interface ShimGitCheckoutResponse {
+  commit_sha?: string;
+  repo_path: string;
+}
+
+interface ShimGitCommitResponse extends ShimGitCheckoutResponse {
+  pushed: boolean;
+}
+
 export interface ModalExecutorOptions {
   secret: string;
   url: string;
@@ -42,6 +51,32 @@ export interface ExecRemoteOptions {
   profile?: SandboxProfileName | undefined;
   sessionId: string;
   timeoutSeconds?: number | undefined;
+}
+
+export interface GitCredentialOptions {
+  password: string;
+  type: "basic" | "token-header";
+  username: string;
+}
+
+export interface GitCheckoutOptions {
+  branch: string;
+  credential: GitCredentialOptions;
+  path?: string | undefined;
+  profile?: SandboxProfileName | undefined;
+  remoteUrl: string;
+  sessionId: string;
+}
+
+export interface GitCommitOptions {
+  branch: string;
+  credential: GitCredentialOptions;
+  message: string;
+  path: string;
+  paths: string[];
+  profile?: SandboxProfileName | undefined;
+  remoteUrl: string;
+  sessionId: string;
 }
 
 export interface SandboxMetadata {
@@ -127,6 +162,48 @@ export class ModalExecutor {
     });
   }
 
+  async checkoutGitRepo(options: GitCheckoutOptions): Promise<{
+    commitSha?: string;
+    repoPath: string;
+  }> {
+    const result = await this.request<ShimGitCheckoutResponse>(
+      "POST",
+      "/git/checkout",
+      {
+        body: toShimGitCheckoutRequest(options),
+        idempotencyKey: crypto.randomUUID(),
+      }
+    );
+    const checkout = {
+      repoPath: result.repo_path,
+      ...(result.commit_sha ? { commitSha: result.commit_sha } : {}),
+    };
+
+    return checkout;
+  }
+
+  async commitGitRepo(options: GitCommitOptions): Promise<{
+    commitSha?: string;
+    pushed: boolean;
+    repoPath: string;
+  }> {
+    const result = await this.request<ShimGitCommitResponse>(
+      "POST",
+      "/git/commit",
+      {
+        body: toShimGitCommitRequest(options),
+        idempotencyKey: crypto.randomUUID(),
+      }
+    );
+    const commit = {
+      pushed: result.pushed,
+      repoPath: result.repo_path,
+      ...(result.commit_sha ? { commitSha: result.commit_sha } : {}),
+    };
+
+    return commit;
+  }
+
   async terminate(sessionId: string): Promise<void> {
     await this.request("POST", "/terminate", {
       body: {
@@ -204,6 +281,26 @@ const toShimExecRequest = (options: ExecRemoteOptions) => ({
   profile: options.profile,
   session_id: options.sessionId,
   timeout_seconds: options.timeoutSeconds,
+});
+
+const toShimGitCheckoutRequest = (options: GitCheckoutOptions) => ({
+  branch: options.branch,
+  credential: options.credential,
+  path: options.path,
+  profile: options.profile,
+  remote_url: options.remoteUrl,
+  session_id: options.sessionId,
+});
+
+const toShimGitCommitRequest = (options: GitCommitOptions) => ({
+  branch: options.branch,
+  credential: options.credential,
+  message: options.message,
+  path: options.path,
+  paths: options.paths,
+  profile: options.profile,
+  remote_url: options.remoteUrl,
+  session_id: options.sessionId,
 });
 
 const fromShimExecResult = (result: ShimExecResult): ExecResult =>

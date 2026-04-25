@@ -1,3 +1,4 @@
+import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { jwtAuth } from "@codebreaker/control-plane/http/auth";
 import { parseAllowedOrigins } from "@codebreaker/control-plane/http/cors";
@@ -8,10 +9,18 @@ import {
 } from "@codebreaker/control-plane/sandbox/modal";
 import type { Env } from "@codebreaker/control-plane/types";
 import {
+  ArtifactCheckoutRequestSchema,
+  ArtifactCommitRequestSchema,
   CreateSessionRequestSchema,
   InspectExecRequestSchema,
   ListSessionsQuerySchema,
+  UpdateArtifactStateRequestSchema,
 } from "@codebreaker/shared/schemas/api";
+import type {
+  BenchmarkArtifactState,
+  BenchmarkConfig,
+} from "@codebreaker/shared/schemas/artifacts";
+import { BenchmarkArtifactStateSchema } from "@codebreaker/shared/schemas/artifacts";
 import { zValidator } from "@hono/zod-validator";
 import { getAgentByName } from "agents";
 import { Hono } from "hono";
@@ -34,7 +43,7 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
 
     return cors({
       allowHeaders: ["Content-Type", "Authorization"],
-      allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PATCH", "DELETE", "HEAD", "OPTIONS"],
       credentials: true,
       maxAge: 86_400,
       origin: (origin) => {
@@ -79,14 +88,29 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
       const request = context.req.valid("json");
       const id = request.id ?? crypto.randomUUID();
       const store = new SessionIndexStore(context.env.DB);
-      const session = await store.upsert({
+      const artifact = request.config.benchmark
+        ? await provisionArtifactState({
+            benchmark: request.config.benchmark,
+            env: context.env,
+            sessionId: id,
+          })
+        : undefined;
+      let session = await store.upsert({
         config: request.config,
         id,
         status: "pending",
       });
       const agent = await getAgentByName(context.env.SESSION_AGENT, id);
 
-      await agent.init(id, request.config);
+      await agent.init(id, request.config, artifact);
+      if (artifact) {
+        await store.setArtifactState({
+          artifact,
+          eventId: `artifact:init:${id}`,
+          id,
+        });
+        session = (await store.get(id)) ?? session;
+      }
       await store.setStatus({
         eventId: `init:${id}`,
         id,
@@ -216,6 +240,139 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     }
   );
 
+  app.get(
+    "/sessions/:id/artifacts",
+    zValidator("param", SessionParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const state = await agent.inspectState();
+
+      return context.json({
+        artifact: state.artifact ?? null,
+      });
+    }
+  );
+
+  app.patch(
+    "/sessions/:id/artifacts",
+    zValidator("param", SessionParamsSchema),
+    zValidator("json", UpdateArtifactStateRequestSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const updates = context.req.valid("json");
+      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const state = await agent.inspectState();
+      const artifact = requireArtifactState(state.artifact);
+      const nextArtifact = BenchmarkArtifactStateSchema.parse({
+        ...artifact,
+        ...updates,
+      });
+
+      await agent.setArtifactState(nextArtifact);
+
+      return context.json({
+        artifact: nextArtifact,
+      });
+    }
+  );
+
+  app.post(
+    "/sessions/:id/artifacts/checkout",
+    zValidator("param", SessionParamsSchema),
+    zValidator("json", ArtifactCheckoutRequestSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const request = context.req.valid("json");
+      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const state = await agent.inspectState();
+      const artifact = requireArtifactState(state.artifact);
+      const store = createGitTreeStore(context.env);
+      const credential = await store.mintCredential({
+        repo: {
+          cloneUrl: artifact.runRepoRemote,
+          defaultBranch: artifact.workingBranch,
+          fullName: artifact.runRepoName,
+          name: artifact.runRepoName,
+          provider: artifact.provider,
+        },
+        scope: "read",
+      });
+      const executor = ModalExecutor.fromEnv(context.env);
+      const result = await executor.checkoutGitRepo({
+        branch: artifact.workingBranch,
+        credential,
+        path: request.path ?? `/workspace/${artifact.runRepoName}`,
+        profile: request.profile,
+        remoteUrl: artifact.runRepoRemote,
+        sessionId: id,
+      });
+      const nextArtifact = result.commitSha
+        ? BenchmarkArtifactStateSchema.parse({
+            ...artifact,
+            latestCommitSha: result.commitSha,
+          })
+        : artifact;
+
+      if (nextArtifact !== artifact) {
+        await agent.setArtifactState(nextArtifact);
+      }
+
+      return context.json({
+        artifact: nextArtifact,
+        result,
+      });
+    }
+  );
+
+  app.post(
+    "/sessions/:id/artifacts/commit",
+    zValidator("param", SessionParamsSchema),
+    zValidator("json", ArtifactCommitRequestSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const request = context.req.valid("json");
+      const agent = await getAgentByName(context.env.SESSION_AGENT, id);
+      const state = await agent.inspectState();
+      const artifact = requireArtifactState(state.artifact);
+      const repoPath = `/workspace/${artifact.runRepoName}`;
+      const store = createGitTreeStore(context.env);
+      const credential = await store.mintCredential({
+        repo: {
+          cloneUrl: artifact.runRepoRemote,
+          defaultBranch: artifact.workingBranch,
+          fullName: artifact.runRepoName,
+          name: artifact.runRepoName,
+          provider: artifact.provider,
+        },
+        scope: "write",
+      });
+      const executor = ModalExecutor.fromEnv(context.env);
+      const result = await executor.commitGitRepo({
+        branch: artifact.workingBranch,
+        credential,
+        message: request.message,
+        path: repoPath,
+        paths: request.paths,
+        profile: request.profile,
+        remoteUrl: artifact.runRepoRemote,
+        sessionId: id,
+      });
+      const nextArtifact = BenchmarkArtifactStateSchema.parse({
+        ...artifact,
+        ...(result.commitSha ? { latestCommitSha: result.commitSha } : {}),
+        status: result.pushed ? "draft" : artifact.status,
+      });
+
+      await agent.setArtifactState(nextArtifact);
+
+      return context.json({
+        artifact: nextArtifact,
+        result,
+      });
+    }
+  );
+
   app.get("/admin/shim/health", async (context) => {
     const executor = ModalExecutor.fromEnv(context.env);
 
@@ -243,4 +400,50 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
   );
 
   return app;
+};
+
+const provisionArtifactState = async (input: {
+  benchmark: BenchmarkConfig;
+  env: Env;
+  sessionId: string;
+}): Promise<BenchmarkArtifactState> => {
+  const store = createGitTreeStore(input.env);
+  const targetRepo = await store.ensureStableTarget({
+    target: input.benchmark.target,
+  });
+  const createRunRepoInput = {
+    benchmarkId: input.benchmark.target.benchmarkId,
+    sessionId: input.sessionId,
+    sourceRepo: targetRepo,
+    workingBranch: input.benchmark.artifacts.workingBranch,
+    ...(input.benchmark.artifacts.agentId
+      ? { agentId: input.benchmark.artifacts.agentId }
+      : {}),
+    ...(input.benchmark.artifacts.runRepoName
+      ? { runRepoName: input.benchmark.artifacts.runRepoName }
+      : {}),
+  };
+  const runRepo = await store.createRunRepo(createRunRepoInput);
+
+  return BenchmarkArtifactStateSchema.parse({
+    benchmarkId: input.benchmark.target.benchmarkId,
+    defaultBranch: targetRepo.defaultBranch,
+    provider: runRepo.provider,
+    runRepoName: runRepo.name,
+    runRepoRemote: runRepo.cloneUrl,
+    status: "pending",
+    targetRepoName: targetRepo.name,
+    targetRepoRemote: targetRepo.cloneUrl,
+    workingBranch: runRepo.defaultBranch,
+  });
+};
+
+const requireArtifactState = (
+  artifact: BenchmarkArtifactState | undefined
+): BenchmarkArtifactState => {
+  if (!artifact) {
+    throw new Error("Session does not have benchmark artifacts configured");
+  }
+
+  return artifact;
 };

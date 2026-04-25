@@ -17,6 +17,10 @@ import {
 } from "@codebreaker/control-plane/tools/builtins";
 import type { Env } from "@codebreaker/control-plane/types";
 import { assertNever } from "@codebreaker/shared/lib/utils";
+import {
+  type BenchmarkArtifactState,
+  BenchmarkArtifactStateSchema,
+} from "@codebreaker/shared/schemas/artifacts";
 import type { SessionStatus } from "@codebreaker/shared/schemas/primitives";
 import {
   type SessionConfig,
@@ -27,6 +31,7 @@ import { createCompactFunction } from "agents/experimental/memory/utils";
 import { generateText, type ToolSet } from "ai";
 
 export interface SessionAgentState {
+  artifact?: BenchmarkArtifactState;
   sessionId?: string;
   status: SessionStatus;
 }
@@ -47,6 +52,15 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
     if (config) {
       this.maxSteps = config.maxSteps;
+    }
+
+    const artifact = this.readPropsArtifact(props);
+
+    if (artifact && !this.state.artifact) {
+      this.setState({
+        ...this.state,
+        artifact,
+      });
     }
   }
 
@@ -83,6 +97,15 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       .withContext("memory", {
         description: "Durable operator-visible session memory",
         maxTokens: 2000,
+      })
+      .withContext("benchmark_artifact", {
+        description: "Current benchmark artifact Git repository state",
+        provider: {
+          get: async () =>
+            this.state.artifact
+              ? JSON.stringify(this.state.artifact, null, 2)
+              : "No benchmark artifact repository is configured.",
+        },
       });
 
     if (!config?.compaction.enabled) {
@@ -213,12 +236,23 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   @callable()
-  init(sessionId: string, configInput: SessionConfig): SessionAgentState {
+  init(
+    sessionId: string,
+    configInput: SessionConfig,
+    artifactInput?: BenchmarkArtifactState
+  ): SessionAgentState {
     const config = SessionConfigSchema.parse(configInput);
+    const artifact = artifactInput
+      ? BenchmarkArtifactStateSchema.parse(artifactInput)
+      : undefined;
 
     this.configure<SessionConfig>(config);
     this.maxSteps = config.maxSteps;
-    this.setState({ sessionId, status: "idle" });
+    this.setState({
+      ...(artifact ? { artifact } : {}),
+      sessionId,
+      status: "idle",
+    });
 
     return this.state;
   }
@@ -238,6 +272,25 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
   @callable()
   inspectState(): SessionAgentState {
+    return this.state;
+  }
+
+  @callable()
+  setArtifactState(artifactInput: BenchmarkArtifactState): SessionAgentState {
+    const artifact = BenchmarkArtifactStateSchema.parse(artifactInput);
+
+    this.setState({
+      ...this.state,
+      artifact,
+    });
+    this.ctx.waitUntil(
+      this.sessionIndex.setArtifactState({
+        artifact,
+        eventId: `artifact:${crypto.randomUUID()}`,
+        id: this.sessionId,
+      })
+    );
+
     return this.state;
   }
 
@@ -273,6 +326,14 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const config = this.getConfig<SessionConfig>();
 
     return config ? SessionConfigSchema.parse(config) : null;
+  }
+
+  private readPropsArtifact(
+    props: Record<string, unknown> | undefined
+  ): BenchmarkArtifactState | null {
+    const artifact = props?.artifact;
+
+    return artifact ? BenchmarkArtifactStateSchema.parse(artifact) : null;
   }
 
   private get sessionId(): string {

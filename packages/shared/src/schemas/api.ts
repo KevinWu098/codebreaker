@@ -1,4 +1,10 @@
 import {
+  BenchmarkArtifactStateSchema,
+  BenchmarkArtifactStatusSchema,
+  GitCheckoutResultSchema,
+  GitCommitResultSchema,
+} from "@codebreaker/shared/schemas/artifacts";
+import {
   ModelProviderSchema,
   SessionStatusSchema,
 } from "@codebreaker/shared/schemas/primitives";
@@ -23,6 +29,11 @@ export const CreateSessionRequestSchema = z.object({
 export type CreateSessionRequest = z.infer<typeof CreateSessionRequestSchema>;
 
 export const SessionRowSchema = z.object({
+  artifactLatestCommitSha: z.string().nullable(),
+  artifactPath: z.string().nullable(),
+  artifactStatus: BenchmarkArtifactStatusSchema.nullable(),
+  artifactWorkingBranch: z.string().nullable(),
+  benchmarkId: z.string().nullable(),
   completedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   id: z.string().min(1),
@@ -32,10 +43,17 @@ export const SessionRowSchema = z.object({
   outputTokens: z.number().int().nonnegative(),
   repoName: z.string().nullable(),
   repoOwner: z.string().nullable(),
+  runCommand: z.string().nullable(),
+  runRepoName: z.string().nullable(),
+  runRepoRemote: z.string().nullable(),
   status: SessionStatusSchema,
+  targetRepoName: z.string().nullable(),
+  targetRepoRemote: z.string().nullable(),
   title: z.string().nullable(),
   turnCount: z.number().int().nonnegative(),
   updatedAt: z.string().datetime(),
+  vulnerableEvidencePath: z.string().nullable(),
+  patchedEvidencePath: z.string().nullable(),
 });
 export type SessionRow = z.infer<typeof SessionRowSchema>;
 
@@ -76,6 +94,57 @@ export const InspectExecResponseSchema = z.object({
 });
 export type InspectExecResponse = z.infer<typeof InspectExecResponseSchema>;
 
+export const ArtifactCheckoutRequestSchema = z.object({
+  path: z.string().min(1).optional(),
+  profile: SandboxProfileNameSchema.optional(),
+});
+export type ArtifactCheckoutRequest = z.infer<
+  typeof ArtifactCheckoutRequestSchema
+>;
+
+export const ArtifactCheckoutResponseSchema = z.object({
+  artifact: BenchmarkArtifactStateSchema,
+  result: GitCheckoutResultSchema,
+});
+export type ArtifactCheckoutResponse = z.infer<
+  typeof ArtifactCheckoutResponseSchema
+>;
+
+export const ArtifactCommitRequestSchema = z.object({
+  message: z.string().min(1),
+  paths: z.array(z.string().min(1)).default(["."]),
+  profile: SandboxProfileNameSchema.optional(),
+});
+export type ArtifactCommitRequest = z.infer<typeof ArtifactCommitRequestSchema>;
+
+export const ArtifactCommitResponseSchema = z.object({
+  artifact: BenchmarkArtifactStateSchema,
+  result: GitCommitResultSchema,
+});
+export type ArtifactCommitResponse = z.infer<
+  typeof ArtifactCommitResponseSchema
+>;
+
+export const SessionArtifactResponseSchema = z.object({
+  artifact: BenchmarkArtifactStateSchema.nullable(),
+});
+export type SessionArtifactResponse = z.infer<
+  typeof SessionArtifactResponseSchema
+>;
+
+export const UpdateArtifactStateRequestSchema =
+  BenchmarkArtifactStateSchema.pick({
+    artifactPath: true,
+    latestCommitSha: true,
+    patchedEvidencePath: true,
+    runCommand: true,
+    status: true,
+    vulnerableEvidencePath: true,
+  }).partial();
+export type UpdateArtifactStateRequest = z.infer<
+  typeof UpdateArtifactStateRequestSchema
+>;
+
 export const SessionMessagesResponseSchema = z.object({
   messages: z.array(z.unknown()),
 });
@@ -89,6 +158,7 @@ export const SessionConfigResponseSchema = z.object({
 export type SessionConfigResponse = z.infer<typeof SessionConfigResponseSchema>;
 
 export const SessionAgentStateSchema = z.object({
+  artifact: BenchmarkArtifactStateSchema.optional(),
   sessionId: z.string().min(1).optional(),
   status: SessionStatusSchema,
 });

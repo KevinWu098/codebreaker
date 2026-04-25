@@ -14,6 +14,10 @@ from codebreaker_modal_shim.profiles import build_image, profile_fingerprint, re
 from codebreaker_modal_shim.schemas import (
     ExecRequest,
     ExecResult,
+    GitCheckoutRequest,
+    GitCheckoutResponse,
+    GitCommitRequest,
+    GitCommitResponse,
     ReadRequest,
     ReadResponse,
     SandboxMetadata,
@@ -228,6 +232,91 @@ class ModalSandboxManager:
 
         return WriteResponse(bytes_written=len(content), path=request.path)
 
+    def checkout_git_repo(self, request: GitCheckoutRequest) -> GitCheckoutResponse:
+        profile = resolve_profile(request.profile)
+        repo_path = (
+            resolve_workdir(request.path, profile.workdir)
+            if request.path
+            else posixpath.join(profile.workdir, repo_name_from_url(request.remote_url))
+        )
+        auth_args = git_auth_args(request)
+        command = "\n".join(
+            [
+                "set -euo pipefail",
+                f"repo_path={shell_quote(repo_path)}",
+                f"remote_url={shell_quote(request.remote_url)}",
+                f"branch={shell_quote(request.branch)}",
+                'mkdir -p "$(dirname "$repo_path")"',
+                'if [ -d "$repo_path/.git" ]; then',
+                '  cd "$repo_path"',
+                '  git remote set-url origin "$remote_url"',
+                f"  git {auth_args} fetch origin \"$branch\"",
+                '  git checkout -B "$branch" "origin/$branch"',
+                '  git reset --hard "origin/$branch"',
+                "else",
+                '  rm -rf "$repo_path"',
+                f"  git {auth_args} clone --branch \"$branch\" \"$remote_url\" \"$repo_path\"",
+                '  cd "$repo_path"',
+                "fi",
+                "git rev-parse HEAD",
+            ]
+        )
+        result = self.exec(
+            ExecRequest(
+                command=command,
+                profile=request.profile,
+                session_id=request.session_id,
+            )
+        )
+
+        if result.exit_code != 0:
+            raise HTTPException(status_code=500, detail=result.stderr)
+
+        return GitCheckoutResponse(
+            commit_sha=last_nonempty_line(result.stdout),
+            repo_path=repo_path,
+        )
+
+    def commit_git_repo(self, request: GitCommitRequest) -> GitCommitResponse:
+        auth_args = git_auth_args(request)
+        add_paths = " ".join(shell_quote(path) for path in request.paths)
+        command = "\n".join(
+            [
+                "set -euo pipefail",
+                f"repo_path={shell_quote(request.path)}",
+                f"remote_url={shell_quote(request.remote_url)}",
+                f"branch={shell_quote(request.branch)}",
+                f"message={shell_quote(request.message)}",
+                'cd "$repo_path"',
+                'git remote set-url origin "$remote_url"',
+                f"git add -- {add_paths}",
+                "if git diff --cached --quiet; then",
+                "  echo __NO_CHANGES__",
+                "  git rev-parse HEAD",
+                "  exit 0",
+                "fi",
+                'git -c user.name="Codebreaker" -c user.email="codebreaker@example.invalid" commit -m "$message"',
+                f"git {auth_args} push origin HEAD:\"$branch\"",
+                "git rev-parse HEAD",
+            ]
+        )
+        result = self.exec(
+            ExecRequest(
+                command=command,
+                profile=request.profile,
+                session_id=request.session_id,
+            )
+        )
+
+        if result.exit_code != 0:
+            raise HTTPException(status_code=500, detail=result.stderr)
+
+        return GitCommitResponse(
+            commit_sha=last_nonempty_line(result.stdout),
+            pushed="__NO_CHANGES__" not in result.stdout,
+            repo_path=request.path,
+        )
+
     def terminate(self, request: TerminateRequest) -> dict[str, bool]:
         metadata = self.get_metadata(request.session_id)
 
@@ -244,6 +333,37 @@ class ModalSandboxManager:
 
 def shell_quote(value: str) -> str:
     return "'" + value.replace("'", "'\"'\"'") + "'"
+
+
+def git_auth_args(request: GitCheckoutRequest | GitCommitRequest) -> str:
+    if request.credential.type == "token-header":
+        header = f"Authorization: Bearer {request.credential.password}"
+    else:
+        encoded = base64.b64encode(
+            f"{request.credential.username}:{request.credential.password}".encode()
+        ).decode()
+        header = f"Authorization: Basic {encoded}"
+
+    return f"-c http.extraHeader={shell_quote(header)}"
+
+
+def repo_name_from_url(remote_url: str) -> str:
+    name = remote_url.rstrip("/").rsplit("/", maxsplit=1)[-1]
+
+    if name.endswith(".git"):
+        name = name[:-4]
+
+    return name or "repo"
+
+
+def last_nonempty_line(value: str) -> str | None:
+    for line in reversed(value.splitlines()):
+        stripped = line.strip()
+
+        if stripped:
+            return stripped
+
+    return None
 
 
 def resolve_workdir(cwd: str | None, default_workdir: str) -> str:

@@ -6,30 +6,42 @@
   "exports": {
     "./lib/base64": {
       "types": "./src/lib/base64.ts",
+      "import": "./src/lib/base64.ts",
       "default": "./src/lib/base64.ts"
     },
     "./lib/sandbox-profiles": {
       "types": "./src/lib/sandbox-profiles.ts",
+      "import": "./src/lib/sandbox-profiles.ts",
       "default": "./src/lib/sandbox-profiles.ts"
     },
     "./lib/utils": {
       "types": "./src/lib/utils.ts",
+      "import": "./src/lib/utils.ts",
       "default": "./src/lib/utils.ts"
     },
     "./schemas/api": {
       "types": "./src/schemas/api.ts",
+      "import": "./src/schemas/api.ts",
       "default": "./src/schemas/api.ts"
+    },
+    "./schemas/artifacts": {
+      "types": "./src/schemas/artifacts.ts",
+      "import": "./src/schemas/artifacts.ts",
+      "default": "./src/schemas/artifacts.ts"
     },
     "./schemas/primitives": {
       "types": "./src/schemas/primitives.ts",
+      "import": "./src/schemas/primitives.ts",
       "default": "./src/schemas/primitives.ts"
     },
     "./schemas/sandbox": {
       "types": "./src/schemas/sandbox.ts",
+      "import": "./src/schemas/sandbox.ts",
       "default": "./src/schemas/sandbox.ts"
     },
     "./schemas/session": {
       "types": "./src/schemas/session.ts",
+      "import": "./src/schemas/session.ts",
       "default": "./src/schemas/session.ts"
     }
   },
