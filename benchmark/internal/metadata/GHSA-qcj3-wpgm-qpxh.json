@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qcj3-wpgm-qpxh",
+  "post_patch_commit": "c1fb14402ce2ee569c5a8e3f1f8e64ae45dfbfb0",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit c1fb1440 is the first in a series of commits fixing XWIKI-5027. It modifies the execute() method in IncludeMacro.java to check whether the included document's content author differs from the current author, and if so, uses AuthorExecutor to execute transformations with the included document's own author rights. The location was derived from the patch diff which clearly shows the security-relevant change in a single source file. The vulnerability class auth-bypass is confirmed: the include macro failed to scope execution privileges to the included content's author, allowing privilege escalation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2025-04-25"
+}
