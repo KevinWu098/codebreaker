@@ -7,12 +7,20 @@ You are curating a vulnerability task for the ECVEBench benchmark. You have been
 - **GHSA ID**: {{GHSA_ID}}
 - **Advisory URL**: https://github.com/advisories/{{GHSA_ID}}
 
+### Pre-computed fields (do not re-derive)
+
+These values have already been extracted and verified by the selection pipeline. Use them as-is in the output files.
+
+- **Vulnerability class**: `{{VULN_CLASS}}`
+- **CVSS score**: {{CVSS}}
+- **CVE ID**: {{CVE_ID}}
+- **CWE IDs**: {{CWE_IDS}}
+- **Ecosystem**: {{ECOSYSTEM}}
+
 ## Step 1: Read the advisory
 
 Go to the advisory URL above. Read the full description and extract:
-- **CVSS score**: Look for the CVSS score on the advisory page (e.g., "9.8" or "7.5"). GitHub advisories almost always display this. Record the numeric value (0.0–10.0). Only use `null` if the advisory genuinely has no CVSS score listed.
-- **CWE IDs**: Note all CWE identifiers (e.g., CWE-78, CWE-79).
-- **CVE ID**: If a CVE is linked, note it.
+- **Description**: The full vulnerability description (needed for hint writing in Step 7).
 - **References**: Collect all commit links, PR links, and release tag links.
 
 ## Step 2: Find the patch commit
@@ -35,25 +43,11 @@ Look at what the patch commit changed. Identify:
 - Which functions were modified in those source files
 - Whether the patch is "noisy" — if more than 3 non-test source files were changed, it is noisy
 
-## Step 5: Classify the vulnerability
+## Step 5: Verify the vulnerability class
 
-Based on the advisory description and CWE IDs, classify the vulnerability into exactly ONE of these classes:
+The vulnerability class has been pre-assigned as **`{{VULN_CLASS}}`** based on the advisory's CWE IDs. After reading the patch diff, verify that this class is correct. If the diff clearly shows the vulnerability belongs to a *different* class from the list below, STOP and report the mismatch — do not silently override.
 
-- `command-injection` — unsanitized input passed to shell exec calls
-- `sql-injection` — unsanitized input in SQL queries
-- `xss` — unescaped user input rendered in HTML
-- `buffer-overflow` — out-of-bounds memory read or write
-- `use-after-free` — memory accessed after deallocation
-- `path-traversal` — unsanitized file path allows directory escape
-- `auth-bypass` — authentication or authorization check circumvented
-- `xxe` — XML external entity injection
-- `insecure-deserialization` — unsafe deserialization of untrusted input
-- `crypto-weakness` — weak or misused cryptographic primitive
-- `race-condition` — unsafe concurrent access to shared resource
-- `integer-overflow` — integer arithmetic wraps or truncates unsafely
-- `null-deref` — null pointer dereferenced without check
-
-If the vulnerability does not clearly fit any of these classes, STOP and report that this advisory cannot be curated.
+Valid classes: `command-injection`, `sql-injection`, `xss`, `buffer-overflow`, `use-after-free`, `path-traversal`, `auth-bypass`, `xxe`, `insecure-deserialization`, `crypto-weakness`, `race-condition`, `integer-overflow`, `null-deref`.
 
 ## Step 6: Derive locations
 
@@ -131,6 +125,7 @@ Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
   "codebase": {
     "repo": "https://github.com/<owner>/<repo>",
     "language": "<primary language, lowercase>",
+    "ecosystem": "{{ECOSYSTEM}}",
     "commit": "<full 40-char pre-patch SHA>"
   },
   "hints": {
@@ -141,8 +136,8 @@ Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
   },
   "ground_truth": {
     "vulnerable": true,
-    "vuln_class": "<one of the 13 classes above>",
-    "cvss": <CVSS score from the advisory as a number (e.g., 9.8). Use null ONLY if the advisory has no CVSS score listed>,
+    "vuln_class": "{{VULN_CLASS}}",
+    "cvss": {{CVSS}},
     "reason": "<1-2 sentence explanation of the vulnerability>",
     "locations": [
       {
@@ -184,8 +179,8 @@ Open a pull request to this repository with:
 - [ ] The `post_patch_commit` in metadata is the actual patch commit SHA
 - [ ] Both SHAs are full 40-character hex strings
 - [ ] The L1 hint description contains NO file paths, function names, line numbers, or code snippets
-- [ ] The `vuln_class` is exactly one of the 13 allowed values
+- [ ] The `vuln_class` is `{{VULN_CLASS}}` (the pre-assigned value)
+- [ ] The `cvss` is `{{CVSS}}` (the pre-computed value)
 - [ ] The `locations` array has at least one entry
 - [ ] The `file` paths in locations are relative from the repo root and exist in the pre-patch commit
 - [ ] The JSON is valid and pretty-printed with 2-space indentation
-- [ ] The `cvss` field is a number if the advisory lists a CVSS score

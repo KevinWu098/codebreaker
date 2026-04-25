@@ -94,6 +94,7 @@ Tasks are stored as individual JSON files in `data/tasks/`, one file per **uniqu
 | `ghsa_id`                           | string        | Source GitHub Security Advisory ID                                         |
 | `codebase.repo`                     | string        | GitHub repository URL                                                      |
 | `codebase.language`                 | string        | Primary language of the repository                                         |
+| `codebase.ecosystem`               | string        | Package ecosystem (e.g. npm, pip, maven, go)                               |
 | `codebase.commit`                   | string        | Full 40-character pre-patch SHA served to the agent                        |
 | `hints.L0`                          | null          | L0 is pure discovery; always null.                                         |
 | `hints.L1`                          | object        | Scrubbed vulnerability description. Object with a `description` string.    |
@@ -121,6 +122,7 @@ The harness projects a task record into an agent input at a given difficulty. Th
 | `difficulty`        | `"L0"` | `"L1"` | Difficulty level this input was rendered at.                |
 | `codebase.repo`     | string          | GitHub repository URL                                       |
 | `codebase.language` | string          | Primary language                                            |
+| `codebase.ecosystem`| string          | Package ecosystem (e.g. npm, pip, maven, go)                |
 | `codebase.commit`   | string          | Full 40-character pre-patch SHA                             |
 | `hint`              | object | null   | The hint at this difficulty. `null` for L0.                 |
 
@@ -184,10 +186,12 @@ benchmark/
 │   └── metadata.schema.json       # JSON Schema for InternalMetadata
 ├── pipeline/
 │   ├── filter_advisories.py       # step 1: filter GHSAs from advisory API
+│   ├── select_candidates.py       # step 2: CWE mapping + stratified sampling
 │   ├── lib/
-│   │   ├── filters.py             # filter functions and reference parsers
+│   │   ├── cwe_map.py             # CWE → vulnerability class lookup table
+│   │   ├── filters.py             # filter functions and metadata extractors
 │   │   └── github_client.py       # GitHub REST API client with rate-limit handling
-│   ├── output/                    # gitignored runtime artifacts (filtered.jsonl, etc.)
+│   ├── output/                    # gitignored runtime artifacts
 │   └── scratch/                   # gitignored throwaway experiments
 ├── data/
 │   └── tasks/                     # one JSON file per unique GHSA

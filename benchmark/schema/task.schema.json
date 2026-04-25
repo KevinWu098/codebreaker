@@ -16,7 +16,7 @@
     },
     "codebase": {
       "type": "object",
-      "required": ["repo", "language", "commit"],
+      "required": ["repo", "language", "ecosystem", "commit"],
       "additionalProperties": false,
       "properties": {
         "repo": {
@@ -27,6 +27,10 @@
         "language": {
           "type": "string",
           "description": "Primary language of the repository"
+        },
+        "ecosystem": {
+          "type": "string",
+          "description": "Package ecosystem (e.g. npm, pip, maven, go, composer, rust, nuget, rubygems)"
         },
         "commit": {
           "type": "string",

@@ -72,10 +72,11 @@ Advisories that do not clearly map to one of these classes are excluded. We inte
 
 ## Pipeline Overview
 
-Curation is a two-stage process:
+Curation is a three-stage process:
 
-1. **Filter** (script) — Paginate through all ~30k reviewed GHSAs and apply cheap metadata filters. No repos are cloned, no diffs are read. This produces a candidate list of GHSA IDs with enough metadata for stratified sampling.
-2. **Curate** (Devin agents) — For each candidate GHSA, a Devin AI agent clones the repo, reads the diff, classifies the vulnerability, localizes it, writes the task and metadata JSON files, and opens a PR.
+1. **Filter** (script) — Paginate through all ~30k reviewed GHSAs and apply cheap metadata filters. No repos are cloned, no diffs are read. This produces a broad candidate list.
+2. **Select** (script) — Map CWE IDs to the 13 vulnerability classes, apply a CVSS floor, and perform stratified random sampling so every class is represented. This produces the final dispatch list.
+3. **Curate** (Devin agents) — For each selected GHSA, a Devin AI agent clones the repo, reads the diff, classifies the vulnerability, localizes it, writes the task and metadata JSON files, and opens a PR.
 
 ### Stage 1: Filtering
 
@@ -87,7 +88,7 @@ The filter script (`pipeline/filter_advisories.py`) paginates through the GitHub
 | English language | ASCII character ratio >= 85% |
 | Single package | `vulnerabilities` array has exactly 1 entry |
 | Has linked reference | `references` contain at least one commit, PR, or tag URL |
-| Has CVSS score | `cvss.score` is present and numeric |
+| Has CVSS score | `cvss_severities` contains a v3 or v4 score |
 | Dedup | No duplicate GHSA IDs |
 
 The output is a JSONL file (`pipeline/output/filtered.jsonl`) where each line contains a GHSA ID plus metadata for downstream sampling: severity, CVSS score, CWE IDs, ecosystem, and publication date.
@@ -98,9 +99,74 @@ GITHUB_TOKEN=ghp_... uv run python -m pipeline.filter_advisories
 
 The script supports checkpointing (`--checkpoint`) for resumption across runs and `--max-pages` for testing.
 
-### Stage 2: Curation (Devin agents)
+### Stage 2: Selection and Sampling
 
-Each filtered GHSA is dispatched to a [Devin](https://devin.ai/) agent. The agent follows a structured prompt (see [`docs/prompts/curation_agent.md`](prompts/curation_agent.md)) that walks it through the full curation workflow. Each agent opens a pull request containing exactly two files, which is then reviewed before merging.
+The selection script (`pipeline/select_candidates.py`) reads the filtered output and narrows it down to a balanced dispatch list:
+
+1. **Deduplication** — removes duplicate GHSA IDs left from overlapping filter runs.
+2. **CWE → class mapping** — each advisory's CWE IDs are mapped to one of the 13 vulnerability classes via a curated lookup table (`pipeline/lib/cwe_map.py`). Advisories with no CWE, unmappable CWEs, or conflicting CWEs (mapping to multiple classes) are dropped.
+3. **CVSS floor** — advisories below a configurable minimum CVSS score (default: 4.0) are dropped to exclude trivial issues.
+4. **Stratified sampling** — the remaining candidates are split by class, and up to N are randomly sampled from each class. N is calculated as `ceil(target_tasks × overprovision_factor / 13)`. Classes with fewer candidates than N are taken in full.
+
+```bash
+uv run python -m pipeline.select_candidates --target 500 --overprovision 2.5
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--target` | 500 | Target number of final benchmark tasks |
+| `--overprovision` | 2.5 | Multiplier to account for Devin rejection rate |
+| `--cvss-floor` | 4.0 | Minimum CVSS score (0 to disable) |
+| `--seed` | 42 | Random seed for reproducible sampling |
+
+The output is `pipeline/output/candidates.jsonl` — the list of GHSAs to dispatch to Devin agents.
+
+### Selection summary
+
+The full pipeline (30k reviewed GHSAs → filter → select) produces the following funnel:
+
+| Stage | Count |
+| --- | --- |
+| Reviewed GHSAs in GitHub Advisory Database | ~30,000 |
+| After Stage 1 metadata filters | ~12,000 |
+| After CWE mapping + CVSS floor (≥ 4.0) | ~6,100 |
+| After stratified sampling (target 500) | **494** |
+
+Class distribution in the final candidate set — 38 per class, evenly balanced:
+
+| Class | Count |
+| --- | --- |
+| `auth-bypass` | 38 |
+| `buffer-overflow` | 38 |
+| `command-injection` | 38 |
+| `crypto-weakness` | 38 |
+| `insecure-deserialization` | 38 |
+| `integer-overflow` | 38 |
+| `null-deref` | 38 |
+| `path-traversal` | 38 |
+| `race-condition` | 38 |
+| `sql-injection` | 38 |
+| `use-after-free` | 38 |
+| `xss` | 38 |
+| `xxe` | 38 |
+
+Ecosystem distribution:
+
+| Ecosystem | Count |
+| --- | --- |
+| pip (Python) | 109 |
+| go | 87 |
+| maven (Java) | 77 |
+| npm (JavaScript) | 65 |
+| rust | 64 |
+| composer (PHP) | 59 |
+| rubygems (Ruby) | 13 |
+| nuget (C#) | 13 |
+| swift, actions, erlang | 7 |
+
+### Stage 3: Curation (Devin agents)
+
+Each selected GHSA is dispatched to a [Devin](https://devin.ai/) agent. The agent follows a structured prompt (see [`docs/prompts/curation_agent.md`](prompts/curation_agent.md)) that walks it through the full curation workflow. Each agent opens a pull request containing exactly two files, which is then reviewed before merging.
 
 ### Per-advisory workflow
 
