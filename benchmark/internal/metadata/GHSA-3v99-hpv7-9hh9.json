@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3v99-hpv7-9hh9",
+  "post_patch_commit": "6fe86eef621b9849f51a5e1e5d73258a93440403",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 6fe86ee referenced directly in the advisory. Only one file changed (windows/winkernel_mm.c) in the cs_winkernel_malloc function. The fix adds an integer overflow check using RtlSizeTAdd before computing the allocation size. Location derived from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
