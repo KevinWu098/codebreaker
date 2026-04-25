@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q3cc-7p7g-392c",
+  "post_patch_commit": "ac30e169ae51b262bc8cf7026469851ce39b23c6",
+  "noisy_patch": false,
+  "curation_notes": "The advisory explicitly identifies sessions.rs as the location of the use-after-free. The patch commit ac30e16 fixes the vulnerability in two functions (attach and diff) in src/session.rs by storing the CString in a variable before calling .as_ptr(), preventing the temporary from being dropped while the pointer is still in use. The same commit also refactors string handling in inner_connection.rs and lib.rs (switching from CString to SmallCString), but the advisory specifically attributes the use-after-free to sessions.rs.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

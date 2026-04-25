@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pqgm-9g82-wcm7",
+  "post_patch_commit": "d33d3cd2d11dbfebd8162c46e2c2a9873919a967",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge of PR #3095 (fix/xss_profile_form). Two files changed: the Django template generic_field.html removed the |safe filter from error message rendering (the primary XSS fix), and twocols_nav.js changed form targeting from $('form').first() to $(e.target).closest('form'). Locations derived directly from the patch diff. The template change is the main vulnerability; the JS change is a secondary fix related to incorrect form targeting.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
