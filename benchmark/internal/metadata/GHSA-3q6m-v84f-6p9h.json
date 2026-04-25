@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3q6m-v84f-6p9h",
+  "post_patch_commit": "b6a4725b60f1fe04e8f1ddcc3114e290fcea1617",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The patch moves the handleHandshakeComplete() call out of handleHandshakeEvents() (where it was triggered immediately on EventHandshakeComplete) and defers it to the end of handleFrames() after all frames in the packet have been processed. This prevents the nil pointer dereference that occurred when an ACK frame serialized after the CRYPTO frame tried to access the already-dropped Handshake packet number space. Only 1 non-test source file (connection.go) was changed.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
