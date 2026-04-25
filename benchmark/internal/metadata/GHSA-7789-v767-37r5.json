@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7789-v767-37r5",
+  "post_patch_commit": "4a5988accbb770b74105baacd5a034689272128c",
+  "noisy_patch": true,
+  "curation_notes": "The advisory explicitly names adherents/subscription/info.php and the rowid parameter as the SQL injection vector. The patch commit fixes this by replacing raw $_GET/$_POST access with GETPOST('rowid','int') which enforces integer type. The commit also hardens several other files (cashdesk templates, multiprix.php, fourn/index.php, main.inc.php) but the CVE specifically targets the subscription info page. Marked noisy because 10 non-test source files were changed in the patch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
