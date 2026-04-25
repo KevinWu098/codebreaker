@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qcj3-wpgm-qpxh",
+  "post_patch_commit": "c1fb14402ce2ee569c5a8e3f1f8e64ae45dfbfb0",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references five commits for XWIKI-5027. The core security fix is c1fb144 on the master branch, which adds author-rights checking to the content inclusion execution path. The pre-patch commit a3815f2 is its direct parent and contains the vulnerable code where included content runs with the includer's privileges. Commit 0a4f9b0 is a cherry-pick to a maintenance branch. Commits b48116a and f627abe are follow-up refinements on master. Only one non-test source file (IncludeMacro.java) was changed in the core fix commit. Location derived from the patch diff: the execute method lacked any author-rights checking for included content.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
