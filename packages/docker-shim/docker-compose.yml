@@ -1,0 +1,11 @@
+services:
+  docker-shim:
+    build:
+      context: ../..
+      dockerfile: packages/docker-shim/Dockerfile
+    environment:
+      SHIM_SECRET: ${SHIM_SECRET:-dev-shim-secret}
+    ports:
+      - "${DOCKER_SHIM_PORT:-8000}:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

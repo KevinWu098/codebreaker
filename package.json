@@ -14,6 +14,7 @@
     "db:generate": "pnpm --dir packages/control-plane exec drizzle-kit generate --config drizzle.config.ts",
     "db:studio": "pnpm --dir packages/control-plane exec drizzle-kit studio --config drizzle.config.ts",
     "dev:dashboard": "pnpm --dir apps/dashboard dev",
+    "dev:docker-shim": "cd packages/docker-shim && PYTHONPATH=src uvicorn codebreaker_docker_shim.main:create_fastapi_app --factory --reload --host 0.0.0.0 --port 8000",
     "dev:token": "pnpm --dir apps/dashboard mint-dev-token",
     "dev:modal": "cd packages/modal-shim && PYTHONPATH=src modal serve -m codebreaker_modal_shim.main",
     "dev:worker": "pnpm --dir packages/control-plane exec wrangler dev --config wrangler.jsonc",
