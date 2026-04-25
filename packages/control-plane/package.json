@@ -20,6 +20,10 @@
       "types": "./src/artifacts/repository.ts",
       "default": "./src/artifacts/repository.ts"
     },
+    "./do/retry": {
+      "types": "./src/do/retry.ts",
+      "default": "./src/do/retry.ts"
+    },
     "./db/d1-schema": {
       "types": "./src/db/d1-schema.ts",
       "default": "./src/db/d1-schema.ts"

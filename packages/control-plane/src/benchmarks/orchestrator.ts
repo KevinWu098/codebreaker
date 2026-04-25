@@ -14,6 +14,7 @@ import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/reposit
 import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/dataset";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
+import { withDORetry } from "@codebreaker/control-plane/do/retry";
 import { ModalExecutor } from "@codebreaker/control-plane/sandbox/modal";
 import type { Env } from "@codebreaker/control-plane/types";
 import type {
@@ -87,8 +88,10 @@ export class BenchmarkRunOrchestrator {
         status: "pending",
       });
 
-      const agent = await getAgentByName(this.env.SESSION_AGENT, sessionId);
-      await agent.init(sessionId, sessionConfig, artifact);
+      const agent = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, sessionId)
+      );
+      await withDORetry(() => agent.init(sessionId, sessionConfig, artifact));
       await sessionIndex.setArtifactState({
         artifact,
         eventId: `benchmark-artifact:${runId}`,
@@ -241,8 +244,11 @@ export class BenchmarkRunOrchestrator {
       (run.cleanupPolicy === "archive_repo" ||
         run.cleanupPolicy === "archive_repo_and_terminate")
     ) {
-      const agent = await getAgentByName(this.env.SESSION_AGENT, run.sessionId);
-      const state = await agent.inspectState();
+      const sessionId = run.sessionId;
+      const agent = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, sessionId)
+      );
+      const state = await withDORetry(() => agent.inspectState());
 
       if (state.artifact) {
         await createGitTreeStore(this.env).archiveRunRepo({
