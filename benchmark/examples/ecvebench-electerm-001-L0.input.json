@@ -1,0 +1,10 @@
+{
+  "task_id": "ecvebench-electerm-001",
+  "difficulty": "L0",
+  "codebase": {
+    "repo": "https://github.com/electerm/electerm",
+    "language": "javascript",
+    "commit": "9590d7933c4021bbc006c3a0ccd366091b008e09"
+  },
+  "hint": null
+}
