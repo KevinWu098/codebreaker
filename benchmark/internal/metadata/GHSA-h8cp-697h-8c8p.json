@@ -4,5 +4,5 @@
   "noisy_patch": true,
   "curation_notes": "Locations derived from the patch diff. The core vulnerability is in UseToken (authority/authorize.go) which silently ignored errors from GetTokenID, disabling token reuse protection for ACME and SCEP provisioners. GetTokenID in both acme.go and scep.go returned generic errors instead of sentinel errors, causing the silent swallow. The Revoke function in authority/tls.go lacked serial number verification between the request and the authenticated token subject. The patch touched 15 non-test source files, many for error handling refactoring and comment fixes, making it noisy.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2025-04-25"
+  "snapshot_date": "2026-04-25"
 }
