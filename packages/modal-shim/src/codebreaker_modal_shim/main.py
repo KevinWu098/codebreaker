@@ -1,0 +1,94 @@
+import modal
+from fastapi import Depends, FastAPI, Request
+
+from codebreaker_modal_shim.runtime import ModalSandboxManager, with_idempotency
+from codebreaker_modal_shim.schemas import (
+    ExecRequest,
+    ReadRequest,
+    SnapshotRequest,
+    SnapshotResponse,
+    TerminateRequest,
+    WriteRequest,
+)
+
+app = modal.App("codebreaker-modal-shim")
+image = modal.Image.debian_slim().pip_install(
+    "fastapi>=0.115.0",
+    "pydantic>=2.9.2",
+)
+
+
+def create_fastapi_app() -> FastAPI:
+    api = FastAPI(title="Codebreaker Modal Shim")
+    manager = ModalSandboxManager()
+
+    def require_auth(request: Request) -> None:
+        manager.require_auth(request)
+
+    @api.get("/health")
+    def health() -> dict[str, bool]:
+        return {"ok": True}
+
+    @api.post("/exec", dependencies=[Depends(require_auth)])
+    def exec_command(request: Request, payload: ExecRequest) -> dict:
+        return with_idempotency(
+            manager,
+            request,
+            lambda: manager.exec(payload).model_dump(mode="json"),
+        )
+
+    @api.post("/exec/stream", dependencies=[Depends(require_auth)])
+    def exec_stream(payload: ExecRequest):
+        return manager.exec_stream(payload)
+
+    @api.post("/read", dependencies=[Depends(require_auth)])
+    def read_file(request: Request, payload: ReadRequest) -> dict:
+        return with_idempotency(
+            manager,
+            request,
+            lambda: manager.read_file(payload).model_dump(mode="json"),
+        )
+
+    @api.post("/write", dependencies=[Depends(require_auth)])
+    def write_file(request: Request, payload: WriteRequest) -> dict:
+        return with_idempotency(
+            manager,
+            request,
+            lambda: manager.write_file(payload).model_dump(mode="json"),
+        )
+
+    @api.post("/terminate", dependencies=[Depends(require_auth)])
+    def terminate(request: Request, payload: TerminateRequest) -> dict:
+        return with_idempotency(
+            manager,
+            request,
+            lambda: manager.terminate(payload),
+        )
+
+    @api.post("/snapshot", dependencies=[Depends(require_auth)])
+    def snapshot(payload: SnapshotRequest) -> dict:
+        manager.check_rate_limit(payload.session_id)
+        return SnapshotResponse().model_dump(mode="json")
+
+    @api.get("/sandboxes", dependencies=[Depends(require_auth)])
+    def list_sandboxes() -> list[dict]:
+        return [
+            metadata.model_dump(mode="json")
+            for metadata in manager.list_metadata()
+        ]
+
+    @api.get("/sandboxes/{session_id}", dependencies=[Depends(require_auth)])
+    def get_sandbox(session_id: str) -> dict | None:
+        metadata = manager.get_metadata(session_id)
+        return metadata.model_dump(mode="json") if metadata else None
+
+    return api
+
+
+@app.function(
+    image=image,
+    secrets=[modal.Secret.from_name("codebreaker-shim")],
+)
+@modal.asgi_app()
+def fastapi_app() -> FastAPI:
+    return create_fastapi_app()

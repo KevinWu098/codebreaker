@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: modal-shim
     content: Build the Modal FastAPI shim with sandbox lifecycle, exec/read/write/terminate endpoints, auth, idempotency, rate limits, and profile fingerprints.
-    status: pending
+    status: completed
   - id: modal-executor
     content: Implement Worker-side ModalExecutor fetch client and AI SDK remote tools.
     status: pending
