@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g3wc-xv93-445q",
+  "post_patch_commit": "cf7105aa2aae90d6656088fe5a8ee1d5730773b6",
+  "noisy_patch": false,
+  "curation_notes": "The advisory explicitly names the file DNS/Protocol/Request.cs. The patch commit changes only this single file, replacing System.Random with RNGCryptoServiceProvider for generating DNS request IDs. The vulnerable code is in the parameterless Request() constructor where RANDOM.Next(UInt16.MaxValue) was used to set the header ID.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
