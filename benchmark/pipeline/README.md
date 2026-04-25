@@ -8,7 +8,7 @@ The pipeline has three stages:
 
 1. **Filter** — `filter_advisories.py` paginates through all reviewed GHSAs via the GitHub REST API and applies metadata-only filters. No repos are cloned, no diffs are read.
 2. **Select** — `select_candidates.py` maps CWEs to the 13 vulnerability classes, applies a CVSS floor, and performs stratified random sampling for a balanced dispatch list.
-3. **Curate** — Each selected GHSA is dispatched to a Devin AI agent, which clones the repo, reads the diff, classifies the vulnerability, localizes it, and opens a PR with the task and metadata JSON files.
+3. **Dispatch** — `dispatch_devin.py` sends each selected candidate to a Devin AI agent with a fully populated prompt. The agent clones the repo, reads the diff, localizes the vulnerability, and opens a PR.
 
 ## Prerequisites
 
@@ -17,16 +17,26 @@ cd benchmark
 uv sync
 ```
 
-You need a GitHub personal access token with public repo read access:
+Copy `.env.example` to `.env` and fill in your credentials:
 
 ```bash
-export GITHUB_TOKEN=ghp_...
+cp .env.example .env
 ```
+
+Required variables:
+
+| Variable | Description |
+|----------|-------------|
+| `GITHUB_TOKEN` | GitHub personal access token (public repo read) |
+| `DEVIN_API_KEY` | Devin API key |
+| `DEVIN_ORG_ID` | Devin organization ID |
+| `DEVIN_USER_ID` | Devin user ID for session attribution |
+| `DEVIN_REPO` | Target repository (e.g. `owner/repo`) |
 
 ## Step 1: Filter advisories
 
 ```bash
-GITHUB_TOKEN=ghp_... uv run python -m pipeline.filter_advisories
+uv run python -m pipeline.filter_advisories
 ```
 
 | Flag | Default | Description |
@@ -72,12 +82,22 @@ Selection logic:
 
 ## Step 3: Dispatch to Devin
 
-Each selected GHSA is sent to a Devin agent with the prompt template at [`docs/prompts/curation_agent.md`](../docs/prompts/curation_agent.md). The agent opens a PR containing:
+```bash
+uv run python -m pipeline.dispatch_devin --count 10
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--input` | `output/candidates.jsonl` | Input from Step 2 |
+| `--count` | (required) | Number of candidates to dispatch |
+| `--offset` | 0 | Skip first N candidates (for batched dispatch) |
+| `--dry-run` | off | Render prompts without calling the API |
+| `--delay` | 2.0 | Seconds between API calls |
+
+Each candidate's pre-computed fields (vulnerability class, CVSS, CVE ID, CWE IDs, ecosystem) are injected into the prompt template at [`docs/prompts/curation_agent.md`](../docs/prompts/curation_agent.md). The agent opens a PR containing:
 
 - `benchmark/data/tasks/{task_id}.json`
 - `benchmark/internal/metadata/{GHSA_ID}.json`
-
-See `scratch/smoke_test_devin.py` for an example of how to call the Devin API.
 
 ## Directory structure
 
@@ -87,13 +107,15 @@ pipeline/
 ├── __init__.py
 ├── filter_advisories.py       # step 1: filter GHSAs
 ├── select_candidates.py       # step 2: CWE mapping + stratified sampling
+├── dispatch_devin.py          # step 3: send candidates to Devin agents
 └── lib/
     ├── __init__.py
     ├── cwe_map.py             # CWE → vulnerability class lookup table
+    ├── env.py                 # environment variable helpers
     ├── filters.py             # filter functions and metadata extractors
     └── github_client.py       # GitHub REST API client with rate-limit handling
 ```
 
 Runtime artifacts (gitignored):
 - `output/` — `filtered.jsonl`, `candidates.jsonl`, checkpoints, rejection logs
-- `scratch/` — throwaway experiments, smoke tests
+- `scratch/` — throwaway experiments

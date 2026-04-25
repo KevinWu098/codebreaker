@@ -187,8 +187,10 @@ benchmark/
 ├── pipeline/
 │   ├── filter_advisories.py       # step 1: filter GHSAs from advisory API
 │   ├── select_candidates.py       # step 2: CWE mapping + stratified sampling
+│   ├── dispatch_devin.py          # step 3: send candidates to Devin agents
 │   ├── lib/
 │   │   ├── cwe_map.py             # CWE → vulnerability class lookup table
+│   │   ├── env.py                 # environment variable helpers
 │   │   ├── filters.py             # filter functions and metadata extractors
 │   │   └── github_client.py       # GitHub REST API client with rate-limit handling
 │   ├── output/                    # gitignored runtime artifacts
