@@ -58,3 +58,10 @@ export const activeToolNamesForPolicy = (
   Object.entries(tiers)
     .filter(([, tier]) => isTierAllowed(tier, policy))
     .map(([name]) => name);
+
+export const mergeTieredToolSets = (
+  ...toolSets: TieredToolSet[]
+): TieredToolSet => ({
+  tiers: Object.assign({}, ...toolSets.map((toolSet) => toolSet.tiers)),
+  tools: Object.assign({}, ...toolSets.map((toolSet) => toolSet.tools)),
+});

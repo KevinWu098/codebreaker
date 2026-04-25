@@ -72,7 +72,9 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     }
 
     return createBuiltinTools({
+      env: this.env,
       policy: config.extensionPolicy,
+      sessionId: this.sessionId,
     }).tools;
   }
 

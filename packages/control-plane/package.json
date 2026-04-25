@@ -24,6 +24,10 @@
       "types": "./src/router.ts",
       "default": "./src/router.ts"
     },
+    "./sandbox/modal": {
+      "types": "./src/sandbox/modal.ts",
+      "default": "./src/sandbox/modal.ts"
+    },
     "./session/agent": {
       "types": "./src/session/agent.ts",
       "default": "./src/session/agent.ts"
@@ -39,6 +43,10 @@
     "./tools/http": {
       "types": "./src/tools/http.ts",
       "default": "./src/tools/http.ts"
+    },
+    "./tools/modal": {
+      "types": "./src/tools/modal.ts",
+      "default": "./src/tools/modal.ts"
     },
     "./tools/tiers": {
       "types": "./src/tools/tiers.ts",

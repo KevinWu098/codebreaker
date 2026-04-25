@@ -28,7 +28,7 @@ todos:
     status: completed
   - id: modal-executor
     content: Implement Worker-side ModalExecutor fetch client and AI SDK remote tools.
-    status: pending
+    status: completed
   - id: smoke-validation
     content: Add local dev examples, deployment docs, and smoke validation for Worker, D1, Think agent, policy gating, and Modal remote exec.
     status: pending
@@ -189,7 +189,7 @@ Implement [`packages/control-plane/src/sandbox/modal.ts`](packages/control-plane
 - Make `writeFile` retry-safe.
 - Treat `terminate()` as best-effort.
 
-Expose AI SDK tools in [`packages/control-plane/src/tools/modal.ts`](packages/control-plane/src/tools/modal.ts): `exec_remote`, `remote_read`, and `remote_write`. Add recon wrappers only as thin structured command wrappers over `exec_remote`.
+Expose AI SDK tools in [`packages/control-plane/src/tools/modal.ts`](packages/control-plane/src/tools/modal.ts): `exec_remote`, `remote_read`, and `remote_write`. Keep them as thin wrappers over `ModalExecutor` behind the `EXEC_REMOTE` policy tier.
 
 ## Phase 7: Local Dev, Validation, And Docs
 

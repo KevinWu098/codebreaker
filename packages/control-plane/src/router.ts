@@ -1,6 +1,10 @@
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { jwtAuth } from "@codebreaker/control-plane/http/auth";
 import { jsonError } from "@codebreaker/control-plane/http/errors";
+import {
+  type ExecRemoteOptions,
+  ModalExecutor,
+} from "@codebreaker/control-plane/sandbox/modal";
 import type { Env } from "@codebreaker/control-plane/types";
 import {
   CreateSessionRequestSchema,
@@ -156,18 +160,10 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const response = await fetch(
-        `${context.env.MODAL_SHIM_URL}/sandboxes/${id}`,
-        {
-          headers: {
-            "X-Shim-Secret": context.env.MODAL_SHIM_SECRET,
-          },
-        }
-      );
+      const executor = ModalExecutor.fromEnv(context.env);
 
-      return new Response(response.body, {
-        headers: response.headers,
-        status: response.status,
+      return context.json({
+        sandbox: await executor.getSandbox(id),
       });
     }
   );
@@ -179,45 +175,43 @@ export const createRouter = (): Hono<{ Bindings: Env }> => {
     async (context) => {
       const { id } = context.req.valid("param");
       const request = context.req.valid("json");
-      const response = await fetch(`${context.env.MODAL_SHIM_URL}/exec`, {
-        body: JSON.stringify({
-          ...request,
-          session_id: id,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-          "X-Idempotency-Key": crypto.randomUUID(),
-          "X-Shim-Secret": context.env.MODAL_SHIM_SECRET,
-        },
-        method: "POST",
-      });
+      const executor = ModalExecutor.fromEnv(context.env);
+      const execOptions: ExecRemoteOptions = {
+        command: request.command,
+        sessionId: id,
+      };
 
-      return new Response(response.body, {
-        headers: response.headers,
-        status: response.status,
+      if (request.cwd) {
+        execOptions.cwd = request.cwd;
+      }
+
+      if (request.profile) {
+        execOptions.profile = request.profile;
+      }
+
+      if (request.timeoutSeconds) {
+        execOptions.timeoutSeconds = request.timeoutSeconds;
+      }
+
+      return context.json({
+        result: await executor.exec(execOptions),
       });
     }
   );
 
   app.get("/admin/shim/health", async (context) => {
-    const response = await fetch(`${context.env.MODAL_SHIM_URL}/health`);
+    const executor = ModalExecutor.fromEnv(context.env);
 
-    return new Response(response.body, {
-      headers: response.headers,
-      status: response.status,
+    return context.json({
+      health: await executor.health(),
     });
   });
 
   app.get("/admin/shim/sandboxes", async (context) => {
-    const response = await fetch(`${context.env.MODAL_SHIM_URL}/sandboxes`, {
-      headers: {
-        "X-Shim-Secret": context.env.MODAL_SHIM_SECRET,
-      },
-    });
+    const executor = ModalExecutor.fromEnv(context.env);
 
-    return new Response(response.body, {
-      headers: response.headers,
-      status: response.status,
+    return context.json({
+      sandboxes: await executor.listSandboxes(),
     });
   });
 
