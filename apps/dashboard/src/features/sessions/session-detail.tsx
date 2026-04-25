@@ -25,7 +25,12 @@ import {
   useSessionStateQuery,
 } from "@/hooks/queries";
 import { cn } from "@/lib/cn";
-import { formatNumber, formatRelativeTime, truncateId } from "@/lib/format";
+import {
+  formatNumber,
+  formatRelativeTime,
+  formatRepo,
+  truncateId,
+} from "@/lib/format";
 
 const TAB_IDS = ["overview", "config", "messages", "chat", "sandbox"] as const;
 
@@ -153,14 +158,6 @@ const ConfirmArchive = ({
   </>
 );
 
-const formatRepo = (row: SessionRow): string => {
-  if (row.repoOwner) {
-    return `${row.repoOwner}/${row.repoName ?? ""}`;
-  }
-
-  return row.repoName ?? "—";
-};
-
 const SessionRowCard = ({ row }: { row: SessionRow }): React.JSX.Element => {
   const tokens = row.inputTokens + row.outputTokens;
 
@@ -178,7 +175,7 @@ const SessionRowCard = ({ row }: { row: SessionRow }): React.JSX.Element => {
           {row.modelProvider}/{row.modelId}
         </Field>
         <Field label="repo" mono>
-          {formatRepo(row)}
+          {formatRepo(row.repoOwner, row.repoName)}
         </Field>
         <Field label="turns" numeric>
           {formatNumber(row.turnCount)}
