@@ -218,6 +218,29 @@ Validation checklist:
 - Archive marks D1 archived and best-effort terminates Modal sandbox.
 - Operator/debug endpoints are JWT-protected and clearly marked non-product APIs.
 
+## Future Think Add-Ons
+
+### Context Blocks For Exploit Workflows
+
+Use Think session context blocks to keep long-running vulnerability work durable and compactable without relying on raw chat history.
+
+- `target`: repository URL, vulnerable ref, patched ref, language/runtime, setup notes, and known constraints.
+- `objective`: vulnerability class, expected exploit behavior, allowed scope, and validation criteria.
+- `artifact`: current exploit file path, run command, assumptions, checksum/version, and final status.
+- `evidence`: vulnerable-run output, patched-run output, failure reasons, tool logs, and validation summary.
+
+These blocks should be updated by harness tools and programmatic turns, then included through `configureSession()` so the agent can recover state after compaction, retries, or hibernation.
+
+### Optional Sub-Agent Split
+
+Start with one `SessionAgent`, then introduce Think sub-agents once the single-agent validation loop is reliable.
+
+- `ResearchAgent`: inspect source, identify likely vulnerability surfaces, and produce focused notes.
+- `ExploitAgent`: generate and revise the exploit artifact using the research notes and target context.
+- `ValidatorAgent`: run the exploit against vulnerable and patched sandboxes, record evidence, and decide pass/fail.
+
+The parent `SessionAgent` should coordinate these via Think `subAgent()`/`chat()` RPC and keep the final artifact/evidence contract in its own session context.
+
 ## Key Risks To Resolve During Implementation
 
 - Verify exact current APIs for `agents`, `routeAgentRequest()`, callable RPC, `@cloudflare/think`, compaction hooks, and Think execute/codemode before locking types.

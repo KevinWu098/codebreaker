@@ -1,0 +1,30 @@
+{
+  "name": "@codebreaker/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "mint-dev-token": "node scripts/mint-dev-token.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "3.0.170",
+    "@cloudflare/ai-chat": "0.5.1",
+    "@codebreaker/shared": "workspace:*",
+    "agents": "0.11.5",
+    "ai": "6.0.168",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.1",
+    "typescript": "6.0.3",
+    "vite": "8.0.10"
+  }
+}

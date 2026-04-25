@@ -14,6 +14,7 @@
     "db:generate": "pnpm --dir packages/control-plane exec drizzle-kit generate --config drizzle.config.ts",
     "db:studio": "pnpm --dir packages/control-plane exec drizzle-kit studio --config drizzle.config.ts",
     "dev:dashboard": "pnpm --dir apps/dashboard dev",
+    "dev:token": "pnpm --dir apps/dashboard mint-dev-token",
     "dev:modal": "cd packages/modal-shim && PYTHONPATH=src modal serve -m codebreaker_modal_shim.main",
     "dev:worker": "pnpm --dir packages/control-plane exec wrangler dev --config wrangler.jsonc",
     "deploy:modal": "cd packages/modal-shim && PYTHONPATH=src modal deploy -m codebreaker_modal_shim.main",
