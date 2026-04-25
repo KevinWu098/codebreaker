@@ -1,13 +1,24 @@
-import { type Session, Think, type TurnConfig } from "@cloudflare/think";
+import {
+  type ChatRecoveryContext,
+  type ChatRecoveryOptions,
+  type ChatResponseResult,
+  type Session,
+  type StepContext,
+  Think,
+  type TurnConfig,
+} from "@cloudflare/think";
+import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { selectModel } from "@codebreaker/control-plane/session/model";
 import type { Env } from "@codebreaker/control-plane/types";
+import { assertNever } from "@codebreaker/shared/lib/utils";
 import type { SessionStatus } from "@codebreaker/shared/schemas/primitives";
 import {
   type SessionConfig,
   SessionConfigSchema,
 } from "@codebreaker/shared/schemas/session";
 import { callable } from "agents";
-import type { ToolSet } from "ai";
+import { createCompactFunction } from "agents/experimental/memory/utils";
+import { generateText, type ToolSet } from "ai";
 
 export interface SessionAgentState {
   config?: SessionConfig;
@@ -23,6 +34,12 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   };
 
   override async onStart(props?: Record<string, unknown>): Promise<void> {
+    const propsConfig = this.readPropsConfig(props);
+
+    if (propsConfig) {
+      this.configure<SessionConfig>(propsConfig);
+    }
+
     await super.onStart(props);
 
     const config = this.readConfig();
@@ -48,11 +65,54 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   override configureSession(session: Session): Session {
-    return session;
+    const config = this.readConfig();
+    const configuredSession = session
+      .withContext("instructions", {
+        provider: {
+          get: async () => this.getSystemPrompt(),
+        },
+      })
+      .withContext("memory", {
+        description: "Durable operator-visible session memory",
+        maxTokens: 2000,
+      })
+      .withCachedPrompt();
+
+    if (!config?.compaction.enabled) {
+      return configuredSession;
+    }
+
+    return configuredSession
+      .onCompaction(
+        createCompactFunction({
+          minTailMessages: config.compaction.preserveRecentMessages,
+          summarize: async (prompt) => {
+            const result = await generateText({
+              model: this.getModel(),
+              prompt,
+            });
+
+            return result.text;
+          },
+        })
+      )
+      .compactAfter(config.compaction.summarizeAtTokens);
   }
 
   override beforeTurn(): TurnConfig | undefined {
     const config = this.readConfig();
+
+    this.setState({
+      ...this.state,
+      status: "running",
+    });
+    this.ctx.waitUntil(
+      this.sessionIndex.setStatus({
+        eventId: `running:${crypto.randomUUID()}`,
+        id: this.sessionId,
+        status: "running",
+      })
+    );
 
     if (config?.model.provider === "openai" && config.model.reasoningEffort) {
       return {
@@ -65,8 +125,75 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     }
   }
 
+  override onStepFinish(ctx: StepContext): void {
+    this.ctx.waitUntil(
+      this.sessionIndex.addTokenUsage({
+        eventId: `${ctx.response.id}:${ctx.stepNumber}`,
+        id: this.sessionId,
+        inputTokens: ctx.usage.inputTokens ?? 0,
+        outputTokens: ctx.usage.outputTokens ?? 0,
+      })
+    );
+  }
+
+  override onChatResponse(result: ChatResponseResult): void {
+    const status = this.toSessionStatus(result.status);
+
+    this.setState({
+      ...this.state,
+      status,
+    });
+    this.ctx.waitUntil(
+      Promise.all([
+        this.sessionIndex.incrementTurn({
+          eventId: result.requestId,
+          id: this.sessionId,
+        }),
+        this.sessionIndex.setStatus({
+          eventId: `${result.status}:${result.requestId}`,
+          id: this.sessionId,
+          status,
+        }),
+      ]).then(() => undefined)
+    );
+  }
+
   override onChatError(error: unknown): unknown {
+    this.setState({
+      ...this.state,
+      status: "failed",
+    });
+    this.ctx.waitUntil(
+      this.sessionIndex.setStatus({
+        eventId: `chat-error:${crypto.randomUUID()}`,
+        id: this.sessionId,
+        status: "failed",
+      })
+    );
+
     return error;
+  }
+
+  override onChatRecovery(
+    ctx: ChatRecoveryContext
+  ): Promise<ChatRecoveryOptions> {
+    const config = this.readConfig();
+    const timeoutMs = (config?.timeoutSeconds ?? 300) * 1000;
+    const replayWindowMs = Math.min(timeoutMs, 5 * 60 * 1000);
+    const shouldContinue = Date.now() - ctx.createdAt <= replayWindowMs;
+
+    this.ctx.waitUntil(
+      this.sessionIndex.setStatus({
+        eventId: `recovery:${ctx.requestId}`,
+        id: this.sessionId,
+        status: shouldContinue ? "running" : "failed",
+      })
+    );
+
+    return Promise.resolve({
+      continue: shouldContinue,
+      persist: true,
+    });
   }
 
   @callable()
@@ -112,5 +239,34 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const config = this.getConfig<SessionConfig>();
 
     return config ? SessionConfigSchema.parse(config) : null;
+  }
+
+  private readPropsConfig(
+    props: Record<string, unknown> | undefined
+  ): SessionConfig | null {
+    const parseResult = SessionConfigSchema.safeParse(props?.config);
+
+    return parseResult.success ? parseResult.data : null;
+  }
+
+  private get sessionId(): string {
+    return this.name;
+  }
+
+  private get sessionIndex(): SessionIndexStore {
+    return new SessionIndexStore(this.env.DB);
+  }
+
+  private toSessionStatus(status: ChatResponseResult["status"]): SessionStatus {
+    switch (status) {
+      case "aborted":
+        return "idle";
+      case "completed":
+        return "idle";
+      case "error":
+        return "failed";
+      default:
+        return assertNever(status);
+    }
   }
 }

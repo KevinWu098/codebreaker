@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: think-agent
     content: Implement SessionAgent on top of Think with model selection, system prompt/context, tool loading, config, callable methods, and lifecycle mirroring.
-    status: pending
+    status: completed
   - id: api-routes
     content: Implement JWT-protected session/admin routes and typed error handling.
     status: completed
