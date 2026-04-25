@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { JsonView } from "@/components/json-view";
 
 export interface MessagePart {
+  errorText?: unknown;
   input?: unknown;
   output?: unknown;
   state?: string;

@@ -87,6 +87,25 @@ export const useCleanupBenchmarkRunMutation = (runId: string) => {
   });
 };
 
+export const useStartBenchmarkRunMutation = (runId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<BenchmarkRunActionResponse, Error, void>({
+    mutationFn: () => api.startBenchmarkRun(runId),
+    onError: (error) => {
+      toast.error(messageFor(error, "benchmark start failed"));
+    },
+    onSuccess: () => {
+      toast.success(`benchmark ${runId.slice(0, 8)}… started`);
+      queryClient.invalidateQueries({ queryKey: qk.benchmarkRuns(connection) });
+      queryClient.invalidateQueries({
+        queryKey: qk.benchmarkRun(connection, runId),
+      });
+    },
+  });
+};
+
 export const useArchiveSessionMutation = (sessionId: string) => {
   const connection = useConnection();
   const queryClient = useQueryClient();

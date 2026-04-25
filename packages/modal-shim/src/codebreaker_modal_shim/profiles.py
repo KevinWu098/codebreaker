@@ -8,14 +8,19 @@ from codebreaker_modal_shim.schemas import SandboxProfile, SandboxProfileName
 
 _PROFILES_FILENAME = "sandbox-profiles.json"
 
-_SEARCH_PATHS = [
-    Path("/app") / _PROFILES_FILENAME,
-    Path(__file__).resolve().parents[4] / "packages" / "shared" / "src" / "data" / _PROFILES_FILENAME,
-]
+def _profile_search_paths() -> list[Path]:
+    paths = [Path("/app") / _PROFILES_FILENAME]
+
+    for parent in Path(__file__).resolve().parents:
+        paths.append(parent / "packages" / "shared" / "src" / "data" / _PROFILES_FILENAME)
+
+    return paths
 
 
 def _load_profiles() -> dict[SandboxProfileName, SandboxProfile]:
-    for path in _SEARCH_PATHS:
+    paths = _profile_search_paths()
+
+    for path in paths:
         if path.exists():
             raw: dict[str, dict] = json.loads(path.read_text())
             return {
@@ -23,9 +28,7 @@ def _load_profiles() -> dict[SandboxProfileName, SandboxProfile]:
                 for name, profile in raw.items()
             }
 
-    raise FileNotFoundError(
-        f"Cannot find {_PROFILES_FILENAME}; searched {_SEARCH_PATHS}"
-    )
+    raise FileNotFoundError(f"Cannot find {_PROFILES_FILENAME}; searched {paths}")
 
 
 PROFILES: dict[SandboxProfileName, SandboxProfile] = _load_profiles()

@@ -31,7 +31,11 @@ const unauthorized = (origin: string | null, env: Env): Response =>
   );
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    context: ExecutionContext
+  ): Promise<Response> {
     const origin = request.headers.get("origin");
 
     if (isAgentRoute(request)) {
@@ -59,6 +63,6 @@ export default {
       }
     }
 
-    return router.fetch(request, env);
+    return router.fetch(request, env, context);
   },
 };

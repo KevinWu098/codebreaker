@@ -15,10 +15,25 @@ from codebreaker_modal_shim.schemas import (
     WriteRequest,
 )
 
-_REPO_ROOT = Path(__file__).resolve().parents[4]
-_PROFILES_JSON = (
-    _REPO_ROOT / "packages" / "shared" / "src" / "data" / "sandbox-profiles.json"
-)
+_PROFILES_FILENAME = "sandbox-profiles.json"
+
+
+def _find_profiles_json() -> Path:
+    deployed_path = Path("/app") / _PROFILES_FILENAME
+
+    if deployed_path.exists():
+        return deployed_path
+
+    for parent in Path(__file__).resolve().parents:
+        path = parent / "packages" / "shared" / "src" / "data" / _PROFILES_FILENAME
+
+        if path.exists():
+            return path
+
+    raise FileNotFoundError(f"Cannot find {_PROFILES_FILENAME}")
+
+
+_PROFILES_JSON = _find_profiles_json()
 
 app = modal.App("codebreaker-modal-shim")
 image = modal.Image.debian_slim().apt_install("git").pip_install(

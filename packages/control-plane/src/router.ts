@@ -128,13 +128,22 @@ export const createRouter = (): Hono<{
     async (context) => {
       const request = context.req.valid("json");
       const orchestrator = new BenchmarkRunOrchestrator(context.env);
-      const run = await orchestrator.create(request);
+      const run = await orchestrator.create({
+        ...request,
+        autoStart: false,
+      });
 
       if (!run) {
         return jsonError(
           "Benchmark run was not created",
           "benchmark_run_not_created",
           500
+        );
+      }
+
+      if (request.autoStart) {
+        context.executionCtx.waitUntil(
+          orchestrator.start(run.id, request).then(() => undefined)
         );
       }
 
@@ -194,12 +203,15 @@ export const createRouter = (): Hono<{
         taskId: run.taskId,
         timeoutSeconds: 1800,
       };
-      const nextRun = await new BenchmarkRunOrchestrator(context.env).start(
-        id,
-        request
+      context.executionCtx.waitUntil(
+        new BenchmarkRunOrchestrator(context.env)
+          .start(id, request)
+          .then(() => undefined)
       );
 
-      return context.json({ run: nextRun });
+      return context.json({
+        run: await store.update({ id, status: "running" }),
+      });
     }
   );
 

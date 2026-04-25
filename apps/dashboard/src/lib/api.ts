@@ -158,6 +158,14 @@ export const api = {
       `/benchmark-runs/${encodeURIComponent(id)}`
     ),
 
+  startBenchmarkRun: (id: string): Promise<BenchmarkRunActionResponse> =>
+    request<BenchmarkRunActionResponse>(
+      `/benchmark-runs/${encodeURIComponent(id)}/start`,
+      {
+        method: "POST",
+      }
+    ),
+
   cleanupBenchmarkRun: (id: string): Promise<BenchmarkRunActionResponse> =>
     request<BenchmarkRunActionResponse>(
       `/benchmark-runs/${encodeURIComponent(id)}/cleanup`,

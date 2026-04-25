@@ -10,6 +10,7 @@ import { useThemeSync } from "@/hooks/use-theme";
 const VIEW_IDS: readonly ViewId[] = ["sessions", "benchmarks", "admin"];
 
 const searchParams = {
+  benchmark: parseAsString,
   view: parseAsStringLiteral(VIEW_IDS).withDefault("sessions"),
   session: parseAsString,
   tab: parseAsString,
@@ -17,12 +18,14 @@ const searchParams = {
 
 interface SessionsViewProps {
   onClearSelection: () => void;
+  onOpenBenchmarkRun: (runId: string) => void;
   onSelect: (id: string) => void;
   selectedId: string | null;
 }
 
 const SessionsView = ({
   onClearSelection,
+  onOpenBenchmarkRun,
   onSelect,
   selectedId,
 }: SessionsViewProps): React.JSX.Element => {
@@ -32,6 +35,7 @@ const SessionsView = ({
         key={selectedId}
         onArchived={onClearSelection}
         onBack={onClearSelection}
+        onOpenBenchmarkRun={onOpenBenchmarkRun}
         sessionId={selectedId}
       />
     );
@@ -42,8 +46,10 @@ const SessionsView = ({
 
 export const App = (): React.JSX.Element => {
   useThemeSync();
-  const [{ view, session: selectedId }, setParams] =
-    useQueryStates(searchParams);
+  const [
+    { benchmark: selectedBenchmarkId, view, session: selectedId },
+    setParams,
+  ] = useQueryStates(searchParams);
 
   const clearSelection = useCallback(
     () => setParams({ session: null, tab: null }),
@@ -67,15 +73,35 @@ export const App = (): React.JSX.Element => {
         {view === "sessions" && (
           <SessionsView
             onClearSelection={clearSelection}
-            onSelect={(id) => setParams({ session: id, tab: null })}
+            onOpenBenchmarkRun={(runId) =>
+              setParams(
+                {
+                  benchmark: runId,
+                  session: null,
+                  tab: null,
+                  view: "benchmarks",
+                },
+                { history: "push" }
+              )
+            }
+            onSelect={(id) =>
+              setParams({ session: id, tab: null }, { history: "push" })
+            }
             selectedId={selectedId}
           />
         )}
         {view === "benchmarks" && (
           <BenchmarksPanel
             onOpenSession={(sessionId) =>
-              setParams({ view: "sessions", session: sessionId, tab: null })
+              setParams(
+                { view: "sessions", session: sessionId, tab: null },
+                { history: "push" }
+              )
             }
+            onSelectRun={(runId) =>
+              setParams({ benchmark: runId }, { history: "push" })
+            }
+            selectedRunId={selectedBenchmarkId}
           />
         )}
         {view === "admin" && <AdminPanel />}

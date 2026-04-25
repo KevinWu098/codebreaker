@@ -171,31 +171,51 @@ class ModalSandboxManager:
 
     def exec(self, request: ExecRequest) -> ExecResult:
         self.check_rate_limit(request.session_id)
-        sandbox, metadata = self.ensure_sandbox(request.session_id, request.profile)
-        profile = resolve_profile(metadata.profile)
-        cwd = resolve_workdir(request.cwd, profile.workdir)
-        timeout_seconds = request.timeout_seconds or profile.timeout_seconds
-        started_at = time.monotonic()
-        process = sandbox.exec(
-            "bash",
-            "-lc",
-            request.command,
-            workdir=cwd,
-            timeout=timeout_seconds,
-        )
-        exit_code = process.wait()
-        stdout, stdout_truncated = cap_text(read_stream(process.stdout), STDIO_LIMIT_BYTES)
-        stderr, stderr_truncated = cap_text(read_stream(process.stderr), STDIO_LIMIT_BYTES)
+        last_error: Exception | None = None
 
-        return ExecResult(
-            command=request.command,
-            duration_ms=int((time.monotonic() - started_at) * 1000),
-            exit_code=int(exit_code),
-            stderr=stderr,
-            stderr_truncated=stderr_truncated,
-            stdout=stdout,
-            stdout_truncated=stdout_truncated,
-        )
+        for attempt in range(2):
+            sandbox, metadata = self.ensure_sandbox(request.session_id, request.profile)
+            profile = resolve_profile(metadata.profile)
+            cwd = resolve_workdir(request.cwd, profile.workdir)
+            timeout_seconds = request.timeout_seconds or profile.timeout_seconds
+            started_at = time.monotonic()
+
+            try:
+                process = sandbox.exec(
+                    "bash",
+                    "-lc",
+                    request.command,
+                    workdir=cwd,
+                    timeout=timeout_seconds,
+                )
+            except modal.exception.NotFoundError as error:
+                last_error = error
+                self.forget_sandbox(request.session_id)
+
+                if attempt == 0:
+                    continue
+
+                raise
+
+            exit_code = process.wait()
+            stdout, stdout_truncated = cap_text(
+                read_stream(process.stdout), STDIO_LIMIT_BYTES
+            )
+            stderr, stderr_truncated = cap_text(
+                read_stream(process.stderr), STDIO_LIMIT_BYTES
+            )
+
+            return ExecResult(
+                command=request.command,
+                duration_ms=int((time.monotonic() - started_at) * 1000),
+                exit_code=int(exit_code),
+                stderr=stderr,
+                stderr_truncated=stderr_truncated,
+                stdout=stdout,
+                stdout_truncated=stdout_truncated,
+            )
+
+        raise last_error or RuntimeError("sandbox exec failed")
 
     def exec_stream(self, request: ExecRequest) -> StreamingResponse:
         async def stream() -> AsyncIterator[str]:
@@ -364,9 +384,13 @@ class ModalSandboxManager:
         try:
             modal.Sandbox.from_id(metadata.sandbox_id).terminate()
         finally:
-            del SANDBOXES[request.session_id]
+            self.forget_sandbox(request.session_id)
 
         return {"terminated": True}
+
+    def forget_sandbox(self, session_id: str) -> None:
+        if self.get_metadata(session_id):
+            del SANDBOXES[session_id]
 
 
 def shell_quote(value: str) -> str:

@@ -4,6 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import { App } from "@/app";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/query-client";
 import "@/styles.css";
 
@@ -16,9 +17,11 @@ if (!container) {
 createRoot(container).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <App />
-      </NuqsAdapter>
+      <TooltipProvider>
+        <NuqsAdapter>
+          <App />
+        </NuqsAdapter>
+      </TooltipProvider>
       <Toaster
         closeButton
         position="bottom-right"

@@ -1,5 +1,9 @@
 import type { BenchmarkRunRow } from "@codebreaker/benchmark-runner/schemas";
-import type { ModelProvider } from "@codebreaker/shared/lib/models";
+import {
+  MODEL_OPTIONS,
+  MODEL_OPTIONS_BY_PROVIDER,
+  MODEL_PROVIDERS,
+} from "@codebreaker/shared/lib/models";
 import { Play, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
@@ -14,6 +18,7 @@ import { Spinner } from "@/components/spinner";
 import {
   useCleanupBenchmarkRunMutation,
   useCreateBenchmarkRunMutation,
+  useStartBenchmarkRunMutation,
 } from "@/hooks/mutations";
 import {
   useBenchmarkRunQuery,
@@ -23,7 +28,10 @@ import {
 import { isAuthorized, useConnection } from "@/lib/connection";
 import { formatRelativeTime } from "@/lib/format";
 
-const DEFAULT_MODEL = "anthropic/claude-sonnet-4-5";
+const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.anthropic[0];
+const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
+  `${model.provider}/${model.id}`;
+const DEFAULT_MODEL_VALUE = modelValue(DEFAULT_MODEL);
 
 const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => {
   if (status === "completed") {
@@ -43,32 +51,44 @@ const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => {
 
 export interface BenchmarksPanelProps {
   onOpenSession?: (sessionId: string) => void;
+  onSelectRun?: (runId: string) => void;
+  selectedRunId?: string | null;
 }
 
 export const BenchmarksPanel = ({
   onOpenSession,
+  onSelectRun,
+  selectedRunId,
 }: BenchmarksPanelProps): React.JSX.Element => {
   const connection = useConnection();
   const enabled = isAuthorized(connection);
   const tasks = useBenchmarkTasksQuery();
   const runs = useBenchmarkRunsQuery();
   const createRun = useCreateBenchmarkRunMutation();
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [localSelectedRunId, setLocalSelectedRunId] = useState<string | null>(
+    null
+  );
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [difficulty, setDifficulty] = useState<"L0" | "L1">("L1");
-  const [model, setModel] = useState(DEFAULT_MODEL);
-  const selectedRun = selectedRunId ? (
+  const [model, setModel] = useState(DEFAULT_MODEL_VALUE);
+  const activeRunId = selectedRunId ?? localSelectedRunId;
+  const selectRun = (runId: string): void => {
+    setLocalSelectedRunId(runId);
+    onSelectRun?.(runId);
+  };
+  const selectedRun = activeRunId ? (
     <BenchmarkRunDetail
       {...(onOpenSession ? { onOpenSession } : {})}
-      runId={selectedRunId}
+      runId={activeRunId}
     />
   ) : null;
 
   const startRun = (): void => {
-    const [provider, ...idParts] = model.split("/");
-    const id = idParts.join("/");
+    const selectedModel = MODEL_OPTIONS.find(
+      (option) => modelValue(option) === model
+    );
 
-    if (!(selectedTaskId && provider && id)) {
+    if (!(selectedTaskId && selectedModel)) {
       return;
     }
 
@@ -79,14 +99,14 @@ export const BenchmarksPanel = ({
         difficulty,
         maxTurns: 20,
         model: {
-          id,
-          provider: provider as ModelProvider,
+          id: selectedModel.id,
+          provider: selectedModel.provider,
         },
         taskId: selectedTaskId,
         timeoutSeconds: 1800,
       },
       {
-        onSuccess: (response) => setSelectedRunId(response.run.id),
+        onSuccess: (response) => selectRun(response.run.id),
       }
     );
   };
@@ -151,11 +171,25 @@ export const BenchmarksPanel = ({
           </label>
           <label className="space-y-1 text-xs">
             <span className="field-label">model</span>
-            <input
+            <select
               className="input"
               onChange={(event) => setModel(event.target.value)}
               value={model}
-            />
+            >
+              {MODEL_PROVIDERS.map((provider) => (
+                <optgroup key={provider} label={provider}>
+                  {MODEL_OPTIONS_BY_PROVIDER[provider].map((option) => (
+                    <option
+                      key={option.id}
+                      title={`Documented at ${option.documentationUrl}`}
+                      value={modelValue(option)}
+                    >
+                      {option.label} ({option.id})
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </label>
         </div>
       </Card>
@@ -163,9 +197,9 @@ export const BenchmarksPanel = ({
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
         <BenchmarkRunsTable
           loading={runs.isLoading}
-          onSelect={setSelectedRunId}
+          onSelect={selectRun}
           runs={runs.data?.runs ?? []}
-          selectedRunId={selectedRunId}
+          selectedRunId={activeRunId}
         />
         {selectedRun}
       </div>
@@ -252,7 +286,12 @@ const BenchmarkRunDetail = ({
 }): React.JSX.Element => {
   const detail = useBenchmarkRunQuery(runId);
   const cleanup = useCleanupBenchmarkRunMutation(runId);
+  const start = useStartBenchmarkRunMutation(runId);
   const run = detail.data?.run;
+  const canStart =
+    run?.status === "pending" ||
+    run?.status === "failed" ||
+    run?.status === "cancelled";
 
   let sessionValue: React.ReactNode = "—";
   if (run?.sessionId) {
@@ -275,19 +314,29 @@ const BenchmarkRunDetail = ({
   return (
     <Card
       actions={
-        <Button
-          disabled={cleanup.isPending}
-          onClick={() => cleanup.mutate()}
-          variant="danger"
-        >
-          <Trash2 aria-hidden="true" size={12} />
-          <span>cleanup</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            disabled={!canStart || start.isPending}
+            onClick={() => start.mutate()}
+          >
+            <Play aria-hidden="true" size={12} />
+            <span>{start.isPending ? "starting…" : "start"}</span>
+          </Button>
+          <Button
+            disabled={cleanup.isPending}
+            onClick={() => cleanup.mutate()}
+            variant="danger"
+          >
+            <Trash2 aria-hidden="true" size={12} />
+            <span>cleanup</span>
+          </Button>
+        </div>
       }
       title="run detail"
     >
       <ErrorState error={detail.error} title="detail unavailable" />
       <ErrorState error={cleanup.error} title="cleanup failed" />
+      <ErrorState error={start.error} title="start failed" />
       {!detail.data && <Spinner />}
       {run && (
         <dl className="mb-4 grid grid-cols-[120px_1fr] gap-x-3 gap-y-2 text-xs">

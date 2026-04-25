@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { JsonView as RawJsonView } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { CopyTextButton } from "@/components/copy-text-button";
@@ -71,7 +71,15 @@ export const JsonView = ({
   value,
 }: JsonViewProps): React.JSX.Element => {
   const copyText = useMemo(() => valueToCopyString(value), [value]);
-  const outerStyle = maxHeight ? { maxHeight: `${maxHeight}px` } : undefined;
+  const data = useMemo(() => ensureRenderable(value), [value]);
+  const outerStyle = useMemo(
+    () => (maxHeight ? { maxHeight: `${maxHeight}px` } : undefined),
+    [maxHeight]
+  );
+  const shouldExpandNode = useCallback(
+    (level: number) => level < collapsedDepth,
+    [collapsedDepth]
+  );
 
   return (
     <div className={cn("json-view", className)} style={outerStyle}>
@@ -88,8 +96,8 @@ export const JsonView = ({
       >
         <RawJsonView
           clickToExpandNode
-          data={ensureRenderable(value)}
-          shouldExpandNode={(level) => level < collapsedDepth}
+          data={data}
+          shouldExpandNode={shouldExpandNode}
           style={STYLES}
         />
       </div>

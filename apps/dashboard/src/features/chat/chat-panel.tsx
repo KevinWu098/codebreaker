@@ -1,13 +1,24 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
-import { ArrowDownIcon, Send, Square, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import type { ChatStatus, UIMessage } from "ai";
+import { MessageSquare, Trash2 } from "lucide-react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   Conversation,
   ConversationContent,
+  ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputFooter,
+  type PromptInputMessage,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+} from "@/components/ai-elements/prompt-input";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
@@ -52,19 +63,62 @@ const isRenderablePart = (
   !TRANSIENT_PART_TYPES.has(part.type) ||
   showTransientParts;
 
-const renderPart = (
-  part: MessagePart,
-  messageId: string,
-  partIndex: number
-): React.JSX.Element => (
-  <MessagePartRenderer
-    jsonMaxHeight={140}
-    key={partKey(messageId, partIndex, part.type)}
-    part={part}
-    partKey={partKey(messageId, partIndex, part.type)}
-    variant="live"
-  />
+interface ChatMessageItemProps {
+  message: UIMessage;
+  showTransientParts: boolean;
+}
+
+const ChatMessageItem = memo(
+  ({
+    message,
+    showTransientParts,
+  }: ChatMessageItemProps): React.JSX.Element => {
+    const isUser = message.role === "user";
+    const renderableParts = message.parts.filter((part) =>
+      isRenderablePart(part as MessagePart, showTransientParts)
+    );
+
+    return (
+      <Message from={message.role}>
+        <header className="mb-1 flex items-center gap-2 text-[10px] text-fg-muted uppercase tracking-wider">
+          <span className={isUser ? "text-accent" : "text-fg"}>
+            {message.role}
+          </span>
+          <span className="font-mono text-fg-subtle">{message.id}</span>
+        </header>
+        <MessageContent>
+          {renderableParts.map((part, partIndex) => {
+            const typedPart = part as MessagePart;
+            const key = partKey(message.id, partIndex, typedPart.type);
+
+            return (
+              <MessagePartRenderer
+                key={key}
+                part={typedPart}
+                partKey={key}
+                role={message.role}
+                variant="live"
+              />
+            );
+          })}
+        </MessageContent>
+      </Message>
+    );
+  }
 );
+
+ChatMessageItem.displayName = "ChatMessageItem";
+
+const chatStatusFor = (
+  error: Error | undefined,
+  isStreaming: boolean
+): ChatStatus => {
+  if (isStreaming) {
+    return "streaming";
+  }
+
+  return error ? "error" : "ready";
+};
 
 const ChatTitle = ({
   identified,
@@ -89,51 +143,52 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
     [connection.baseUrl]
   );
   const [draft, setDraft] = useState("");
+  const agentOptions = useMemo<Parameters<typeof useAgent>[0]>(
+    () => ({
+      agent: "session-agent",
+      host,
+      name: sessionId,
+      protocol: secure ? "wss" : "ws",
+      ...(connection.token
+        ? { query: { token: connection.token }, queryDeps: [connection.token] }
+        : {}),
+    }),
+    [connection.token, host, secure, sessionId]
+  );
 
-  const agent = useAgent({
-    agent: "session-agent",
-    host,
-    name: sessionId,
-    protocol: secure ? "wss" : "ws",
-    ...(connection.token
-      ? { query: { token: connection.token }, queryDeps: [connection.token] }
-      : {}),
-  });
+  const agent = useAgent(agentOptions);
 
   const chat = useAgentChat({ agent });
 
-  const send = (): void => {
-    const text = draft.trim();
+  const send = useCallback(
+    (message: PromptInputMessage): void => {
+      const text = message.text.trim();
 
-    if (!text) {
-      return;
-    }
+      if (!text) {
+        return;
+      }
 
-    chat.sendMessage({ text });
-    setDraft("");
-  };
+      chat.sendMessage({ text });
+      setDraft("");
+    },
+    [chat]
+  );
 
   const isStreaming = chat.isStreaming;
+  const chatStatus = chatStatusFor(chat.error, isStreaming);
+  const latestMessageId = chat.messages.at(-1)?.id;
 
   return (
     <Card
       actions={
-        <>
-          <Button
-            disabled={isStreaming}
-            onClick={() => chat.clearHistory()}
-            variant="ghost"
-          >
-            <Trash2 aria-hidden="true" size={12} />
-            <span>clear</span>
-          </Button>
-          {isStreaming && (
-            <Button onClick={() => chat.stop()} variant="danger">
-              <Square aria-hidden="true" size={12} />
-              <span>stop</span>
-            </Button>
-          )}
-        </>
+        <Button
+          disabled={isStreaming}
+          onClick={() => chat.clearHistory()}
+          variant="ghost"
+        >
+          <Trash2 aria-hidden="true" size={12} />
+          <span>clear</span>
+        </Button>
       }
       title={
         <ChatTitle identified={agent.identified} isStreaming={isStreaming} />
@@ -142,80 +197,56 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
       <div className="space-y-3">
         <ErrorState error={chat.error} title="chat error" />
 
-        <Conversation className="max-h-[520px] overflow-y-auto">
-          <ConversationContent>
-            {chat.messages.length === 0 && (
-              <div className="py-6 text-center text-fg-muted text-xs">
-                no messages yet — say something below.
-              </div>
+        <Conversation className="h-[520px] rounded border border-border bg-bg-raised/40">
+          <ConversationContent className="gap-3 p-3">
+            {chat.messages.length === 0 ? (
+              <ConversationEmptyState
+                description="say something below to start."
+                icon={<MessageSquare className="size-10" />}
+                title="no messages yet"
+              />
+            ) : (
+              chat.messages.map((message) => (
+                <ChatMessageItem
+                  key={message.id}
+                  message={message}
+                  showTransientParts={
+                    isStreaming &&
+                    message.role !== "user" &&
+                    message.id === latestMessageId
+                  }
+                />
+              ))
             )}
-            {chat.messages.map((message) => {
-              const isUser = message.role === "user";
-              const isLatestMessage = message.id === chat.messages.at(-1)?.id;
-              const showTransientParts =
-                isStreaming && !isUser && isLatestMessage;
-              const renderableParts = message.parts.filter((part) =>
-                isRenderablePart(part as MessagePart, showTransientParts)
-              );
-
-              return (
-                <Message from={message.role} key={message.id}>
-                  <header className="mb-1 flex items-center gap-2 text-[10px] text-fg-muted uppercase tracking-wider">
-                    <span className={isUser ? "text-accent" : "text-fg"}>
-                      {message.role}
-                    </span>
-                    <span className="font-mono text-fg-subtle">
-                      {message.id}
-                    </span>
-                  </header>
-                  <MessageContent>
-                    {renderableParts.map((part, partIndex) =>
-                      renderPart(part as MessagePart, message.id, partIndex)
-                    )}
-                  </MessageContent>
-                </Message>
-              );
-            })}
           </ConversationContent>
-          <ConversationScrollButton>
-            <ArrowDownIcon aria-hidden="true" size={14} />
-          </ConversationScrollButton>
+          <ConversationScrollButton />
         </Conversation>
 
-        <div className="composer">
-          <textarea
-            className="input"
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-                event.preventDefault();
-                send();
-              }
-            }}
-            placeholder="send a message to the agent…"
-            rows={2}
-            value={draft}
-          />
-          <Button
-            disabled={isStreaming || !draft.trim()}
-            onClick={send}
-            variant="primary"
-          >
-            <Send aria-hidden="true" size={12} />
-            <span>send</span>
-          </Button>
-        </div>
+        <PromptInput className="mt-3" onSubmit={send}>
+          <PromptInputBody>
+            <PromptInputTextarea
+              className="font-mono text-xs"
+              disabled={isStreaming}
+              onChange={(event) => setDraft(event.currentTarget.value)}
+              placeholder="send a message to the agent..."
+              value={draft}
+            />
+          </PromptInputBody>
+          <PromptInputFooter>
+            <PromptInputTools>
+              <span className="text-[10px] text-fg-subtle">
+                enter to send · shift+enter for newline
+              </span>
+            </PromptInputTools>
+            <PromptInputSubmit
+              disabled={!(draft.trim() || isStreaming)}
+              onStop={() => chat.stop()}
+              status={chatStatus}
+            />
+          </PromptInputFooter>
+        </PromptInput>
 
         <div className="flex flex-wrap items-center gap-2 text-[10px] text-fg-subtle">
-          <span>
-            <kbd className="kbd">⌘</kbd>
-            <span className="mx-0.5">/</span>
-            <kbd className="kbd">ctrl</kbd>
-            <span className="mx-0.5">+</span>
-            <kbd className="kbd">enter</kbd>
-            <span> to send</span>
-          </span>
-          <span>·</span>
           <span>
             websocket auth uses the configured token via ?token= query (the only
             way to authenticate a browser WS upgrade).

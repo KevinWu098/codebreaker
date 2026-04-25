@@ -73,6 +73,7 @@ const usage = `Usage:
   benchmark-runner list
   benchmark-runner runs
   benchmark-runner run --task <id> --difficulty <L0|L1> --model <provider/model> [--cleanup <policy>]
+  benchmark-runner start <runId>
   benchmark-runner inspect <runId>
   benchmark-runner cleanup <runId>
 
@@ -130,6 +131,17 @@ const main = async (): Promise<void> => {
       }
 
       const response = await client.getRun(runId);
+      process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
+      return;
+    }
+    case "start": {
+      const runId = args.at(0);
+
+      if (!runId) {
+        throw new Error("start requires a run id");
+      }
+
+      const response = await client.startRun(runId);
       process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
       return;
     }
