@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h2rm-29ch-wfmh",
+  "post_patch_commit": "d805d3154b17c6bf455ddf5deb0a3461a3833bc6",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit d805d31 fixes XSS by adding $escapetool.xml() and $escapetool.javascript() calls around user-controlled and translation-rendered content. The primary vulnerability is in LoginUIExtension.vm where $request.identityOAuth (a GET parameter) flows into $statusMsg and is rendered unescaped in an HTML comment. Secondary locations are the t and tp translation macros in IdentityOAuthConfigMacros.vm which output raw translation strings without escaping. WebHome.xml also received escaping fixes for rendered translations. The 3 translation .properties files had only i18n string updates. Locations derived from both the advisory description (which points to LoginUIExtension) and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
