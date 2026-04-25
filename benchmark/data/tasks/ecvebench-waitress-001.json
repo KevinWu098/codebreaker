@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-waitress-001",
+  "ghsa_id": "GHSA-9298-4cf8-g4wj",
+  "codebase": {
+    "repo": "https://github.com/Pylons/waitress",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "fdd2ecfd325af2f419d91c62b2551e2c3922f686"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTTP request processing and connection lifecycle management"
+    },
+    "L2": {
+      "description": "A race condition exists in the HTTP server's request pipeline handling. When request lookahead is enabled and a client sends a specifically sized initial request followed by a second pipelined request, the server may process and serve the second request even after determining the first request is invalid and the connection should be closed. The connection closure state is not checked atomically when new data is received, allowing a queued request to be serviced by a worker thread during connection teardown, potentially granting unauthorized access to the application."
+    },
+    "L3": {
+      "area": "HTTP request processing and connection lifecycle management",
+      "description": "A race condition exists in the HTTP server's request pipeline handling. When request lookahead is enabled and a client sends a specifically sized initial request followed by a second pipelined request, the server may process and serve the second request even after determining the first request is invalid and the connection should be closed. The connection closure state is not checked atomically when new data is received, allowing a queued request to be serviced by a worker thread during connection teardown, potentially granting unauthorized access to the application."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 9.1,
+    "reason": "A TOCTOU race condition in HTTP pipelining allows a secondary request to be processed and served by a worker thread even when the first request failed validation and the connection should have been closed, because the connection closure state is not checked under the request lock when receiving new data.",
+    "locations": [
+      {
+        "file": "src/waitress/channel.py",
+        "function": "received"
+      }
+    ]
+  }
+}

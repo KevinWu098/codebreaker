@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fmx4-26r3-wxpf",
+  "post_patch_commit": "ab4504fd17460627a6ab255bc3c63e8e5fc6aed3",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit is a merge commit that updates cmark-gfm to 0.29.0.gfm.3. The primary fix is in ext/commonmarker/table.c in the row_from_string function, which adds a UINT16_MAX bounds check on row->n_columns before incrementing. Additional null-check guards were added in try_opening_table_header and try_opening_table_row. Only one non-test source file (table.c) was meaningfully changed; the other files are version bumps and a submodule pointer update. Location derived directly from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w6xv-mf6f-r5f6",
+  "post_patch_commit": "96d5f5bec734c7a0e7c64654cdb7aacc81fdc867",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit is a merge commit (PR #1) with 258 files changed, mostly due to removal of the third_party_tls/tlslite directory and third_party/oscrypto vendor libraries. The vulnerability is in scalyr_agent/connection.py: (1) HTTPSConnectionWithTimeoutAndVerification.connect() calls ssl.wrap_socket() with CERT_REQUIRED but no hostname verification, and (2) ScalyrHttpConnection._validate_chain_openssl() invokes the openssl verify command without -verify_hostname. The patch replaces these with ssl.SSLContext using check_hostname=True and adds ssl_match_hostname for older Python versions.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

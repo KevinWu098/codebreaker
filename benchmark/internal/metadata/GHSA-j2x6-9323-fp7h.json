@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j2x6-9323-fp7h",
+  "post_patch_commit": "049dbdc647b2ce838fae7c188e6bb09cf16e470b",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit is a merge commit fixing GHSA-j2x6-9323-fp7h. Five non-test source files were changed (noisy patch). Primary vulnerability location is _unpack_returndata in external_call.py, which failed to validate return data bounds when used in complex expressions. Secondary location is needs_clamp in core.py, which incorrectly skipped clamping for JSON_ABI-encoded bytestrings. Locations derived from both the advisory description (which describes the missing bounds check on external call returns in complex expressions) and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

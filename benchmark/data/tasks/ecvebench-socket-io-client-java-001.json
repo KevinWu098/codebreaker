@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-socket-io-client-java-001",
+  "ghsa_id": "GHSA-85xx-xhjm-rhrw",
+  "codebase": {
+    "repo": "https://github.com/socketio/socket.io-client-java",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "4885e7d59fad78285448694cb5681e8a9ce809ef"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Network protocol packet parsing and message decoding"
+    },
+    "L2": {
+      "description": "A null pointer dereference vulnerability exists where incoming network packets with an invalid or unexpected payload format are not validated before being processed. A remote attacker can send a crafted packet with a malformed payload, causing the application to dereference a null value and crash."
+    },
+    "L3": {
+      "area": "Network protocol packet parsing and message decoding",
+      "description": "A null pointer dereference vulnerability exists where incoming network packets with an invalid or unexpected payload format are not validated before being processed. A remote attacker can send a crafted packet with a malformed payload, causing the application to dereference a null value and crash."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 7.5,
+    "reason": "The packet parser does not validate that the payload matches the expected format for the given packet type, allowing crafted packets with invalid payloads to cause null pointer exceptions during subsequent processing.",
+    "locations": [
+      {
+        "file": "src/main/java/io/socket/parser/IOParser.java",
+        "function": "decodeString"
+      },
+      {
+        "file": "src/main/java/io/socket/client/Manager.java",
+        "function": "ondata"
+      }
+    ]
+  }
+}

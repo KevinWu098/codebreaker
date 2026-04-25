@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-numpy-001",
+  "ghsa_id": "GHSA-9fq2-x9r6-wfmf",
+  "codebase": {
+    "repo": "https://github.com/numpy/numpy",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "cc94f360febdef0e6c4183c50555ba82e60ccff6"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data persistence and file loading infrastructure"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where loading data from untrusted sources permits arbitrary code execution. The default configuration allows deserialization of arbitrary Python objects from crafted serialized data, enabling remote code execution when a user loads a malicious file."
+    },
+    "L3": {
+      "area": "Data persistence and file loading infrastructure",
+      "description": "An insecure deserialization vulnerability exists where loading data from untrusted sources permits arbitrary code execution. The default configuration allows deserialization of arbitrary Python objects from crafted serialized data, enabling remote code execution when a user loads a malicious file."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "NumPy's data loading functions default to allow_pickle=True, enabling deserialization of arbitrary Python objects via pickle. An attacker can craft a malicious serialized file that executes arbitrary code when loaded.",
+    "locations": [
+      {
+        "file": "numpy/lib/npyio.py",
+        "function": "load"
+      },
+      {
+        "file": "numpy/lib/format.py",
+        "function": "read_array"
+      }
+    ]
+  }
+}

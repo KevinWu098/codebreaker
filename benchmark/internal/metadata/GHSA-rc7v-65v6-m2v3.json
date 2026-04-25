@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rc7v-65v6-m2v3",
+  "post_patch_commit": "6cdf450232f653886078b8f250ce1ce3935c3c4b",
+  "noisy_patch": true,
+  "curation_notes": "The patch (PR #690) replaces the satori/go.uuid dependency with google/uuid across 4 non-test source files. The only UUID generation call is uuid.NewV1() in replication/binlogsyncer.go registerSlave(), which is the primary vulnerable location. The other file changes (canal/sync.go, mysql/mysql_gtid.go, replication/event.go) are import swaps and API adjustments for the new library. Marked as noisy because 4 non-test source files were modified, though all changes are tightly related to the dependency replacement.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

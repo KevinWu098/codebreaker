@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fw42-4mq4-4qpq",
+  "post_patch_commit": "cd84a0b85b4b2bcf1653c7bfd5426bbc72b2b216",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit cd84a0b was directly referenced in the advisory. It modifies two files: FunctionBody.h (MapFunctionObjectTypes) and FunctionBody.cpp (RegisterFunctionObjectType). The MapFunctionObjectTypes template function omitted the undeferredFunctionType when iterating over function object types, despite a comment claiming it was already processed via the registered type list. The patch adds explicit iteration over undeferredFunctionType and updates the assert in RegisterFunctionObjectType accordingly. Both locations were derived from the patch diff since the advisory description does not name specific files or functions.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

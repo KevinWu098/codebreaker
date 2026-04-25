@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9cp7-j3f8-p5jx",
+  "post_patch_commit": "8d626bbb14f82160a08cbca53e0749f475f5742c",
+  "noisy_patch": true,
+  "curation_notes": "Advisory explicitly names server/actions/action_cloudstore_file_upload.go and the cloudstore.file.upload action. Patch touches 8 non-test source files adding filepath.Clean and traversal-stripping loops across multiple upload handlers. Locations derived from the advisory description since the patch is noisy. The two vulnerable functions in the named file are unzip (zip slip) and DoAction (path traversal in filename and atPath parameters).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

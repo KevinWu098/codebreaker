@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-daptin-001",
+  "ghsa_id": "GHSA-9cp7-j3f8-p5jx",
+  "codebase": {
+    "repo": "https://github.com/daptin/daptin",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "c5761c150c85207f4c5b29f433e5aadc401e5ad8"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Cloud storage and file upload processing"
+    },
+    "L2": {
+      "description": "A path traversal and zip slip vulnerability exists where user-supplied filenames are written directly to disk without proper sanitization during file upload operations. An unauthenticated attacker can craft filenames containing directory traversal sequences to write arbitrary files outside the intended storage directory, potentially leading to remote code execution."
+    },
+    "L3": {
+      "area": "Cloud storage and file upload processing",
+      "description": "A path traversal and zip slip vulnerability exists where user-supplied filenames are written directly to disk without proper sanitization during file upload operations. An unauthenticated attacker can craft filenames containing directory traversal sequences to write arbitrary files outside the intended storage directory, potentially leading to remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 10.0,
+    "reason": "The cloudstore file upload action writes user-supplied filenames directly to disk without sanitizing directory traversal sequences, allowing unauthenticated attackers to perform path traversal and zip slip attacks for arbitrary file write.",
+    "locations": [
+      {
+        "file": "server/actions/action_cloudstore_file_upload.go",
+        "function": "unzip"
+      },
+      {
+        "file": "server/actions/action_cloudstore_file_upload.go",
+        "function": "DoAction"
+      }
+    ]
+  }
+}

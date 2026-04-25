@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-udm-001",
+  "ghsa_id": "GHSA-7g27-v5wj-jr75",
+  "codebase": {
+    "repo": "https://github.com/free5gc/udm",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "504b14458d156558b3c0ade7107b86b3d5e72998"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTTP callback and notification handling subsystem"
+    },
+    "L2": {
+      "description": "A null pointer dereference vulnerability exists in the data change notification processing logic. When a crafted HTTP request is sent to a subscription-related endpoint with a malformed URL path and a large JSON payload, the service attempts to look up user equipment context but fails to validate whether the lookup succeeded before dereferencing the result. This causes a nil pointer dereference panic, leading to a complete service crash and denial of service."
+    },
+    "L3": {
+      "area": "HTTP callback and notification handling subsystem",
+      "description": "A null pointer dereference vulnerability exists in the data change notification processing logic. When a crafted HTTP request is sent to a subscription-related endpoint with a malformed URL path and a large JSON payload, the service attempts to look up user equipment context but fails to validate whether the lookup succeeded before dereferencing the result. This causes a nil pointer dereference panic, leading to a complete service crash and denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 8.7,
+    "reason": "The DataChangeNotificationProcedure function discards the boolean return value from UdmUeFindBySupi and proceeds to dereference the potentially nil UE context pointer, causing a panic when the lookup fails for a non-existent subscriber.",
+    "locations": [
+      {
+        "file": "internal/sbi/processor/notifier.go",
+        "function": "DataChangeNotificationProcedure"
+      },
+      {
+        "file": "internal/sbi/api_httpcallback.go",
+        "function": "HandleDataChangeNotificationToNF"
+      }
+    ]
+  }
+}

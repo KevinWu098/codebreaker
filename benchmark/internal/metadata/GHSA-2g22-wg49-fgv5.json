@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-2g22-wg49-fgv5",
+  "post_patch_commit": "5fdcf06a05015786492fda69b4d9dea5460cc994",
+  "noisy_patch": false,
+  "curation_notes": "Single file changed in patch: macro-fullcalendar-ui/src/main/resources/Calendar/JSONService.xml. The vulnerability allowed user-controlled request.sql parameter to set arbitrary HQL queries and used string interpolation for request.classname in the query. The fix removed the arbitrary SQL parameter, used parameterized query binding for classname, and dropped programming rights before query execution. Location derived directly from the patch diff as it was the only file modified.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
