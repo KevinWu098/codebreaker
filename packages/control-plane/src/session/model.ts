@@ -3,8 +3,10 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Env } from "@codebreaker/control-plane/types";
 import {
+  getModelTokenPricing,
   MODEL_PROVIDER_CONFIGS,
   type ModelProvider,
+  toCloudflareAiGatewayCustomCost,
 } from "@codebreaker/shared/lib/models";
 import { assertNever } from "@codebreaker/shared/lib/utils";
 import type { SessionConfig } from "@codebreaker/shared/schemas/session";
@@ -39,15 +41,28 @@ const cloudflareGatewayBaseUrl = (env: Env): string | undefined => {
 };
 
 const cloudflareGatewayHeaders = (
+  config: SessionConfig,
   env: Env,
   providerApiKey: string | undefined
 ): Record<string, string> | undefined => {
+  const pricing = getModelTokenPricing(config.model.provider, config.model.id);
+  const customCost = pricing
+    ? JSON.stringify(toCloudflareAiGatewayCustomCost(pricing))
+    : undefined;
+
   if (!(env.CLOUDFLARE_AI_GATEWAY_TOKEN && providerApiKey)) {
-    return;
+    return customCost ? { "cf-aig-custom-cost": customCost } : undefined;
+  }
+
+  if (!customCost) {
+    return {
+      "cf-aig-authorization": `Bearer ${env.CLOUDFLARE_AI_GATEWAY_TOKEN}`,
+    };
   }
 
   return {
     "cf-aig-authorization": `Bearer ${env.CLOUDFLARE_AI_GATEWAY_TOKEN}`,
+    "cf-aig-custom-cost": customCost,
   };
 };
 
@@ -95,7 +110,7 @@ const selectCloudflareGatewayModel = (
     "provider API key or CLOUDFLARE_AI_GATEWAY_TOKEN",
     providerName
   );
-  const headers = cloudflareGatewayHeaders(env, providerApiKey);
+  const headers = cloudflareGatewayHeaders(config, env, providerApiKey);
 
   return createOpenAI({
     apiKey,

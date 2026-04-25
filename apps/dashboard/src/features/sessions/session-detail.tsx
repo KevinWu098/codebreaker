@@ -1,3 +1,4 @@
+import { estimateTokenUsageCost } from "@codebreaker/shared/lib/models";
 import { truncateId } from "@codebreaker/shared/lib/utils";
 import type { SessionRow } from "@codebreaker/shared/schemas/api";
 import {
@@ -26,7 +27,12 @@ import {
   useSessionQuery,
   useSessionStateQuery,
 } from "@/hooks/queries";
-import { formatNumber, formatRelativeTime, formatRepo } from "@/lib/format";
+import {
+  formatNumber,
+  formatRelativeTime,
+  formatRepo,
+  formatUsd,
+} from "@/lib/format";
 
 const TAB_IDS = ["overview", "config", "messages", "chat", "sandbox"] as const;
 
@@ -45,9 +51,21 @@ const TABS: readonly TabDef[] = [
   { id: "sandbox", label: "sandbox" },
 ];
 
+const BENCHMARK_SESSION_PREFIX = "bench-";
+
+const getBenchmarkRunId = (sessionId: string): string | null => {
+  if (!sessionId.startsWith(BENCHMARK_SESSION_PREFIX)) {
+    return null;
+  }
+
+  const runId = sessionId.slice(BENCHMARK_SESSION_PREFIX.length);
+  return runId || null;
+};
+
 interface SessionDetailProps {
   onArchived: () => void;
   onBack: () => void;
+  onOpenBenchmarkRun?: (runId: string) => void;
   sessionId: string;
 }
 
@@ -154,14 +172,40 @@ const ConfirmArchive = ({
   </>
 );
 
-const SessionRowCard = ({ row }: { row: SessionRow }): React.JSX.Element => {
+const SessionRowCard = ({
+  onOpenBenchmarkRun,
+  row,
+}: {
+  onOpenBenchmarkRun?: (runId: string) => void;
+  row: SessionRow;
+}): React.JSX.Element => {
   const tokens = row.inputTokens + row.outputTokens;
+  const tokenCost = estimateTokenUsageCost({
+    inputTokens: row.inputTokens,
+    modelId: row.modelId,
+    modelProvider: row.modelProvider,
+    outputTokens: row.outputTokens,
+  });
+  const benchmarkRunId = getBenchmarkRunId(row.id);
+  const idValue =
+    benchmarkRunId && onOpenBenchmarkRun ? (
+      <button
+        className="id-link break-all text-left"
+        onClick={() => onOpenBenchmarkRun(benchmarkRunId)}
+        title="open benchmark run"
+        type="button"
+      >
+        {row.id}
+      </button>
+    ) : (
+      row.id
+    );
 
   return (
     <Card title="d1 session row">
       <dl className="grid grid-cols-[160px_1fr] gap-x-3 gap-y-2 text-xs">
         <DefinitionField label="id" mono>
-          {row.id}
+          {idValue}
         </DefinitionField>
         <DefinitionField label="status">
           <Badge status={row.status} />
@@ -179,6 +223,19 @@ const SessionRowCard = ({ row }: { row: SessionRow }): React.JSX.Element => {
         <DefinitionField label="tokens (in/out/total)" numeric>
           {formatNumber(row.inputTokens)} / {formatNumber(row.outputTokens)} /{" "}
           {formatNumber(tokens)}
+          {tokenCost ? (
+            <span
+              className="ml-2 text-fg-muted"
+              title={`${formatUsd(tokenCost.pricing.inputUsdPerMillionTokens)} input / ${formatUsd(tokenCost.pricing.outputUsdPerMillionTokens)} output per 1M tokens`}
+            >
+              ({formatUsd(tokenCost.inputUsd)} /{" "}
+              {formatUsd(tokenCost.outputUsd)} /{" "}
+              <strong className="font-semibold text-fg">
+                {formatUsd(tokenCost.totalUsd)}
+              </strong>
+              )
+            </span>
+          ) : null}
         </DefinitionField>
         <DefinitionField label="created" mono>
           {row.createdAt}
@@ -197,6 +254,7 @@ const SessionRowCard = ({ row }: { row: SessionRow }): React.JSX.Element => {
 export const SessionDetail = ({
   onArchived,
   onBack,
+  onOpenBenchmarkRun,
   sessionId,
 }: SessionDetailProps): React.JSX.Element => {
   const [tab, setTab] = useQueryState(
@@ -234,7 +292,12 @@ export const SessionDetail = ({
         <TabsContent className="mt-4 outline-none" value="overview">
           <div className="space-y-4">
             <ErrorState error={session.error} title="load failed" />
-            {row && <SessionRowCard row={row} />}
+            {row && (
+              <SessionRowCard
+                {...(onOpenBenchmarkRun ? { onOpenBenchmarkRun } : {})}
+                row={row}
+              />
+            )}
             <Card
               actions={
                 <RefreshButton

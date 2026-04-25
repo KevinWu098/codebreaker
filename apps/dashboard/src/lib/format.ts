@@ -40,6 +40,14 @@ export const formatDuration = (ms: number): string => {
 export const formatNumber = (value: number): string =>
   new Intl.NumberFormat("en-US").format(value);
 
+export const formatUsd = (value: number): string =>
+  new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    maximumFractionDigits: 4,
+    minimumFractionDigits: 2,
+    style: "currency",
+  }).format(value);
+
 export const formatRepo = (
   owner: string | null,
   name: string | null
