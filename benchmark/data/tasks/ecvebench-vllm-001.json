@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-vllm-001",
+  "ghsa_id": "GHSA-hj4w-hm2g-p6w5",
+  "codebase": {
+    "repo": "https://github.com/vllm-project/vllm",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "9d98ab5ec60ae43453e3bd2e68452483b3ced199"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Distributed inference data transfer and inter-process communication layer"
+    },
+    "L2": {
+      "description": "A remote code execution vulnerability exists in a distributed inference framework's integration with an external KV cache transfer engine. The system uses pickle-based serialization to exchange data over network sockets that are bound to all network interfaces, increasing the likelihood of attacker reachability. An attacker who can reach these sockets can send crafted pickle payloads to achieve arbitrary code execution on the server."
+    },
+    "L3": {
+      "area": "Distributed inference data transfer and inter-process communication layer",
+      "description": "A remote code execution vulnerability exists in a distributed inference framework's integration with an external KV cache transfer engine. The system uses pickle-based serialization to exchange data over network sockets that are bound to all network interfaces, increasing the likelihood of attacker reachability. An attacker who can reach these sockets can send crafted pickle payloads to achieve arbitrary code execution on the server."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 10.0,
+    "reason": "The mooncake integration uses pickle-based serialization (recv_pyobj/send_pyobj) over ZeroMQ sockets bound to all network interfaces, allowing remote code execution via crafted pickle payloads.",
+    "locations": [
+      {
+        "file": "vllm/distributed/kv_transfer/kv_pipe/mooncake_pipe.py",
+        "function": "recv_bytes"
+      },
+      {
+        "file": "vllm/distributed/kv_transfer/kv_pipe/mooncake_pipe.py",
+        "function": "wait_for_ack"
+      },
+      {
+        "file": "vllm/distributed/kv_transfer/kv_pipe/mooncake_pipe.py",
+        "function": "send_bytes"
+      }
+    ]
+  }
+}

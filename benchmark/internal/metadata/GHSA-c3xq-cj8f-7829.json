@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-c3xq-cj8f-7829",
+  "post_patch_commit": "eeefb784f24c37d5f56a421e1ccc911cace9385e",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The patch rewrote the memcache crypto middleware in memcache_crypt.py, replacing weak SHA1-based MAC, simple SHA256 key derivation, and non-constant-time signature verification with HMAC-SHA384-based key derivation, proper encrypt-then-MAC, and constant-time comparison. The auth_token.py changes are callers of the crypto module and were refactored accordingly, but the core vulnerability resides in the crypto primitives themselves. Only 2 non-test source files were changed, so the patch is not noisy.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
