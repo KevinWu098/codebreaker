@@ -1,3 +1,4 @@
+import { truncateId } from "@codebreaker/shared/lib/utils";
 import type { SessionRow } from "@codebreaker/shared/schemas/api";
 import {
   Content as TabsContent,
@@ -25,6 +26,7 @@ import {
   useSessionQuery,
   useSessionStateQuery,
 } from "@/hooks/queries";
+import { cn } from "@/lib/cn";
 import {
   formatNumber,
   formatRelativeTime,

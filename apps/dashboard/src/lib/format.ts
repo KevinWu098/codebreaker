@@ -37,14 +37,6 @@ export const formatDuration = (ms: number): string => {
   return `${minutes}m ${seconds}s`;
 };
 
-export const truncateId = (value: string, head = 8, tail = 4): string => {
-  if (value.length <= head + tail + 1) {
-    return value;
-  }
-
-  return `${value.slice(0, head)}…${value.slice(-tail)}`;
-};
-
 export const formatNumber = (value: number): string =>
   new Intl.NumberFormat("en-US").format(value);
 

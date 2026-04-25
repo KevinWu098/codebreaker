@@ -1,3 +1,4 @@
+import { truncateId } from "@codebreaker/shared/lib/utils";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/badge";
@@ -10,12 +11,7 @@ import { Spinner } from "@/components/spinner";
 import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
 import { useSessionsQuery } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
-import {
-  formatNumber,
-  formatRelativeTime,
-  formatRepo,
-  truncateId,
-} from "@/lib/format";
+import { formatNumber, formatRelativeTime, formatRepo } from "@/lib/format";
 
 interface SessionsListProps {
   onSelect: (id: string) => void;
