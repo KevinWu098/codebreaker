@@ -1,0 +1,26 @@
+{
+  "name": "@codebreaker/benchmark-runner",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./loaders": {
+      "types": "./src/loaders.ts",
+      "default": "./src/loaders.ts"
+    },
+    "./schemas": {
+      "types": "./src/schemas.ts",
+      "default": "./src/schemas.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "validate:fixtures": "node --experimental-strip-types src/validate-fixtures.ts"
+  },
+  "dependencies": {
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "25.6.0"
+  }
+}
