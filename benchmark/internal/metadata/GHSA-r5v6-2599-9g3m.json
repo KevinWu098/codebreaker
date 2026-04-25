@@ -1,8 +1,0 @@
-{
-  "ghsa_id": "GHSA-r5v6-2599-9g3m",
-  "post_patch_commit": "fed52fecd9cc384bc8cbc03d9765e5b610201eca",
-  "noisy_patch": true,
-  "curation_notes": "The security fix spans two commits between tags 10.0.20 and 10.0.21: (1) 924a107c5d66e79af1e9fd15ed6b29af4c06ffbc fixes tenant scoping in TenantPermission.ts and ModelPermission.ts by correcting the condition that gates access to the multi-tenant query path, and (2) 0ef5c7aa1ef89bf1f31a7996a18c82b85bc95f1c hashes reset password tokens in Authentication.ts and StatusPageAuthentication.ts. Locations were derived from both the advisory description (which names CommonAPI.ts and BasePermission.ts as root cause) and the patch diff (which modifies TenantPermission.ts and ModelPermission.ts). The pre-patch commit is the parent of the first security fix commit.",
-  "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
-}

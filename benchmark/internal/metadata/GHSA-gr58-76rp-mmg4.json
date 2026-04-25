@@ -1,8 +1,0 @@
-{
-  "ghsa_id": "GHSA-gr58-76rp-mmg4",
-  "post_patch_commit": "5e3167e3a2dc95836fa2607fe201524c031a2c4c",
-  "noisy_patch": false,
-  "curation_notes": "The advisory references merge commit 5e3167e (Merge branch 'master' into add-django-axes) as the patch. This is a merge commit on the add-django-axes feature branch with two parents: 6568666 (feature branch head, already contains the fix) and f38a27c (master, does not contain the fix). The pre-patch commit is set to f38a27c (the second parent / master state) since it represents the vulnerable codebase without django-axes rate limiting. The patch adds django-axes middleware, authentication backend, and configuration to wger/settings_global.py, and passes the request object to the authenticate() call in wger/core/views/user.py. Locations derived from the patch diff: settings_global.py (missing rate-limiting middleware/backend/config) and user.py registration function (missing request parameter for axes tracking).",
-  "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
-}
