@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-deno-003",
+  "ghsa_id": "GHSA-mc52-jpm2-cqh6",
+  "codebase": {
+    "repo": "https://github.com/denoland/deno",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "9644220df2f03efa75fcd63a7d37fb5903b5ff08"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Runtime permission prompting and user interaction subsystem"
+    },
+    "L2": {
+      "description": "A race condition vulnerability exists in the interactive permission prompt mechanism. In a multi-threaded context, concurrent code can write to standard output and error streams while a security-sensitive prompt is being displayed to the user. This allows a malicious program to clear the terminal screen and replace the permission prompt with misleading text, tricking the user into granting permissions they did not intend to grant."
+    },
+    "L3": {
+      "area": "Runtime permission prompting and user interaction subsystem",
+      "description": "A race condition vulnerability exists in the interactive permission prompt mechanism. In a multi-threaded context, concurrent code can write to standard output and error streams while a security-sensitive prompt is being displayed to the user. This allows a malicious program to clear the terminal screen and replace the permission prompt with misleading text, tricking the user into granting permissions they did not intend to grant."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 8.8,
+    "reason": "The interactive permission prompt does not lock standard I/O streams, allowing concurrent threads (e.g., Web Workers) to overwrite the prompt with misleading text and trick users into granting unintended permissions.",
+    "locations": [
+      {
+        "file": "runtime/permissions/prompter.rs",
+        "function": "prompt"
+      }
+    ]
+  }
+}

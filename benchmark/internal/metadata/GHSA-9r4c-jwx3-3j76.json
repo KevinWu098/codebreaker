@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9r4c-jwx3-3j76",
+  "post_patch_commit": "547336ac73c8d17929c18c3941c0d5b0099753cc",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge commit (547336ac73c8) with first parent 3f6fcab0c56b. Only one source file changed: core/src/plugins/sqlite3/db.go. The patch adds a strings.HasPrefix check in the DB function to verify that the resolved database path starts with the default directory, and appends trailing slashes to default directory values. Location derived from both the advisory description (which references the sqlite3/db.go file and the Join call) and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

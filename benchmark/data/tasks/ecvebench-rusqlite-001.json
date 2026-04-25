@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-rusqlite-001",
+  "ghsa_id": "GHSA-3cgf-9m6x-pwwr",
+  "codebase": {
+    "repo": "https://github.com/rusqlite/rusqlite",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "c9ef5bd63cad5c0c123344c072b490a1a9bcbe1f"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Concurrency and synchronization primitives for database operations"
+    },
+    "L2": {
+      "description": "A data race vulnerability exists in the database unlock notification mechanism where mutable references are unsafely aliased from raw pointers in a concurrent callback context, and a mutex guard is released before a condition variable is signaled, allowing unsynchronized access to shared state."
+    },
+    "L3": {
+      "area": "Concurrency and synchronization primitives for database operations",
+      "description": "A data race vulnerability exists in the database unlock notification mechanism where mutable references are unsafely aliased from raw pointers in a concurrent callback context, and a mutex guard is released before a condition variable is signaled, allowing unsynchronized access to shared state."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 9.8,
+    "reason": "The UnlockNotification type allows creating aliased mutable references from raw pointers in the unlock-notify callback, violating Rust's memory safety guarantees, and drops the mutex guard before signaling the condition variable, creating a data race on shared state.",
+    "locations": [
+      {
+        "file": "src/unlock_notify.rs",
+        "function": "fired"
+      },
+      {
+        "file": "src/unlock_notify.rs",
+        "function": "unlock_notify_cb"
+      },
+      {
+        "file": "src/unlock_notify.rs",
+        "function": "wait_for_unlock_notify"
+      }
+    ]
+  }
+}

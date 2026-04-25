@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-cryptography-001",
+  "ghsa_id": "GHSA-6vqw-3v5j-54x4",
+  "codebase": {
+    "repo": "https://github.com/pyca/cryptography",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "4398f19e0700ffb1bb1e13be4f8efe7271feb62a"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Cryptographic key and certificate serialization routines"
+    },
+    "L2": {
+      "description": "A NULL pointer dereference occurs when serializing a PKCS#12 bundle with a private key that does not match the provided certificate and a custom MAC hash algorithm. The underlying library call returns NULL on failure, but the result is used without validation, causing the process to crash."
+    },
+    "L3": {
+      "area": "Cryptographic key and certificate serialization routines",
+      "description": "A NULL pointer dereference occurs when serializing a PKCS#12 bundle with a private key that does not match the provided certificate and a custom MAC hash algorithm. The underlying library call returns NULL on failure, but the result is used without validation, causing the process to crash."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 7.5,
+    "reason": "When pkcs12.serialize_key_and_certificates is called with a mismatched key and certificate alongside an hmac_hash override, the PKCS12_create call returns NULL but the result is not checked, leading to a NULL pointer dereference that crashes the Python process.",
+    "locations": [
+      {
+        "file": "src/cryptography/hazmat/backends/openssl/backend.py",
+        "function": "serialize_key_and_certificates_to_pkcs12"
+      }
+    ]
+  }
+}
