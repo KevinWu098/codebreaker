@@ -1,5 +1,5 @@
 import { ApiClientError } from "@/lib/api";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 interface ErrorStateProps {
   className?: string;
