@@ -10,6 +10,13 @@
   "hints": {
     "L0": null,
     "L1": {
+      "area": "Package installation and setup scripts"
+    },
+    "L2": {
+      "description": "A command injection vulnerability exists where attacker-controlled remote version strings are appended directly into a shell exec() call without sanitization or validation."
+    },
+    "L3": {
+      "area": "Package installation and setup scripts",
       "description": "A command injection vulnerability exists where attacker-controlled remote version strings are appended directly into a shell exec() call without sanitization or validation."
     }
   },

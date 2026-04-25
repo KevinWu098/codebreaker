@@ -5,9 +5,9 @@
     "language": "javascript",
     "repo": "https://github.com/electerm/electerm"
   },
-  "difficulty": "L1",
+  "difficulty": "L2",
   "hint": {
-    "area": "Package installation and setup scripts"
+    "description": "A command injection vulnerability exists where attacker-controlled remote version strings are appended directly into a shell exec() call without sanitization or validation."
   },
   "task_id": "ecvebench-electerm-001"
 }

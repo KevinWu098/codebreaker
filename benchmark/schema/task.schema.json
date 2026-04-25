@@ -42,7 +42,7 @@
     "hints": {
       "type": "object",
       "description": "Map of difficulty level to the hint shown at that level. The harness projects exactly one of these into the agent input at runtime.",
-      "required": ["L0", "L1"],
+      "required": ["L0"],
       "additionalProperties": false,
       "properties": {
         "L0": {
@@ -51,12 +51,41 @@
         },
         "L1": {
           "type": "object",
+          "description": "Vague localization hint pointing at a broad region of the codebase without revealing the vulnerability type or specific files/functions.",
+          "required": ["area"],
+          "additionalProperties": false,
+          "properties": {
+            "area": {
+              "type": "string",
+              "description": "Broad codebase area where the vulnerability lives (e.g. 'authentication middleware', 'API request handling layer'). No file paths, function names, or vulnerability details."
+            }
+          }
+        },
+        "L2": {
+          "type": "object",
+          "description": "Scrubbed CVE description. Describes the vulnerability type, mechanism, and impact without revealing location.",
           "required": ["description"],
           "additionalProperties": false,
           "properties": {
             "description": {
               "type": "string",
               "description": "Scrubbed vulnerability description. No file or function references."
+            }
+          }
+        },
+        "L3": {
+          "type": "object",
+          "description": "Combined hint: both the L1 localization area and the L2 CVE description.",
+          "required": ["area", "description"],
+          "additionalProperties": false,
+          "properties": {
+            "area": {
+              "type": "string",
+              "description": "Same localization hint as L1."
+            },
+            "description": {
+              "type": "string",
+              "description": "Same scrubbed CVE description as L2."
             }
           }
         }

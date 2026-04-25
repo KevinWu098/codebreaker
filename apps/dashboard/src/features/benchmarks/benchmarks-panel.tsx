@@ -96,7 +96,7 @@ export const BenchmarksPanel = ({
     null
   );
   const [selectedTaskId, setSelectedTaskId] = useState("");
-  const [difficulty, setDifficulty] = useState<"L0" | "L1">("L0");
+  const [difficulty, setDifficulty] = useState<"L0" | "L1" | "L2" | "L3">("L0");
   const [model, setModel] = useState(DEFAULT_MODEL_VALUE);
   const activeRunId = selectedRunId ?? localSelectedRunId;
   const selectRun = (runId: string): void => {
@@ -192,12 +192,14 @@ export const BenchmarksPanel = ({
             <select
               className="input"
               onChange={(event) =>
-                setDifficulty(event.target.value as "L0" | "L1")
+                setDifficulty(event.target.value as "L0" | "L1" | "L2" | "L3")
               }
               value={difficulty}
             >
               <option value="L0">L0</option>
               <option value="L1">L1</option>
+              <option value="L2">L2</option>
+              <option value="L3">L3</option>
             </select>
           </label>
           <label className="space-y-1 text-xs">

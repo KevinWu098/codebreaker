@@ -19,7 +19,7 @@
     },
     "difficulty": {
       "type": "string",
-      "enum": ["L0", "L1"],
+      "enum": ["L0", "L1", "L2", "L3"],
       "description": "Difficulty level the agent ran at. Must match the difficulty of the agent input."
     },
     "vulnerable": {

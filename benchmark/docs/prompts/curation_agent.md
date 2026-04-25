@@ -21,7 +21,7 @@ These values have already been extracted and verified by the selection pipeline.
 ## Step 1: Read the advisory
 
 Go to the advisory URL above. Read the full description and extract:
-- **Description**: The full vulnerability description (needed for hint writing in Step 7).
+- **Description**: The full vulnerability description (needed for hint writing in Steps 7 and 8).
 - **References**: Collect all commit links, PR links, and release tag links.
 
 ## Step 2: Find the patch commit
@@ -62,9 +62,59 @@ Each location must have:
 - `file`: relative path from repo root (e.g., `src/auth/login.py`)
 - `function`: the function name where the vulnerability lives, or `null` if you cannot determine it
 
-## Step 7: Write the L1 hint
+## Step 7: Write the L1 localization hint
 
-ECVEBench scores agents on **localization** — identifying the vulnerable file(s) and function(s). The L1 hint must describe the vulnerability without giving away where it lives. Unlike benchmarks that score only on exploit generation (where naming the function is fine), any location-revealing detail in our hint undermines the benchmark.
+ECVEBench uses four difficulty levels. The L1 hint gives the agent a vague sense of *where* to look without describing *what* the vulnerability is. The goal is to scope down the search area while keeping the task difficult — the agent still has to figure out the vulnerability type and the exact location on its own.
+
+### What to REMOVE (deny-list)
+
+Strip all of the following:
+- File paths or file names (e.g., `src/auth/login.py`, `install.js`)
+- Function, method, or class names (e.g., `runLinux()`, `VerifyGet`)
+- Line numbers or column references
+- Variable names, parameter names, or struct/field names
+- Code snippets, pseudocode, or regex patterns
+- Library or module names that uniquely identify the vulnerable file (e.g., "LibGfx" when there's a single `libgfx/` directory)
+- The vulnerability type or class (e.g., "command injection", "XSS", "buffer overflow")
+- The mechanism of the bug (e.g., "unsanitized input passed to exec", "missing bounds check")
+- The impact (e.g., "arbitrary code execution", "authentication bypass")
+
+### What to KEEP (allow-list)
+
+The hint should point at a broad region of the codebase:
+- **Architectural layer**: e.g., "authentication middleware", "REST API request handling", "package installation logic"
+- **Subsystem or feature area**: e.g., "user session management", "file upload processing", "backup and restore functionality"
+- **General component type**: e.g., "the URL routing layer", "input validation pipeline", "data serialization layer"
+
+### The scope test
+
+Ask yourself: *does this hint narrow the codebase to fewer than ~10-20 source files?* If yes, it's too specific. Broaden it. The hint should cover a general area that contains many files, only some of which are relevant.
+
+### Examples
+
+**Too specific** (maps to one directory/file):
+> "The request verification endpoint handler"
+
+**Too specific** (reveals vulnerability type):
+> "The authentication bypass in the API middleware"
+
+**Acceptable**:
+> "Authentication and authorization middleware"
+
+**Acceptable**:
+> "Package installation and setup scripts"
+
+**Acceptable**:
+> "REST API endpoint handlers"
+
+**Too vague** (almost useless):
+> "The backend code"
+
+The hint should identify a *feature area or architectural layer* — broad enough to contain dozens of files, but specific enough that the agent doesn't have to search the entire codebase.
+
+## Step 8: Write the L2 CVE hint
+
+The L2 hint describes *what* the vulnerability is without revealing *where* it lives. This is a scrubbed version of the advisory description. Unlike benchmarks that score only on exploit generation (where naming the function is fine), any location-revealing detail in our hint undermines the benchmark.
 
 ### What to REMOVE (deny-list)
 
@@ -107,7 +157,7 @@ Ask yourself: *could someone use this hint to `grep` the codebase and find the v
 
 The hint should narrow the search to a *category of code* (e.g., "image parsing", "authentication middleware", "package installation logic") without naming the specific file or function.
 
-## Step 8: Generate the task ID
+## Step 9: Generate the task ID
 
 Format: `ecvebench-{project}-{NNN}` where:
 - `{project}` is the repo name, lowercased, with special characters replaced by hyphens
@@ -115,7 +165,7 @@ Format: `ecvebench-{project}-{NNN}` where:
 
 Check what task files already exist in `benchmark/data/tasks/` to determine the next available number. If no tasks exist yet for this project, use `001`.
 
-## Step 9: Create the task file
+## Step 10: Create the task file
 
 Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
 
@@ -132,7 +182,14 @@ Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
   "hints": {
     "L0": null,
     "L1": {
-      "description": "<scrubbed description with no file/function references>"
+      "area": "<broad codebase area hint from Step 7>"
+    },
+    "L2": {
+      "description": "<scrubbed CVE description from Step 8>"
+    },
+    "L3": {
+      "area": "<same area hint as L1>",
+      "description": "<same CVE description as L2>"
     }
   },
   "ground_truth": {
@@ -150,7 +207,7 @@ Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
 }
 ```
 
-## Step 10: Create the metadata file
+## Step 11: Create the metadata file
 
 Create `benchmark/internal/metadata/{GHSA_ID}.json` with this exact structure:
 
@@ -165,7 +222,7 @@ Create `benchmark/internal/metadata/{GHSA_ID}.json` with this exact structure:
 }
 ```
 
-## Step 11: Open a PR
+## Step 12: Open a PR
 
 Open a pull request to this repository with:
 - Title: `Add task: {task_id}`
@@ -179,7 +236,9 @@ Open a pull request to this repository with:
 - [ ] The `commit` field in the task is the PRE-patch SHA (parent of the patch), not the patch itself
 - [ ] The `post_patch_commit` in metadata is the actual patch commit SHA
 - [ ] Both SHAs are full 40-character hex strings
-- [ ] The L1 hint description contains NO file paths, function names, line numbers, or code snippets
+- [ ] The L1 hint `area` field contains NO file paths, function names, vulnerability types, or mechanism details
+- [ ] The L2 hint `description` field contains NO file paths, function names, line numbers, or code snippets
+- [ ] The L3 hint contains the same `area` as L1 and the same `description` as L2
 - [ ] The `vuln_class` is `{{VULN_CLASS}}` (the pre-assigned value)
 - [ ] The `cvss` is `{{CVSS}}` (the pre-computed value)
 - [ ] The `locations` array has at least one entry

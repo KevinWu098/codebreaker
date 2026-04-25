@@ -136,7 +136,7 @@ const benchmarkSystemPrompt = (
     "- Reading slices: `sed -n 'A,Bp' <file>` or `grep -n -C 6 'symbol' <file>`.",
     "",
     "When finished, respond with only valid JSON matching this shape:",
-    '{"task_id":"string","difficulty":"L0|L1","vulnerable":boolean,"vuln_class":"command-injection|sql-injection|xss|buffer-overflow|use-after-free|path-traversal|auth-bypass|xxe|insecure-deserialization|crypto-weakness|race-condition|integer-overflow|null-deref"|null,"locations":[{"file":"string","function":"string|null"}],"reason":"string|null","confidence":number}',
+    '{"task_id":"string","difficulty":"L0|L1|L2|L3","vulnerable":boolean,"vuln_class":"command-injection|sql-injection|xss|buffer-overflow|use-after-free|path-traversal|auth-bypass|xxe|insecure-deserialization|crypto-weakness|race-condition|integer-overflow|null-deref"|null,"locations":[{"file":"string","function":"string|null"}],"reason":"string|null","confidence":number}',
     "",
     "Output discipline:",
     "- Return at most 3 locations, ranked. `locations[0]` is your single best site.",

@@ -25,8 +25,8 @@ import sys
 from pathlib import Path
 from typing import Any, Literal
 
-Difficulty = Literal["L0", "L1"]
-DIFFICULTIES: tuple[Difficulty, ...] = ("L0", "L1")
+Difficulty = Literal["L0", "L1", "L2", "L3"]
+DIFFICULTIES: tuple[Difficulty, ...] = ("L0", "L1", "L2", "L3")
 
 DEFAULT_TASKS_PATH = Path(__file__).resolve().parent.parent / "data" / "tasks"
 
@@ -34,9 +34,9 @@ DEFAULT_TASKS_PATH = Path(__file__).resolve().parent.parent / "data" / "tasks"
 def generate_input(task: dict[str, Any], difficulty: Difficulty) -> dict[str, Any]:
     """Project a task record into an agent input at the given difficulty.
 
-    The task record stores all hint variants in ``hints[L0|L1]``. The agent
-    input projects exactly one of those into a single ``hint`` field and
-    drops ``ghsa_id`` and ``ground_truth``, which the agent must not see.
+    The task record stores all hint variants in ``hints[L0|L1|L2|L3]``. The
+    agent input projects exactly one of those into a single ``hint`` field
+    and drops ``ghsa_id`` and ``ground_truth``, which the agent must not see.
     """
     hints = task.get("hints")
     if not isinstance(hints, dict) or difficulty not in hints:

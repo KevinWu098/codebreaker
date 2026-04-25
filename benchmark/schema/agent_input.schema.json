@@ -12,7 +12,7 @@
     },
     "difficulty": {
       "type": "string",
-      "enum": ["L0", "L1"],
+      "enum": ["L0", "L1", "L2", "L3"],
       "description": "Difficulty level this input was rendered at."
     },
     "codebase": {
@@ -42,12 +42,38 @@
         { "type": "null" },
         {
           "type": "object",
+          "required": ["area"],
+          "additionalProperties": false,
+          "properties": {
+            "area": {
+              "type": "string",
+              "description": "Broad codebase area hint (L1 localization)."
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["description"],
           "additionalProperties": false,
           "properties": {
             "description": {
               "type": "string",
-              "description": "Scrubbed vulnerability description. No file or function references."
+              "description": "Scrubbed vulnerability description (L2 CVE hint)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["area", "description"],
+          "additionalProperties": false,
+          "properties": {
+            "area": {
+              "type": "string",
+              "description": "Broad codebase area hint (localization)."
+            },
+            "description": {
+              "type": "string",
+              "description": "Scrubbed vulnerability description (CVE hint)."
             }
           }
         }

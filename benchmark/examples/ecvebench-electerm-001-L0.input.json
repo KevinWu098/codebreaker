@@ -1,11 +1,11 @@
 {
-  "task_id": "ecvebench-electerm-001",
-  "difficulty": "L0",
   "codebase": {
-    "repo": "https://github.com/electerm/electerm",
-    "language": "javascript",
+    "commit": "9590d7933c4021bbc006c3a0ccd366091b008e09",
     "ecosystem": "npm",
-    "commit": "9590d7933c4021bbc006c3a0ccd366091b008e09"
+    "language": "javascript",
+    "repo": "https://github.com/electerm/electerm"
   },
-  "hint": null
+  "difficulty": "L0",
+  "hint": null,
+  "task_id": "ecvebench-electerm-001"
 }

@@ -185,15 +185,17 @@ Each selected GHSA is dispatched to a [Devin](https://devin.ai/) agent. The agen
    - Patch diff (what was removed or modified is where the vulnerability was)
    - For noisy patches, advisory description is preferred over the diff
 
-7. **Write the L1 hint.** The agent takes the advisory description and scrubs all file paths, function names, line numbers, variable names, and code snippets. The result describes *what* the vulnerability is without revealing *where* it is.
+7. **Write the L1 localization hint.** The agent writes a vague area hint that points at a broad region of the codebase (e.g., "authentication middleware", "package installation scripts") without naming files, functions, or the vulnerability type.
 
-8. **Generate the task ID.** Format: `ecvebench-{project}-{NNN}`, where `{project}` is the lowercased repo name and `{NNN}` is a zero-padded sequence number.
+8. **Write the L2 CVE hint.** The agent takes the advisory description and scrubs all file paths, function names, line numbers, variable names, and code snippets. The result describes *what* the vulnerability is without revealing *where* it is.
 
-9. **Create the task file.** Written to `benchmark/data/tasks/{task_id}.json` following `schema/task.schema.json`.
+9. **Generate the task ID.** Format: `ecvebench-{project}-{NNN}`, where `{project}` is the lowercased repo name and `{NNN}` is a zero-padded sequence number.
 
-10. **Create the metadata file.** Written to `benchmark/internal/metadata/{GHSA_ID}.json` following `schema/metadata.schema.json`.
+10. **Create the task file.** Written to `benchmark/data/tasks/{task_id}.json` following `schema/task.schema.json`.
 
-11. **Open a PR.** Branch: `curate/{task_id}`. The PR contains exactly the two new files.
+11. **Create the metadata file.** Written to `benchmark/internal/metadata/{GHSA_ID}.json` following `schema/metadata.schema.json`.
+
+12. **Open a PR.** Branch: `curate/{task_id}`. The PR contains exactly the two new files.
 
 ### Why AI agents for curation?
 
@@ -237,7 +239,9 @@ Every curated task is validated against the following checklist before merging:
 | **Pre-patch SHA** | The `commit` field in the task is the parent of the patch commit, not the patch itself. |
 | **Post-patch SHA** | The `post_patch_commit` in metadata is the actual patch commit. |
 | **SHA format** | Both SHAs are full 40-character lowercase hex strings. |
-| **Hint scrubbing** | The L1 hint contains no file paths, function names, line numbers, variable names, or code snippets. |
+| **L1 hint scrubbing** | The L1 `area` field contains no file paths, function names, vulnerability types, or mechanism details. |
+| **L2 hint scrubbing** | The L2 `description` field contains no file paths, function names, line numbers, variable names, or code snippets. |
+| **L3 hint consistency** | The L3 hint contains the same `area` as L1 and the same `description` as L2. |
 | **Vulnerability class** | Exactly one of the 13 allowed values. |
 | **Locations non-empty** | At least one location entry exists. |
 | **File paths valid** | All `file` paths in locations are relative from the repo root and exist in the pre-patch commit. |

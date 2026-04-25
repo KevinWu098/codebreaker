@@ -25,10 +25,12 @@ The agent sees only the pre-patch commit and the difficulty-specific hint. It do
 ### Difficulty Levels
 
 
-| Level | Agent receives                                                     |
-| ----- | ------------------------------------------------------------------ |
-| L0    | Repository at pre-patch commit only. No hint. Pure discovery.      |
-| L1    | Repository + scrubbed vulnerability description. No location info. |
+| Level | Agent receives                                                                  |
+| ----- | ------------------------------------------------------------------------------- |
+| L0    | Repository at pre-patch commit only. No hint. Pure discovery.                   |
+| L1    | Repository + vague localization hint (broad codebase area). No vuln details.    |
+| L2    | Repository + scrubbed CVE description (vuln type + mechanism). No location info.|
+| L3    | Repository + both the L1 localization hint and the L2 CVE description.          |
 
 
 ### Vulnerability Classes
@@ -90,14 +92,16 @@ Tasks are stored as individual JSON files in `data/tasks/`, one file per **uniqu
 
 | Field                               | Type          | Description                                                                |
 | ----------------------------------- | ------------- | -------------------------------------------------------------------------- |
-| `task_id`                           | string        | GHSA-level identifier. Format: `ecvebench-{project}-{n}`. No L0/L1 suffix. |
+| `task_id`                           | string        | GHSA-level identifier. Format: `ecvebench-{project}-{n}`. No difficulty suffix. |
 | `ghsa_id`                           | string        | Source GitHub Security Advisory ID                                         |
 | `codebase.repo`                     | string        | GitHub repository URL                                                      |
 | `codebase.language`                 | string        | Primary language of the repository                                         |
 | `codebase.ecosystem`               | string        | Package ecosystem (e.g. npm, pip, maven, go)                               |
 | `codebase.commit`                   | string        | Full 40-character pre-patch SHA served to the agent                        |
 | `hints.L0`                          | null          | L0 is pure discovery; always null.                                         |
-| `hints.L1`                          | object        | Scrubbed vulnerability description. Object with a `description` string.    |
+| `hints.L1`                          | object        | Vague localization hint. Object with an `area` string.                     |
+| `hints.L2`                          | object        | Scrubbed CVE description. Object with a `description` string.             |
+| `hints.L3`                          | object        | Combined hint. Object with both `area` and `description` strings.          |
 | `ground_truth.vulnerable`           | boolean       | Whether the commit is vulnerable                                           |
 | `ground_truth.vuln_class`           | string        | Vulnerability class                                                        |
 | `ground_truth.cvss`                 | float | null  | CVSS score. null if unavailable.                                           |
@@ -119,7 +123,7 @@ The harness projects a task record into an agent input at a given difficulty. Th
 | Field               | Type            | Description                                                 |
 | ------------------- | --------------- | ----------------------------------------------------------- |
 | `task_id`           | string          | GHSA-level identifier (matches `task_id` in task file).     |
-| `difficulty`        | `"L0"` | `"L1"` | Difficulty level this input was rendered at.                |
+| `difficulty`        | `"L0"` | `"L1"` | `"L2"` | `"L3"` | Difficulty level this input was rendered at.                |
 | `codebase.repo`     | string          | GitHub repository URL                                       |
 | `codebase.language` | string          | Primary language                                            |
 | `codebase.ecosystem`| string          | Package ecosystem (e.g. npm, pip, maven, go)                |
@@ -157,7 +161,7 @@ See `schema/output.schema.json` for the formal schema.
 | Field                  | Type            | Description                                                 |
 | ---------------------- | --------------- | ----------------------------------------------------------- |
 | `task_id`              | string          | GHSA-level identifier. Must match the task being evaluated. |
-| `difficulty`           | `"L0"` | `"L1"` | Difficulty the agent ran at. Must match the agent input.    |
+| `difficulty`           | `"L0"` | `"L1"` | `"L2"` | `"L3"` | Difficulty the agent ran at. Must match the agent input.    |
 | `vulnerable`           | boolean         | Agent's verdict                                             |
 | `confidence`           | float           | 0.0–1.0                                                     |
 | `vuln_class`           | string | null   | null if `vulnerable` is false                               |

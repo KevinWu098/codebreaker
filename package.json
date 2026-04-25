@@ -19,6 +19,7 @@
     "dev:worker": "pnpm --dir packages/control-plane exec wrangler dev --config wrangler.jsonc",
     "deploy:modal": "cd packages/modal-shim && PYTHONPATH=src modal deploy -m codebreaker_modal_shim.main",
     "deploy:worker": "pnpm --dir packages/control-plane exec wrangler deploy --config wrangler.jsonc",
+
     "fix": "ultracite fix",
     "prepare": "lefthook install",
     "typecheck": "pnpm -r --parallel exec tsc --noEmit"

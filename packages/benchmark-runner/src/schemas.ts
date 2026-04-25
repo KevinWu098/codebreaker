@@ -18,7 +18,7 @@ export type GhsaId = z.infer<typeof GhsaIdSchema>;
 export const CommitShaSchema = z.string().regex(COMMIT_SHA_PATTERN);
 export type CommitSha = z.infer<typeof CommitShaSchema>;
 
-export const DifficultySchema = z.enum(["L0", "L1"]);
+export const DifficultySchema = z.enum(["L0", "L1", "L2", "L3"]);
 export type Difficulty = z.infer<typeof DifficultySchema>;
 
 export const VulnClassSchema = z.enum([
@@ -48,11 +48,33 @@ export const CodebaseSchema = z
   .strict();
 export type Codebase = z.infer<typeof CodebaseSchema>;
 
-export const HintSchema = z
+export const LocalizationHintSchema = z
+  .object({
+    area: z.string(),
+  })
+  .strict();
+export type LocalizationHint = z.infer<typeof LocalizationHintSchema>;
+
+export const CveHintSchema = z
   .object({
     description: z.string(),
   })
   .strict();
+export type CveHint = z.infer<typeof CveHintSchema>;
+
+export const CombinedHintSchema = z
+  .object({
+    area: z.string(),
+    description: z.string(),
+  })
+  .strict();
+export type CombinedHint = z.infer<typeof CombinedHintSchema>;
+
+export const HintSchema = z.union([
+  LocalizationHintSchema,
+  CveHintSchema,
+  CombinedHintSchema,
+]);
 export type Hint = z.infer<typeof HintSchema>;
 
 export const FindingLocationSchema = z
@@ -79,7 +101,9 @@ export const TaskInstanceSchema = z
     hints: z
       .object({
         L0: z.null(),
-        L1: HintSchema,
+        L1: HintSchema.optional(),
+        L2: CveHintSchema.optional(),
+        L3: CombinedHintSchema.optional(),
       })
       .strict(),
     task_id: z.string(),
@@ -370,19 +394,24 @@ export const renderAgentInput = (
   AgentInputSchema.parse({
     codebase: task.codebase,
     difficulty,
-    hint: task.hints[difficulty],
+    hint: task.hints[difficulty] ?? null,
     task_id: task.task_id,
   });
 
-export const summarizeTask = (task: TaskInstance): BenchmarkTaskSummary =>
-  BenchmarkTaskSummarySchema.parse({
-    difficulties: ["L0", "L1"],
+export const summarizeTask = (task: TaskInstance): BenchmarkTaskSummary => {
+  const difficulties = (["L0", "L1", "L2", "L3"] as const).filter(
+    (d) => task.hints[d] !== undefined
+  );
+
+  return BenchmarkTaskSummarySchema.parse({
+    difficulties,
     ghsaId: task.ghsa_id,
     language: task.codebase.language,
     repo: task.codebase.repo,
     taskId: task.task_id,
     vulnClass: task.ground_truth.vuln_class,
   });
+};
 
 export const scoreAgentOutput = (
   task: TaskInstance,

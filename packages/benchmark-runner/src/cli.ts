@@ -72,7 +72,7 @@ const applyBenchmarkEnvFromControlPlaneDevVars = (): void => {
 const usage = `Usage:
   benchmark-runner list
   benchmark-runner runs
-  benchmark-runner run --task <id> --difficulty <L0|L1> --model <provider/model> [--cleanup <policy>]
+  benchmark-runner run --task <id> --difficulty <L0|L1|L2|L3> --model <provider/model> [--cleanup <policy>]
   benchmark-runner start <runId>
   benchmark-runner inspect <runId>
   benchmark-runner cleanup <runId>

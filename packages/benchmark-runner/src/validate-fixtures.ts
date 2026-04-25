@@ -18,6 +18,10 @@ const EXAMPLE_L0_INPUT_PATH =
   "benchmark/examples/ecvebench-electerm-001-L0.input.json";
 const EXAMPLE_L1_INPUT_PATH =
   "benchmark/examples/ecvebench-electerm-001-L1.input.json";
+const EXAMPLE_L2_INPUT_PATH =
+  "benchmark/examples/ecvebench-electerm-001-L2.input.json";
+const EXAMPLE_L3_INPUT_PATH =
+  "benchmark/examples/ecvebench-electerm-001-L3.input.json";
 
 const readJsonFixture = async (
   workspaceRoot: string,
@@ -33,30 +37,27 @@ const validateFixtureProjection = async (
   const task = TaskInstanceSchema.parse(
     await readJsonFixture(workspaceRoot, EXAMPLE_TASK_PATH)
   );
-  const l0Input = AgentInputSchema.parse(
-    await readJsonFixture(workspaceRoot, EXAMPLE_L0_INPUT_PATH)
-  );
-  const l1Input = AgentInputSchema.parse(
-    await readJsonFixture(workspaceRoot, EXAMPLE_L1_INPUT_PATH)
-  );
 
-  AgentInputSchema.parse(renderAgentInput(task, "L0"));
-  AgentInputSchema.parse(renderAgentInput(task, "L1"));
+  const exampleInputs: Array<{
+    difficulty: "L0" | "L1" | "L2" | "L3";
+    path: string;
+  }> = [
+    { difficulty: "L0", path: EXAMPLE_L0_INPUT_PATH },
+    { difficulty: "L1", path: EXAMPLE_L1_INPUT_PATH },
+    { difficulty: "L2", path: EXAMPLE_L2_INPUT_PATH },
+    { difficulty: "L3", path: EXAMPLE_L3_INPUT_PATH },
+  ];
 
-  if (
-    JSON.stringify(renderAgentInput(task, "L0")) !== JSON.stringify(l0Input)
-  ) {
-    throw new Error(
-      `${EXAMPLE_L0_INPUT_PATH} does not match rendered task input`
+  for (const { difficulty, path } of exampleInputs) {
+    const exampleInput = AgentInputSchema.parse(
+      await readJsonFixture(workspaceRoot, path)
     );
-  }
+    const rendered = renderAgentInput(task, difficulty);
+    AgentInputSchema.parse(rendered);
 
-  if (
-    JSON.stringify(renderAgentInput(task, "L1")) !== JSON.stringify(l1Input)
-  ) {
-    throw new Error(
-      `${EXAMPLE_L1_INPUT_PATH} does not match rendered task input`
-    );
+    if (JSON.stringify(rendered) !== JSON.stringify(exampleInput)) {
+      throw new Error(`${path} does not match rendered task input`);
+    }
   }
 };
 
