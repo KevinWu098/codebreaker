@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h7wq-jj8r-qm7p",
+  "post_patch_commit": "40a6d6306a2c6c202ab33c3d90178ce19fabf7cf",
+  "noisy_patch": false,
+  "curation_notes": "The upstream fix (PR #114358) changes the autoscaling API version priority from v1 to v2, eliminating the v1-to-v2 conversion path that produces nil behavior pointers. The actual nil dereference occurs in the HPA controller's stabilizeRecommendationWithBehaviors and normalizeDesiredReplicasWithBehaviors functions, which access ScaleUpBehavior and ScaleDownBehavior without nil checks. Locations derived from the panic stack trace in kubernetes/kubernetes#107038 and confirmed by examining the pre-patch source code at the parent commit.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
