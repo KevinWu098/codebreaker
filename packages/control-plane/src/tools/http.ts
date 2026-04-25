@@ -14,6 +14,7 @@ const IPV4_DECIMAL_REGEX = /^\d+$/;
 const IPV4_HEX_REGEX = /^0x[0-9a-f]+$/i;
 const IPV4_OCTAL_REGEX = /^0[0-7]+$/;
 const IPV4_MAPPED_IPV6_REGEX = /^::ffff:([\d.]+)$/i;
+const IPV4_MAPPED_IPV6_HEX_REGEX = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i;
 const IPV6_LINK_LOCAL_REGEX = /^fe[89ab][0-9a-f]/i;
 const IPV6_UNIQUE_LOCAL_REGEX = /^f[cd][0-9a-f]{2}/i;
 
@@ -152,6 +153,22 @@ export const isPrivateHost = (rawHostname: string): boolean => {
 
   if (ipv4Mapped?.[1]) {
     return isPrivateIPv4(ipv4Mapped[1]);
+  }
+
+  // Colon-hex form of IPv4-mapped IPv6 (e.g. ::ffff:7f00:1 == 127.0.0.1).
+  // The dotted regex above doesn't catch this; expand the trailing 32 bits
+  // and run them through the IPv4 check.
+  const ipv4MappedHex = hostname.match(IPV4_MAPPED_IPV6_HEX_REGEX);
+
+  if (ipv4MappedHex?.[1] && ipv4MappedHex[2]) {
+    const high = Number.parseInt(ipv4MappedHex[1], 16);
+    const low = Number.parseInt(ipv4MappedHex[2], 16);
+    const a = Math.floor(high / 256) % 256;
+    const b = high % 256;
+    const c = Math.floor(low / 256) % 256;
+    const d = low % 256;
+
+    return isPrivateIPv4(`${a}.${b}.${c}.${d}`);
   }
 
   if (hostname.includes(":")) {

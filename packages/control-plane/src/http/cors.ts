@@ -61,11 +61,9 @@ const resolveAllowedOrigin = (
     return origin;
   }
 
-  if (allowedOrigins.includes("*")) {
-    return origin ?? "*";
-  }
-
-  return allowedOrigins[0] ?? null;
+  // At this point isOriginAllowed succeeded but the origin isn't an exact
+  // allowlist match, which only happens when the allowlist contains "*".
+  return origin ?? "*";
 };
 
 export const buildCorsHeaders = (

@@ -17,6 +17,9 @@ export const verifyJwt = async (
       nbf: true,
     });
 
+    // hono/jwt's `exp: true` only validates the claim *if it is present* —
+    // a token with no `exp` at all silently passes verify(). This explicit
+    // check is what enforces "missing exp = reject"; do not remove.
     if (typeof payload.exp !== "number") {
       return false;
     }
