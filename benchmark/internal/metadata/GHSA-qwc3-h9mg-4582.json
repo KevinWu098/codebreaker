@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qwc3-h9mg-4582",
+  "post_patch_commit": "f92a9ef5246d57e51696bd881a15f3b133b2bb50",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit f92a9ef modifies only Parse-Dashboard/app.js (plus a new test file). The fix extracts the agent route handler into a named function and registers it behind authentication and CSRF middleware. It also adds cross-app access control and read-only enforcement. Location derived directly from the patch diff: the vulnerable route definition app.post('/apps/:appId/agent', ...) resided in the main module export function in app.js with no authentication middleware.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
