@@ -94,7 +94,7 @@ The filter script (`pipeline/filter_advisories.py`) paginates through the GitHub
 The output is a JSONL file (`pipeline/output/filtered.jsonl`) where each line contains a GHSA ID plus metadata for downstream sampling: severity, CVSS score, CWE IDs, ecosystem, and publication date.
 
 ```bash
-GITHUB_TOKEN=ghp_... uv run python -m pipeline.filter_advisories
+uv run python -m pipeline.filter_advisories
 ```
 
 The script supports checkpointing (`--checkpoint`) for resumption across runs and `--max-pages` for testing.
@@ -224,7 +224,7 @@ Contains everything needed for evaluation: the codebase pointer (repo, language,
 **Path**: `benchmark/internal/metadata/{GHSA_ID}.json`
 **Schema**: `schema/metadata.schema.json`
 
-Contains internal curation data not exposed to agents: the post-patch commit SHA (used for negative validation), whether the patch was noisy, free-text curation notes, the dataset version, and the snapshot date.
+Contains internal curation data not exposed to agents: the post-patch commit SHA (reserved for future POC-based evaluation), whether the patch was noisy, free-text curation notes, the dataset version, and the snapshot date.
 
 ---
 
@@ -244,9 +244,9 @@ Every curated task is validated against the following checklist before merging:
 | **JSON validity** | Files are valid JSON, pretty-printed with 2-space indentation. |
 | **Schema compliance** | Both files pass validation against their respective JSON schemas. |
 
-### Negative validation
+### Negative validation (planned)
 
-During evaluation (not curation), the harness uses the post-patch commit to check the agent's findings against the fixed version. If a reported vulnerability is absent in the patched code, this confirms the agent found the intended vulnerability. This follows the same approach as CyberGYM's negative validation.
+For future POC-based evaluation tasks, the harness will use the post-patch commit to verify that agent-generated exploits succeed against the vulnerable version and fail against the patched version. This follows the same approach as CyberGYM's negative validation.
 
 ---
 
