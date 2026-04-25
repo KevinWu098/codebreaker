@@ -70,9 +70,37 @@ Advisories that do not clearly map to one of these classes are excluded. We inte
 
 ---
 
-## Curation Process
+## Pipeline Overview
 
-Curation is performed by [Devin](https://devin.ai/) AI agents, each assigned a single GHSA. The agent follows a structured prompt (see [`docs/prompts/curation_agent.md`](prompts/curation_agent.md)) that walks it through the full curation workflow. Each agent opens a pull request containing exactly two files, which is then reviewed before merging.
+Curation is a two-stage process:
+
+1. **Filter** (script) — Paginate through all ~30k reviewed GHSAs and apply cheap metadata filters. No repos are cloned, no diffs are read. This produces a candidate list of GHSA IDs with enough metadata for stratified sampling.
+2. **Curate** (Devin agents) — For each candidate GHSA, a Devin AI agent clones the repo, reads the diff, classifies the vulnerability, localizes it, writes the task and metadata JSON files, and opens a PR.
+
+### Stage 1: Filtering
+
+The filter script (`pipeline/filter_advisories.py`) paginates through the GitHub Advisory REST API and applies the following hard filters using only advisory metadata — no additional API calls per advisory:
+
+| Filter | Field checked |
+| --- | --- |
+| Has description | `description` is non-empty |
+| English language | ASCII character ratio >= 85% |
+| Single package | `vulnerabilities` array has exactly 1 entry |
+| Has linked reference | `references` contain at least one commit, PR, or tag URL |
+| Has CVSS score | `cvss.score` is present and numeric |
+| Dedup | No duplicate GHSA IDs |
+
+The output is a JSONL file (`pipeline/output/filtered.jsonl`) where each line contains a GHSA ID plus metadata for downstream sampling: severity, CVSS score, CWE IDs, ecosystem, and publication date.
+
+```bash
+GITHUB_TOKEN=ghp_... uv run python -m pipeline.filter_advisories
+```
+
+The script supports checkpointing (`--checkpoint`) for resumption across runs and `--max-pages` for testing.
+
+### Stage 2: Curation (Devin agents)
+
+Each filtered GHSA is dispatched to a [Devin](https://devin.ai/) agent. The agent follows a structured prompt (see [`docs/prompts/curation_agent.md`](prompts/curation_agent.md)) that walks it through the full curation workflow. Each agent opens a pull request containing exactly two files, which is then reviewed before merging.
 
 ### Per-advisory workflow
 
