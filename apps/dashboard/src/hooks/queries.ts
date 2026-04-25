@@ -18,6 +18,7 @@ import type {
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { ApiClientError, api } from "@/lib/api";
 import { isAuthorized, useConnection } from "@/lib/connection";
+import { POLLING } from "@/lib/polling";
 import { qk } from "@/lib/query-keys";
 
 export const useSessionsQuery = (
@@ -29,7 +30,7 @@ export const useSessionsQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.listSessions(query),
     queryKey: [...qk.sessions(connection), query],
-    refetchInterval: 5000,
+    refetchInterval: POLLING.sessions.list,
   });
 };
 
@@ -43,7 +44,7 @@ export const useBenchmarkTasksQuery = (): UseQueryResult<
     enabled: isAuthorized(connection),
     queryFn: () => api.listBenchmarkTasks(),
     queryKey: qk.benchmarkTasks(connection),
-    refetchInterval: 30_000,
+    refetchInterval: POLLING.benchmarks.tasks,
   });
 };
 
@@ -57,7 +58,7 @@ export const useBenchmarkRunsQuery = (): UseQueryResult<
     enabled: isAuthorized(connection),
     queryFn: () => api.listBenchmarkRuns(),
     queryKey: qk.benchmarkRuns(connection),
-    refetchInterval: 5000,
+    refetchInterval: POLLING.benchmarks.runs,
   });
 };
 
@@ -70,7 +71,7 @@ export const useBenchmarkRunQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.getBenchmarkRun(id),
     queryKey: qk.benchmarkRun(connection, id),
-    refetchInterval: 5000,
+    refetchInterval: POLLING.benchmarks.runDetail,
   });
 };
 
@@ -83,7 +84,7 @@ export const useSessionQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.getSession(id),
     queryKey: qk.session.detail(connection, id),
-    refetchInterval: 4000,
+    refetchInterval: POLLING.sessions.detail,
   });
 };
 
@@ -96,7 +97,7 @@ export const useSessionStateQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.getState(id),
     queryKey: qk.session.state(connection, id),
-    refetchInterval: 4000,
+    refetchInterval: POLLING.sessions.state,
   });
 };
 
@@ -122,7 +123,7 @@ export const useSessionMessagesQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.getMessages(id),
     queryKey: qk.session.messages(connection, id),
-    refetchInterval: 5000,
+    refetchInterval: POLLING.sessions.messages,
   });
 };
 
@@ -135,7 +136,7 @@ export const useSandboxQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.getSandbox(id),
     queryKey: qk.session.sandbox(connection, id),
-    refetchInterval: 5000,
+    refetchInterval: POLLING.sessions.sandbox,
   });
 };
 
@@ -148,7 +149,7 @@ export const useSessionArtifactsQuery = (
     enabled: isAuthorized(connection),
     queryFn: () => api.getArtifacts(id),
     queryKey: qk.session.artifacts(connection, id),
-    refetchInterval: 5000,
+    refetchInterval: POLLING.sessions.artifacts,
   });
 };
 
@@ -162,7 +163,7 @@ export const useShimHealthQuery = (): UseQueryResult<
     enabled: isAuthorized(connection),
     queryFn: () => api.shimHealth(),
     queryKey: qk.admin.health(connection),
-    refetchInterval: 10_000,
+    refetchInterval: POLLING.admin.health,
   });
 };
 
@@ -176,7 +177,7 @@ export const useShimSandboxesQuery = (): UseQueryResult<
     enabled: isAuthorized(connection),
     queryFn: () => api.shimSandboxes(),
     queryKey: qk.admin.sandboxes(connection),
-    refetchInterval: 8000,
+    refetchInterval: POLLING.admin.sandboxes,
   });
 };
 
@@ -186,7 +187,7 @@ export const useHealthProbe = (): UseQueryResult<{ ok: boolean }, Error> => {
   return useQuery({
     queryFn: () => api.health(),
     queryKey: qk.health(connection),
-    refetchInterval: 10_000,
+    refetchInterval: POLLING.health,
     retry: (failureCount, error) => {
       // Treat 401 as "reachable but locked"; don't burn retries on it.
       if (error instanceof ApiClientError && error.status === 401) {
