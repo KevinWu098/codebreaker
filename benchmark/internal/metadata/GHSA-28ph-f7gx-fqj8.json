@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-28ph-f7gx-fqj8",
+  "post_patch_commit": "3c6b57fe1b2cc87e7ebecde43dd836ffb1c4ea5c",
+  "noisy_patch": true,
+  "curation_notes": "The patch modifies 4 non-test source files (src/vtab/mod.rs, src/vtab/array.rs, src/vtab/csvtab.rs, src/vtab/series.rs), making it a noisy patch. The core fix is in src/vtab/mod.rs where read_only_module and eponymous_only_module were changed to return &'static Module<T> instead of Module<T>, and create_module was changed to require &'static Module<T>. The other three files are consumers that were updated to pass inline function results instead of referencing lazy_static Module instances. Locations were derived from the patch diff, focusing on the mod.rs functions that define the vulnerable API.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
