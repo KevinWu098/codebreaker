@@ -10,7 +10,12 @@ import { Spinner } from "@/components/spinner";
 import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
 import { useSessionsQuery } from "@/hooks/queries";
 import { useConnection } from "@/lib/connection";
-import { formatNumber, formatRelativeTime, truncateId } from "@/lib/format";
+import {
+  formatNumber,
+  formatRelativeTime,
+  formatRepo,
+  truncateId,
+} from "@/lib/format";
 
 interface SessionsListProps {
   onSelect: (id: string) => void;
@@ -97,9 +102,7 @@ export const SessionsList = ({
             <tbody>
               {rows.map((session) => {
                 const tokens = session.inputTokens + session.outputTokens;
-                const repo = session.repoOwner
-                  ? `${session.repoOwner}/${session.repoName ?? ""}`
-                  : (session.repoName ?? "—");
+                const repo = formatRepo(session.repoOwner, session.repoName);
 
                 return (
                   <tr

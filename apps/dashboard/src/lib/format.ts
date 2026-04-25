@@ -47,3 +47,14 @@ export const truncateId = (value: string, head = 8, tail = 4): string => {
 
 export const formatNumber = (value: number): string =>
   new Intl.NumberFormat("en-US").format(value);
+
+export const formatRepo = (
+  owner: string | null,
+  name: string | null
+): string => {
+  if (owner) {
+    return `${owner}/${name ?? ""}`;
+  }
+
+  return name ?? "—";
+};
