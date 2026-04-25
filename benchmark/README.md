@@ -13,11 +13,11 @@ Each task presents an agent with a repository at a single commit and asks it to 
 ECVEBench follows CyberGYM's pattern: **difficulty is a runtime parameter, not a separate task**. There is one record per unique vulnerability (GHSA). The harness projects that record into a difficulty-specific agent input at evaluation time.
 
 
-| Layer       | What it is                                                | Schema                       | Lives in                                          |
-| ----------- | --------------------------------------------------------- | ---------------------------- | ------------------------------------------------- |
-| Task        | Canonical record per GHSA. All hint variants + ground truth. | `schema/task.schema.json`    | `data/tasks.jsonl`                                |
-| Agent input | Difficulty-specific projection of a task. No ground truth.   | `schema/agent_input.schema.json` | Generated at runtime by `harness/generate_input.py` |
-| Agent output | Agent's verdict, class, locations, confidence, difficulty. | `schema/output.schema.json`  | Returned by the agent, consumed by the scorer     |
+| Layer        | What it is                                                   | Schema                           | Lives in                                            |
+| ------------ | ------------------------------------------------------------ | -------------------------------- | --------------------------------------------------- |
+| Task         | Canonical record per GHSA. All hint variants + ground truth. | `schema/task.schema.json`        | `data/tasks.jsonl`                                  |
+| Agent input  | Difficulty-specific projection of a task. No ground truth.   | `schema/agent_input.schema.json` | Generated at runtime by `harness/generate_input.py` |
+| Agent output | Agent's verdict, class, locations, confidence, difficulty.   | `schema/output.schema.json`      | Returned by the agent, consumed by the scorer       |
 
 
 The agent sees only the pre-patch commit and the difficulty-specific hint. It does not know whether a vulnerability exists — that is what it must determine. Negative validation is handled by the evaluation harness using the post-patch commit stored in `internal/metadata.jsonl`, following the same approach as CyberGYM.
@@ -77,33 +77,33 @@ The following fields are **not scored**:
 
 ### Negative Validation
 
-The evaluation harness uses the post-patch commit stored in `internal/metadata.jsonl` to verify that agent-identified vulnerabilities are not present in the patched version. This is not exposed to the agent. If an agent identifies a genuinely different vulnerability in the codebase, this is a known edge case and noted as a benchmark limitation.
+The evaluation harness uses the post-patch commit stored in `internal/metadata/` to verify that agent-identified vulnerabilities are not present in the patched version. This is not exposed to the agent. If an agent identifies a genuinely different vulnerability in the codebase, this is a known edge case and noted as a benchmark limitation.
 
 ---
 
 ## Task Instance Format
 
-Tasks are stored as JSONL in `data/tasks.jsonl`, one JSON object per **unique vulnerability** (GHSA). Ground truth is included in each task. See `schema/task.schema.json` for the formal schema.
+Tasks are stored as individual JSON files in `data/tasks/`, one file per **unique vulnerability** (GHSA), named `{task_id}.json`. Ground truth is included in each task. See `schema/task.schema.json` for the formal schema.
 
 ### Fields
 
 
-| Field                               | Type            | Description                                                                  |
-| ----------------------------------- | --------------- | ---------------------------------------------------------------------------- |
-| `task_id`                           | string          | GHSA-level identifier. Format: `ecvebench-{project}-{n}`. No L0/L1 suffix.   |
-| `ghsa_id`                           | string          | Source GitHub Security Advisory ID                                           |
-| `codebase.repo`                     | string          | GitHub repository URL                                                        |
-| `codebase.language`                 | string          | Primary language of the repository                                           |
-| `codebase.commit`                   | string          | Full 40-character pre-patch SHA served to the agent                          |
-| `hints.L0`                          | null            | L0 is pure discovery; always null.                                           |
-| `hints.L1`                          | object          | Scrubbed vulnerability description. Object with a `description` string.      |
-| `ground_truth.vulnerable`           | boolean         | Whether the commit is vulnerable                                             |
-| `ground_truth.vuln_class`           | string          | Vulnerability class                                                          |
-| `ground_truth.cvss`                 | float \| null   | CVSS score. null if unavailable.                                             |
-| `ground_truth.reason`               | string          | Unscored. Human-readable explanation.                                        |
-| `ground_truth.locations`            | array           | One or more vulnerable locations                                             |
-| `ground_truth.locations[].file`     | string          | Relative path from repo root                                                 |
-| `ground_truth.locations[].function` | string \| null  | Function name. null if not determinable.                                     |
+| Field                               | Type          | Description                                                                |
+| ----------------------------------- | ------------- | -------------------------------------------------------------------------- |
+| `task_id`                           | string        | GHSA-level identifier. Format: `ecvebench-{project}-{n}`. No L0/L1 suffix. |
+| `ghsa_id`                           | string        | Source GitHub Security Advisory ID                                         |
+| `codebase.repo`                     | string        | GitHub repository URL                                                      |
+| `codebase.language`                 | string        | Primary language of the repository                                         |
+| `codebase.commit`                   | string        | Full 40-character pre-patch SHA served to the agent                        |
+| `hints.L0`                          | null          | L0 is pure discovery; always null.                                         |
+| `hints.L1`                          | object        | Scrubbed vulnerability description. Object with a `description` string.    |
+| `ground_truth.vulnerable`           | boolean       | Whether the commit is vulnerable                                           |
+| `ground_truth.vuln_class`           | string        | Vulnerability class                                                        |
+| `ground_truth.cvss`                 | float | null  | CVSS score. null if unavailable.                                           |
+| `ground_truth.reason`               | string        | Unscored. Human-readable explanation.                                      |
+| `ground_truth.locations`            | array         | One or more vulnerable locations                                           |
+| `ground_truth.locations[].file`     | string        | Relative path from repo root                                               |
+| `ground_truth.locations[].function` | string | null | Function name. null if not determinable.                                   |
 
 
 ---
@@ -115,14 +115,14 @@ The harness projects a task record into an agent input at a given difficulty. Th
 ### Fields
 
 
-| Field                | Type            | Description                                                  |
-| -------------------- | --------------- | ------------------------------------------------------------ |
-| `task_id`            | string          | GHSA-level identifier (matches `task_id` in `tasks.jsonl`).  |
-| `difficulty`         | `"L0"` \| `"L1"`| Difficulty level this input was rendered at.                 |
-| `codebase.repo`      | string          | GitHub repository URL                                        |
-| `codebase.language`  | string          | Primary language                                             |
-| `codebase.commit`    | string          | Full 40-character pre-patch SHA                              |
-| `hint`               | object \| null  | The hint at this difficulty. `null` for L0.                  |
+| Field               | Type            | Description                                                 |
+| ------------------- | --------------- | ----------------------------------------------------------- |
+| `task_id`           | string          | GHSA-level identifier (matches `task_id` in `tasks.jsonl`). |
+| `difficulty`        | `"L0"` | `"L1"` | Difficulty level this input was rendered at.                |
+| `codebase.repo`     | string          | GitHub repository URL                                       |
+| `codebase.language` | string          | Primary language                                            |
+| `codebase.commit`   | string          | Full 40-character pre-patch SHA                             |
+| `hint`              | object | null   | The hint at this difficulty. `null` for L0.                 |
 
 
 ### Generating an agent input
@@ -139,7 +139,7 @@ Or as a library:
 from benchmark.harness import generate_input, load_task
 from pathlib import Path
 
-task = load_task(Path("benchmark/data/tasks.jsonl"), "ecvebench-electerm-001")
+task = load_task(Path("benchmark/data/tasks"), "ecvebench-electerm-001")
 agent_input = generate_input(task, "L1")
 ```
 
@@ -152,17 +152,17 @@ See `schema/output.schema.json` for the formal schema.
 ### Fields
 
 
-| Field                  | Type             | Description                                                                  |
-| ---------------------- | ---------------- | ---------------------------------------------------------------------------- |
-| `task_id`              | string           | GHSA-level identifier. Must match the task being evaluated.                  |
-| `difficulty`           | `"L0"` \| `"L1"` | Difficulty the agent ran at. Must match the agent input.                     |
-| `vulnerable`           | boolean          | Agent's verdict                                                              |
-| `confidence`           | float            | 0.0–1.0                                                                      |
-| `vuln_class`           | string \| null   | null if `vulnerable` is false                                                |
-| `locations`            | array            | Empty if `vulnerable` is false                                               |
-| `locations[].file`     | string           | Relative path from repo root                                                 |
-| `locations[].function` | string \| null   | null if not determinable                                                     |
-| `reason`               | string \| null   | Unscored. null if `vulnerable` is false.                                     |
+| Field                  | Type            | Description                                                 |
+| ---------------------- | --------------- | ----------------------------------------------------------- |
+| `task_id`              | string          | GHSA-level identifier. Must match the task being evaluated. |
+| `difficulty`           | `"L0"` | `"L1"` | Difficulty the agent ran at. Must match the agent input.    |
+| `vulnerable`           | boolean         | Agent's verdict                                             |
+| `confidence`           | float           | 0.0–1.0                                                     |
+| `vuln_class`           | string | null   | null if `vulnerable` is false                               |
+| `locations`            | array           | Empty if `vulnerable` is false                              |
+| `locations[].file`     | string          | Relative path from repo root                                |
+| `locations[].function` | string | null   | null if not determinable                                    |
+| `reason`               | string | null   | Unscored. null if `vulnerable` is false.                    |
 
 
 ---
@@ -182,19 +182,21 @@ benchmark/
 │   ├── ecvebench-electerm-001-L0.input.json     # rendered agent input at L0
 │   └── ecvebench-electerm-001-L1.input.json     # rendered agent input at L1
 ├── data/
-│   └── tasks.jsonl                # full dataset, one task per unique GHSA
+│   └── tasks/                     # one JSON file per unique GHSA
+│       └── ecvebench-electerm-001.json
 ├── internal/
-│   └── metadata.jsonl             # post_patch_commit and curation metadata, not published
+│   └── metadata/                  # one JSON file per GHSA, keyed by GHSA ID
+│       └── GHSA-8x35-hph8-37hq.json
 ├── harness/
 │   ├── __init__.py
 │   └── generate_input.py          # task -> agent input projection
 └── scorer/
-    └── score.py                   # evaluation harness (planned)
+    ├── __init__.py
+    └── score.py                   # evaluation harness
 ```
 
 ## Dataset
 
 Source: GitHub Advisory Database (reviewed advisories only)  
-Enrichment: CVSS scores from NVD  
-Curation: Filtered for linked patch commits, CWE mappings, and CVSS >= 6.0. Balanced across vulnerability classes and languages.  
+Curation: Each task is curated from a reviewed GHSA with a linked patch commit. Balanced across vulnerability classes and languages.  
 Versioning: Each release is a frozen snapshot. See CHANGELOG for version history.

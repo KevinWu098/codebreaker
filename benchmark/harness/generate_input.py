@@ -8,7 +8,7 @@ contains exactly one hint and no ground truth.
 Usage as a library:
 
     from benchmark.harness import generate_input, load_task
-    task = load_task(Path("benchmark/data/tasks.jsonl"), "ecvebench-electerm-001")
+    task = load_task(Path("benchmark/data/tasks"), "ecvebench-electerm-001")
     agent_input = generate_input(task, "L1")
 
 Usage as a script:
@@ -28,7 +28,7 @@ from typing import Any, Literal
 Difficulty = Literal["L0", "L1"]
 DIFFICULTIES: tuple[Difficulty, ...] = ("L0", "L1")
 
-DEFAULT_TASKS_PATH = Path(__file__).resolve().parent.parent / "data" / "tasks.jsonl"
+DEFAULT_TASKS_PATH = Path(__file__).resolve().parent.parent / "data" / "tasks"
 
 
 def generate_input(task: dict[str, Any], difficulty: Difficulty) -> dict[str, Any]:
@@ -53,7 +53,18 @@ def generate_input(task: dict[str, Any], difficulty: Difficulty) -> dict[str, An
 
 
 def load_task(tasks_path: Path, task_id: str) -> dict[str, Any]:
-    """Load a single task record from a tasks.jsonl file by ``task_id``."""
+    """Load a single task record by ``task_id``.
+
+    Accepts either a directory of ``*.json`` files (looks for
+    ``{task_id}.json``) or a JSONL file (scans lines for matching id).
+    """
+    if tasks_path.is_dir():
+        filepath = tasks_path / f"{task_id}.json"
+        if not filepath.exists():
+            raise KeyError(f"Task {task_id!r} not found in {tasks_path}")
+        with filepath.open() as f:
+            return json.load(f)
+
     with tasks_path.open() as f:
         for raw_line in f:
             line = raw_line.strip()
@@ -80,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
         "--tasks",
         type=Path,
         default=DEFAULT_TASKS_PATH,
-        help=f"Path to tasks.jsonl (default: {DEFAULT_TASKS_PATH}).",
+        help=f"Path to tasks directory or JSONL file (default: {DEFAULT_TASKS_PATH}).",
     )
     args = parser.parse_args(argv)
 
