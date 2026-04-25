@@ -1,6 +1,6 @@
 # ECVEBench
 
-A large-scale, multi-language cybersecurity benchmark for evaluating AI agents on real-world vulnerability detection and localization tasks. Built on the GitHub Advisory Database, ECVEBench addresses key limitations of existing benchmarks like CyberGYM by covering diverse attack vectors beyond memory-safety bugs in C/C++.
+A large-scale, multi-language cybersecurity benchmark for evaluating AI agents on real-world vulnerability detection and localization tasks. Built on the GitHub Advisory Database, ECVEBench addresses key limitations of existing benchmarks by covering diverse attack vectors beyond memory-safety bugs in C/C++.
 
 ## Overview
 
