@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-application-changerequest-001",
+  "ghsa_id": "GHSA-f776-w9v2-7vfj",
+  "codebase": {
+    "repo": "https://github.com/xwiki-contrib/application-changerequest",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "feacb5cd0e0628aea1995b0824a007e82e9e8d21"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Change request rendering and UI template layer"
+    },
+    "L2": {
+      "description": "A cross-site scripting (XSS) vulnerability allows a user without any specific rights to perform script injection and remote code execution by inserting a crafted title when creating a new change request. The title value is rendered without proper output escaping in the user interface, allowing arbitrary script execution in the context of other users' sessions."
+    },
+    "L3": {
+      "area": "Change request rendering and UI template layer",
+      "description": "A cross-site scripting (XSS) vulnerability allows a user without any specific rights to perform script injection and remote code execution by inserting a crafted title when creating a new change request. The title value is rendered without proper output escaping in the user interface, allowing arbitrary script execution in the context of other users' sessions."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 10.0,
+    "reason": "The change request title is rendered without escaping in the UI template, allowing an attacker to inject arbitrary scripts via a crafted title that executes in other users' browsers.",
+    "locations": [
+      {
+        "file": "application-changerequest-ui/src/main/resources/ChangeRequest/Code/ChangeRequestSheet.xml",
+        "function": null
+      }
+    ]
+  }
+}
