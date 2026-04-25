@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-p9m8-27x8-rg87",
+  "post_patch_commit": "d6707503ec2f20947f79e38f861dba93b39df9da",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references two commits: d670750 (PR #493, prevents arbitrary EL expression evaluation in CronValidator) and cfd2880 (PR #494, removes user expression from CronParser error messages). The core vulnerability is in CronValidator.isValid() where e.getMessage() containing user input is passed to buildConstraintViolationWithTemplate(), which evaluates Java EL expressions. Used d670750 as the patch commit since it fixes the primary vulnerability. The pre-patch commit 6f91560 is its first parent and contains the fully vulnerable code.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
