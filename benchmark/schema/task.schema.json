@@ -107,10 +107,7 @@
                 "description": "Relative path from repo root"
               },
               "function": {
-                "oneOf": [
-                  { "type": "null" },
-                  { "type": "string" }
-                ]
+                "oneOf": [{ "type": "null" }, { "type": "string" }]
               }
             }
           }
