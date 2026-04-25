@@ -132,6 +132,7 @@ class ModalSandboxManager:
             image=build_image(profile),
             memory=profile.memory_mb,
             timeout=profile.timeout_seconds,
+            **({"idle_timeout": profile.idle_timeout_seconds} if profile.idle_timeout_seconds else {}),
         )
         metadata = SandboxMetadata(
             created_at=time.time(),

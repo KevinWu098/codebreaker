@@ -3,6 +3,7 @@
     "cpu": 1,
     "encryptedPorts": [],
     "env": {},
+    "idleTimeoutSeconds": 300,
     "image": "debian_slim",
     "installCommands": [
       "apt-get update",
@@ -18,6 +19,7 @@
     "cpu": 1,
     "encryptedPorts": [],
     "env": {},
+    "idleTimeoutSeconds": 300,
     "image": "debian_slim",
     "installCommands": [
       "apt-get update",
@@ -33,6 +35,7 @@
     "cpu": 2,
     "encryptedPorts": [],
     "env": {},
+    "idleTimeoutSeconds": 300,
     "image": "debian_slim",
     "installCommands": [
       "apt-get update",
