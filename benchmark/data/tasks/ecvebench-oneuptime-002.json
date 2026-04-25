@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-oneuptime-002",
+  "ghsa_id": "GHSA-jmhp-5558-qxh5",
+  "codebase": {
+    "repo": "https://github.com/OneUptime/oneuptime",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "93cead93fd2c4f2c1b9fe4c2ba53d5ad7526c236"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Network monitoring and diagnostics infrastructure"
+    },
+    "L2": {
+      "description": "A command injection vulnerability exists where attacker-controlled destination values from network monitoring configurations are directly interpolated into shell command strings and passed to a shell-spawning execution function without any sanitization or validation, allowing authenticated users to inject arbitrary operating system commands via shell metacharacters."
+    },
+    "L3": {
+      "area": "Network monitoring and diagnostics infrastructure",
+      "description": "A command injection vulnerability exists where attacker-controlled destination values from network monitoring configurations are directly interpolated into shell command strings and passed to a shell-spawning execution function without any sanitization or validation, allowing authenticated users to inject arbitrary operating system commands via shell metacharacters."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 10.0,
+    "reason": "The performTraceroute method directly interpolates user-controlled destination strings into shell commands executed via child_process.exec(), allowing OS command injection through shell metacharacters.",
+    "locations": [
+      {
+        "file": "Probe/Utils/Monitors/MonitorTypes/NetworkPathMonitor.ts",
+        "function": "performTraceroute"
+      }
+    ]
+  }
+}
