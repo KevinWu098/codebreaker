@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x422-6qhv-p29g",
+  "post_patch_commit": "f73147496e05c09a8b83d95fb4f1bf86696c6342",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit f731474 adds _validate_non_local_source_contains_relative_paths() and calls it from _validate_source() in mlflow/server/handlers.py. Only one non-test source file was changed. Location derived from the patch diff: the vulnerable function is _validate_source which lacked relative path validation for non-local URIs.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
