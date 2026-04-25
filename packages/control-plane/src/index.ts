@@ -1,5 +1,8 @@
 import { verifyRequestJwt } from "@codebreaker/control-plane/http/auth";
-import { buildCorsHeaders } from "@codebreaker/control-plane/http/cors";
+import {
+  handlePreflight,
+  withCorsHeaders,
+} from "@codebreaker/control-plane/http/cors";
 import { createRouter } from "@codebreaker/control-plane/router";
 import type { Env } from "@codebreaker/control-plane/types";
 import { routeAgentRequest } from "agents";
@@ -9,60 +12,51 @@ export { SessionAgent } from "@codebreaker/control-plane/session/agent";
 
 const router = createRouter();
 
-const unauthorized = (corsHeaders: HeadersInit | undefined): Response =>
-  new Response(
-    JSON.stringify({ code: "unauthorized", message: "Unauthorized" }),
-    {
-      headers: { "Content-Type": "application/json", ...(corsHeaders ?? {}) },
-      status: 401,
-    }
-  );
+const isAgentRoute = (request: Request): boolean => {
+  const url = new URL(request.url);
+  return url.pathname.startsWith("/agents/");
+};
 
-const forbiddenOrigin = (): Response =>
-  new Response(
-    JSON.stringify({ code: "forbidden_origin", message: "Origin not allowed" }),
-    {
-      headers: { "Content-Type": "application/json" },
-      status: 403,
-    }
+const unauthorized = (origin: string | null, env: Env): Response =>
+  withCorsHeaders(
+    new Response(
+      JSON.stringify({ code: "unauthorized", message: "Unauthorized" }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 401,
+      }
+    ),
+    origin,
+    env
   );
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const corsHeaders = buildCorsHeaders(request, env);
+    const origin = request.headers.get("origin");
 
-    const agentResponse = await routeAgentRequest(request, env, {
-      cors: corsHeaders ?? false,
-      onBeforeConnect: async (req) => {
-        const origin = req.headers.get("Origin");
+    if (isAgentRoute(request)) {
+      const preflight = handlePreflight(request, env);
 
-        if (origin && !corsHeaders) {
-          return forbiddenOrigin();
-        }
+      if (preflight) {
+        return preflight;
+      }
 
-        if (!(await verifyRequestJwt(req, env.JWT_SECRET))) {
-          return unauthorized(corsHeaders);
-        }
-      },
-      onBeforeRequest: async (req) => {
-        if (req.method === "OPTIONS") {
-          return;
-        }
+      const agentResponse = await routeAgentRequest(request, env, {
+        onBeforeConnect: async (req) => {
+          if (!(await verifyRequestJwt(req, env.JWT_SECRET))) {
+            return unauthorized(origin, env);
+          }
+        },
+        onBeforeRequest: async (req) => {
+          if (!(await verifyRequestJwt(req, env.JWT_SECRET))) {
+            return unauthorized(origin, env);
+          }
+        },
+      });
 
-        const origin = req.headers.get("Origin");
-
-        if (origin && !corsHeaders) {
-          return forbiddenOrigin();
-        }
-
-        if (!(await verifyRequestJwt(req, env.JWT_SECRET))) {
-          return unauthorized(corsHeaders);
-        }
-      },
-    });
-
-    if (agentResponse) {
-      return agentResponse;
+      if (agentResponse) {
+        return withCorsHeaders(agentResponse, origin, env);
+      }
     }
 
     return router.fetch(request, env);

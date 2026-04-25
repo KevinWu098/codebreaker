@@ -1,0 +1,452 @@
+@import "tailwindcss";
+
+/* Tell Tailwind which non-standard data-theme attribute toggles dark mode. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Design tokens — RGB triplets are stored as raw CSS variables so they can be
+ * composed via `rgb(var(--token) / <alpha>)` and toggled by data-theme.
+ */
+:root,
+[data-theme="dark"] {
+  --bg: 10 10 10;
+  --bg-raised: 19 19 19;
+  --bg-overlay: 26 26 26;
+  --bg-hover: 31 31 31;
+
+  --fg: 230 230 230;
+  --fg-muted: 139 139 139;
+  --fg-subtle: 85 85 85;
+
+  --border: 39 39 39;
+  --border-strong: 58 58 58;
+
+  --accent: 124 219 255;
+  --accent-muted: 74 140 161;
+
+  --status-idle: 139 139 139;
+  --status-pending: 244 200 105;
+  --status-running: 124 219 255;
+  --status-completed: 93 208 124;
+  --status-failed: 255 107 107;
+  --status-paused: 244 200 105;
+  --status-archived: 85 85 85;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: 250 250 249;
+  --bg-raised: 255 255 255;
+  --bg-overlay: 244 244 243;
+  --bg-hover: 237 237 236;
+
+  --fg: 24 24 27;
+  --fg-muted: 82 82 91;
+  --fg-subtle: 140 140 150;
+
+  --border: 228 228 231;
+  --border-strong: 212 212 216;
+
+  --accent: 3 105 161;
+  --accent-muted: 2 132 199;
+
+  --status-idle: 107 114 128;
+  --status-pending: 180 83 9;
+  --status-running: 2 132 199;
+  --status-completed: 22 163 74;
+  --status-failed: 220 38 38;
+  --status-paused: 180 83 9;
+  --status-archived: 156 163 175;
+  color-scheme: light;
+}
+
+/*
+ * Map raw triplets into Tailwind theme tokens. Using rgb(var(--x) / <alpha>)
+ * lets every utility (e.g. bg-accent/10) automatically pick up the active
+ * theme without recompiling.
+ */
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji";
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
+  --radius-DEFAULT: 4px;
+  --radius-md: 4px;
+  --color-bg: rgb(var(--bg));
+  --color-bg-raised: rgb(var(--bg-raised));
+  --color-bg-overlay: rgb(var(--bg-overlay));
+  --color-bg-hover: rgb(var(--bg-hover));
+
+  --color-fg: rgb(var(--fg));
+  --color-fg-muted: rgb(var(--fg-muted));
+  --color-fg-subtle: rgb(var(--fg-subtle));
+
+  --color-border: rgb(var(--border));
+  --color-border-strong: rgb(var(--border-strong));
+
+  --color-accent: rgb(var(--accent));
+  --color-accent-muted: rgb(var(--accent-muted));
+
+  --color-status-idle: rgb(var(--status-idle));
+  --color-status-pending: rgb(var(--status-pending));
+  --color-status-running: rgb(var(--status-running));
+  --color-status-completed: rgb(var(--status-completed));
+  --color-status-failed: rgb(var(--status-failed));
+  --color-status-paused: rgb(var(--status-paused));
+  --color-status-archived: rgb(var(--status-archived));
+}
+
+/* Default border color uses our token. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: rgb(var(--border) / 1);
+  }
+
+  html,
+  body {
+    @apply bg-bg text-fg;
+  }
+
+  body {
+    font-feature-settings:
+      "liga" 1,
+      "calt" 1;
+    @apply font-sans text-sm antialiased;
+  }
+
+  ::selection {
+    color: rgb(var(--bg) / 1);
+    background-color: rgb(var(--accent-muted) / 1);
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    @apply font-mono;
+  }
+
+  ::placeholder {
+    color: rgb(var(--fg-subtle) / 1);
+  }
+
+  /* Visible focus that respects WCAG AA in both themes. */
+  :focus-visible {
+    outline: none;
+    border-color: rgb(var(--accent) / 1);
+  }
+
+  /* Calmer scrollbars. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--border) / 1);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--border-strong) / 1);
+  }
+}
+
+/*
+ * Semantic component primitives. Class names match the styling guide so
+ * markup reads as HTML semantics, not Tailwind soup.
+ */
+@layer components {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .input {
+    @apply w-full rounded border border-border bg-bg-raised px-2 py-1 text-sm text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none;
+  }
+
+  textarea.input {
+    @apply font-mono leading-snug;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded border border-border bg-bg-raised px-3 py-1 text-xs font-medium text-fg transition-colors hover:border-border-strong hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-bg-raised disabled:hover:border-border;
+  }
+
+  .btn-icon {
+    @apply px-1.5 py-1;
+  }
+
+  .btn-primary {
+    @apply border-accent-muted bg-accent-muted text-bg hover:border-accent hover:bg-accent;
+  }
+
+  .btn-danger {
+    @apply border-status-failed/40 bg-transparent text-status-failed hover:border-status-failed hover:bg-status-failed/10;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider tabular-nums;
+  }
+
+  .badge-idle {
+    @apply bg-status-idle/10 text-status-idle;
+  }
+  .badge-pending {
+    @apply bg-status-pending/15 text-status-pending;
+  }
+  .badge-running {
+    @apply bg-status-running/15 text-status-running;
+  }
+  .badge-completed {
+    @apply bg-status-completed/15 text-status-completed;
+  }
+  .badge-failed {
+    @apply bg-status-failed/15 text-status-failed;
+  }
+  .badge-paused {
+    @apply bg-status-paused/15 text-status-paused;
+  }
+  .badge-archived {
+    @apply bg-status-archived/15 text-status-archived;
+  }
+
+  .card {
+    @apply rounded border border-border bg-bg-raised;
+  }
+
+  .card-header {
+    @apply flex items-center justify-between gap-3 border-b border-border px-3 py-2 text-xs text-fg-muted;
+  }
+
+  .card-body {
+    @apply p-3;
+  }
+
+  .kbd {
+    @apply rounded border border-border bg-bg-overlay px-1 font-mono text-[10px] text-fg-muted;
+  }
+
+  /* Tables — the workhorse pattern. */
+  .table {
+    border-spacing: 0;
+    border-collapse: separate;
+    @apply w-full text-xs text-fg;
+  }
+
+  .table thead {
+    @apply bg-bg-overlay text-fg-muted;
+  }
+
+  .table th {
+    @apply px-3 py-2 text-left font-normal lowercase;
+  }
+
+  .table tbody tr {
+    @apply border-t border-border transition-colors hover:bg-bg-hover;
+  }
+
+  .table td {
+    @apply px-3 py-2 align-top;
+  }
+
+  .table .num {
+    @apply text-right tabular-nums;
+  }
+
+  .table .num.dim {
+    @apply text-fg-muted;
+  }
+
+  /* Row link styling for short ids. */
+  .id-link {
+    @apply font-mono tabular-nums text-accent hover:underline;
+  }
+
+  /* Field label above input. */
+  .field-label {
+    @apply mb-1 block text-[10px] font-normal uppercase tracking-wider text-fg-muted;
+  }
+
+  /* Tabs — simple underline style. */
+  .tabs {
+    @apply flex items-end gap-4 border-b border-border;
+  }
+
+  .tab {
+    @apply -mb-px cursor-pointer border-b border-transparent px-1 pb-2 text-xs lowercase text-fg-muted transition-colors hover:text-fg;
+  }
+
+  .tab[aria-selected="true"],
+  .tab[data-state="active"] {
+    @apply border-fg text-fg;
+  }
+
+  /* Status dot — solid circle of the status color. */
+  .status-dot {
+    @apply inline-block h-1.5 w-1.5 rounded-full;
+  }
+
+  /* Shell layout primitives. */
+  .app-shell {
+    grid-template-columns: 200px 1fr;
+    @apply grid min-h-screen w-full;
+  }
+
+  .sidebar {
+    @apply sticky top-0 flex h-screen flex-col border-r border-border bg-bg-raised;
+  }
+
+  .sidebar-section {
+    @apply flex flex-col gap-0.5 border-t border-border px-3 py-3;
+  }
+  .sidebar-section:first-of-type {
+    @apply border-t-0;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-2 rounded px-2 py-1.5 text-xs lowercase text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg;
+  }
+
+  .nav-item[aria-current="page"] {
+    @apply bg-bg-hover text-fg;
+  }
+
+  .page {
+    @apply mx-auto w-full max-w-[1400px] space-y-4 px-6 py-5;
+  }
+
+  .page-header {
+    @apply flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .page-header h1 {
+    @apply text-lg leading-tight text-fg;
+  }
+
+  .page-header .subtitle {
+    @apply text-xs text-fg-muted;
+  }
+
+  /* Empty / loading / error blocks. */
+  .empty-card {
+    @apply flex flex-col items-center justify-center gap-1 rounded border border-border bg-bg-raised px-6 py-10 text-center;
+  }
+
+  .error-card {
+    @apply rounded border border-status-failed/40 bg-status-failed/5 p-3 font-mono text-xs text-status-failed;
+  }
+
+  /* Spinner — minimal, monochrome. */
+  .spinner {
+    @apply inline-block h-3 w-3 animate-spin rounded-full border border-fg-muted/40 border-t-fg-muted;
+  }
+
+  /* Composer for chat — input + send. */
+  .composer {
+    @apply flex items-end gap-2;
+  }
+
+  .composer textarea {
+    @apply w-full resize-none rounded border border-border bg-bg-raised px-2 py-1 font-mono text-sm text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none;
+  }
+
+  /* JSON view (react-json-view-lite). */
+  .json-view {
+    @apply overflow-auto rounded border border-border bg-bg-overlay p-2 font-mono text-[11px] leading-relaxed text-fg;
+  }
+  .json-view .rjv-container {
+    @apply bg-transparent text-fg;
+  }
+  .json-view .rjv-row {
+    @apply pl-3;
+  }
+  .json-view .rjv-children {
+    @apply ml-1 border-l border-border/60 pl-2;
+  }
+  .json-view .rjv-key {
+    @apply text-accent;
+  }
+  .json-view .rjv-key-clickable {
+    @apply cursor-pointer hover:text-fg;
+  }
+  .json-view .rjv-str {
+    @apply text-status-completed;
+  }
+  .json-view .rjv-num {
+    @apply text-status-paused;
+  }
+  .json-view .rjv-bool {
+    @apply text-status-running;
+  }
+  .json-view .rjv-null,
+  .json-view .rjv-other {
+    @apply text-fg-subtle;
+  }
+  .json-view .rjv-punct {
+    @apply text-fg-muted;
+  }
+  .json-view .rjv-collapsed {
+    @apply text-fg-subtle italic;
+  }
+  .json-view .rjv-icon {
+    @apply mr-1 inline-block w-3 text-fg-muted hover:text-fg;
+  }
+
+  /* Streaming markdown overrides — keep within the terminal palette. */
+  .md {
+    @apply text-sm leading-relaxed text-fg;
+  }
+  .md p {
+    @apply my-2;
+  }
+  .md h1 {
+    @apply mt-3 text-base text-fg;
+  }
+  .md h2,
+  .md h3,
+  .md h4 {
+    @apply mt-3 text-sm text-fg;
+  }
+  .md ul,
+  .md ol {
+    @apply my-2 pl-5;
+  }
+  .md ul {
+    list-style: disc;
+  }
+  .md ol {
+    list-style: decimal;
+  }
+  .md a {
+    @apply text-accent hover:underline;
+  }
+  .md code {
+    @apply rounded border border-border bg-bg-overlay px-1 py-0.5 text-[12px];
+  }
+  .md pre {
+    @apply my-2 overflow-auto rounded border border-border bg-bg-overlay p-2 text-[12px];
+  }
+  .md pre code {
+    @apply border-0 bg-transparent p-0;
+  }
+  .md blockquote {
+    @apply my-2 border-l-2 border-border pl-3 text-fg-muted;
+  }
+  .md hr {
+    @apply my-3 border-border;
+  }
+  .md table {
+    @apply my-2 w-full text-xs;
+  }
+  .md th,
+  .md td {
+    @apply border-b border-border px-2 py-1 text-left;
+  }
+}

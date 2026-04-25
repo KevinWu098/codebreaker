@@ -1,0 +1,39 @@
+<!doctype html>
+<html data-theme="dark" lang="en">
+  <head>
+    <script type="module">
+    // first npm i react-grab
+    // then in head:
+    if (import.meta.env.DEV) {
+      import("react-grab");
+    }
+    </script>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>codebreaker · control plane</title>
+    <script>
+    "use strict";
+    (() => {
+      try {
+        const stored = localStorage.getItem("codebreaker.theme");
+        const mode =
+          stored === "light" || stored === "dark" || stored === "auto"
+            ? stored
+            : "auto";
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+        const autoTheme = prefersDark ? "dark" : "light";
+        const theme = mode === "auto" ? autoTheme : mode;
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch {
+        /* keep default */
+      }
+    })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="/src/main.tsx" type="module"></script>
+  </body>
+</html>

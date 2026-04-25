@@ -1,0 +1,342 @@
+import {
+  ExtensionPolicySchema,
+  ModelProviderSchema,
+} from "@codebreaker/shared/schemas/primitives";
+import { SandboxProfileNameSchema } from "@codebreaker/shared/schemas/sandbox";
+import {
+  defaultCompactionConfig,
+  defaultSessionRuntimeConfig,
+  type ModelConfig,
+  type SessionConfig,
+} from "@codebreaker/shared/schemas/session";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Close as DialogClose,
+  Content as DialogContent,
+  Overlay as DialogOverlay,
+  Portal as DialogPortal,
+  Root as DialogRoot,
+  Title as DialogTitle,
+} from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
+import { useId } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/button";
+import { ErrorState } from "@/components/error-state";
+import { useCreateSessionMutation } from "@/hooks/mutations";
+
+interface CreateSessionDialogProps {
+  onClose: () => void;
+  onCreated: (id: string) => void;
+}
+
+const ProfileChoiceSchema = z.union([
+  SandboxProfileNameSchema,
+  z.literal("none"),
+]);
+
+const FormSchema = z.object({
+  extensionPolicy: ExtensionPolicySchema,
+  maxSteps: z.number().int().positive(),
+  maxTurns: z.number().int().positive(),
+  modelId: z.string().trim().min(1, "model id is required"),
+  profile: ProfileChoiceSchema,
+  provider: ModelProviderSchema,
+  systemPrompt: z.string(),
+  title: z.string(),
+});
+
+type FormValues = z.infer<typeof FormSchema>;
+
+const PROVIDERS = ModelProviderSchema.options;
+const POLICIES = ExtensionPolicySchema.options;
+const PROFILES = ["none", ...SandboxProfileNameSchema.options] as const;
+const DEFAULT_MODELS: Record<ModelConfig["provider"], string> = {
+  anthropic: "claude-3-5-sonnet-latest",
+  openai: "gpt-5-codex",
+};
+
+const DEFAULT_VALUES: FormValues = {
+  extensionPolicy: "readonly",
+  maxSteps: defaultSessionRuntimeConfig.maxSteps,
+  maxTurns: defaultSessionRuntimeConfig.maxTurns,
+  modelId: DEFAULT_MODELS.openai,
+  profile: "none",
+  provider: "openai",
+  systemPrompt: "",
+  title: "",
+};
+
+const buildSessionConfig = (values: FormValues): SessionConfig => ({
+  compaction: defaultCompactionConfig,
+  extensionPolicy: values.extensionPolicy,
+  maxSteps: values.maxSteps,
+  maxTurns: values.maxTurns,
+  model: { id: values.modelId.trim(), provider: values.provider },
+  timeoutSeconds: defaultSessionRuntimeConfig.timeoutSeconds,
+  ...(values.title.trim() ? { title: values.title.trim() } : {}),
+  ...(values.systemPrompt.trim()
+    ? { systemPrompt: values.systemPrompt.trim() }
+    : {}),
+  ...(values.profile === "none"
+    ? {}
+    : {
+        sandbox: {
+          profile: values.profile,
+          provider: "modal" as const,
+        },
+      }),
+});
+
+export const CreateSessionDialog = ({
+  onClose,
+  onCreated,
+}: CreateSessionDialogProps): React.JSX.Element => {
+  const titleId = useId();
+  const providerId = useId();
+  const modelId = useId();
+  const policyId = useId();
+  const profileId = useId();
+  const turnsId = useId();
+  const stepsId = useId();
+  const promptId = useId();
+
+  const mutation = useCreateSessionMutation();
+
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    setValue,
+    watch,
+  } = useForm<FormValues>({
+    defaultValues: DEFAULT_VALUES,
+    resolver: zodResolver(FormSchema),
+  });
+
+  const provider = watch("provider");
+
+  const onSubmit = handleSubmit((values) => {
+    mutation.mutate(
+      { config: buildSessionConfig(values) },
+      {
+        onSuccess: (response) => {
+          onCreated(response.session.id);
+        },
+      }
+    );
+  });
+
+  return (
+    <DialogRoot
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+      open
+    >
+      <DialogPortal>
+        <DialogOverlay className="fixed inset-0 z-40 bg-bg/80 backdrop-blur-sm" />
+        <DialogContent
+          className="card fixed top-1/2 left-1/2 z-50 w-full max-w-xl -translate-x-1/2 -translate-y-1/2"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+          }}
+        >
+          <header className="card-header">
+            <DialogTitle className="lowercase">create session</DialogTitle>
+            <DialogClose asChild>
+              <button
+                aria-label="close"
+                className="btn btn-icon"
+                title="close"
+                type="button"
+              >
+                <X aria-hidden="true" size={12} />
+              </button>
+            </DialogClose>
+          </header>
+
+          <form className="space-y-3 p-3" onSubmit={onSubmit}>
+            <ErrorState
+              error={mutation.error ?? undefined}
+              title="create failed"
+            />
+
+            <Field
+              error={errors.title?.message}
+              id={titleId}
+              label="title (optional)"
+            >
+              <input
+                className="input"
+                id={titleId}
+                placeholder="weekend exfil hunt"
+                {...register("title")}
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                error={errors.provider?.message}
+                id={providerId}
+                label="provider"
+              >
+                <select
+                  className="input"
+                  id={providerId}
+                  {...register("provider", {
+                    onChange: (event) => {
+                      const next = event.target
+                        .value as ModelConfig["provider"];
+                      setValue("modelId", DEFAULT_MODELS[next], {
+                        shouldDirty: true,
+                      });
+                    },
+                  })}
+                >
+                  {PROVIDERS.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field
+                error={errors.modelId?.message}
+                id={modelId}
+                label="model id"
+              >
+                <input
+                  className="input font-mono"
+                  id={modelId}
+                  key={provider}
+                  {...register("modelId")}
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                error={errors.extensionPolicy?.message}
+                id={policyId}
+                label="extension policy"
+              >
+                <select
+                  className="input"
+                  id={policyId}
+                  {...register("extensionPolicy")}
+                >
+                  {POLICIES.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field
+                error={errors.profile?.message}
+                id={profileId}
+                label="sandbox profile"
+              >
+                <select
+                  className="input"
+                  id={profileId}
+                  {...register("profile")}
+                >
+                  {PROFILES.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                error={errors.maxTurns?.message}
+                id={turnsId}
+                label="max turns"
+              >
+                <input
+                  className="input tabular-nums"
+                  id={turnsId}
+                  min={1}
+                  type="number"
+                  {...register("maxTurns", { valueAsNumber: true })}
+                />
+              </Field>
+
+              <Field
+                error={errors.maxSteps?.message}
+                id={stepsId}
+                label="max steps / turn"
+              >
+                <input
+                  className="input tabular-nums"
+                  id={stepsId}
+                  min={1}
+                  type="number"
+                  {...register("maxSteps", { valueAsNumber: true })}
+                />
+              </Field>
+            </div>
+
+            <Field
+              error={errors.systemPrompt?.message}
+              id={promptId}
+              label="system prompt (optional)"
+            >
+              <textarea
+                className="input"
+                id={promptId}
+                rows={4}
+                {...register("systemPrompt")}
+              />
+            </Field>
+
+            <footer className="-mx-3 mt-2 -mb-3 flex items-center justify-end gap-2 border-border border-t px-3 py-2">
+              <DialogClose asChild>
+                <Button variant="ghost">cancel</Button>
+              </DialogClose>
+              <Button
+                disabled={mutation.isPending}
+                type="submit"
+                variant="primary"
+              >
+                {mutation.isPending ? "creating…" : "create"}
+              </Button>
+            </footer>
+          </form>
+        </DialogContent>
+      </DialogPortal>
+    </DialogRoot>
+  );
+};
+
+interface FieldProps {
+  children: React.ReactNode;
+  error?: string | undefined;
+  id: string;
+  label: string;
+}
+
+const Field = ({
+  children,
+  error,
+  id,
+  label,
+}: FieldProps): React.JSX.Element => (
+  <div className="space-y-1">
+    <label className="field-label" htmlFor={id}>
+      {label}
+    </label>
+    {children}
+    {error ? <p className="text-[10px] text-status-failed">{error}</p> : null}
+  </div>
+);

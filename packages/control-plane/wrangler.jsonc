@@ -4,6 +4,13 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-04-24",
   "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "placement": {
+    "mode": "smart"
+  },
   "durable_objects": {
     "bindings": [
       {
@@ -21,8 +28,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_id": "replace-with-d1-database-id",
-      "database_name": "codebreaker-sessions"
+      "database_name": "codebreaker-sessions",
+      "database_id": "95269127-d119-4e26-9686-b24313025da7"
     }
   ],
   "worker_loaders": [
