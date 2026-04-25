@@ -94,6 +94,9 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       policy: config.extensionPolicy,
       sessionId: this.sessionId,
       workspace: this.workspace,
+      ...(config.sandbox?.profile
+        ? { defaultSandboxProfile: config.sandbox.profile }
+        : {}),
     }).tools;
   }
 
