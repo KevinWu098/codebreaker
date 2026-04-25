@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-2c59-37c4-qrx5",
+  "post_patch_commit": "680edfa71c142d9eb63e76e5070b3713ba0cab53",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies a single source file (AvroConverters.java) by adding a checkSecurity method to the FieldStringableConverter inner class. The vulnerability was in the FieldStringableConverter constructor which instantiated arbitrary Java classes from schema metadata without any package validation. The fix adds an allowlist of trusted packages that restricts which classes can be instantiated. Two test files were also added/modified but are excluded from locations. Location derived from the patch diff as the advisory description did not specify exact file or function names.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
