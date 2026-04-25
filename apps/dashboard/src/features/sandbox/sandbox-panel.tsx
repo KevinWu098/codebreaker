@@ -1,3 +1,4 @@
+import { truncateId } from "@codebreaker/shared/lib/utils";
 import {
   type ExecResult,
   type SandboxProfileName,
@@ -15,7 +16,7 @@ import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import { useExecSandboxMutation } from "@/hooks/mutations";
 import { useSandboxQuery } from "@/hooks/queries";
-import { formatDuration, formatRelativeTime, truncateId } from "@/lib/format";
+import { formatDuration, formatRelativeTime } from "@/lib/format";
 
 interface SandboxPanelProps {
   sessionId: string;

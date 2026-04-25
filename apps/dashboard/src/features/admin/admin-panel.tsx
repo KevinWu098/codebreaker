@@ -1,3 +1,4 @@
+import { truncateId } from "@codebreaker/shared/lib/utils";
 import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
@@ -7,7 +8,7 @@ import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import { useShimHealthQuery, useShimSandboxesQuery } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
-import { formatRelativeTime, truncateId } from "@/lib/format";
+import { formatRelativeTime } from "@/lib/format";
 
 export const AdminPanel = (): React.JSX.Element => {
   const connection = useConnection();
