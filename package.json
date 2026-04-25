@@ -1,0 +1,11 @@
+{
+    "name": "codebreaker",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "typecheck": "pnpm -r --parallel exec tsc --noEmit"
+    },
+    "engines": {
+        "node": ">=24"
+    }
+}
