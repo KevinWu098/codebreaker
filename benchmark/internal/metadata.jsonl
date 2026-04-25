@@ -1,0 +1,1 @@
+{"ghsa_id":"GHSA-8x35-hph8-37hq","post_patch_commit":"59708b38c8a52f5db59d7d4eff98e31d573128ee","noisy_patch":true,"curation_notes":"Patch touches 10 files but advisory description explicitly names npm/install.js:130 and runLinux(). Location derived from description not diff.","dataset_version":"0.1.0","snapshot_date":"2026-04-25"}
