@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7534-mm45-c74v",
+  "post_patch_commit": "31c473898c29d1b7cb6555ce67d9503a4906b83f",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge (31c4738) of PR #5567. Only one source file changed: src/libImaging/Convert.c. Two functions patched: convert() and ImagingConvertTransparent(), both replacing unbounded sprintf with snprintf and %.10s format limiters. Locations derived directly from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

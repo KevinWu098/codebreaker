@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vwcg-7xqw-qcxw",
+  "post_patch_commit": "627b54768293ec277f1adb997c888ec524f4174d",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 627b547 modifies one source file (py_mini_racer/extension/mini_racer_extension.cc) and adds one test file. The vulnerability is in the convert_v8_to_binary function which allocates a buffer based on the initial array length but uses arr->Length() in the loop condition, allowing heap overflow if the array grows during iteration. Location derived directly from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
