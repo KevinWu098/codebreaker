@@ -1,5 +1,6 @@
 import type {
   AgentOutput,
+  BenchmarkRunRow,
   CreateBenchmarkRunRequest,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
@@ -170,43 +171,7 @@ export class BenchmarkRunOrchestrator {
         runId,
       });
 
-      const completedRun = await this.requireRun(runId);
-      if (completedRun.status === "cancelled") {
-        return completedRun;
-      }
-
-      const agentForOutput = await withDORetry(() =>
-        getAgentByName(this.env.SESSION_AGENT, sessionId)
-      );
-      const rawOutput = await this.readAssistantOutput(agentForOutput);
-      const agentOutput = parseAgentOutput(rawOutput);
-      const score = scoreAgentOutput(record.task, agentOutput);
-      const result = await this.runs.putResult({
-        agentOutput,
-        rawOutput,
-        runId,
-        score,
-        task: record.task,
-      });
-      await this.runs.update({
-        artifactCommitSha: null,
-        artifactPath: result.artifactPath,
-        completedAt: new Date().toISOString(),
-        id: runId,
-        score: score?.score ?? null,
-        status: "completed",
-      });
-      await this.runs.addEvent({
-        kind: "result_parsed",
-        message: "Benchmark result parsed and scored",
-        runId,
-      });
-
-      const finalRun = await this.requireRun(runId);
-
-      if (finalRun.cleanupPolicy !== "retain") {
-        await this.cleanup(runId);
-      }
+      await this.completeRunFromSession(runId);
     } catch (error) {
       const currentRun = await this.requireRun(runId);
       if (currentRun.status === "cancelled") {
@@ -214,27 +179,51 @@ export class BenchmarkRunOrchestrator {
       }
 
       const message = error instanceof Error ? error.message : String(error);
-      const result = await this.runs.putResult({
-        error: message,
-        rawOutput: null,
-        runId,
-        task: record.task,
-      });
-      await this.runs.update({
-        artifactPath: result.artifactPath,
-        completedAt: new Date().toISOString(),
-        error: message,
-        id: runId,
-        status: "failed",
-      });
-      await this.runs.addEvent({
-        kind: "failed",
-        message,
-        runId,
-      });
+      await this.failRun(currentRun, message);
     }
 
     return this.requireRun(runId);
+  }
+
+  async reconcile(runId: string): Promise<BenchmarkRunRow> {
+    const run = await this.requireRun(runId);
+
+    if (run.status !== "running" || !run.sessionId) {
+      return run;
+    }
+
+    const session = await new SessionIndexStore(this.env.DB).get(run.sessionId);
+
+    if (
+      !session ||
+      session.status === "pending" ||
+      session.status === "running"
+    ) {
+      return run;
+    }
+
+    const events = await this.runs.listEvents(runId);
+    const agentWasStarted = events.some(
+      (event) => event.kind === "agent_started"
+    );
+
+    if (!agentWasStarted) {
+      return run;
+    }
+
+    try {
+      return await this.completeRunFromSession(runId);
+    } catch (error) {
+      const currentRun = await this.requireRun(runId);
+
+      if (currentRun.status !== "running") {
+        return currentRun;
+      }
+
+      const message = error instanceof Error ? error.message : String(error);
+
+      return this.failRun(currentRun, message);
+    }
   }
 
   async cancel(runId: string) {
@@ -387,6 +376,127 @@ export class BenchmarkRunOrchestrator {
     return checkout;
   }
 
+  private async completeRunFromSession(
+    runId: string
+  ): Promise<BenchmarkRunRow> {
+    const run = await this.requireRun(runId);
+
+    if (run.status === "cancelled") {
+      return run;
+    }
+
+    const existingResult = await this.runs.getLatestResult(runId);
+
+    if (existingResult?.agentOutput) {
+      return this.runs.update({
+        artifactCommitSha: null,
+        artifactPath: existingResult.artifactPath,
+        completedAt: new Date().toISOString(),
+        id: runId,
+        score: existingResult.score?.score ?? null,
+        status: "completed",
+      });
+    }
+
+    if (existingResult?.error) {
+      return this.runs.update({
+        artifactPath: existingResult.artifactPath,
+        completedAt: new Date().toISOString(),
+        error: existingResult.error,
+        id: runId,
+        status: "failed",
+      });
+    }
+
+    if (!run.sessionId) {
+      throw new Error("Benchmark run has no session to read output from");
+    }
+
+    const record = this.dataset.getTaskRecord(run.taskId);
+    const agentForOutput = await withDORetry(() =>
+      getAgentByName(this.env.SESSION_AGENT, run.sessionId as string)
+    );
+    const rawOutput = await this.readAssistantOutput(agentForOutput);
+    const agentOutput = parseAgentOutput(rawOutput);
+    const score = scoreAgentOutput(record.task, agentOutput);
+    const result = await this.runs.putResult({
+      agentOutput,
+      rawOutput,
+      runId,
+      score,
+      task: record.task,
+    });
+
+    await this.addAgentCompletedEventIfMissing(runId);
+    await this.runs.update({
+      artifactCommitSha: null,
+      artifactPath: result.artifactPath,
+      completedAt: new Date().toISOString(),
+      id: runId,
+      score: score.score,
+      status: "completed",
+    });
+    await this.runs.addEvent({
+      kind: "result_parsed",
+      message: "Benchmark result parsed and scored",
+      runId,
+    });
+
+    const finalRun = await this.requireRun(runId);
+
+    if (finalRun.cleanupPolicy !== "retain") {
+      return this.cleanup(runId);
+    }
+
+    return finalRun;
+  }
+
+  private async failRun(
+    run: BenchmarkRunRow,
+    message: string
+  ): Promise<BenchmarkRunRow> {
+    const record = this.dataset.getTaskRecord(run.taskId);
+    const result = await this.runs.putResult({
+      error: message,
+      rawOutput: null,
+      runId: run.id,
+      task: record.task,
+    });
+
+    await this.runs.update({
+      artifactPath: result.artifactPath,
+      completedAt: new Date().toISOString(),
+      error: message,
+      id: run.id,
+      status: "failed",
+    });
+    await this.runs.addEvent({
+      kind: "failed",
+      message,
+      runId: run.id,
+    });
+
+    return this.requireRun(run.id);
+  }
+
+  private async addAgentCompletedEventIfMissing(runId: string): Promise<void> {
+    const events = await this.runs.listEvents(runId);
+    const agentCompleted = events.some(
+      (event) => event.kind === "agent_completed"
+    );
+
+    if (agentCompleted) {
+      return;
+    }
+
+    await this.runs.addEvent({
+      details: { recovered: true },
+      kind: "agent_completed",
+      message: "Agent turn completed",
+      runId,
+    });
+  }
+
   private async readAssistantOutput(agent: {
     getMessages(): Promise<unknown>;
   }): Promise<string> {
@@ -394,15 +504,17 @@ export class BenchmarkRunOrchestrator {
       parts?: Record<string, unknown>[];
       role?: string;
     }>;
-    const assistant = messages
+    const assistantTexts = messages
       .filter((message) => message.role === "assistant")
-      .at(-1);
-    const text = assistant?.parts
-      ?.map((part) => (typeof part.text === "string" ? part.text : ""))
-      .join("")
-      .trim();
+      .map((message) =>
+        message.parts
+          ?.map((part) => (typeof part.text === "string" ? part.text : ""))
+          .join("")
+          .trim()
+      )
+      .filter((text): text is string => Boolean(text));
 
-    return text ?? "";
+    return assistantTexts.at(-1) ?? "";
   }
 
   private async requireRun(runId: string) {

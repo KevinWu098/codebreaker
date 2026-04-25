@@ -117,9 +117,22 @@ export const createRouter = (): Hono<{
 
   app.get("/benchmark-runs", async (context) => {
     const store = new BenchmarkRunStore(context.env.DB);
+    let runs = await store.list();
+    const runningRunIds = runs
+      .filter((run) => run.status === "running")
+      .map((run) => run.id);
+
+    if (runningRunIds.length > 0) {
+      const orchestrator = new BenchmarkRunOrchestrator(context.env);
+
+      await Promise.allSettled(
+        runningRunIds.map((id) => orchestrator.reconcile(id))
+      );
+      runs = await store.list();
+    }
 
     return context.json({
-      runs: await store.list(),
+      runs,
     });
   });
 
@@ -159,10 +172,14 @@ export const createRouter = (): Hono<{
       const { id } = context.req.valid("param");
       const store = new BenchmarkRunStore(context.env.DB);
       const dataset = new BenchmarkDatasetService();
-      const run = await store.get(id);
+      let run = await store.get(id);
 
       if (!run) {
         return jsonError("Benchmark run not found", "run_not_found", 404);
+      }
+
+      if (run.status === "running") {
+        run = await new BenchmarkRunOrchestrator(context.env).reconcile(id);
       }
 
       const result = await store.getLatestResult(id);

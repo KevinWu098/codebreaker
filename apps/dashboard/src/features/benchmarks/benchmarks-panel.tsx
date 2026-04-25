@@ -5,6 +5,7 @@ import type {
   BenchmarkRunResult,
   BenchmarkRunRow,
   BenchmarkRunScoreBreakdown,
+  BenchmarkTaskSummary,
   CreateBenchmarkRunRequest,
   Difficulty,
   TaskInstance,
@@ -48,6 +49,7 @@ const BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
 const BENCHMARK_MAX_TURNS = 1;
 const BENCHMARK_TIMEOUT_SECONDS = 600;
 const DEFAULT_BATCH_REPEAT_COUNT = 1;
+const DIFFICULTY_OPTIONS: readonly Difficulty[] = ["L0", "L1", "L2", "L3"];
 
 const createBenchmarkRequestFromRun = (
   run: BenchmarkRunRow
@@ -73,18 +75,20 @@ const createBenchmarkRequestsFromBatch = ({
   difficulties,
   models,
   repeatCount,
-  taskIds,
+  tasks,
 }: {
   cleanupPolicy: BenchmarkCleanupPolicy;
   difficulties: Difficulty[];
   models: BenchmarkRunModel[];
   repeatCount: number;
-  taskIds: string[];
+  tasks: BenchmarkTaskSummary[];
 }): CreateBenchmarkRunRequest[] => {
   const requests: CreateBenchmarkRunRequest[] = [];
 
-  for (const taskId of taskIds) {
-    for (const difficulty of difficulties) {
+  for (const task of tasks) {
+    for (const difficulty of difficulties.filter((difficultyOption) =>
+      task.difficulties.includes(difficultyOption)
+    )) {
       for (const model of models) {
         for (let i = 0; i < repeatCount; i += 1) {
           requests.push({
@@ -97,7 +101,7 @@ const createBenchmarkRequestsFromBatch = ({
             maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
             maxTurns: BENCHMARK_MAX_TURNS,
             model,
-            taskId,
+            taskId: task.taskId,
             timeoutSeconds: BENCHMARK_TIMEOUT_SECONDS,
           });
         }
@@ -106,6 +110,56 @@ const createBenchmarkRequestsFromBatch = ({
   }
 
   return requests;
+};
+
+const buildBatchRequests = ({
+  difficulties,
+  models,
+  repeatCount,
+  tasks,
+}: {
+  difficulties: Difficulty[];
+  models: BenchmarkRunModel[];
+  repeatCount: number;
+  tasks: BenchmarkTaskSummary[];
+}):
+  | { error: string; requests: null }
+  | {
+      error: null;
+      requests: CreateBenchmarkRunRequest[];
+    } => {
+  if (tasks.length === 0) {
+    return { error: "Select at least one task.", requests: null };
+  }
+  if (difficulties.length === 0) {
+    return { error: "Select at least one level.", requests: null };
+  }
+  if (models.length === 0) {
+    return { error: "Select at least one model.", requests: null };
+  }
+  if (!(Number.isInteger(repeatCount) && repeatCount > 0)) {
+    return {
+      error: "Repeat count must be a positive whole number.",
+      requests: null,
+    };
+  }
+
+  const requests = createBenchmarkRequestsFromBatch({
+    cleanupPolicy: "retain",
+    difficulties,
+    models,
+    repeatCount,
+    tasks,
+  });
+
+  if (requests.length === 0) {
+    return {
+      error: "No selected task supports the selected level(s).",
+      requests: null,
+    };
+  }
+
+  return { error: null, requests };
 };
 
 const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
@@ -358,7 +412,7 @@ export const BenchmarksPanel = ({
     null
   );
   const [selectedTaskId, setSelectedTaskId] = useState("");
-  const [difficulty, setDifficulty] = useState<"L0" | "L1" | "L2" | "L3">("L0");
+  const [difficulty, setDifficulty] = useState<Difficulty>("L0");
   const [model, setModel] = useState(DEFAULT_MODEL_VALUE);
   const [batchTaskIds, setBatchTaskIds] = useState<string[]>([]);
   const [batchDifficulties, setBatchDifficulties] = useState<Difficulty[]>([
@@ -373,6 +427,14 @@ export const BenchmarksPanel = ({
   const [batchError, setBatchError] = useState<string | null>(null);
   const [batchRunCount, setBatchRunCount] = useState<number | null>(null);
   const taskOptions = tasks.data?.tasks ?? [];
+  const selectedTask = taskOptions.find(
+    (task) => task.taskId === selectedTaskId
+  );
+  const singleRunDifficultyOptions =
+    selectedTask?.difficulties ?? DIFFICULTY_OPTIONS;
+  const selectedBatchTasks = taskOptions.filter((task) =>
+    batchTaskIds.includes(task.taskId)
+  );
   const selectedBatchModels = batchModelValues.flatMap((value) => {
     const selectedModel = MODEL_OPTIONS.find(
       (option) => modelValue(option) === value
@@ -390,10 +452,16 @@ export const BenchmarksPanel = ({
   const repeatCountNumber = Number(batchRepeatCount);
   const batchPreviewCount =
     Number.isInteger(repeatCountNumber) && repeatCountNumber > 0
-      ? batchTaskIds.length *
-        batchDifficulties.length *
-        selectedBatchModels.length *
-        repeatCountNumber
+      ? selectedBatchModels.length *
+        repeatCountNumber *
+        selectedBatchTasks.reduce(
+          (count, task) =>
+            count +
+            batchDifficulties.filter((difficultyOption) =>
+              task.difficulties.includes(difficultyOption)
+            ).length,
+          0
+        )
       : 0;
   const activeRunId = selectedRunId ?? localSelectedRunId;
   const selectRun = (runId: string): void => {
@@ -413,7 +481,10 @@ export const BenchmarksPanel = ({
       (option) => modelValue(option) === model
     );
 
-    if (!(selectedTaskId && selectedModel)) {
+    if (
+      !(selectedTaskId && selectedModel) ||
+      (selectedTask && !selectedTask.difficulties.includes(difficulty))
+    ) {
       return;
     }
 
@@ -442,7 +513,7 @@ export const BenchmarksPanel = ({
 
   const setBatchDifficulty = (next: Difficulty, checked: boolean): void => {
     setBatchDifficulties((current) =>
-      (["L0", "L1"] as const).filter((difficultyOption) =>
+      DIFFICULTY_OPTIONS.filter((difficultyOption) =>
         difficultyOption === next ? checked : current.includes(difficultyOption)
       )
     );
@@ -459,35 +530,22 @@ export const BenchmarksPanel = ({
   const startBatch = async (): Promise<void> => {
     setBatchError(null);
 
-    if (batchTaskIds.length === 0) {
-      setBatchError("Select at least one task.");
-      return;
-    }
-    if (batchDifficulties.length === 0) {
-      setBatchError("Select at least one level.");
-      return;
-    }
-    if (selectedBatchModels.length === 0) {
-      setBatchError("Select at least one model.");
-      return;
-    }
-    if (!(Number.isInteger(repeatCountNumber) && repeatCountNumber > 0)) {
-      setBatchError("Repeat count must be a positive whole number.");
-      return;
-    }
-
-    const requests = createBenchmarkRequestsFromBatch({
-      cleanupPolicy: "retain",
+    const result = buildBatchRequests({
       difficulties: batchDifficulties,
       models: selectedBatchModels,
       repeatCount: repeatCountNumber,
-      taskIds: batchTaskIds,
+      tasks: selectedBatchTasks,
     });
 
-    setBatchRunCount(requests.length);
+    if (result.error) {
+      setBatchError(result.error);
+      return;
+    }
+
+    setBatchRunCount(result.requests.length);
     try {
       let lastRunId: string | null = null;
-      for (const request of requests) {
+      for (const request of result.requests) {
         const response = await createRun.mutateAsync(request);
         lastRunId = response.run.id;
       }
@@ -537,7 +595,21 @@ export const BenchmarksPanel = ({
             <span className="field-label">task</span>
             <select
               className="input"
-              onChange={(event) => setSelectedTaskId(event.target.value)}
+              onChange={(event) => {
+                const nextTaskId = event.target.value;
+                const nextTask = taskOptions.find(
+                  (task) => task.taskId === nextTaskId
+                );
+
+                setSelectedTaskId(nextTaskId);
+                if (
+                  nextTask &&
+                  !nextTask.difficulties.includes(difficulty) &&
+                  nextTask.difficulties[0]
+                ) {
+                  setDifficulty(nextTask.difficulties[0]);
+                }
+              }}
               value={selectedTaskId}
             >
               <option value="">select task</option>
@@ -553,14 +625,15 @@ export const BenchmarksPanel = ({
             <select
               className="input"
               onChange={(event) =>
-                setDifficulty(event.target.value as "L0" | "L1" | "L2" | "L3")
+                setDifficulty(event.target.value as Difficulty)
               }
               value={difficulty}
             >
-              <option value="L0">L0</option>
-              <option value="L1">L1</option>
-              <option value="L2">L2</option>
-              <option value="L3">L3</option>
+              {singleRunDifficultyOptions.map((difficultyOption) => (
+                <option key={difficultyOption} value={difficultyOption}>
+                  {difficultyOption}
+                </option>
+              ))}
             </select>
           </label>
           <label className="space-y-1 text-xs">
@@ -592,9 +665,7 @@ export const BenchmarksPanel = ({
         actions={
           <Button
             disabled={!enabled || createRun.isPending || batchRunCount !== null}
-            onClick={() => {
-              startBatch();
-            }}
+            onClick={startBatch}
             variant="primary"
           >
             <Play aria-hidden="true" size={12} />
@@ -634,7 +705,7 @@ export const BenchmarksPanel = ({
             <fieldset className="space-y-2 text-xs">
               <legend className="field-label">levels</legend>
               <div className="flex flex-wrap gap-3">
-                {(["L0", "L1"] as const).map((difficultyOption) => (
+                {DIFFICULTY_OPTIONS.map((difficultyOption) => (
                   <label
                     className="flex items-center gap-2"
                     key={difficultyOption}
@@ -693,9 +764,9 @@ export const BenchmarksPanel = ({
           </div>
         </fieldset>
         <p className="mt-3 text-fg-muted text-xs">
-          This will create {batchPreviewCount} run(s): selected tasks x levels x
-          models x repeat count. The default selection uses only{" "}
-          {DEFAULT_MODEL.label}.
+          This will create {batchPreviewCount} run(s): supported selected
+          task/level pairs x models x repeat count. The default selection uses
+          only {DEFAULT_MODEL.label}.
         </p>
         {batchError && (
           <div className="error-card mt-3 text-xs" role="alert">
