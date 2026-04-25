@@ -9,6 +9,7 @@ import {
   Think,
   type TurnConfig,
 } from "@cloudflare/think";
+import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { selectModel } from "@codebreaker/control-plane/session/model";
 import {
@@ -38,6 +39,7 @@ export interface SessionAgentState {
 
 const DEFAULT_SYSTEM_PROMPT =
   "You are Codebreaker, a background security and code workflow agent. Stay within the configured policy and explain tool limitations clearly.";
+const BENCHMARK_SESSION_PREFIX = "bench-";
 
 export class SessionAgent extends Think<Env, SessionAgentState> {
   initialState: SessionAgentState = {
@@ -137,12 +139,19 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       ...this.state,
       status: "running",
     });
+    const eventId = `running:${crypto.randomUUID()}`;
     this.ctx.waitUntil(
-      this.sessionIndex.setStatus({
-        eventId: `running:${crypto.randomUUID()}`,
-        id: this.sessionId,
-        status: "running",
-      })
+      Promise.all([
+        this.sessionIndex.setStatus({
+          eventId,
+          id: this.sessionId,
+          status: "running",
+        }),
+        this.sessionIndex.incrementTurn({
+          eventId,
+          id: this.sessionId,
+        }),
+      ]).then(() => undefined)
     );
 
     if (!config) {
@@ -183,31 +192,35 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       status,
     });
     this.ctx.waitUntil(
-      Promise.all([
-        this.sessionIndex.incrementTurn({
-          eventId: result.requestId,
-          id: this.sessionId,
-        }),
-        this.sessionIndex.setStatus({
-          eventId: `${result.status}:${result.requestId}`,
-          id: this.sessionId,
-          status,
-        }),
-      ]).then(() => undefined)
+      this.sessionIndex.setStatus({
+        eventId: `${result.status}:${result.requestId}`,
+        id: this.sessionId,
+        status,
+      })
     );
+    if (status === "failed") {
+      this.ctx.waitUntil(
+        this.markBenchmarkRunFailed("Agent chat response failed")
+      );
+    }
   }
 
   override onChatError(error: unknown): unknown {
+    const message = error instanceof Error ? error.message : String(error);
+
     this.setState({
       ...this.state,
       status: "failed",
     });
     this.ctx.waitUntil(
-      this.sessionIndex.setStatus({
-        eventId: `chat-error:${crypto.randomUUID()}`,
-        id: this.sessionId,
-        status: "failed",
-      })
+      Promise.all([
+        this.sessionIndex.setStatus({
+          eventId: `chat-error:${crypto.randomUUID()}`,
+          id: this.sessionId,
+          status: "failed",
+        }),
+        this.markBenchmarkRunFailed(message),
+      ]).then(() => undefined)
     );
 
     return error;
@@ -220,13 +233,24 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const timeoutMs = (config?.timeoutSeconds ?? 300) * 1000;
     const replayWindowMs = Math.min(timeoutMs, 5 * 60 * 1000);
     const shouldContinue = Date.now() - ctx.createdAt <= replayWindowMs;
+    const status = shouldContinue ? "running" : "failed";
+
+    this.setState({
+      ...this.state,
+      status,
+    });
 
     this.ctx.waitUntil(
-      this.sessionIndex.setStatus({
-        eventId: `recovery:${ctx.requestId}`,
-        id: this.sessionId,
-        status: shouldContinue ? "running" : "failed",
-      })
+      Promise.all([
+        this.sessionIndex.setStatus({
+          eventId: `recovery:${ctx.requestId}`,
+          id: this.sessionId,
+          status,
+        }),
+        shouldContinue
+          ? Promise.resolve()
+          : this.markBenchmarkRunFailed("Agent turn recovery window expired"),
+      ]).then(() => undefined)
     );
 
     return Promise.resolve({
@@ -348,6 +372,43 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
   private get sessionIndex(): SessionIndexStore {
     return new SessionIndexStore(this.env.DB);
+  }
+
+  private getBenchmarkRunId(): string | null {
+    if (!this.state.sessionId?.startsWith(BENCHMARK_SESSION_PREFIX)) {
+      return null;
+    }
+
+    return this.state.sessionId.slice(BENCHMARK_SESSION_PREFIX.length) || null;
+  }
+
+  private async markBenchmarkRunFailed(message: string): Promise<void> {
+    const runId = this.getBenchmarkRunId();
+
+    if (!runId) {
+      return;
+    }
+
+    const runs = new BenchmarkRunStore(this.env.DB);
+    const run = await runs.get(runId);
+
+    const canFailRun = run?.status === "pending" || run?.status === "running";
+
+    if (!canFailRun) {
+      return;
+    }
+
+    await runs.update({
+      completedAt: new Date().toISOString(),
+      error: message,
+      id: runId,
+      status: "failed",
+    });
+    await runs.addEvent({
+      kind: "failed",
+      message,
+      runId,
+    });
   }
 
   private compactionTailTokenBudget(config: SessionConfig): number {

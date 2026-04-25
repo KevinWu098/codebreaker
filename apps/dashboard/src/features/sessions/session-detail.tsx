@@ -62,6 +62,19 @@ const getBenchmarkRunId = (sessionId: string): string | null => {
   return runId || null;
 };
 
+const formatSessionRepo = (
+  session: Pick<
+    SessionRow,
+    "repoName" | "repoOwner" | "runRepoName" | "targetRepoName"
+  >
+): string => {
+  if (session.repoName || session.repoOwner) {
+    return formatRepo(session.repoOwner, session.repoName);
+  }
+
+  return session.runRepoName ?? session.targetRepoName ?? "—";
+};
+
 interface SessionDetailProps {
   onArchived: () => void;
   onBack: () => void;
@@ -215,7 +228,7 @@ const SessionRowCard = ({
           {row.modelProvider}/{row.modelId}
         </DefinitionField>
         <DefinitionField label="repo" mono>
-          {formatRepo(row.repoOwner, row.repoName)}
+          {formatSessionRepo(row)}
         </DefinitionField>
         <DefinitionField label="turns" numeric>
           {formatNumber(row.turnCount)}
