@@ -8,11 +8,6 @@ import type {
   BenchmarkRunScoreBreakdown,
   BenchmarkTaskSummary,
   CreateBenchmarkRunRequest,
-  CveFollowupDetailResponse,
-  CveFollowupEventRow,
-  CveFollowupStageKind,
-  CveFollowupStageRow,
-  CveFollowupValidationRow,
   Difficulty,
   TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
@@ -47,20 +42,17 @@ import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
 import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/spinner";
+import { CveFollowupRunSection } from "@/features/followups/cve-followup-detail";
 import {
   useCancelBenchmarkRunMutation,
-  useCancelCveFollowupMutation,
   useCleanupBenchmarkRunMutation,
   useCreateBenchmarkRunMutation,
-  useCreateCveFollowupMutation,
-  useRetryCveFollowupStageMutation,
   useStartBenchmarkRunMutation,
 } from "@/hooks/mutations";
 import {
   useBenchmarkRunQuery,
   useBenchmarkRunsQuery,
   useBenchmarkTasksQuery,
-  useCveFollowupQuery,
 } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import {
@@ -1582,311 +1574,6 @@ const BenchmarkRunAgentReview = ({
   );
 };
 
-const CVE_STAGE_ORDER: readonly CveFollowupStageKind[] = [
-  "repro",
-  "review_repro",
-  "fix",
-  "review_fix",
-] as const;
-
-const cveStageTitle = (kind: CveFollowupStageKind): string => {
-  switch (kind) {
-    case "fix": {
-      return "Fix";
-    }
-    case "repro": {
-      return "Repro";
-    }
-    case "review_fix": {
-      return "Review (fix PR)";
-    }
-    case "review_repro": {
-      return "Review (repro PR)";
-    }
-    default: {
-      return kind;
-    }
-  }
-};
-
-const cveStageRetryable = (status: CveFollowupStageRow["status"]): boolean =>
-  status === "failed" ||
-  status === "succeeded" ||
-  status === "succeeded_weak" ||
-  status === "skipped" ||
-  status === "cancelled";
-
-const validationsForStage = (
-  validations: CveFollowupValidationRow[],
-  stageId: string
-): CveFollowupValidationRow[] =>
-  validations.filter((v) => v.stageId === stageId);
-
-const BenchmarkRunCveFollowupSection = ({
-  runId,
-  runStatus,
-}: {
-  runId: string;
-  runStatus: BenchmarkRunRow["status"];
-}): React.JSX.Element => {
-  const enabled = runStatus === "completed";
-  const followupQuery = useCveFollowupQuery(runId, { enabled });
-  const createFollowup = useCreateCveFollowupMutation(runId);
-  const cancelFollowup = useCancelCveFollowupMutation(runId);
-  const retryStage = useRetryCveFollowupStageMutation(runId);
-  const data = followupQuery.data;
-
-  if (!enabled) {
-    return (
-      <div className="mb-4 space-y-2 text-xs">
-        <div className="field-label">CVE follow-up</div>
-        <p className="text-fg-muted">
-          available when the benchmark run is completed.
-        </p>
-      </div>
-    );
-  }
-
-  if (followupQuery.isLoading) {
-    return (
-      <div className="mb-4 text-xs">
-        <div className="field-label">CVE follow-up</div>
-        <Spinner />
-      </div>
-    );
-  }
-
-  if (followupQuery.error) {
-    return (
-      <div className="mb-4 text-xs">
-        <div className="field-label">CVE follow-up</div>
-        <ErrorState error={followupQuery.error} title="follow-up unavailable" />
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="mb-4 space-y-3 text-xs">
-        <div className="field-label">CVE follow-up</div>
-        <p className="text-fg-muted">
-          No follow-up record yet. Start one to run Devin repro → fix → review
-          (requires Devin credentials on the control plane).
-        </p>
-        <Button
-          disabled={createFollowup.isPending}
-          onClick={() => createFollowup.mutate({ force: false })}
-        >
-          <Play aria-hidden="true" size={12} />
-          <span>
-            {createFollowup.isPending ? "starting…" : "start CVE follow-up"}
-          </span>
-        </Button>
-        <ErrorState error={createFollowup.error} title="start failed" />
-      </div>
-    );
-  }
-
-  return (
-    <CveFollowupDetailCards
-      cancel={cancelFollowup}
-      create={createFollowup}
-      data={data}
-      retryStage={retryStage}
-    />
-  );
-};
-
-const CveFollowupDetailCards = ({
-  cancel,
-  create,
-  data,
-  retryStage,
-}: {
-  cancel: ReturnType<typeof useCancelCveFollowupMutation>;
-  create: ReturnType<typeof useCreateCveFollowupMutation>;
-  data: CveFollowupDetailResponse;
-  retryStage: ReturnType<typeof useRetryCveFollowupStageMutation>;
-}): React.JSX.Element => {
-  const { events, followup, stages, validations } = data;
-  const byKind = new Map(stages.map((stage) => [stage.kind, stage] as const));
-  const isTerminal =
-    followup.status === "completed" ||
-    followup.status === "failed" ||
-    followup.status === "cancelled";
-
-  return (
-    <div className="mb-4 space-y-4 text-xs">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className="field-label">CVE follow-up</div>
-          <p className="text-fg-muted">
-            {followup.id} · {followup.autoFired ? "auto-fired" : "manual"} ·{" "}
-            <Badge status={followup.status} />
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            disabled={create.isPending}
-            onClick={() => create.mutate({ force: true })}
-            title="Delete the current workflow and create a new one"
-            variant="ghost"
-          >
-            <RefreshCw aria-hidden="true" size={12} />
-            <span>{create.isPending ? "recreating…" : "recreate"}</span>
-          </Button>
-          <Button
-            disabled={
-              cancel.isPending || followup.status === "cancelled" || isTerminal
-            }
-            onClick={() => cancel.mutate()}
-            variant="danger"
-          >
-            <Square aria-hidden="true" size={12} />
-            <span>{cancel.isPending ? "cancelling…" : "cancel"}</span>
-          </Button>
-        </div>
-      </div>
-      <ErrorState error={create.error} title="recreate failed" />
-      <ErrorState error={cancel.error} title="cancel failed" />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {CVE_STAGE_ORDER.map((kind) => {
-          const stage = byKind.get(kind);
-          if (!stage) {
-            return null;
-          }
-          const stageValidations = validationsForStage(validations, stage.id);
-          return (
-            <div
-              className="rounded border border-border bg-bg-raised p-3"
-              key={kind}
-            >
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <span className="font-medium">{cveStageTitle(kind)}</span>
-                <Badge status={stage.status} />
-              </div>
-              <dl className={cn("mb-2", BENCHMARK_DL_GRID)}>
-                <DefinitionField label="attempts" numeric>
-                  {formatNumber(stage.attempts)}
-                </DefinitionField>
-                {stage.branch ? (
-                  <DefinitionField label="branch" mono>
-                    {stage.branch}
-                  </DefinitionField>
-                ) : null}
-                {stage.prUrl ? (
-                  <DefinitionField label="PR" mono>
-                    <a
-                      className="id-link break-all"
-                      href={stage.prUrl}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      {stage.prUrl}
-                    </a>
-                  </DefinitionField>
-                ) : null}
-                {stage.devinUrl ? (
-                  <DefinitionField label="Devin" mono>
-                    <a
-                      className="id-link break-all"
-                      href={stage.devinUrl}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      {stage.devinUrl}
-                    </a>
-                  </DefinitionField>
-                ) : null}
-                {stage.lastError ? (
-                  <DefinitionField label="last error">
-                    {stage.lastError}
-                  </DefinitionField>
-                ) : null}
-              </dl>
-              {stageValidations[0] ? (
-                <p className="text-fg-muted">
-                  last validation:{" "}
-                  {stageValidations[0].passed ? "passed" : "failed"} · marker{" "}
-                  {formatBool(stageValidations[0].markerSeen)}
-                  {stageValidations[0].manifestJson ? (
-                    <JsonView
-                      className="mt-2"
-                      collapsedDepth={0}
-                      maxHeight={120}
-                      value={(() => {
-                        try {
-                          return JSON.parse(
-                            stageValidations[0].manifestJson as string
-                          ) as unknown;
-                        } catch {
-                          return stageValidations[0].manifestJson;
-                        }
-                      })()}
-                    />
-                  ) : null}
-                </p>
-              ) : null}
-              <Button
-                className="mt-2"
-                disabled={
-                  retryStage.isPending || !cveStageRetryable(stage.status)
-                }
-                onClick={() => retryStage.mutate(kind)}
-                variant="ghost"
-              >
-                <RotateCcw aria-hidden="true" size={12} />
-                <span>retry from here</span>
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-      <ErrorState error={retryStage.error} title="stage retry failed" />
-      <div className="space-y-2">
-        <div className="field-label">follow-up events</div>
-        {events.length === 0 ? (
-          <p className="text-fg-muted">no events yet.</p>
-        ) : (
-          <ol className="max-h-48 space-y-2 overflow-y-auto">
-            {events.map((ev: CveFollowupEventRow) => (
-              <li
-                className="border-border border-l-2 pl-3"
-                key={ev.id}
-                title={ev.createdAt}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium">{ev.kind}</span>
-                  <span className="text-fg-muted">
-                    {formatRelativeTime(ev.createdAt)}
-                  </span>
-                </div>
-                <div className="text-fg-muted">{ev.message}</div>
-                {ev.details == null ? null : (
-                  <JsonView
-                    className="mt-1"
-                    collapsedDepth={1}
-                    maxHeight={120}
-                    value={ev.details}
-                  />
-                )}
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
-      {followup.deepwikiContext ? (
-        <details className="rounded border border-border bg-bg-raised p-2">
-          <summary className="cursor-pointer">DeepWiki context</summary>
-          <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-[11px]">
-            {followup.deepwikiContext}
-          </pre>
-        </details>
-      ) : null}
-    </div>
-  );
-};
-
 const BenchmarkRunEventsTimeline = ({
   events,
 }: {
@@ -2062,7 +1749,7 @@ const BenchmarkRunDetail = ({
           task={detail.data.task}
         />
       )}
-      <BenchmarkRunCveFollowupSection
+      <CveFollowupRunSection
         runId={runId}
         runStatus={run?.status ?? "pending"}
       />

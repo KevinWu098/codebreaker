@@ -3,14 +3,21 @@ import { useCallback } from "react";
 import { Sidebar, type ViewId } from "@/components/sidebar";
 import { AdminPanel } from "@/features/admin/admin-panel";
 import { BenchmarksPanel } from "@/features/benchmarks/benchmarks-panel";
+import { FollowupsPanel } from "@/features/followups/followups-panel";
 import { SessionDetail } from "@/features/sessions/session-detail";
 import { SessionsList } from "@/features/sessions/sessions-list";
 import { useThemeSync } from "@/hooks/use-theme";
 
-const VIEW_IDS: readonly ViewId[] = ["sessions", "benchmarks", "admin"];
+const VIEW_IDS: readonly ViewId[] = [
+  "sessions",
+  "benchmarks",
+  "followups",
+  "admin",
+];
 
 const searchParams = {
   benchmark: parseAsString,
+  followupRun: parseAsString,
   view: parseAsStringLiteral(VIEW_IDS).withDefault("sessions"),
   session: parseAsString,
   tab: parseAsString,
@@ -53,7 +60,12 @@ const SessionsView = ({
 export const App = (): React.JSX.Element => {
   useThemeSync();
   const [
-    { benchmark: selectedBenchmarkId, view, session: selectedId },
+    {
+      benchmark: selectedBenchmarkId,
+      followupRun: followupSelectedRunId,
+      view,
+      session: selectedId,
+    },
     setParams,
   ] = useQueryStates(searchParams);
 
@@ -67,9 +79,21 @@ export const App = (): React.JSX.Element => {
       <Sidebar
         onSelectView={(next) => {
           if (next === "sessions") {
-            setParams({ view: next });
+            setParams({ followupRun: null, view: next });
+          } else if (next === "followups") {
+            setParams({
+              benchmark: null,
+              session: null,
+              tab: null,
+              view: next,
+            });
           } else {
-            setParams({ view: next, session: null, tab: null });
+            setParams({
+              followupRun: null,
+              session: null,
+              tab: null,
+              view: next,
+            });
           }
         }}
         view={view}
@@ -108,6 +132,26 @@ export const App = (): React.JSX.Element => {
               setParams({ benchmark: runId }, { history: "push" })
             }
             selectedRunId={selectedBenchmarkId}
+          />
+        )}
+        {view === "followups" && (
+          <FollowupsPanel
+            onOpenBenchmarkRun={(runId) =>
+              setParams(
+                {
+                  benchmark: runId,
+                  followupRun: null,
+                  session: null,
+                  tab: null,
+                  view: "benchmarks",
+                },
+                { history: "push" }
+              )
+            }
+            onSelectRun={(runId) =>
+              setParams({ followupRun: runId }, { history: "push" })
+            }
+            selectedRunId={followupSelectedRunId}
           />
         )}
         {view === "admin" && <AdminPanel />}

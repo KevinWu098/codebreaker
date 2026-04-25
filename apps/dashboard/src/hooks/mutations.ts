@@ -188,6 +188,9 @@ export const useCreateCveFollowupMutation = (runId: string) => {
         queryKey: qk.cveFollowup(connection, runId),
       });
       queryClient.invalidateQueries({
+        queryKey: qk.cveFollowupsList(connection),
+      });
+      queryClient.invalidateQueries({
         queryKey: qk.benchmarkRun(connection, runId),
       });
     },
@@ -209,6 +212,9 @@ export const useCancelCveFollowupMutation = (runId: string) => {
         queryKey: qk.cveFollowup(connection, runId),
       });
       queryClient.invalidateQueries({
+        queryKey: qk.cveFollowupsList(connection),
+      });
+      queryClient.invalidateQueries({
         queryKey: qk.benchmarkRun(connection, runId),
       });
     },
@@ -228,6 +234,9 @@ export const useRetryCveFollowupStageMutation = (runId: string) => {
       toast.success("stage queued for retry");
       queryClient.invalidateQueries({
         queryKey: qk.cveFollowup(connection, runId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.cveFollowupsList(connection),
       });
       queryClient.invalidateQueries({
         queryKey: qk.benchmarkRun(connection, runId),

@@ -3,6 +3,7 @@ import type {
   CveFollowupDetailResponse,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
+  ListCveFollowupsResponse,
 } from "@codebreaker/benchmark-runner/schemas";
 import type {
   AdminShimHealthResponse,
@@ -88,6 +89,20 @@ export const useCveFollowupQuery = (
     queryFn: () => api.getCveFollowup(runId),
     queryKey: qk.cveFollowup(connection, runId),
     refetchInterval: POLLING.benchmarks.cveFollowup,
+  });
+};
+
+export const useCveFollowupsListQuery = (): UseQueryResult<
+  ListCveFollowupsResponse,
+  Error
+> => {
+  const connection = useConnection();
+
+  return useQuery({
+    enabled: isAuthorized(connection),
+    queryFn: () => api.listCveFollowups(200),
+    queryKey: qk.cveFollowupsList(connection),
+    refetchInterval: POLLING.benchmarks.cveFollowupsList,
   });
 };
 

@@ -464,6 +464,7 @@ export type CveFollowupStageStatus = z.infer<
 >;
 
 export const CveFollowupEventKindSchema = z.enum([
+  "artifact_from_task",
   "created",
   "repro_dispatched",
   "repro_validated",
@@ -555,6 +556,22 @@ export const CveFollowupDetailResponseSchema = z
   .strict();
 export type CveFollowupDetailResponse = z.infer<
   typeof CveFollowupDetailResponseSchema
+>;
+
+export const ListCveFollowupsQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(500).default(200),
+  })
+  .strict();
+export type ListCveFollowupsQuery = z.infer<typeof ListCveFollowupsQuerySchema>;
+
+export const ListCveFollowupsResponseSchema = z
+  .object({
+    followups: z.array(CveFollowupRowSchema),
+  })
+  .strict();
+export type ListCveFollowupsResponse = z.infer<
+  typeof ListCveFollowupsResponseSchema
 >;
 
 export const CreateCveFollowupRequestSchema = z

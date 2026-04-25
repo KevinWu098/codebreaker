@@ -1,10 +1,16 @@
-import { FlaskConical, ServerCog, Settings2, Workflow } from "lucide-react";
+import {
+  FlaskConical,
+  ListTree,
+  ServerCog,
+  Settings2,
+  Workflow,
+} from "lucide-react";
 import { ConnectionForm } from "@/components/connection-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import { cn } from "@/lib/utils";
 
-export type ViewId = "sessions" | "benchmarks" | "admin";
+export type ViewId = "sessions" | "benchmarks" | "followups" | "admin";
 
 interface SidebarProps {
   onSelectView: (view: ViewId) => void;
@@ -30,6 +36,12 @@ const NAV: readonly NavItem[] = [
     Icon: FlaskConical,
     id: "benchmarks",
     label: "benchmarks",
+  },
+  {
+    description: "CVE follow-up workflows (repro, fix, review)",
+    Icon: ListTree,
+    id: "followups",
+    label: "follow-ups",
   },
   {
     description: "modal shim health, sandboxes",

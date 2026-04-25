@@ -8,6 +8,7 @@ import type {
   CveFollowupStageKind,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
+  ListCveFollowupsResponse,
 } from "@codebreaker/benchmark-runner/schemas";
 import type {
   AdminShimHealthResponse,
@@ -148,6 +149,13 @@ export const api = {
 
   listBenchmarkRuns: (): Promise<ListBenchmarkRunsResponse> =>
     request<ListBenchmarkRunsResponse>("/benchmark-runs"),
+
+  listCveFollowups: (limit?: number): Promise<ListCveFollowupsResponse> =>
+    request<ListCveFollowupsResponse>(
+      "/cve-followups",
+      {},
+      limit === undefined ? undefined : { limit }
+    ),
 
   createBenchmarkRun: (
     body: CreateBenchmarkRunRequest
