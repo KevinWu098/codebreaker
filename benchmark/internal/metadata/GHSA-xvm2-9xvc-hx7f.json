@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xvm2-9xvc-hx7f",
+  "post_patch_commit": "62470065c35871076ad14480d2df26d9c5c3700a",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references commit 0749c7b which only updates the README. The actual security fix is commit 6247006 ('Preventing entity expansion during XML parsing'), which modifies XmlUtils.java to add XXE prevention settings to the DocumentBuilderFactory. The pre-patch commit is its parent b1645d7. Location derived from the patch diff: the document() method in XmlUtils.java was the only non-test source file with security-relevant changes. The pom.xml changes were only Java version bump and test dependency addition.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
