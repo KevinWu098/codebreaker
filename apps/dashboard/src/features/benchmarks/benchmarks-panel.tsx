@@ -385,11 +385,9 @@ const scoreColumnForRun = (run: BenchmarkRunRow): React.ReactNode => {
   );
 };
 
+/*
 const scoreText = (score: number | null | undefined): string =>
   score == null ? "—" : score.toFixed(2);
-
-const percentText = (value: number | null): string =>
-  value == null ? "—" : `${Math.round(value * 100)}%`;
 
 const average = (values: number[]): number | null => {
   if (values.length === 0) {
@@ -421,6 +419,10 @@ const booleanRate = (
 
   return matches / known.length;
 };
+*/
+
+const percentText = (value: number | null): string =>
+  value == null ? "—" : `${Math.round(value * 100)}%`;
 
 const runDuration = (run: BenchmarkRunRow): string => {
   if (!run.completedAt) {
@@ -436,6 +438,7 @@ const runDuration = (run: BenchmarkRunRow): string => {
   return formatDuration(Math.max(0, completedAt - startedAt));
 };
 
+/*
 const totalTokenCount = (run: BenchmarkRunRow): number | null => {
   if (run.inputTokens == null || run.outputTokens == null) {
     return null;
@@ -458,6 +461,7 @@ const runCost = (run: BenchmarkRunRow): number | null => {
 
   return tokenCost?.totalUsd ?? null;
 };
+*/
 
 const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => status;
 
@@ -494,6 +498,7 @@ const benchmarkRunTokensLine = (run: BenchmarkRunRow): React.ReactNode => {
   );
 };
 
+/*
 const MetricCard = ({
   hint,
   label,
@@ -573,6 +578,7 @@ const BenchmarkResultsSummary = ({
     </div>
   );
 };
+*/
 
 export interface BenchmarksPanelProps {
   onOpenSession?: (sessionId: string) => void;
@@ -793,7 +799,7 @@ export const BenchmarksPanel = ({
         </TabsList>
 
         <TabsContent className="mt-4 space-y-4 outline-none" value="results">
-          <BenchmarkResultsSummary runs={runs.data?.runs ?? []} />
+          {/* <BenchmarkResultsSummary runs={runs.data?.runs ?? []} /> */}
           <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(500px,1fr)]">
             <BenchmarkRunsTable
               loading={runs.isLoading}
