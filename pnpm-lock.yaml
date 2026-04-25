@@ -14,9 +14,20 @@ importers:
       lefthook:
         specifier: 2.1.6
         version: 2.1.6
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
       ultracite:
         specifier: 7.6.1
         version: 7.6.1
+
+  packages/control-plane: {}
+
+  packages/shared:
+    dependencies:
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
 
 packages:
 
@@ -222,6 +233,11 @@ packages:
     resolution: {integrity: sha512-VKS/ZaQhhkKFMANmAOhhXVoIfBXblQxGX1myCQ2faQrfmobMftXeJPcZGp0gS07ocvGJWDLZGyOZDadDBqYIJg==}
     engines: {node: '>=18'}
 
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   ultracite@7.6.1:
     resolution: {integrity: sha512-flfiWIwxiBFLgRed6yHQOAOpBvwtvwdpSO5YWj5txmpbUutZOADqCX7WZDtAFG+BlttYkwvRD9lyewQWyPQ1vA==}
     hasBin: true
@@ -409,6 +425,8 @@ snapshots:
   sisteransi@1.0.5: {}
 
   tinyexec@1.1.1: {}
+
+  typescript@6.0.3: {}
 
   ultracite@7.6.1:
     dependencies:

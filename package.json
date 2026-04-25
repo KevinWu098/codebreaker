@@ -2,6 +2,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.12",
     "lefthook": "2.1.6",
+    "typescript": "6.0.3",
     "ultracite": "7.6.1"
   },
   "name": "codebreaker",
