@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-69wx-xc6j-28v3",
+  "post_patch_commit": "3ff02b0c64a6911ab3e81cd61077f392c0b25248",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge commit (3ff02b0) merging the fix branch (4e88b39) into mainline (a4d8ab2). Only one source file was changed: adm_program/modules/ecards/ecard_send.php. The fix adds an (int) cast to the $value from $_POST['ecard_recipients'] before appending to $arrayUsers, which is later used in implode(',', $arrayUsers) inside a SQL IN clause. The vulnerability location was derived from both the advisory description (which explicitly names the file and POST parameter) and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

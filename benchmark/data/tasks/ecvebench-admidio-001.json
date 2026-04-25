@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-admidio-001",
+  "ghsa_id": "GHSA-69wx-xc6j-28v3",
+  "codebase": {
+    "repo": "https://github.com/Admidio/admidio",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "a4d8ab2dd795df2be39404408c402d0f97892f6d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "User communication and greeting card features"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-supplied recipient identifiers from a POST request are directly concatenated into a SQL query without sanitization or type casting. An authenticated member user can inject arbitrary SQL through the recipient selection parameter, enabling blind condition-based and time-based SQL injection attacks that can exfiltrate, modify, or delete database contents."
+    },
+    "L3": {
+      "area": "User communication and greeting card features",
+      "description": "A SQL injection vulnerability exists where user-supplied recipient identifiers from a POST request are directly concatenated into a SQL query without sanitization or type casting. An authenticated member user can inject arbitrary SQL through the recipient selection parameter, enabling blind condition-based and time-based SQL injection attacks that can exfiltrate, modify, or delete database contents."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 10.0,
+    "reason": "The ecard_recipients POST parameter values are directly concatenated into a SQL IN clause via implode() without type casting or sanitization, allowing an authenticated user to inject arbitrary SQL and compromise the database.",
+    "locations": [
+      {
+        "file": "adm_program/modules/ecards/ecard_send.php",
+        "function": null
+      }
+    ]
+  }
+}
