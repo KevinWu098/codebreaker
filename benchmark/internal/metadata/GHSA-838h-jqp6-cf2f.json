@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-838h-jqp6-cf2f",
+  "post_patch_commit": "25b73a366f8b114d05add8b93aa52beb321dcb6e",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The patch adds permission checks (FfiPermissions::check) and unstable API checks (check_unstable) to op_ffi_call_ptr and op_ffi_call_ptr_nonblocking in ext/ffi/lib.rs. These two functions were the only ones completely missing permission enforcement — other FFI ops already had permission checks but were only missing the unstable gate. The merge commit from PR #14115 was used as the patch commit, and its first parent as the pre-patch commit.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2025-04-25"
+}
