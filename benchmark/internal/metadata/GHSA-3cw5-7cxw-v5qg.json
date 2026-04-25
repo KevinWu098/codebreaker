@@ -4,5 +4,5 @@
   "noisy_patch": false,
   "curation_notes": "Patch commit 7558f07 changed a single line in src/Image/Cache.php within the resolve_url function, converting a case-sensitive tag name comparison to case-insensitive using strtolower(). The location was derived directly from the patch diff since only one source file was modified. The advisory description also explicitly identified the same file and code path.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2025-04-25"
+  "snapshot_date": "2026-04-25"
 }

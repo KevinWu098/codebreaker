@@ -4,5 +4,5 @@
   "noisy_patch": false,
   "curation_notes": "Location derived from the patch diff which modified a single file (internal/handlers/handler_verify.go) in the VerifyGet function. The fix changed the error handling when URL parsing fails from ctx.Error() (which returned HTTP 200) to ctx.ReplyUnauthorized() (HTTP 401). The advisory description also confirms the vulnerability is in the verify/forward-auth endpoint.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2025-04-25"
+  "snapshot_date": "2026-04-25"
 }
