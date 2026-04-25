@@ -96,7 +96,7 @@ export class BenchmarkRunOrchestrator {
         status: "pending",
       });
 
-      const agent = await withDORetry(() =>
+      let agent = await withDORetry(() =>
         getAgentByName(this.env.SESSION_AGENT, sessionId)
       );
       await withDORetry(() => agent.init(sessionId, sessionConfig, artifact));
@@ -126,6 +126,14 @@ export class BenchmarkRunOrchestrator {
           ? { profile: sessionConfig.sandbox.profile }
           : {}),
       });
+
+      // Re-obtain the agent stub after the potentially long checkout operation.
+      // The DO may have hibernated while idle, and native RPC calls bypass the
+      // partyserver #ensureInitialized() gate. Calling getAgentByName triggers
+      // setName → onStart, which re-initializes this.session on the Think class.
+      agent = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, sessionId)
+      );
 
       await agent.requestFollowUp(
         benchmarkInitialPrompt(record.task, run.difficulty)
