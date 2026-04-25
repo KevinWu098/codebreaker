@@ -6,6 +6,12 @@ import type {
 } from "@codebreaker/benchmark-runner/schemas";
 import {
   AgentOutputSchema,
+  DEFAULT_BENCHMARK_MAX_INPUT_TOKENS,
+  DEFAULT_BENCHMARK_MAX_STEPS,
+  DEFAULT_BENCHMARK_MAX_TOOL_CALLS,
+  DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS,
+  DEFAULT_BENCHMARK_MAX_TURNS,
+  DEFAULT_BENCHMARK_TIMEOUT_SECONDS,
   scoreBestCandidate,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
@@ -27,12 +33,6 @@ import type {
 import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 import { getAgentByName } from "agents";
 
-const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 300_000;
-const DEFAULT_BENCHMARK_MAX_STEPS = 50;
-const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
-const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
-const DEFAULT_BENCHMARK_MAX_TURNS = 2;
-const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 // Hard ceiling, in seconds, on how long any benchmark run is allowed to stay
 // in the `running` state before the watchdog finalizes it. Sized to comfortably
