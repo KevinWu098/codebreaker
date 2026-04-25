@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jrfm-2h82-xg28",
+  "post_patch_commit": "e32fc2329d3dd23298725153c5b2cc7fcd0f14f1",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff which modified only one file (scipy/ndimage/src/nd_image.c) in the Py_FindObjects function. The fix removed a premature Py_XDECREF(result) call in the error handling path that could free the result list while it was still potentially referenced. The advisory was withdrawn on May 3, 2024 as maintainers determined it was not exploitable in practice, but the use-after-free pattern in the code is still valid.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
