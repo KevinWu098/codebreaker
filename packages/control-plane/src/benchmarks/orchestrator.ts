@@ -14,6 +14,7 @@ import {
 } from "@codebreaker/benchmark-runner/session-config";
 import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
 import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/dataset";
+import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { withDORetry } from "@codebreaker/control-plane/do/retry";
@@ -90,8 +91,11 @@ export class BenchmarkRunOrchestrator {
 
     await this.runs.update({ id: runId, status: "running" });
 
+    const artifactOwner = this.env.GITHUB_ORG ?? this.env.GITHUB_OWNER;
+
     try {
       const sessionConfig = toBenchmarkSessionConfig({
+        ...(artifactOwner ? { artifactOwner } : {}),
         difficulty: run.difficulty,
         maxSteps,
         maxTurns,
@@ -162,7 +166,7 @@ export class BenchmarkRunOrchestrator {
       });
       const turnResult = await withTimeout(
         agent.requestFollowUp(
-          benchmarkInitialPrompt(record.task, run.difficulty)
+          benchmarkInitialPrompt(record.task, run.difficulty, artifactOwner)
         ),
         (timeoutSeconds + AGENT_TURN_COMPLETION_GRACE_SECONDS) * 1000,
         `Agent turn did not complete within ${
@@ -209,6 +213,10 @@ export class BenchmarkRunOrchestrator {
         message: "Benchmark result parsed and scored",
         runId,
       });
+
+      await new CveFollowupOrchestrator(
+        this.env
+      ).scheduleAfterBenchmarkCompletedIfEligible(runId);
 
       const finalRun = await this.requireRun(runId);
 
@@ -484,6 +492,10 @@ export class BenchmarkRunOrchestrator {
       message: "Benchmark result parsed and scored",
       runId,
     });
+
+    await new CveFollowupOrchestrator(
+      this.env
+    ).scheduleAfterBenchmarkCompletedIfEligible(runId);
 
     const finalRun = await this.requireRun(runId);
 

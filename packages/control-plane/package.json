@@ -12,6 +12,30 @@
       "types": "./src/benchmarks/orchestrator.ts",
       "default": "./src/benchmarks/orchestrator.ts"
     },
+    "./cve-followup/orchestrator": {
+      "types": "./src/cve-followup/orchestrator.ts",
+      "default": "./src/cve-followup/orchestrator.ts"
+    },
+    "./cve-followup/devin": {
+      "types": "./src/cve-followup/devin.ts",
+      "default": "./src/cve-followup/devin.ts"
+    },
+    "./cve-followup/prompts": {
+      "types": "./src/cve-followup/prompts.ts",
+      "default": "./src/cve-followup/prompts.ts"
+    },
+    "./cve-followup/triage": {
+      "types": "./src/cve-followup/triage.ts",
+      "default": "./src/cve-followup/triage.ts"
+    },
+    "./cve-followup/util": {
+      "types": "./src/cve-followup/util.ts",
+      "default": "./src/cve-followup/util.ts"
+    },
+    "./cve-followup/validation": {
+      "types": "./src/cve-followup/validation.ts",
+      "default": "./src/cve-followup/validation.ts"
+    },
     "./artifacts/github": {
       "types": "./src/artifacts/github.ts",
       "default": "./src/artifacts/github.ts"
@@ -31,6 +55,10 @@
     "./db/benchmark-runs": {
       "types": "./src/db/benchmark-runs.ts",
       "default": "./src/db/benchmark-runs.ts"
+    },
+    "./db/cve-followups": {
+      "types": "./src/db/cve-followups.ts",
+      "default": "./src/db/cve-followups.ts"
     },
     "./db/session-index": {
       "types": "./src/db/session-index.ts",
@@ -94,6 +122,7 @@
     }
   },
   "scripts": {
+    "ensure-targets": "node --experimental-strip-types src/scripts/ensure-stable-targets.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
