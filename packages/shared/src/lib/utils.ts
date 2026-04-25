@@ -1,3 +1,8 @@
+const TRAILING_SLASHES_RE = /\/+$/;
+
+export const trimTrailingSlash = (value: string): string =>
+  value.replace(TRAILING_SLASHES_RE, "");
+
 export const nowIso = (): string => new Date().toISOString();
 
 export const assertNever = (value: never): never => {
