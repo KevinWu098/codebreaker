@@ -6,8 +6,7 @@ import type {
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
 } from "@codebreaker/benchmark-runner/schemas";
-
-const TRAILING_SLASH_REGEX = /\/$/;
+import { trimTrailingSlash } from "@codebreaker/shared/lib/utils";
 
 export interface BenchmarkApiClientOptions {
   baseUrl: string;
@@ -21,7 +20,7 @@ export class BenchmarkApiClient {
   private readonly token: string | undefined;
 
   constructor(options: BenchmarkApiClientOptions) {
-    this.baseUrl = options.baseUrl.replace(TRAILING_SLASH_REGEX, "");
+    this.baseUrl = trimTrailingSlash(options.baseUrl);
     this.fetchImpl = options.fetch ?? fetch;
     this.token = options.token;
   }
