@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-dns-001",
+  "ghsa_id": "GHSA-g3wc-xv93-445q",
+  "codebase": {
+    "repo": "https://github.com/kapetan/dns",
+    "language": "c#",
+    "ecosystem": "nuget",
+    "commit": "6cb35e4481fb9ee5a0b5879f1816eda42fa49c74"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "DNS protocol request construction and message handling"
+    },
+    "L2": {
+      "description": "A DNS client library uses a non-cryptographic pseudorandom number generator to produce request identifiers, making them predictable. An attacker who can observe or guess the sequence of identifiers could craft forged DNS responses that are accepted as legitimate, enabling DNS cache poisoning or response spoofing."
+    },
+    "L3": {
+      "area": "DNS protocol request construction and message handling",
+      "description": "A DNS client library uses a non-cryptographic pseudorandom number generator to produce request identifiers, making them predictable. An attacker who can observe or guess the sequence of identifiers could craft forged DNS responses that are accepted as legitimate, enabling DNS cache poisoning or response spoofing."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.8,
+    "reason": "The DNS request class uses System.Random, a non-cryptographic PRNG, to generate request identifiers, allowing an attacker to predict IDs and spoof DNS responses.",
+    "locations": [
+      {
+        "file": "DNS/Protocol/Request.cs",
+        "function": "Request"
+      }
+    ]
+  }
+}
