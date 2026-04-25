@@ -153,6 +153,8 @@ export const BenchmarkRunEventKindSchema = z.enum([
   "result_parsed",
   "artifact_committed",
   "cleanup_completed",
+  "finalize_started",
+  "finalize_completed",
   "failed",
   "cancelled",
 ]);
