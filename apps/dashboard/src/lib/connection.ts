@@ -66,6 +66,9 @@ export const connectionStore = {
   },
 };
 
+export const isAuthorized = (connection: Connection): boolean =>
+  connection.token.length > 0;
+
 export const useConnection = (): Connection =>
   useSyncExternalStore(
     connectionStore.subscribe,

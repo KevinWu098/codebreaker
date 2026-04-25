@@ -6,12 +6,12 @@ import { PageHeader } from "@/components/page-header";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import { useShimHealthQuery, useShimSandboxesQuery } from "@/hooks/queries";
-import { useConnection } from "@/lib/connection";
+import { isAuthorized, useConnection } from "@/lib/connection";
 import { formatRelativeTime, truncateId } from "@/lib/format";
 
 export const AdminPanel = (): React.JSX.Element => {
   const connection = useConnection();
-  const enabled = connection.token.length > 0;
+  const enabled = isAuthorized(connection);
 
   const health = useShimHealthQuery();
   const sandboxes = useShimSandboxesQuery();

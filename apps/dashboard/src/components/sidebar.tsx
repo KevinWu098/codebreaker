@@ -2,7 +2,7 @@ import { ServerCog, Settings2, Workflow } from "lucide-react";
 import { ConnectionForm } from "@/components/connection-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/cn";
-import { useConnection } from "@/lib/connection";
+import { isAuthorized, useConnection } from "@/lib/connection";
 
 export type ViewId = "sessions" | "admin";
 
@@ -38,7 +38,7 @@ export const Sidebar = ({
   view,
 }: SidebarProps): React.JSX.Element => {
   const connection = useConnection();
-  const hasToken = connection.token.length > 0;
+  const hasToken = isAuthorized(connection);
 
   return (
     <aside className="sidebar">
