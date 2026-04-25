@@ -41,29 +41,12 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   override messageConcurrency: MessageConcurrency = "queue";
 
   override async onStart(props?: Record<string, unknown>): Promise<void> {
-    const propsConfig = this.readPropsConfig(props);
-    const propsSessionId = this.readPropsSessionId(props);
-
-    if (propsConfig) {
-      this.configure<SessionConfig>(propsConfig);
-    }
-
     await super.onStart(props);
 
     const config = this.readConfig();
 
     if (config) {
       this.maxSteps = config.maxSteps;
-      const nextState: SessionAgentState = {
-        status: this.state.status,
-      };
-      const sessionId = this.state.sessionId ?? propsSessionId;
-
-      if (sessionId) {
-        nextState.sessionId = sessionId;
-      }
-
-      this.setState(nextState);
     }
   }
 
@@ -71,10 +54,6 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const config = this.requireConfig();
 
     return selectModel(config, this.env);
-  }
-
-  override getSystemPrompt(): string {
-    return this.readConfig()?.systemPrompt ?? DEFAULT_SYSTEM_PROMPT;
   }
 
   override getTools(): ToolSet {
@@ -97,14 +76,14 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const configuredSession = session
       .withContext("instructions", {
         provider: {
-          get: async () => this.getSystemPrompt(),
+          get: async () =>
+            this.readConfig()?.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
         },
       })
       .withContext("memory", {
         description: "Durable operator-visible session memory",
         maxTokens: 2000,
-      })
-      .withCachedPrompt();
+      });
 
     if (!config?.compaction.enabled) {
       return configuredSession;
@@ -294,22 +273,6 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     const config = this.getConfig<SessionConfig>();
 
     return config ? SessionConfigSchema.parse(config) : null;
-  }
-
-  private readPropsConfig(
-    props: Record<string, unknown> | undefined
-  ): SessionConfig | null {
-    const parseResult = SessionConfigSchema.safeParse(props?.config);
-
-    return parseResult.success ? parseResult.data : null;
-  }
-
-  private readPropsSessionId(
-    props: Record<string, unknown> | undefined
-  ): string | null {
-    return typeof props?.sessionId === "string" && props.sessionId.length > 0
-      ? props.sessionId
-      : null;
   }
 
   private get sessionId(): string {
