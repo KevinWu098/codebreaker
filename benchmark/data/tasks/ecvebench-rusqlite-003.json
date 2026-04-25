@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-rusqlite-003",
+  "ghsa_id": "GHSA-6q5w-m3c5-rv95",
+  "codebase": {
+    "repo": "https://github.com/rusqlite/rusqlite",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "3c6b57fe1b2cc87e7ebecde43dd836ffb1c4ea5c"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Database extension module and plugin interfaces"
+    },
+    "L2": {
+      "description": "A data race vulnerability exists where certain trait interfaces for extending the database engine do not enforce required memory layout safety invariants on their implementing types. Implementations are expected to maintain a specific C-compatible memory layout for correct interaction with the underlying C library, but the trait definitions allow any type to provide an implementation. This can result in memory safety violations and data races when the database engine concurrently accesses memory through the FFI boundary at offsets that do not correspond to the actual Rust struct layout."
+    },
+    "L3": {
+      "area": "Database extension module and plugin interfaces",
+      "description": "A data race vulnerability exists where certain trait interfaces for extending the database engine do not enforce required memory layout safety invariants on their implementing types. Implementations are expected to maintain a specific C-compatible memory layout for correct interaction with the underlying C library, but the trait definitions allow any type to provide an implementation. This can result in memory safety violations and data races when the database engine concurrently accesses memory through the FFI boundary at offsets that do not correspond to the actual Rust struct layout."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 9.8,
+    "reason": "The VTab and VTabCursor traits could be safely implemented by any type without enforcing the required #[repr(C)] memory layout with sqlite3_vtab/sqlite3_vtab_cursor as the first field, allowing data races and memory safety violations when SQLite's C code accesses struct fields through the FFI boundary.",
+    "locations": [
+      {
+        "file": "src/vtab/mod.rs",
+        "function": null
+      }
+    ]
+  }
+}

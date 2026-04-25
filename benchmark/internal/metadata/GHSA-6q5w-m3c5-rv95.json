@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6q5w-m3c5-rv95",
+  "post_patch_commit": "c9ef5bd63cad5c0c123344c072b490a1a9bcbe1f",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit c9ef5bd changes 4 source files in src/vtab/: mod.rs, array.rs, csvtab.rs, and series.rs. The core fix is in mod.rs where the VTab and VTabCursor trait definitions are changed from safe to unsafe traits. The other 3 files mechanically add the unsafe keyword to their impl blocks. Locations derived from the patch diff — the trait definitions in mod.rs are the root cause since they failed to enforce memory layout invariants required for safe FFI interaction with SQLite's C code.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
