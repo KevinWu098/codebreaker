@@ -4,6 +4,13 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-04-24",
   "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "placement": {
+    "mode": "smart"
+  },
   "durable_objects": {
     "bindings": [
       {
