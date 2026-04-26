@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jvfv-hrrc-6q72",
+  "post_patch_commit": "d60de3f18acba5423b60d09ee40df44103a07295",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #2384 (enable_xml_secure_processing branch). The fix adds FEATURE_SECURE_PROCESSING to the SAX parser factory in the constructor and restricts ACCESS_EXTERNAL_SCHEMA on parser instances in parseToNode. GlobalConfiguration.java was also modified to add a SECURE_PARSING config flag, but the vulnerability itself resides in XMLChangeLogSAXParser.java. No sibling XML parsers with the same vulnerability pattern were found in the same directory. Pre-assigned class 'xxe' is correct per CWE-611 and the patch content.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
