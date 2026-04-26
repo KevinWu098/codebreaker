@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3x47-w4rx-6pm7",
+  "post_patch_commit": "f4424cfc3d6dfb3ad5ac17dd46801efe784933e9",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit was found in ParisNeo/lollms_legacy (the original ParisNeo/lollms repo was renamed). Only one source file was modified: lollms/security.py. The patch adds checks in both sanitize_path() and sanitize_path_from_endpoint() to reject paths starting with a forward slash, which previously allowed bypassing path traversal protections on Windows. No sibling files share this vulnerability pattern as security.py is the sole security utility module. Vulnerability class confirmed as path-traversal based on CWE-22/CWE-29 and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
