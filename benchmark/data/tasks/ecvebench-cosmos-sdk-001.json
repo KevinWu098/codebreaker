@@ -13,18 +13,18 @@
       "area": "Mathematical data types and arithmetic operations"
     },
     "L2": {
-      "description": "A misalignment in the maximum allowed bit-length between integer and decimal data types causes an inconsistency in range validation. Decimal values can be created that fit within the decimal type's validation bounds but exceed the valid range of the corresponding integer type. When such an oversized decimal value is used in an integer context, it causes a panic. An attacker can exploit this by providing crafted numeric inputs that produce values within the incorrectly permissive decimal range but outside the actual safe limits, leading to a denial of service through an unrecoverable panic."
+      "description": "An integer overflow vulnerability exists due to a misalignment in range validation between integer and decimal numeric types. The maximum allowed bit-length for decimal values is computed to be larger than the maximum for integer values, creating an inconsistency. This allows decimal values to be constructed that appear valid under decimal range checks but exceed the representable range of the integer type. When such an oversized decimal interacts with integer operations, it causes an unrecoverable panic, leading to denial of service. An attacker can trigger this through any input path that creates or deserializes decimal values exceeding the intended bounds."
     },
     "L3": {
-      "area": "Mathematical data types and arithmetic operations",
-      "description": "A misalignment in the maximum allowed bit-length between integer and decimal data types causes an inconsistency in range validation. Decimal values can be created that fit within the decimal type's validation bounds but exceed the valid range of the corresponding integer type. When such an oversized decimal value is used in an integer context, it causes a panic. An attacker can exploit this by providing crafted numeric inputs that produce values within the incorrectly permissive decimal range but outside the actual safe limits, leading to a denial of service through an unrecoverable panic."
+      "area": "Decimal type arithmetic and range validation in the SDK math library",
+      "description": "An integer overflow vulnerability exists in the Cosmos SDK math library due to a misalignment in range validation between integer and legacy decimal numeric types. The maximum allowed bit-length for decimal values is computed to be larger than the maximum for integer values. This allows decimal values to be constructed through string parsing, arithmetic operations, or deserialization that appear valid under decimal range checks but exceed the representable range of the integer type. When such an oversized decimal interacts with integer operations, it causes an unrecoverable panic, leading to denial of service."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "integer-overflow",
     "cvss": 8.7,
-    "reason": "The maxDecBitLen constant used for range validation in decimal arithmetic operations was misaligned with MaxBitLen used for integers, allowing decimal values that exceed the integer type's valid range and causing panics during type interactions.",
+    "reason": "The maxDecBitLen constant used for decimal range validation was larger than MaxBitLen used for integers (315 bits vs 256 bits), allowing decimal values that exceed the integer type's valid range and causing panics when interacting with integer operations.",
     "locations": [
       {
         "file": "math/dec.go",
@@ -41,6 +41,38 @@
       {
         "file": "math/dec.go",
         "function": "MulMut"
+      },
+      {
+        "file": "math/dec.go",
+        "function": "MulTruncateMut"
+      },
+      {
+        "file": "math/dec.go",
+        "function": "MulRoundUpMut"
+      },
+      {
+        "file": "math/dec.go",
+        "function": "MulIntMut"
+      },
+      {
+        "file": "math/dec.go",
+        "function": "MulInt64Mut"
+      },
+      {
+        "file": "math/dec.go",
+        "function": "QuoMut"
+      },
+      {
+        "file": "math/dec.go",
+        "function": "QuoTruncateMut"
+      },
+      {
+        "file": "math/dec.go",
+        "function": "QuoRoundupMut"
+      },
+      {
+        "file": "math/dec.go",
+        "function": "Ceil"
       },
       {
         "file": "math/dec.go",
