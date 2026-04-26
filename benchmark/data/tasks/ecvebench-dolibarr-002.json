@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-dolibarr-002",
+  "ghsa_id": "GHSA-jjgq-jq8g-24w4",
+  "codebase": {
+    "repo": "https://github.com/Dolibarr/dolibarr",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "032f54dd1ad48ee532915b5f458c2fb8d71d02e2"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Donation management and record listing functionality"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where a user-supplied HTTP request parameter used for filtering record status is taken directly from the request without sanitization and interpolated into a SQL query string, allowing remote attackers to execute arbitrary SQL commands."
+    },
+    "L3": {
+      "area": "Donation list filtering and status-based search within the donation module",
+      "description": "A SQL injection vulnerability exists where an HTTP GET parameter used to filter donation records by status is read directly from user input without type validation or sanitization and is interpolated into a SQL WHERE clause, allowing remote attackers to execute arbitrary SQL commands against the donation records database."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "The statut GET parameter in the donation list page is taken directly from $_GET without sanitization and interpolated into a SQL query, allowing remote SQL injection.",
+    "locations": [
+      {
+        "file": "htdocs/don/list.php",
+        "function": null
+      }
+    ]
+  }
+}
