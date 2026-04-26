@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Core random number generation primitives and data conversion utilities"
+      "area": "Core random number generation primitives and internal data processing routines"
     },
     "L2": {
-      "description": "An incorrect buffer length check in the random number generation library causes assertions to be too permissive. The size multiplier is applied to the wrong operand in the comparison, allowing destination buffers to not be fully populated. This means a random number generator may be seeded with too little data, weakening the quality of generated random values."
+      "description": "A cryptographic weakness exists in the random number generation library where a buffer length validation is incorrect. This causes an assertion to be overly permissive, allowing a random number generator to potentially be seeded with insufficient entropy, degrading the quality and unpredictability of generated random values."
     },
     "L3": {
-      "area": "Core random number generation primitives and data conversion utilities",
-      "description": "An incorrect buffer length check in the random number generation library causes assertions to be too permissive. The size multiplier is applied to the wrong operand in the comparison, allowing destination buffers to not be fully populated. This means a random number generator may be seeded with too little data, weakening the quality of generated random values."
+      "area": "Byte-to-integer conversion utilities in the core random number generation library",
+      "description": "A cryptographic weakness exists in the random number generation library where buffer length assertions in byte-to-integer conversion routines use the size multiplier on the wrong operand. This causes the checks to be overly permissive, allowing source byte buffers that are too small to pass validation. As a result, random number generators may be seeded with insufficient data, degrading the quality and unpredictability of generated random values."
     }
   },
   "ground_truth": {
