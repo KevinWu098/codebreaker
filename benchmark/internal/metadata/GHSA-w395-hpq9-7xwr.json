@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w395-hpq9-7xwr",
+  "post_patch_commit": "a2bd5788d0b0728d91d551ddaac878b336d7892a",
+  "noisy_patch": true,
+  "curation_notes": "The advisory references PR #1166 (documentation only) and JIRA GEODE-3923. The actual code fix is commit a2bd5788d0 which adds serialization whitelist/blacklist filtering via ObjectInputStreamFilterWrapper. The patch is noisy (45 non-test source files changed) because it adds sanctioned-serializables whitelist files across multiple modules and modifies numerous classes to implement DataSerializable. The primary vulnerability location is in InternalDataSerializer.basicReadObject() where the SERIALIZABLE case creates a DSObjectInputStream and calls readObject() without any deserialization filter. TcpServer.java itself was not modified but is the entry point that calls DataSerializer.readObject(input), which delegates to InternalDataSerializer.basicReadObject(). Pre-assigned class insecure-deserialization confirmed from CWE-502.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
