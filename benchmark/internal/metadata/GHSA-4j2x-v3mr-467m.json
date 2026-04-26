@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4j2x-v3mr-467m",
+  "post_patch_commit": "8632a835c23f558dfee3584d7658cc6a13ccec6f",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references two commits for issue #4127. Commit 958cf01 fixes the primary SQL injection in updateNullByEmptyString (SysUserMapper.xml) by replacing ${fieldName} interpolation with hardcoded if/else checks for 'email' and 'phone'. Commit 8632a83 deprecates the queryTableDictByKeysAndFilterSql method in SysDictMapper.java, which maps to a query in SysDictMapper.xml that also uses ${filterSql} direct interpolation. Pre-patch commit is 01602bd (parent of first fix) so both vulnerabilities are present. SysDictMapper.xml added as a sibling location since it uses the same ${...} MyBatis string interpolation pattern in the same mapper/xml directory.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
