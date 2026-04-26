@@ -1,0 +1,51 @@
+{
+  "task_id": "ecvebench-skywalking-001",
+  "ghsa_id": "GHSA-grpf-gg7v-5g5h",
+  "codebase": {
+    "repo": "https://github.com/apache/skywalking",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "cc9ea271a720e8def161a583595f75da9bda77a5"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Storage layer query data access objects for the observability platform's JDBC-based backends"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists in the wildcard query functionality of the JDBC-based storage backends. User-supplied search keywords are directly concatenated into SQL query strings within LIKE clauses instead of being passed as parameterized query arguments, allowing an attacker to manipulate the executed SQL."
+    },
+    "L3": {
+      "area": "H2 and MySQL JDBC storage query DAOs that implement wildcard search functionality",
+      "description": "A SQL injection vulnerability exists in the wildcard search functionality of the H2 and MySQL JDBC storage backends. When performing fuzzy queries for alarms, service metadata, endpoints, or traces, user-supplied search keywords are directly concatenated into SQL LIKE clauses instead of being passed as parameterized query arguments, allowing an attacker to inject arbitrary SQL."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "User-supplied search keywords are directly concatenated into SQL LIKE clauses in multiple JDBC query DAO classes, enabling SQL injection when using H2 or MySQL storage backends.",
+    "locations": [
+      {
+        "file": "oap-server/server-storage-plugin/storage-jdbc-hikaricp-plugin/src/main/java/org/apache/skywalking/oap/server/storage/plugin/jdbc/h2/dao/H2AlarmQueryDAO.java",
+        "function": "getAlarm"
+      },
+      {
+        "file": "oap-server/server-storage-plugin/storage-jdbc-hikaricp-plugin/src/main/java/org/apache/skywalking/oap/server/storage/plugin/jdbc/h2/dao/H2MetadataQueryDAO.java",
+        "function": "searchServices"
+      },
+      {
+        "file": "oap-server/server-storage-plugin/storage-jdbc-hikaricp-plugin/src/main/java/org/apache/skywalking/oap/server/storage/plugin/jdbc/h2/dao/H2MetadataQueryDAO.java",
+        "function": "searchEndpoint"
+      },
+      {
+        "file": "oap-server/server-storage-plugin/storage-jdbc-hikaricp-plugin/src/main/java/org/apache/skywalking/oap/server/storage/plugin/jdbc/h2/dao/H2TraceQueryDAO.java",
+        "function": "queryBasicTraces"
+      },
+      {
+        "file": "oap-server/server-storage-plugin/storage-jdbc-hikaricp-plugin/src/main/java/org/apache/skywalking/oap/server/storage/plugin/jdbc/mysql/MySQLAlarmQueryDAO.java",
+        "function": "getAlarm"
+      }
+    ]
+  }
+}
