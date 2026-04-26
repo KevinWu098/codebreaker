@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-vyper-002",
+  "ghsa_id": "GHSA-6r8q-pfpv-7cgj",
+  "codebase": {
+    "repo": "https://github.com/vyperlang/vyper",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "4f8289a81206f767df1900ac48f485d90fc87edb"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Compiler backend and intermediate representation code generation"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists in the compiler's loop code generation. When processing range-based for-loops with a dynamically computed start value and a constant offset, the compiler fails to verify that the loop iterator range stays within the bounds of its declared integer type. This allows the loop variable to wrap around and take on values that exceed the maximum of its declared type."
+    },
+    "L3": {
+      "area": "Loop iteration and range-based for-loop handling in the compiler's code generation backend",
+      "description": "An integer overflow vulnerability exists in the compiler's range-based for-loop code generation. When a loop uses a dynamic start value with a constant bound (e.g., iterating from a variable to that variable plus a constant), the compiler does not clamp or verify that the computed upper bound of the iterator stays within the integer type's valid range. This allows the loop variable to overflow its declared type and produce out-of-bounds values."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 7.5,
+    "reason": "The Vyper compiler does not check for integer overflow in range-based for-loops of the form `for i in range(x, x+N)`. When the start value is close to the type's maximum, the iterator can overflow its declared integer type, producing out-of-bounds values.",
+    "locations": [
+      {
+        "file": "vyper/codegen/stmt.py",
+        "function": "_parse_For_range"
+      }
+    ]
+  }
+}
