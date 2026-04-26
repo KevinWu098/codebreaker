@@ -1,0 +1,115 @@
+{
+  "task_id": "ecvebench-gnark-crypto-001",
+  "ghsa_id": "GHSA-9xfq-8j3r-xp5g",
+  "codebase": {
+    "repo": "https://github.com/Consensys/gnark-crypto",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "55489ac07ca1a88bf0b830a29625fcb0d8879a48"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Cryptographic signature serialization and deserialization logic"
+    },
+    "L2": {
+      "description": "A signature malleability vulnerability exists where deserialization of digital signatures does not validate that the signature components are within the expected numerical range. An attacker can modify a valid signature by providing component values that exceed the group modulus, producing a different but still-accepted signature for the same message."
+    },
+    "L3": {
+      "area": "ECDSA and EdDSA signature deserialization across elliptic curve implementations",
+      "description": "A signature malleability vulnerability exists where deserialization of ECDSA and EdDSA signatures does not validate that the R and S components are within the range [0, modulus). An attacker can craft modified signatures that pass verification by providing component values congruent modulo the group order but outside the canonical range, or by supplying zero-valued components."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.8,
+    "reason": "The SetBytes deserialization function for ECDSA and EdDSA signatures does not validate that the R and S components are non-zero and less than the relevant modulus, allowing signature malleability.",
+    "locations": [
+      {
+        "file": "ecc/bls12-377/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls12-378/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls12-381/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls24-315/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls24-317/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bn254/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bw6-633/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bw6-756/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bw6-761/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/secp256k1/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/stark-curve/ecdsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls12-377/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls12-378/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls12-381/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls12-381/bandersnatch/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls24-315/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bls24-317/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bn254/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bw6-633/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bw6-756/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      },
+      {
+        "file": "ecc/bw6-761/twistededwards/eddsa/marshal.go",
+        "function": "SetBytes"
+      }
+    ]
+  }
+}
