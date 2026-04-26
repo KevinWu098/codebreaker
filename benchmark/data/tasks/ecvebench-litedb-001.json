@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-litedb-001",
+  "ghsa_id": "GHSA-3x49-g6rc-c284",
+  "codebase": {
+    "repo": "https://github.com/litedb-org/LiteDB",
+    "language": "csharp",
+    "ecosystem": "nuget",
+    "commit": "6d9ac6237ff8cae104a3c57a8de4ec55b4506e87"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Document-to-object mapping and type resolution during data retrieval"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where a specially crafted type discriminator field in stored documents is used to resolve and instantiate arbitrary types without validation. An attacker who can control the content of stored documents can exploit this to load dangerous types, potentially leading to remote code execution."
+    },
+    "L3": {
+      "area": "BSON document deserialization and polymorphic type resolution in the object mapper",
+      "description": "An insecure deserialization vulnerability exists where a specially crafted type discriminator field in stored BSON documents is used to resolve and instantiate arbitrary types without validating that the resolved type is assignable to the expected target type. An attacker who can inject documents with a malicious type discriminator can cause the deserializer to load dangerous types such as process execution classes, potentially leading to remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The BsonMapper deserializer uses a _type discriminator field to resolve and instantiate arbitrary .NET types from stored documents without checking type assignability, allowing an attacker to inject malicious type references and instantiate dangerous classes during deserialization.",
+    "locations": [
+      {
+        "file": "LiteDB/Client/Mapper/BsonMapper.Deserialize.cs",
+        "function": "Deserialize"
+      }
+    ]
+  }
+}

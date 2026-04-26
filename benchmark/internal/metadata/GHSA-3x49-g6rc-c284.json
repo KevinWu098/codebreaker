@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3x49-g6rc-c284",
+  "post_patch_commit": "4382ff4dd0dd8b8b16a4e37dfd29727c5f70f93f",
+  "noisy_patch": false,
+  "curation_notes": "The fix spans two commits: d72c677 adds a type assignability check (IsAssignableFrom) to prevent loading types not assignable to the expected target, and 4382ff4 adds a specific blacklist for System.Diagnostics.Process. The pre-patch commit 6d9ac62 (v5.0.12) is the parent of the first fix commit and contains the full unpatched vulnerability. The vulnerability location is in the Deserialize method of BsonMapper.Deserialize.cs where the _type field value is used to resolve and set the deserialization type without any validation. No sibling files share this pattern as this is the single deserializer entry point.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
