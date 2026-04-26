@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3fx4-7f69-5mmg",
+  "post_patch_commit": "789a4c4bd4c118f7564954f441b29c153ccd6a96",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff in cipher/cbc_hmac.go, which is the file explicitly referenced by the advisory (CBC-HMAC integer overflow). The patch changes int-typed size calculations to uint64 across Seal, Open, computeAuthTag, resize, and padBuffer functions. Sibling locations cipher/concat_kdf.go (NewConcatKDF) and cipher/ecdh_es.go (DeriveECDHES) contain the same integer overflow pattern in buffer size calculations and were also fixed in the same commit. Exactly 3 non-test source files changed, so noisy_patch is false. Vulnerability class integer-overflow confirmed — matches CWE-190 and the patch clearly addresses int overflow on 32-bit architectures.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
