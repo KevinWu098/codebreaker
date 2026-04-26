@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-57h3-9rgr-c24m",
+  "post_patch_commit": "3fee28eb9479bf7d59e0fa08068f9cc4a6e2f04c",
+  "noisy_patch": false,
+  "curation_notes": "The patch fixes incorrect error code checking in _decodeStripYCbCr in src/libImaging/TiffDecode.c. TIFFRGBAImageGet returns 0 on failure, but the pre-patch code compared the return value against -1, which never matched. This caused decode errors to go undetected, leading to a heap-based buffer overflow. The advisory notes this is an incomplete fix for CVE-2020-35654. Only one non-test source file was modified. No sibling files call TIFFRGBAImageGet. The pre-assigned class buffer-overflow (CWE-787) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
