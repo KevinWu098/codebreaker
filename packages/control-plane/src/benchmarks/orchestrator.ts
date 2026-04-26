@@ -7,6 +7,7 @@ import type {
 } from "@codebreaker/benchmark-runner/schemas";
 import {
   DEFAULT_BENCHMARK_MAX_INPUT_TOKENS,
+  DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS,
   DEFAULT_BENCHMARK_MAX_STEPS,
   DEFAULT_BENCHMARK_MAX_TOOL_CALLS,
   DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS,
@@ -87,6 +88,8 @@ export class BenchmarkRunOrchestrator {
     };
     const maxInputTokens =
       request?.maxInputTokens ?? DEFAULT_BENCHMARK_MAX_INPUT_TOKENS;
+    const maxOutputTokens =
+      request?.maxOutputTokens ?? DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS;
     const maxSteps = request?.maxSteps ?? DEFAULT_BENCHMARK_MAX_STEPS;
     const maxToolCalls =
       request?.maxToolCalls ?? DEFAULT_BENCHMARK_MAX_TOOL_CALLS;
@@ -110,6 +113,7 @@ export class BenchmarkRunOrchestrator {
         metadata: record.metadata,
         model,
         maxInputTokens,
+        maxOutputTokens,
         maxToolCalls,
         maxTotalTokens,
         task: record.task,

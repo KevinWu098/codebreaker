@@ -5,10 +5,11 @@ const GHSA_ID_PATTERN = /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/;
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const DATASET_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-export const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 300_000;
+export const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 250_000;
+export const DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS = 50_000;
 export const DEFAULT_BENCHMARK_MAX_STEPS = 50;
 export const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
-export const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
+export const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 300_000;
 export const DEFAULT_BENCHMARK_MAX_TURNS = 10;
 export const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 
@@ -209,6 +210,11 @@ export const CreateBenchmarkRunRequestSchema = z
       .positive()
       .default(DEFAULT_BENCHMARK_MAX_INPUT_TOKENS),
     model: BenchmarkRunModelSchema,
+    maxOutputTokens: z
+      .number()
+      .int()
+      .positive()
+      .default(DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS),
     maxToolCalls: z
       .number()
       .int()
