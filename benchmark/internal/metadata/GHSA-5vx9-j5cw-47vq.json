@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5vx9-j5cw-47vq",
+  "post_patch_commit": "b3b875c7c0436a7f30d2498138e782ad6d450724",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the squash merge of PR #1637, which fixes issue #1633. The vulnerability is in prefixMatcher.Matches() in pkg/filter/stream/jwtauthn/matcher.go, where the caseSensitive flag from the route rule configuration was completely ignored during prefix matching — strings.HasPrefix was always used case-sensitively. The patch adds a check: when caseSensitive is false, both the request path and the configured prefix are lowered before comparison. A minor change was also made to pathMatcher.Matches() replacing ToLower+== with EqualFold, but the primary vulnerability is the prefix matcher. Only 1 non-test source file was changed. The pre-assigned class auth-bypass is correct — CWE-178 (Improper Handling of Case Sensitivity) and CWE-863 (Incorrect Authorization) both map to authentication bypass via case manipulation of URL paths.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
