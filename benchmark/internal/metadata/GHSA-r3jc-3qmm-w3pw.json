@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r3jc-3qmm-w3pw",
+  "post_patch_commit": "e682b99f8406f20bc3f0f2c77153ed7345fd215a",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as sql-injection from CWE-89, but the patch adds Zope access control decorators (@security.private and @security.protected) to the query() and add_extra_engine_options() methods — it does not sanitize SQL input. The root cause is missing authentication/authorization checks, not unsanitized SQL interpolation. Reclassified to auth-bypass. Locations derived directly from the patch diff: both vulnerable methods are in the SAWrapper class in da.py. No sibling files contain the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
