@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-helm-001",
+  "ghsa_id": "GHSA-x6r5-vxfg-gq3v",
+  "codebase": {
+    "repo": "https://github.com/helm/helm",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "dc1029f152845b113572beb14b7548c931256325"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Server initialization and network transport configuration"
+    },
+    "L2": {
+      "description": "An improper certificate validation vulnerability allows unauthorized clients to connect to the server. The TLS configuration uses a permissive client authentication policy that only verifies client certificates if they happen to be provided, rather than requiring all clients to present a valid certificate signed by a trusted certificate authority. This allows clients with self-signed certificates or no certificates at all to establish connections."
+    },
+    "L3": {
+      "area": "Tiller server TLS option configuration and mutual authentication setup",
+      "description": "An improper certificate validation vulnerability exists in the server's TLS mutual authentication configuration. When TLS verification is enabled, the server's client authentication policy is set to only verify client certificates if they are optionally provided, rather than requiring clients to present a certificate signed by a known certificate authority. This allows malicious clients to connect using self-signed certificates or without any client certificate."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.8,
+    "reason": "The Tiller server's TLS configuration uses VerifyClientCertIfGiven instead of RequireAndVerifyClientCert, allowing clients to connect without presenting a valid certificate or by using a self-signed certificate not signed by a trusted CA.",
+    "locations": [
+      {
+        "file": "cmd/tiller/tiller.go",
+        "function": "tlsOptions"
+      }
+    ]
+  }
+}
