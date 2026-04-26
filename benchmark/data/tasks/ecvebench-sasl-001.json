@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-sasl-001",
+  "ghsa_id": "GHSA-gvfj-fxx3-j323",
+  "codebase": {
+    "repo": "https://codeberg.org/mellium/sasl",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "827ebd922ef255037f48376cf1030453e182091a"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Authentication protocol negotiation and session initialization"
+    },
+    "L2": {
+      "description": "An authentication vulnerability exists in the SCRAM-based authentication implementation where, under certain conditions involving channel binding support, the random nonce is not properly generated. This results in an empty nonce being used during the authentication exchange, which causes authentication to fail or, if the remote end does not validate nonce length, leads to insufficient randomness during authentication."
+    },
+    "L3": {
+      "area": "SCRAM authentication negotiation state machine setup for client and server roles",
+      "description": "During SCRAM-based SASL authentication, when the remote end advertises mechanisms that support channel binding, the state machine initialization exits prematurely without generating a random nonce. This results in an empty nonce, causing authentication to fail or, if the remote end does not validate nonce length, leading to insufficient randomness during the authentication exchange."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 9.8,
+    "reason": "When the remote end advertises SASL mechanisms supporting channel binding, the negotiator constructor returns early without generating a nonce, leading to empty nonce usage that weakens or breaks SCRAM authentication.",
+    "locations": [
+      {
+        "file": "negotiator.go",
+        "function": "NewClient"
+      },
+      {
+        "file": "negotiator.go",
+        "function": "NewServer"
+      }
+    ]
+  }
+}

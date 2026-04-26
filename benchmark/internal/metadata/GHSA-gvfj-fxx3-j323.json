@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gvfj-fxx3-j323",
+  "post_patch_commit": "e6cbf681b247c4efa1477eaad2cc47a01707b732",
+  "noisy_patch": false,
+  "curation_notes": "The patch changes 'return machine' to 'break' in both NewClient and NewServer functions in negotiator.go, so the nonce generation code after the loop is reached when channel binding mechanisms are present. Only 1 non-test source file was changed (negotiator.go). No sibling files share this vulnerability pattern. Pre-assigned class auth-bypass (CWE-287) is correct: the empty nonce weakens or breaks SCRAM authentication.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
