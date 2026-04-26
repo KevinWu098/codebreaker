@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8554-jxcw-454q",
+  "post_patch_commit": "716bd8d1f24c84aaf99170efaa17d1d34206f6c0",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is merge of PR #373 into dev branch. The fix adds a _clone() method to the core Parser class that shallow-copies the parser and clears its cache, then uses this clone inside parse() so each request gets its own isolated cache. The async variant in asyncparser.py receives the same treatment. tornadoparser.py had a minor cleanup (removing a redundant __init__) but the actual vulnerability is in the base parse() methods of core.py and asyncparser.py. Locations derived from the patch diff. Pre-assigned class race-condition (CWE-362) is correct — the vulnerability is concurrent access to a shared _cache dict on the parser instance.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
