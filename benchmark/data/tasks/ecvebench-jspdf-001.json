@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-jspdf-001",
+  "ghsa_id": "GHSA-wfv2-pwc8-crg5",
+  "codebase": {
+    "repo": "https://github.com/parallax/jsPDF",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "b1607a9391d4cd65ea7ade25998aea8345ae1be3"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "PDF document generation and output rendering logic"
+    },
+    "L2": {
+      "description": "User-controlled option values are concatenated directly into HTML strings that are then written into newly opened browser windows without sanitization, allowing injection of arbitrary HTML and script elements into those windows."
+    },
+    "L3": {
+      "area": "PDF output format handling and new browser window rendering paths",
+      "description": "When generating PDF output for display in new browser windows, user-controlled option values such as viewer URLs and document names are directly concatenated into HTML strings. These strings are then injected into the new window's document without any encoding or sanitization, allowing attackers to inject arbitrary HTML and script elements that execute in the victim's browser context."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.6,
+    "reason": "The output function builds HTML strings by directly concatenating user-controlled option values (pdfObjectUrl, pdfJsUrl, filename) and writes them into new browser windows using document.write(), enabling injection of arbitrary scripts.",
+    "locations": [
+      {
+        "file": "src/jspdf.js",
+        "function": "output"
+      }
+    ]
+  }
+}
