@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vh7m-p724-62c2",
+  "post_patch_commit": "856fe4d99fe7b6200556e6400b3bf585b1721bec",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only lib/elliptic/ec/signature.js (1 file). The getLength function lacked bounds on octetLen and did not apply unsigned right-shift (>>>= 0) after bit-shifting, causing integer overflow for crafted DER length fields. The _importDER function did not check getLength return values for false and accepted leading-zero-padded R/S components. The sibling lib/elliptic/eddsa/signature.js uses a completely different parsing approach (fixed-length byte splitting) and does not share this vulnerability. Pre-assigned class integer-overflow (CWE-190) is correct — the core code defect is unbounded bit-shift arithmetic in DER length decoding.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
