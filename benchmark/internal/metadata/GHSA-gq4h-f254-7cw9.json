@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gq4h-f254-7cw9",
+  "post_patch_commit": "a986a9335d591fa5c826157d1674d47aa525357f",
+  "noisy_patch": false,
+  "curation_notes": "Patch changes only src/lib.rs (+2 -2), adding T: Send bounds to unsafe impl Send for ReadTicket<T> and WriteTicket<T>. The vulnerable code is two standalone unsafe impl blocks at module level (lines 53 and 115), not inside any function. Pre-assigned class race-condition is correct — the missing Send bound allows non-Send types to cross thread boundaries, enabling data races. This advisory (GHSA-gq4h-f254-7cw9) was withdrawn as a duplicate of GHSA-77m6-x95j-75r5, but the vulnerability details and patch are identical.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
