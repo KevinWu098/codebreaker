@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vp47-9734-prjw",
+  "post_patch_commit": "45bb47533f7abb5479618ae7f6a809215700dcb2",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff which modifies on_attribute (replacing inline TOCTOU-vulnerable safety check with safe_getattr) and on_formattedvalue (replacing direct fmt.format() with safe_format). The vulnerability class race-condition matches the pre-assigned CWE-367 TOCTOU classification. Only 2 non-test source files were changed (asteval/asteval.py and asteval/astutils.py). No sibling files — the asteval package contains only asteval.py, astutils.py, and __init__.py.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
