@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-ccmq-qvcp-5mrm",
+  "post_patch_commit": "5d0575303f6df869a515ced4285f24ba721e0d4e",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived directly from the patch diff. The patch changes yaml.load() to yaml.safe_load() in two functions (load_yaml and load_yamlf) in owlmixin/util.py. No sibling files contain the same unsafe yaml.load() pattern. Pre-assigned class insecure-deserialization (CWE-502) is correct — the vulnerability is unsafe YAML deserialization enabling arbitrary Python object instantiation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
