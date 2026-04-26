@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "HTTP server request handling and routing infrastructure"
+      "area": "HTTP server request handling and connection management"
     },
     "L2": {
       "description": "A nil pointer dereference vulnerability exists where authentication hooks configured for certain real-time communication endpoints are not invoked during connection establishment. When an authentication method is configured, downstream request handlers expect the returned user data to be non-nil. Since the authentication method is never called for these connection types, the user data remains nil, leading to a panic when handlers attempt to dereference it. An attacker can exploit this to cause denial of service or bypass authentication on affected endpoints."
     },
     "L3": {
-      "area": "HTTP server request handling and routing infrastructure",
-      "description": "A nil pointer dereference vulnerability exists where authentication hooks configured for certain real-time communication endpoints are not invoked during connection establishment. When an authentication method is configured, downstream request handlers expect the returned user data to be non-nil. Since the authentication method is never called for these connection types, the user data remains nil, leading to a panic when handlers attempt to dereference it. An attacker can exploit this to cause denial of service or bypass authentication on affected endpoints."
+      "area": "WebSocket endpoint handling and connection upgrade logic",
+      "description": "A nil pointer dereference vulnerability exists where authentication hooks configured for WebSocket endpoints are not invoked during the connection upgrade process. When an authentication method is configured, downstream WebSocket handlers expect the returned user data to be non-nil. Since the authentication method is never called during WebSocket connection establishment, the user data remains nil, leading to a panic when handlers attempt to dereference it. An attacker can exploit this to cause denial of service or bypass authentication on WebSocket endpoints."
     }
   },
   "ground_truth": {

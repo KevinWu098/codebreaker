@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Stream multiplexing flow control and window management"
+      "area": "Connection handling and per-stream resource management"
     },
     "L2": {
       "description": "An integer overflow vulnerability exists in the stream multiplexer's send-window accounting. A remote peer can send a specially crafted window update frame with a very large credit value that causes arithmetic overflow in the per-stream window state, triggering a panic in the connection state machine. This results in a remotely exploitable denial of service that does not require authentication."
     },
     "L3": {
-      "area": "Stream multiplexing flow control and window management",
-      "description": "An integer overflow vulnerability exists in the stream multiplexer's send-window accounting. A remote peer can send a specially crafted window update frame with a very large credit value that causes arithmetic overflow in the per-stream window state, triggering a panic in the connection state machine. This results in a remotely exploitable denial of service that does not require authentication."
+      "area": "Per-stream send-window flow control and credit accounting within the Yamux connection multiplexer",
+      "description": "An integer overflow vulnerability exists in the Yamux stream multiplexer's per-stream send-window accounting. When a remote peer sends a WindowUpdate frame with a credit value large enough to overflow the u32 send-window counter, the connection state machine panics due to unchecked arithmetic. This is remotely exploitable without authentication over any network connection using the Yamux protocol, resulting in denial of service."
     }
   },
   "ground_truth": {

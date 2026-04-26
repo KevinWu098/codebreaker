@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-4w32-2493-32g7",
   "post_patch_commit": "b1aae09d60c0bd6a5915a5448f4e8cbc5174db53",
   "noisy_patch": true,
-  "curation_notes": "The patch modifies 4 non-test source files (connection.rs, stream.rs, flow_control.rs, error.rs). The core vulnerability is in flow_control.rs where increase_send_window_by uses checked_add().expect() which panics on u32 overflow. The patch converts panic-on-overflow to Result-based error handling with a new InvalidWindowUpdate error variant. Locations derived from the patch diff: the primary vulnerable function is increase_send_window_by in flow_control.rs, and the caller on_window_update in connection.rs which did not handle the overflow error.",
+  "curation_notes": "Re-curated with updated guidelines. The patch modifies 4 non-test source files: connection.rs, stream.rs, flow_control.rs, and error.rs. The core vulnerability is in flow_control.rs where increase_send_window_by uses checked_add().expect() which panics on u32 overflow when a remote peer sends a WindowUpdate with a large credit value. The patch converts panic-on-overflow to Result-based error handling with a new InvalidWindowUpdate error variant. Primary location is increase_send_window_by in flow_control.rs; the caller on_window_update in connection.rs propagates the overflow without error handling. L1 broadened to cover connection handling generally; L3 narrowed to per-stream send-window flow control. No sibling files share the same vulnerability pattern.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

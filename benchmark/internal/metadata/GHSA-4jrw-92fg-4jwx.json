@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-4jrw-92fg-4jwx",
   "post_patch_commit": "3b9ac4403c2756dc89a5ed3cdcefe688458588aa",
   "noisy_patch": false,
-  "curation_notes": "Patch commit is a merge commit (3b9ac44) in free5gc/ausf merging PR #52. Only 1 source file changed (internal/sbi/processor/ue_authentication.go) with 10 lines added. The fix adds two nil existence checks: one for the SUCI-SUPI pair mapping and one for the AUSF UE context, both before performing interface type assertions that would panic on nil values. Location derived from the patch diff, confirmed by the advisory description which names the GetSupiFromSuciSupiMap function and the UE authentication endpoint.",
+  "curation_notes": "Re-curation. Patch commit is merge commit 3b9ac4403c2756dc89a5ed3cdcefe688458588aa in free5gc/ausf (PR #52). Only 1 source file changed with 10 lines added. The fix adds two nil existence checks in the resynchronization branch of UeAuthPostRequestProcedure: one for the SUCI-SUPI pair mapping and one for the AUSF UE context, both before performing interface type assertions that would panic on nil values. No sibling locations — the only other file in the processor directory is processor.go, and other call sites of the same functions already have proper nil checks. Vulnerability class null-deref confirmed from CWE-476 and the patch diff. L3 hints improved to be more specific than L1/L2 (mentioning UE authentication resync flow and SBI layer).",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

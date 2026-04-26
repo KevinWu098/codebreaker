@@ -13,11 +13,11 @@
       "area": "Workload autoscaling and resource management controllers"
     },
     "L2": {
-      "description": "A nil pointer dereference vulnerability exists in the controller manager. When a HorizontalPodAutoscaler object is created or modified through the v1 API with partially specified scaling behavior configuration (e.g., specifying scale-down behavior but omitting scale-up behavior), the controller does not validate that all required behavior fields are populated before accessing them. This results in a nil pointer dereference that causes the controller manager to panic and enter a crash loop, leading to denial of service."
+      "description": "A nil pointer dereference vulnerability exists in the controller manager's autoscaling logic. When a scaling resource is created or modified through a legacy API version with partially specified scaling behavior configuration (e.g., specifying scale-down behavior but omitting scale-up behavior), the controller does not validate that all required behavior fields are populated before accessing them. This results in a panic that causes the controller manager to enter a crash loop, leading to denial of service."
     },
     "L3": {
-      "area": "Workload autoscaling and resource management controllers",
-      "description": "A nil pointer dereference vulnerability exists in the controller manager. When a HorizontalPodAutoscaler object is created or modified through the v1 API with partially specified scaling behavior configuration (e.g., specifying scale-down behavior but omitting scale-up behavior), the controller does not validate that all required behavior fields are populated before accessing them. This results in a nil pointer dereference that causes the controller manager to panic and enter a crash loop, leading to denial of service."
+      "area": "HorizontalPodAutoscaler controller and scaling behavior reconciliation logic",
+      "description": "A nil pointer dereference vulnerability exists in the controller manager's HorizontalPodAutoscaler controller. When an HPA object is created or modified through the v1 autoscaling API with partially specified scaling behavior configuration (e.g., specifying scale-down behavior but omitting scale-up behavior), the API version conversion path may leave behavior pointers uninitialized. The controller does not validate that these behavior fields are populated before accessing them during scaling decision stabilization and normalization, causing the controller manager to panic and enter a crash loop."
     }
   },
   "ground_truth": {
