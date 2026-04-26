@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qc84-gqf4-9926",
+  "post_patch_commit": "924436cc71b5d7245631a0cf4f02ff536630a1fd",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies a single file (crossbeam-utils/src/atomic/atomic_cell.rs), specifically the impl_arithmetic macro that generates fetch_add, fetch_sub, fetch_and, fetch_or, and fetch_xor methods. The vulnerability is in the second arm of the macro (for types with native atomic support) where the code unconditionally casts self.value.get() to a pointer to the atomic type without checking alignment compatibility. On 32-bit targets where {i,u}64 has 4-byte alignment but Atomic{I,U}64 requires 8-byte alignment, this produces misaligned pointers causing undefined behavior (unaligned accesses and data races). The fix adds a can_transmute() alignment check and falls back to a lock-based implementation when alignment differs. The race-condition classification from CWE-362 is correct as the core impact is data races from non-atomic operations on shared memory.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

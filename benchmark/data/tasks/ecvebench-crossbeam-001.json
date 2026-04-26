@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-crossbeam-001",
+  "ghsa_id": "GHSA-qc84-gqf4-9926",
+  "codebase": {
+    "repo": "https://github.com/crossbeam-rs/crossbeam",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "be6ff29e1fce196519b65cb0b647f1ad72659498"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Atomic primitive operations and concurrent data access utilities"
+    },
+    "L2": {
+      "description": "A race condition vulnerability exists due to incorrect alignment assumptions when performing arithmetic and bitwise operations on 64-bit atomic cell types on 32-bit targets. The code unconditionally casts to a type with stricter alignment requirements, which can result in unaligned memory accesses and non-atomic operations on shared data, leading to data races."
+    },
+    "L3": {
+      "area": "Atomic cell arithmetic and bitwise fetch operations for 64-bit integer types",
+      "description": "A race condition vulnerability exists in the arithmetic and bitwise fetch operations on 64-bit atomic cell types when running on 32-bit targets that support native 64-bit atomics. The operations unconditionally assume that the underlying integer type shares the same memory alignment as the corresponding atomic type, but on affected 32-bit platforms the integer type may have weaker alignment. This causes the operations to be performed on misaligned memory, resulting in non-atomic accesses and data races on shared state."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 8.1,
+    "reason": "The fetch_add, fetch_sub, fetch_and, fetch_or, and fetch_xor methods in the atomic cell implementation unconditionally cast to atomic types with stricter alignment requirements, causing unaligned memory accesses and data races on 32-bit targets where 64-bit integers have smaller alignment than their atomic counterparts.",
+    "locations": [
+      {
+        "file": "crossbeam-utils/src/atomic/atomic_cell.rs",
+        "function": "impl_arithmetic"
+      }
+    ]
+  }
+}
