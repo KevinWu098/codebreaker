@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-45h5-cqqw-9rjw",
+  "post_patch_commit": "a81b12a3b4174953b3bc7ef4c37103f4d5636740",
+  "noisy_patch": false,
+  "curation_notes": "Patch adds a NULL check on s->avr (the avresample resampling context) immediately after aubio_source_avcodec_reset_resampler() in new_aubio_source_avcodec(). Only one source file changed (src/io/source_avcodec.c, +2 lines). Sibling source backends (source_sndfile.c, source_apple_audio.c, source_wavread.c) use different resampling mechanisms and do not share this pattern. Pre-assigned class null-deref (CWE-476) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
