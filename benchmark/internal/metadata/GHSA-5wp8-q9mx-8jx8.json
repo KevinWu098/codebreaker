@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5wp8-q9mx-8jx8",
+  "post_patch_commit": "68916c3e4f3af107f11940b27854fc7ef517058b",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 68916c3 fixes three GHSAs in a single commit; only the changes to src/security/shell.rs are relevant to GHSA-5wp8-q9mx-8jx8. The second file changed (src/tools/android/actions.rs) addresses a separate advisory (GHSA-hhjv-jq77-cmvx). The vulnerable function is validate_command in ShellSecurityConfig, which had four bypass vectors: (1) allowlist only checked the first whitespace token so command-chaining metacharacters bypassed it, (2) regex patterns for python/perl/ruby/node inline-code flags used narrow \\s+-c patterns that missed combined flags, (3) literal blocked patterns used exact substring matching that glob wildcards evaded, and (4) empty allowlist in Strict mode was skipped by an is_empty() guard. No sibling files in src/security/ share the same vulnerability pattern. Pre-assigned class command-injection from CWE-77 is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-zeptoclaw-001",
+  "ghsa_id": "GHSA-5wp8-q9mx-8jx8",
+  "codebase": {
+    "repo": "https://github.com/qhkm/zeptoclaw",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "fda2f10c3ee4df20ec58bb6b112baa6cbda318bf"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Security policy enforcement and command execution infrastructure"
+    },
+    "L2": {
+      "description": "A command injection vulnerability exists in the shell command validation logic where multiple bypass vectors allow attackers to circumvent security controls that restrict which commands can be executed. Command chaining metacharacters can bypass command allow-listing that only inspects the first token, reordered or combined interpreter flags can bypass pattern-based detection of dangerous inline-code invocations, and file name glob wildcards can evade literal path matching for sensitive files. Additionally, a logic error causes strict enforcement mode with an empty allow-list to silently permit all commands instead of blocking them."
+    },
+    "L3": {
+      "area": "Shell command validation and security filtering within the security subsystem",
+      "description": "A command injection vulnerability exists in the shell command validation logic where multiple bypass vectors allow attackers to circumvent both allow-list and block-list security controls. The allow-list only inspects the first whitespace-delimited token of a command string, so shell metacharacters (semicolons, pipes, subshell syntax) after an allowed command bypass it entirely. Regex patterns meant to block dangerous interpreter invocations (such as inline code execution via scripting language flags) fail to account for reordered or combined flag arguments. Literal path matching for sensitive system files is defeated by shell glob or bracket wildcards that expand to the blocked path. A logic error also causes the strict enforcement mode with an empty allow-list to silently permit all commands."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 10.0,
+    "reason": "The shell command validation function fails to detect command-chaining metacharacters, combined interpreter flags, and file name glob wildcards, allowing attackers to bypass both allow-list and block-list security controls to execute arbitrary commands.",
+    "locations": [
+      {
+        "file": "src/security/shell.rs",
+        "function": "validate_command"
+      }
+    ]
+  }
+}
