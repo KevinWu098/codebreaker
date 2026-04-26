@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-j8r2-47rx-qhw4",
   "post_patch_commit": "26b6ba8ed5b2a11a646ce2d5da8d42cd53574b1f",
   "noisy_patch": false,
-  "curation_notes": "The advisory and patch both clearly identify the vulnerability in the recursive file deletion logic within the cache cleaner component. Only one source file was changed in the patch. The fix adds a canonical path check to ensure files being deleted remain within the allowed base directory. Location derived directly from the patch diff which modifies the recursivelyDelete method.",
+  "curation_notes": "Re-curation with updated hint guidelines. Only one source file changed in the patch (CacheCleaner.java in the cachecleaner package). No sibling files exist in the cachecleaner directory. The fix adds a canonical path check to the recursivelyDelete method ensuring file paths remain within the allowed base directory. Location derived directly from the patch diff. Vulnerability class path-traversal confirmed from CWE-22, advisory description, and the canonical path validation in the fix.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
