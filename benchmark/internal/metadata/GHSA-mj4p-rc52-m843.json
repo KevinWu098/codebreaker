@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-mj4p-rc52-m843",
+  "post_patch_commit": "e95f2dcd6efe8029d4cf2fbad6baf4b6b1cc3ea6",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit e95f2dcd found via release tag v2026.3.11 by searching commit messages for 'sandbox' and 'fs-bridge'. The commit modifies 3 non-test source files (fs-bridge.ts, fs-bridge-shell-command-plans.ts, fs-bridge-path-safety.ts), so noisy_patch is false. Locations derived from the patch diff: writeFile in fs-bridge.ts used synchronous resolvePinnedEntry instead of the new async resolveAnchoredPinnedEntry that canonicalizes the parent path; stat in fs-bridge.ts and buildStatPlan in fs-bridge-shell-command-plans.ts used the raw containerPath instead of an anchored canonical parent + basename decomposition. Pre-assigned class race-condition (CWE-367 TOCTOU, CWE-59 symlink following) is correct — the vulnerability is a classic time-of-check-time-of-use race where the path validation and the file materialization are not atomic with respect to the parent directory identity.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
