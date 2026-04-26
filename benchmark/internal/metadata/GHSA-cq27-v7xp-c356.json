@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cq27-v7xp-c356",
+  "post_patch_commit": "8dbe0dc3eea5c689d4f76b37b93fe216cf1f00d4",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds two new checks in the ALGnew function in src/block_template.c to reject IV parameters when ECB or CTR mode is selected. Before this fix, the IV length validation (IVlen != BLOCK_SIZE) was skipped for ECB and CTR modes, but the subsequent memcpy(new->IV, IV, IVlen) still copied the user-supplied IV into the fixed-size BLOCK_SIZE buffer, causing a heap-based buffer overflow. Only 1 non-test source file was modified. The pre-assigned class buffer-overflow is correct per both the CWE-119 mapping and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

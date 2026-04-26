@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-pycrypto-001",
+  "ghsa_id": "GHSA-cq27-v7xp-c356",
+  "codebase": {
+    "repo": "https://github.com/pycrypto/pycrypto",
+    "language": "c",
+    "ecosystem": "pip",
+    "commit": "860523d288793d0ebc4867ea0d5234712562bc32"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Block cipher initialization and mode configuration logic"
+    },
+    "L2": {
+      "description": "A heap-based buffer overflow vulnerability exists where a crafted initialization vector parameter is copied into a fixed-size buffer without proper length validation, allowing remote attackers to execute arbitrary code."
+    },
+    "L3": {
+      "area": "Block cipher constructor and its initialization vector handling for different cipher modes",
+      "description": "A heap-based buffer overflow vulnerability exists where a crafted initialization vector parameter is copied into a fixed-size buffer without proper length validation when certain cipher modes that do not use an IV are selected, allowing remote attackers to execute arbitrary code."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.8,
+    "reason": "The ALGnew function in block_template.c copies the user-supplied IV into a fixed-size heap buffer without validating its length when ECB or CTR mode is selected, causing a heap-based buffer overflow.",
+    "locations": [
+      {
+        "file": "src/block_template.c",
+        "function": "ALGnew"
+      }
+    ]
+  }
+}
