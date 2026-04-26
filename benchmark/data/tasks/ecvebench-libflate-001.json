@@ -13,11 +13,11 @@
       "area": "Data stream decompression and decoding pipeline"
     },
     "L2": {
-      "description": "A use-after-free vulnerability exists in the multi-stream decompression logic. An unsafe block uses uninitialized memory as a temporary placeholder when swapping a decoder's internal state. If a panic occurs between placing the uninitialized value and restoring valid state, the uninitialized memory may be read, leading to arbitrary code execution."
+      "description": "A use-after-free vulnerability exists in the decompression stream reading logic where an unsafe block uses uninitialized memory as a temporary placeholder during an internal state swap. If a panic occurs between placing the uninitialized value and restoring valid state, the uninitialized memory may be dropped or read, leading to arbitrary code execution."
     },
     "L3": {
-      "area": "Data stream decompression and decoding pipeline",
-      "description": "A use-after-free vulnerability exists in the multi-stream decompression logic. An unsafe block uses uninitialized memory as a temporary placeholder when swapping a decoder's internal state. If a panic occurs between placing the uninitialized value and restoring valid state, the uninitialized memory may be read, leading to arbitrary code execution."
+      "area": "Gzip format multi-stream decompression and decoder state management",
+      "description": "A use-after-free vulnerability exists in the gzip decompression stream reading logic where an unsafe block uses uninitialized memory as a temporary placeholder during the internal state swap of a chained stream decoder. If a panic occurs between placing the uninitialized value and restoring valid state, the uninitialized memory may be dropped or read, leading to arbitrary code execution."
     }
   },
   "ground_truth": {
