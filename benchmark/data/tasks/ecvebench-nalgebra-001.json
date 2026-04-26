@@ -5,7 +5,7 @@
     "repo": "https://github.com/dimforge/nalgebra",
     "language": "rust",
     "ecosystem": "rust",
-    "commit": "58bea21d74e9f6df1376eb89ae94f5c1c3184101"
+    "commit": "02614cbdb798217958af09e2ea80dfaf6ac1599d"
   },
   "hints": {
     "L0": null,
@@ -13,11 +13,11 @@
       "area": "Matrix data storage and serialization layer"
     },
     "L2": {
-      "description": "A buffer overflow vulnerability exists in the deserialization logic for dynamically-sized matrix storage. The automatically derived deserialization implementation does not validate that the number of elements in the deserialized data matches the expected dimensions (rows times columns). An attacker can craft malicious serialized input where the claimed dimensions exceed the actual data length, leading to out-of-bounds memory access when the matrix is subsequently used."
+      "description": "A buffer overflow vulnerability exists in the deserialization logic for matrix storage types. The deserialization implementation does not validate that the number of elements in the deserialized data matches the expected matrix dimensions (rows multiplied by columns). An attacker can craft malicious serialized input where the claimed dimensions exceed the actual data length, leading to out-of-bounds memory access when the matrix is subsequently used."
     },
     "L3": {
-      "area": "Matrix data storage and serialization layer",
-      "description": "A buffer overflow vulnerability exists in the deserialization logic for dynamically-sized matrix storage. The automatically derived deserialization implementation does not validate that the number of elements in the deserialized data matches the expected dimensions (rows times columns). An attacker can craft malicious serialized input where the claimed dimensions exceed the actual data length, leading to out-of-bounds memory access when the matrix is subsequently used."
+      "area": "Vector-backed dynamically-sized matrix storage and its serialization support",
+      "description": "A buffer overflow vulnerability exists in the deserialization logic for dynamically-sized vector-backed matrix storage. The automatically derived deserialization implementation does not validate that the number of elements matches the expected matrix dimensions (rows multiplied by columns). When processing crafted serialized input where the claimed dimensions exceed the actual data length, out-of-bounds memory access occurs. The vulnerability was introduced when an automatic derive macro was added for the deserialization trait on this storage type."
     }
   },
   "ground_truth": {
