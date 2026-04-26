@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-72mh-269x-7mh5",
+  "post_patch_commit": "bf53329b61ca6afc5d28f6b8d2dc2e3ca740a9b2",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only lib/XMLHttpRequest.js (and a version bump in package.json). Two locations within the send() function were changed: the initial HTTPS request options (line 400) and the redirect-following request options (line 445). Both had the same bug — opts.rejectUnauthorized was assigned directly without coercing undefined to true. No sibling files exist in lib/. The pre-assigned class crypto-weakness (CWE-295 Improper Certificate Validation) is correct: the vulnerability is about SSL/TLS certificates never being rejected due to a falsy-default bug.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

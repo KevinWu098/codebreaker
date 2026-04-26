@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-node-xmlhttprequest-001",
+  "ghsa_id": "GHSA-72mh-269x-7mh5",
+  "codebase": {
+    "repo": "https://github.com/mjwwit/node-XMLHttpRequest",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "ae38832a0f1347c5e96dda665402509a3458e302"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTTP and HTTPS request handling and connection option configuration"
+    },
+    "L2": {
+      "description": "An improper certificate validation vulnerability exists where SSL/TLS certificate verification is effectively disabled by default. When the caller does not explicitly set the certificate rejection option, the undefined value is treated as falsy, causing outgoing HTTPS connections to accept any server certificate without validation. This allows man-in-the-middle attackers to intercept and tamper with encrypted traffic."
+    },
+    "L3": {
+      "area": "HTTPS request dispatch and redirect-following logic for outgoing connections",
+      "description": "An improper certificate validation vulnerability exists in the HTTPS request option handling where the SSL certificate rejection setting defaults to disabled when not explicitly provided. Because an undefined configuration value is passed through without coercion, it is interpreted as falsy by the underlying Node.js HTTPS module, causing all outgoing HTTPS connections — including those following redirects — to silently accept any server certificate. This enables man-in-the-middle attacks against all HTTPS traffic made through the library."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.4,
+    "reason": "The xmlhttprequest-ssl package passes the rejectUnauthorized option directly without defaulting undefined to true, causing Node.js https.request to treat undefined as false and disable SSL certificate validation for all outgoing HTTPS connections.",
+    "locations": [
+      {
+        "file": "lib/XMLHttpRequest.js",
+        "function": "send"
+      }
+    ]
+  }
+}
