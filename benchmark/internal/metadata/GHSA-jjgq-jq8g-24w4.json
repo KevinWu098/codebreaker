@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jjgq-jq8g-24w4",
+  "post_patch_commit": "33e2179b65331d9d9179b59d746817c5be1fecdb",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit modifies 7 files, but only htdocs/don/list.php contains the SQL injection fix. The vulnerability is on line 42 where $_GET['statut'] is used directly without sanitization, and on line 93 where $statut is interpolated into a SQL query. The fix replaces raw $_GET access with GETPOST('statut','intcomma') for type-safe input handling. Other files in the commit (card.php, document.php, info.php, note.php) contain only cosmetic UI changes (CSS classes, whitespace, parameter tweaks) unrelated to the SQL injection. No sibling files in htdocs/don/ share the same unsanitized $_GET-to-SQL pattern. The pre-assigned sql-injection class is correct per CWE-89 and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
