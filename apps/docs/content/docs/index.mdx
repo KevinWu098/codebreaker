@@ -1,0 +1,33 @@
+---
+title: ECVEBench
+description: A large-scale, multi-language cybersecurity benchmark for evaluating AI agents on real-world vulnerability detection and localization tasks.
+---
+
+ECVEBench is built on the [GitHub Advisory Database](https://github.com/advisories) and addresses key limitations of existing benchmarks by covering diverse attack vectors across 11+ programming languages and 13 vulnerability classes.
+
+## How It Works
+
+Each task presents an agent with a repository at a single commit and asks it to:
+
+1. **Detect** whether a vulnerability exists
+2. **Classify** the vulnerability type
+3. **Localize** it to the relevant file(s) and function(s)
+
+Tasks are derived from reviewed GitHub Security Advisories (GHSAs) with known patch commits, CWE mappings, and CVSS scores.
+
+## Key Features
+
+- **138 curated tasks** across 11 languages and 13 vulnerability classes
+- **Four difficulty levels** (L0–L3) controlled at runtime, not per-task
+- **Gated scoring** with file-level location recall as the primary metric
+- **Multi-candidate scoring** — agents may submit up to 3 hypotheses per task
+- **Automated curation pipeline** using Devin AI agents for scalable data creation
+
+## Quick Links
+
+- [Benchmark Overview](/docs/benchmark/overview) — Design, difficulty levels, and scoring
+- [Task Format](/docs/benchmark/task-format) — JSON schema and field reference
+- [Statistics](/docs/data/statistics) — Dataset distribution charts
+- [Task Explorer](/docs/data/explorer) — Browse and filter all tasks
+- [Pipeline](/docs/pipeline/overview) — How tasks are sourced and curated
+- [Contributing](/docs/contributing/curation) — Curate new tasks

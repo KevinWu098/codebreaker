@@ -1,0 +1,32 @@
+---
+title: "Stage 1: Filter"
+description: Paginate through GitHub advisories and apply metadata-only filters.
+---
+
+The filter script (`pipeline/filter_advisories.py`) paginates through the GitHub Advisory REST API and applies the following hard filters using only advisory metadata — no additional API calls per advisory:
+
+## Filters Applied
+
+| Filter | Field checked |
+| --- | --- |
+| Has description | `description` is non-empty |
+| English language | ASCII character ratio ≥ 85% |
+| Single package | `vulnerabilities` array has exactly 1 entry |
+| Has linked reference | `references` contain at least one commit, PR, or tag URL |
+| Has CVSS score | `cvss_severities` contains a v3 or v4 score |
+| Dedup | No duplicate GHSA IDs |
+
+## Usage
+
+```bash
+uv run python -m pipeline.filter_advisories
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--output` | `output/filtered.jsonl` | Filtered candidates JSONL |
+| `--rejected` | `output/rejected.jsonl` | Rejected advisories with reasons |
+| `--checkpoint` | `output/filter_checkpoint.json` | Checkpoint for resumption |
+| `--max-pages` | all | Stop after N pages (100 advisories/page) |
+
+The script checkpoints after each page, so you can interrupt and resume.

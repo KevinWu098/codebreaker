@@ -1,0 +1,44 @@
+---
+title: Data Curation
+description: How ECVEBench tasks are sourced, filtered, curated, and validated.
+---
+
+## Data Source
+
+All tasks are derived from the [GitHub Advisory Database](https://github.com/advisories), the largest open collection of reviewed security advisories for open-source software. We restrict to **reviewed** advisories only — these have been triaged by GitHub's security team.
+
+### Why GitHub Advisories?
+
+- **Scale**: Tens of thousands of reviewed advisories across all major ecosystems.
+- **Structured metadata**: CWE IDs, CVSS scores, affected version ranges, and reference links are machine-readable.
+- **Multi-language coverage**: Unlike NVD, which skews toward C/C++ due to historical CVE reporting patterns, GHSA covers JavaScript, Python, Go, Rust, Java, Ruby, and more.
+- **Patch linkage**: Most reviewed advisories link directly to the commit or PR that fixed the vulnerability.
+
+### What We Do Not Use
+
+- **NVD (National Vulnerability Database)**: NVD data is not fetched during curation. If an advisory lacks a CVSS score on GitHub, the field is set to `null`.
+- **Unreviewed advisories**: These are community-submitted and may contain inaccurate or incomplete information.
+
+## Selection Criteria
+
+An advisory is eligible for curation if it passes all of the following hard filters:
+
+| Criterion | Rationale |
+| --- | --- |
+| **Reviewed status** | Ensures advisory has been vetted by GitHub's security team. |
+| **Resolvable patch commit** | The advisory must reference a commit, PR, or tag that can be resolved to a specific Git SHA. |
+| **Single repository** | The vulnerability must be localizable to one repository. |
+| **English description** | The advisory description must be in English. |
+| **Classifiable vulnerability** | The vulnerability must fit one of the 13 canonical vulnerability classes. |
+
+### Soft Preferences for Balance
+
+| Criterion | Notes |
+| --- | --- |
+| **Language diversity** | Prefer advisories that increase coverage of underrepresented languages. |
+| **Class diversity** | Prefer advisories that fill gaps in underrepresented vulnerability classes. |
+| **Clean patch** | Prefer advisories where the patch modifies 3 or fewer non-test source files. |
+
+## Dataset Versioning
+
+Each release of ECVEBench is a frozen snapshot. The `dataset_version` field in metadata tracks which version a task belongs to. Tasks are never silently modified after release — corrections are issued as new versions.

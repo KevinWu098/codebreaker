@@ -1,0 +1,40 @@
+---
+title: Pipeline Overview
+description: The three-stage process for sourcing, filtering, and curating ECVEBench tasks.
+---
+
+Curation is a three-stage process:
+
+1. **[Filter](/docs/pipeline/filter)** (script) — Paginate through all ~30k reviewed GHSAs and apply cheap metadata filters. No repos are cloned, no diffs are read. Produces a broad candidate list.
+2. **[Select](/docs/pipeline/select)** (script) — Map CWE IDs to the 13 vulnerability classes, apply a CVSS floor, and perform stratified random sampling so every class is represented.
+3. **[Dispatch](/docs/pipeline/dispatch)** (Devin agents) — For each selected GHSA, a Devin AI agent clones the repo, reads the diff, classifies the vulnerability, localizes it, writes the task and metadata JSON files, and opens a PR.
+
+## Prerequisites
+
+```bash
+cd benchmark
+uv sync
+cp .env.example .env  # fill in credentials
+```
+
+## Selection Funnel
+
+The full pipeline (30k reviewed GHSAs → filter → select) produces the following funnel:
+
+| Stage | Count |
+| --- | --- |
+| Reviewed GHSAs in GitHub Advisory Database | ~30,000 |
+| After Stage 1 metadata filters | ~12,000 |
+| After CWE mapping + CVSS floor (≥ 4.0) | ~6,100 |
+| After stratified sampling (target 500) | **494** |
+
+## Why AI Agents for Curation?
+
+The primary bottleneck in manually curating vulnerability benchmarks is reading the patch diff, understanding the vulnerability root cause, and accurately localizing it. Traditional script-based pipelines can fetch advisory metadata and filter by hard criteria, but they cannot:
+
+- Read and comprehend large, multi-file diffs
+- Distinguish meaningful code changes from noise (refactoring, formatting, unrelated fixes)
+- Scrub a description of location-revealing details while preserving semantic content
+- Determine whether a function name in the diff is the root cause location or just a call site
+
+Devin agents handle all of these tasks in a single pass. Each agent works on one advisory in isolation, and the per-PR output makes review and correction straightforward.

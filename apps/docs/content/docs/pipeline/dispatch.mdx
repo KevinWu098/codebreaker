@@ -1,0 +1,44 @@
+---
+title: "Stage 3: Dispatch"
+description: Send selected candidates to Devin AI agents for full curation.
+---
+
+Each selected GHSA is dispatched to a [Devin](https://devin.ai/) agent. The agent follows a structured prompt that walks it through the full curation workflow. Each agent opens a pull request containing exactly two files, which is then reviewed before merging.
+
+## Usage
+
+```bash
+uv run python -m pipeline.dispatch_devin --count 10
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--input` | `output/candidates.jsonl` | Input from Stage 2 |
+| `--count` | (required) | Number of candidates to dispatch |
+| `--offset` | 0 | Skip first N candidates (for batched dispatch) |
+| `--dry-run` | off | Render prompts without calling the API |
+| `--delay` | 2.0 | Seconds between API calls |
+
+## Per-Advisory Workflow
+
+Each Devin agent executes the following steps:
+
+1. **Read the advisory** — Navigate to the GHSA URL, extract description and references
+2. **Resolve the patch commit** — Find the patch commit SHA from references
+3. **Identify the pre-patch commit** — First parent of the patch commit
+4. **Examine the patch diff** — Identify modified files and functions
+5. **Classify the vulnerability** — Verify the pre-assigned vulnerability class
+6. **Derive locations** — Identify file(s) and function(s) where the vulnerability exists
+7. **Write the L1 localization hint** — Vague area hint without revealing vulnerability type
+8. **Write the L2 CVE hint** — Scrubbed description without revealing location
+9. **Generate the task ID** — Format: `ecvebench-{project}-{NNN}`
+10. **Create the task file** — `benchmark/data/tasks/{task_id}.json`
+11. **Create the metadata file** — `benchmark/internal/metadata/{GHSA_ID}.json`
+12. **Open a PR** — Branch: `curate/{task_id}`
+
+## Output Artifacts
+
+Each curated advisory produces two files:
+
+- **Task file** (`data/tasks/{task_id}.json`) — Contains codebase pointer, hints at each difficulty, and ground truth
+- **Metadata file** (`internal/metadata/{GHSA_ID}.json`) — Contains post-patch commit, curation notes, dataset version (not exposed to agents)

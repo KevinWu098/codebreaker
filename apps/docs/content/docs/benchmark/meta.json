@@ -1,0 +1,10 @@
+{
+  "title": "Benchmark",
+  "pages": [
+    "overview",
+    "task-format",
+    "agent-input",
+    "agent-output",
+    "vulnerability-classes"
+  ]
+}

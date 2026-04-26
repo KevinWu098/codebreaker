@@ -1,0 +1,27 @@
+---
+title: "Stage 2: Select"
+description: CWE mapping, CVSS floor, and stratified random sampling for a balanced dispatch list.
+---
+
+The selection script (`pipeline/select_candidates.py`) reads the filtered output and narrows it down to a balanced dispatch list:
+
+1. **Deduplication** — removes duplicate GHSA IDs left from overlapping filter runs.
+2. **CWE → class mapping** — each advisory's CWE IDs are mapped to one of the 13 vulnerability classes via a curated lookup table (`pipeline/lib/cwe_map.py`). Advisories with no CWE, unmappable CWEs, or conflicting CWEs (mapping to multiple classes) are dropped.
+3. **CVSS floor** — advisories below a configurable minimum CVSS score (default: 4.0) are dropped to exclude trivial issues.
+4. **Stratified sampling** — the remaining candidates are split by class, and up to N are randomly sampled from each class.
+
+## Usage
+
+```bash
+uv run python -m pipeline.select_candidates --target 500 --overprovision 2.5
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--input` | `output/filtered.jsonl` | Input from Stage 1 |
+| `--output` | `output/candidates.jsonl` | Selected candidates for Devin |
+| `--rejected` | `output/select_rejected.jsonl` | Rejected candidates with reasons |
+| `--target` | 500 | Target number of final benchmark tasks |
+| `--overprovision` | 2.5 | Multiplier for expected Devin rejection rate |
+| `--cvss-floor` | 4.0 | Minimum CVSS score (0 to disable) |
+| `--seed` | 42 | Random seed for reproducibility |
