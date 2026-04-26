@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vjh7-5r6x-xh6g",
+  "post_patch_commit": "391dd7f0f239020c46bf057cfa25f82031fc15f7",
+  "noisy_patch": false,
+  "curation_notes": "Single file patch in route/gateway_route.go. The patch adds a rewriteRequestSourceIP function that strips and re-derives X-Forwarded-For from RemoteAddr, then calls it in GetRoute before proxying. Pre-patch, the gateway blindly trusted the X-Forwarded-For header, letting remote attackers spoof localhost and bypass IP-based authentication. The vulnerability location is the GetRoute handler where requests are proxied without IP validation. No sibling files share this pattern — management_route.go uses JWT-based auth via gin middleware, and static_route.go only serves static files. Pre-assigned class auth-bypass is correct per CWE-306 (Missing Authentication) and CWE-348 (Use of Less Trusted Source).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
