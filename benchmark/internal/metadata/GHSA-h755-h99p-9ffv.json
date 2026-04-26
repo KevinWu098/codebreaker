@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h755-h99p-9ffv",
+  "post_patch_commit": "8ec61d1328f50e23cd14285a950ca57a088b32b2",
+  "noisy_patch": false,
+  "curation_notes": "The advisory explicitly names the getXmlDoc method in BaseWxPayResult.java as vulnerable. The patch commit also fixes the same pattern in WxCryptUtil.java (initialValue method), where a DocumentBuilderFactory uses setExpandEntityReferences(false) but does not disable DOCTYPE declarations. Both locations were derived from the patch diff. No sibling files in either directory contained the same vulnerable XML parsing pattern. The pre-assigned vulnerability class 'xxe' (CWE-611) is correct as the patch adds disallow-doctype-decl to prevent XXE attacks.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

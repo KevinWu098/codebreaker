@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-wxjava-001",
+  "ghsa_id": "GHSA-h755-h99p-9ffv",
+  "codebase": {
+    "repo": "https://github.com/binarywang/WxJava",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "d6923f253733783f662c165d112a5561396557b7"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "XML response processing and data transformation utilities in the payment and common messaging SDK modules"
+    },
+    "L2": {
+      "description": "An XML external entity (XXE) vulnerability exists where an XML parser is configured to disable entity expansion but does not disable DOCTYPE declarations. This incomplete mitigation allows an attacker to supply crafted XML input containing external entity references, potentially enabling local file disclosure or server-side request forgery. The issue exists because of an incomplete fix for a prior XXE vulnerability."
+    },
+    "L3": {
+      "area": "XML document parsing logic in payment result deserialization and common cryptographic message decryption utilities",
+      "description": "An XML external entity (XXE) vulnerability exists where XML parser instances used for parsing payment API responses and encrypted WeChat message payloads are configured to disable entity expansion but do not disable DOCTYPE declarations entirely. This incomplete mitigation allows an attacker to supply crafted XML input with external entity references that bypass the existing protection, potentially enabling local file disclosure or server-side request forgery."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML parser instances in payment result processing and cryptographic message handling use setExpandEntityReferences(false) but do not disable DOCTYPE declarations, allowing XXE attacks via crafted XML input that bypasses the incomplete mitigation.",
+    "locations": [
+      {
+        "file": "weixin-java-pay/src/main/java/com/github/binarywang/wxpay/bean/result/BaseWxPayResult.java",
+        "function": "getXmlDoc"
+      },
+      {
+        "file": "weixin-java-common/src/main/java/me/chanjar/weixin/common/util/crypto/WxCryptUtil.java",
+        "function": "initialValue"
+      }
+    ]
+  }
+}
