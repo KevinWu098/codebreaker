@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cf3q-vg8w-mw84",
+  "post_patch_commit": "1d94191c49617dffbcb6f6d8fd73bcd5dd597d52",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The patch replaced RandomStringUtils.randomAlphanumeric() (backed by java.util.Random, a non-cryptographic PRNG) with RandomStringGenerator from Apache Commons Text (backed by SecureRandom) in two token generation sites: ElementIdGenerator.makeRecoveryToken() and TokenUtil.generateToken(). UserResourceManager.java was also changed to call the new secure method, but the vulnerability itself (weak PRNG usage) resides in the token generation functions. No sibling files with the same vulnerability pattern were found. Pre-assigned class crypto-weakness (CWE-338) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
