@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5p4h-3377-7w67",
+  "post_patch_commit": "aaf60122140d3fcf75376d319f0554393160eb50",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only html/parse.go (1 non-test source file). Two functions were changed: inFramesetIM had a special case dispatching <template> to inTemplateIM which caused a nil pointer panic, and inBodyIM had a special case incorrectly adding <frame> elements when a <template> was in the open elements stack. The fix removes both special cases, adding <frame> to the ignore list in inBodyIM and removing the <template> dispatch in inFramesetIM. Vulnerability class null-deref confirmed from CWE-476 and the advisory description mentioning 'panic: runtime error'. No sibling files share the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
