@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wpcv-5jgp-69f3",
+  "post_patch_commit": "6bad017d8078c94e80d6c6fe8abd693910bf55cf",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 6bad017 (PR #1217, v4.3.18) changes filename.equals(\"..\") to filename.contains(\"..\") in LocalFileSystemAttachmentServiceImpl.saveAttachments. The pre-patch commit f53744cc (PR #1216, v4.3.17) already has checks for path separators (/ and \\) and exact matches for '.' and '..', but the exact-match for '..' fails to catch filenames containing '..' as a substring. Only 1 non-test source file was changed. No sibling files share the same vulnerability pattern — S3AttachmentServiceImpl uploads to S3 and does not write to the local filesystem. Pre-assigned class path-traversal (CWE-22) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
