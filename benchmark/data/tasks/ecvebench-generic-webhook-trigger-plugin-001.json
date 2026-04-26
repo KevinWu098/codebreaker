@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-generic-webhook-trigger-plugin-001",
+  "ghsa_id": "GHSA-732f-w585-gmpc",
+  "codebase": {
+    "repo": "https://github.com/jenkinsci/generic-webhook-trigger-plugin",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "75de929d6ed34bf48751b7198f235554d83a05ac"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Webhook request body parsing and parameter extraction logic"
+    },
+    "L2": {
+      "description": "An XML external entity (XXE) vulnerability exists where the XML parser used to process incoming webhook request bodies does not disable external entity resolution. Attackers who can trigger webhooks configured to extract parameters using XPath expressions can supply a crafted XML request body with external entity declarations, enabling extraction of secrets from the server or server-side request forgery."
+    },
+    "L3": {
+      "area": "Webhook post content parameter resolution and XPath-based extraction logic",
+      "description": "An XML external entity (XXE) vulnerability exists in the XPath-based parameter extraction path for incoming webhook post content. The XML parser used to evaluate XPath expressions against webhook request bodies does not disable external entity resolution or DOCTYPE declarations, allowing attackers to craft XML payloads that reference external entities to extract secrets from the server or perform server-side request forgery."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML parser in the XPath parameter resolver does not disable external entity resolution, allowing attackers to submit crafted XML webhook payloads with external entity declarations to extract secrets or perform SSRF.",
+    "locations": [
+      {
+        "file": "src/main/java/org/jenkinsci/plugins/gwt/resolvers/PostContentParameterResolver.java",
+        "function": "resolveXPath"
+      }
+    ]
+  }
+}
