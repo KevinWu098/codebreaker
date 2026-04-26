@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-rq8g-5pc5-wrhr",
   "post_patch_commit": "9332d4263a32b84e76bf538d7470d01ea63fa047",
   "noisy_patch": false,
-  "curation_notes": "The patch commit (9332d42) was identified from the v4.1.2 tag changelog and PR #34. The vulnerability is in lib/index.js in the randomDigits() function, which used Math.floor(buffer[i] / 25.6) to map random bytes to digits 0-9. Since 256 is not evenly divisible by 10, digits 0-5 each had a 26/256 probability while digits 6-9 each had a 25/256 probability, creating insufficient entropy. The fix uses rejection sampling, discarding byte values >= 250 so the remaining values map evenly to digits 0-9.",
+  "curation_notes": "Re-curated with updated guidelines. Patch commit 9332d42 identified from v4.1.2 tag and PR #34. Only one non-test source file changed (lib/index.js). The vulnerability is in the randomDigits() function which used Math.floor(buffer[i] / 25.6) to map random bytes to digits 0-9. Since 256 is not evenly divisible by 10, digits 0-5 each had a 26/256 probability while digits 6-9 had 25/256, creating insufficient entropy (CWE-331). The fix uses rejection sampling, discarding byte values >= 250 so remaining values map evenly via modulo 10. No sibling files exist — lib/ contains only index.js. Vulnerability class crypto-weakness confirmed from CWE-331 and the nature of the fix. L3 hints differentiated from L1/L2 by specifying the digit generation subsystem and the division-based mapping mechanism.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
