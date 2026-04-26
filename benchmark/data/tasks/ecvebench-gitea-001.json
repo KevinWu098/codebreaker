@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-gitea-001",
+  "ghsa_id": "GHSA-4h4p-553m-46qh",
+  "codebase": {
+    "repo": "https://github.com/go-gitea/gitea",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "1987c86f3ce8335a3c1f4754b37872c3ca137b3d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Content rendering and output sanitization layer"
+    },
+    "L2": {
+      "description": "A stored cross-site scripting vulnerability exists where a sanitization policy applied to user-supplied HTML content does not restrict URL schemes in hyperlinks. An attacker can craft a link with a dangerous URL scheme, and when the sanitized content is rendered in other users' browsers, the injected script executes."
+    },
+    "L3": {
+      "area": "HTML sanitization policies for repository metadata rendering",
+      "description": "A stored cross-site scripting vulnerability exists where the HTML sanitization policy applied to repository descriptions does not restrict URL schemes in hyperlinks. An attacker can create a repository description containing a link with a dangerous URL scheme such as javascript:, and when the description is rendered, the injected script executes in other users' browsers."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.8,
+    "reason": "The HTML sanitization policy for repository descriptions uses bluemonday.NewPolicy() and allows href attributes on anchor elements without restricting URL schemes, enabling stored XSS via javascript: URLs.",
+    "locations": [
+      {
+        "file": "modules/markup/sanitizer.go",
+        "function": "createRepoDescriptionPolicy"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4h4p-553m-46qh",
+  "post_patch_commit": "b6280f4d21309cfae7cc07f74173354c664d5e10",
+  "noisy_patch": true,
+  "curation_notes": "The patch (backport PR #31200 of #31192) refactors sanitizer.go into multiple files and adds policy.AllowStandardURLs() to createRepoDescriptionPolicy(). In the pre-patch code, createRepoDescriptionPolicy() in sanitizer.go creates a bluemonday.NewPolicy() and allows href on anchor elements without scheme restrictions, while the default policy explicitly blocks javascript/vbscript/data schemes. The vulnerability is localized to createRepoDescriptionPolicy in sanitizer.go. The patch is noisy (5 non-test source files changed due to the file-split refactor) but the security-relevant fix is the addition of AllowStandardURLs(). Vulnerability class xss confirmed — matches CWE-79 and the advisory description of Stored XSS.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
