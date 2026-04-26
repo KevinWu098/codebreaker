@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-9r4c-jwx3-3j76",
   "post_patch_commit": "547336ac73c8d17929c18c3941c0d5b0099753cc",
   "noisy_patch": false,
-  "curation_notes": "Patch commit is a merge commit (547336ac73c8) with first parent 3f6fcab0c56b. Only one source file changed: core/src/plugins/sqlite3/db.go. The patch adds a strings.HasPrefix check in the DB function to verify that the resolved database path starts with the default directory, and appends trailing slashes to default directory values. Location derived from both the advisory description (which references the sqlite3/db.go file and the Join call) and the patch diff.",
+  "curation_notes": "Re-curated with updated hint guidelines. Patch commit 547336ac73c8 is a merge commit with first parent 3f6fcab0c56b. Only one source file changed: core/src/plugins/sqlite3/db.go (+8/-5). The patch adds a strings.HasPrefix check in the DB function to verify the resolved database path starts with the default directory, and appends trailing slashes to default directory values. No sibling locations: other plugins (clickhouse, elasticsearch, mongodb, mysql, postgres, redis) connect to network databases and do not use file path joining. Vulnerability class path-traversal confirmed from CWE-22, advisory description, and patch diff. L1/L3 areas and L2/L3 descriptions rewritten per updated guidelines to ensure proper specificity graduation.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
