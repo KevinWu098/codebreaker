@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hhw2-pqhf-vmx2",
+  "post_patch_commit": "0dca1a705ad1ff4885b3491ecb809a808e1de66c",
+  "noisy_patch": true,
+  "curation_notes": "The patch removes the custom Cell<T> (wrapping Rc<UnsafeCell<T>>) from actix-utils/src/cell.rs and replaces all usages across the crate with Rc<RefCell<T>>. The unsound Cell allowed obtaining multiple mutable references via get_mut_unsafe(&self) -> &mut T and get_mut(&mut self) -> &mut T (where Cell is Clone via Rc). 8 non-test source files were modified (cell.rs removed, condition.rs, either.rs, lib.rs, mpsc.rs, oneshot.rs, stream.rs, time.rs updated), making this a noisy patch. Primary locations are the three unsafe accessor methods in cell.rs. The pre-assigned class use-after-free (CWE-416) is correct per the RUSTSEC advisory which states the flaw 'may result in arbitrary memory corruption, most likely use-after-free'.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
