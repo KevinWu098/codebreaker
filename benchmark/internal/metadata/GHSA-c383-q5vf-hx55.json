@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-c383-q5vf-hx55",
+  "post_patch_commit": "7559e141d0707f8eeff2f9aeaa5a0ca2e3fe6583",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which adds max:500 validation rules to shipping address fields in shippingMethodSave. The sibling ContactInformationTrait.php already had max:500 validation at the pre-patch commit, so it is not vulnerable. PaymentTrait.php handles payment gateway selection and does not process free-text address fields, so it is not a sibling. Kept pre-assigned integer-overflow class consistent with CWE-190 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
