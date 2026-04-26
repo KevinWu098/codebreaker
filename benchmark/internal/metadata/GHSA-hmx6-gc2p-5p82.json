@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hmx6-gc2p-5p82",
+  "post_patch_commit": "8009877df067e72fb88fd0f749f09eb7c14fdf0e",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is PR #54 merged into release-5u14 branch. The fix modifies HiddenStore.java to add AES encryption (via Encryptor interface) and session ID validation to the hidden form field session store. Pre-patch, save() and load() only Base64-encoded session entries without any encryption, exposing session data to client-side reading and tampering. The patch also removes SecureHiddenStore.java (added by earlier PR #53) since HiddenStore itself now includes encryption. HttpSessionStore.java in the same directory was checked but is not a sibling — it stores data server-side in HTTP sessions, not in client-visible hidden fields. Pre-assigned class crypto-weakness (CWE-327) is correct: the vulnerability is lack of encryption on client-stored session data.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
