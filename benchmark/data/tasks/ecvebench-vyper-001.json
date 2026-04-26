@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Compiler code generation and runtime type validation pipeline"
+      "area": "Compiler code generation and data validation pipeline"
     },
     "L2": {
-      "description": "An integer bounds validation vulnerability exists in the smart contract compiler where return values from calls to other contracts are not validated to fall within the declared type's bounds when used in complex expressions such as type conversions or concatenations. In simple assignment expressions the runtime correctly clamps return values, but compound expressions bypass the bounds checks entirely. An attacker could deploy a malicious contract that returns out-of-range values, leading to integer overflow or buffer overrun in the calling contract."
+      "description": "An integer bounds validation vulnerability exists in the smart contract compiler where return values from external contract calls are not validated to fall within the declared type's bounds when used in complex expressions such as type conversions or concatenations. In simple assignment expressions the runtime correctly clamps return values, but compound expressions bypass bounds checking entirely. An attacker could deploy a malicious contract that returns out-of-range values, leading to integer overflow or buffer overrun in the calling contract."
     },
     "L3": {
-      "area": "Compiler code generation and runtime type validation pipeline",
-      "description": "An integer bounds validation vulnerability exists in the smart contract compiler where return values from calls to other contracts are not validated to fall within the declared type's bounds when used in complex expressions such as type conversions or concatenations. In simple assignment expressions the runtime correctly clamps return values, but compound expressions bypass the bounds checks entirely. An attacker could deploy a malicious contract that returns out-of-range values, leading to integer overflow or buffer overrun in the calling contract."
+      "area": "External call return data handling and ABI encoding validation in the compiler code generation layer",
+      "description": "An integer bounds validation vulnerability exists in the smart contract compiler where return values from external contract calls are not validated to fall within the declared type's bounds when used in complex expressions such as type conversions or concatenations. The issue is compounded when interfaces are imported from JSON ABI definitions, where the encoding type used for return data causes bytestring bounds validation to be skipped entirely. An attacker could deploy a malicious contract that returns out-of-range values, leading to integer overflow or buffer overrun in the calling contract."
     }
   },
   "ground_truth": {
