@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-f7cq-gvh6-qr25",
+  "post_patch_commit": "269dba165aa42210352628c0db6756f3b8fd3c8a",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only pkg/extract/extract.go (1 file). The fix appends a trailing os.PathSeparator to the cleaned destination directory in the strings.HasPrefix check inside sanitizeArchivePath, preventing directory name prefix collisions (Archive Slip / Zip Slip). No sibling files contain the same vulnerable pattern. Pre-assigned class path-traversal from CWE-22 is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
