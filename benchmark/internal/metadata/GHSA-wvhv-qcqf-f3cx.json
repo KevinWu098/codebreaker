@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wvhv-qcqf-f3cx",
+  "post_patch_commit": "f212c4f4a126556bab008f79758e21a839ef2c0f",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies 3 source files (httpserver/filebased.go, httpserver/handler.go, httpserver/updown.go). The filebased.go change adds a new findEffectiveACL helper function but is not itself a vulnerability location. The vulnerable locations are the four state-changing handler functions (deleteFile, handleMkdir in handler.go and put, upload in updown.go) that lacked authorization checks against the .goshs ACL file. The pre-assigned class auth-bypass (CWE-862) is correct: the fix adds missing authorization enforcement to these mutation routes. No sibling files contain the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
