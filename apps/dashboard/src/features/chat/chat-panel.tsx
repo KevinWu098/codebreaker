@@ -34,6 +34,7 @@ import {
 } from "@/components/message-part-renderer";
 import type { MessagePart } from "@/components/tool-call-part";
 import { Spinner } from "@/components/ui/spinner";
+import { useSessionMessagesQuery } from "@/hooks/queries";
 import { useConnection } from "@/lib/connection";
 import { formatRelativeTime } from "@/lib/format";
 
@@ -149,6 +150,12 @@ interface MessageMetadataWithTimestamp {
   createdAt?: string | number | Date;
 }
 
+interface PersistedMessageWithTimestamp {
+  createdAt?: string | number;
+  id?: string;
+  parts?: readonly MessagePart[];
+}
+
 const messageTimestamp = (message: UIMessage): Date | null => {
   const metadata = message.metadata as MessageMetadataWithTimestamp | undefined;
   const candidate = metadata?.createdAt;
@@ -159,9 +166,37 @@ const messageTimestamp = (message: UIMessage): Date | null => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const parseTimestamp = (
+  value: Date | string | number | null | undefined | unknown
+): Date | null => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const parsed = value instanceof Date ? value : new Date(value as string);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const isPersistedMessage = (
+  value: unknown
+): value is PersistedMessageWithTimestamp =>
+  typeof value === "object" && value !== null;
+
+const persistedMessageMap = (
+  messages: readonly unknown[]
+): Map<string, PersistedMessageWithTimestamp> => {
+  const map = new Map<string, PersistedMessageWithTimestamp>();
+  for (const raw of messages) {
+    if (isPersistedMessage(raw) && typeof raw.id === "string") {
+      map.set(raw.id, raw);
+    }
+  }
+  return map;
+};
+
 interface ChatMessageItemProps {
   fallbackSentAt: Date | null;
   message: UIMessage;
+  persistedMessage?: PersistedMessageWithTimestamp | undefined;
   showTransientParts: boolean;
 }
 
@@ -169,6 +204,7 @@ const ChatMessageItem = memo(
   ({
     fallbackSentAt,
     message,
+    persistedMessage,
     showTransientParts,
   }: ChatMessageItemProps): React.JSX.Element => {
     const isUser = message.role === "user";
@@ -176,18 +212,10 @@ const ChatMessageItem = memo(
     const renderableParts = message.parts.filter((part) =>
       isRenderableMessagePart(part as MessagePart, showTransientParts)
     );
-    const sentAt = messageTimestamp(message) ?? fallbackSentAt;
-    const partFirstSeenRef = useRef<Map<string, Date>>(new Map());
-
-    const partStartedAt = useCallback((key: string): Date => {
-      const cached = partFirstSeenRef.current.get(key);
-      if (cached) {
-        return cached;
-      }
-      const stamp = new Date();
-      partFirstSeenRef.current.set(key, stamp);
-      return stamp;
-    }, []);
+    const sentAt =
+      messageTimestamp(message) ??
+      parseTimestamp(persistedMessage?.createdAt) ??
+      fallbackSentAt;
 
     return (
       <Message from={message.role}>
@@ -201,6 +229,10 @@ const ChatMessageItem = memo(
           {renderableParts.map((part, partIndex) => {
             const typedPart = part as MessagePart;
             const key = partKey(message.id, partIndex, typedPart.type);
+            const persistedPart = persistedMessage?.parts?.[partIndex];
+            const persistedStartedAt = parseTimestamp(
+              persistedPart?.startedAt ?? persistedPart?.createdAt
+            );
 
             return (
               <MessagePartRenderer
@@ -209,7 +241,7 @@ const ChatMessageItem = memo(
                 partKey={key}
                 role={message.role}
                 showTransientParts={showTransientParts}
-                startedAt={partStartedAt(key)}
+                startedAt={persistedStartedAt ?? sentAt}
                 variant="live"
               />
             );
@@ -266,7 +298,6 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
     [connection.baseUrl]
   );
   const [draft, setDraft] = useState("");
-  const firstSeenRef = useRef<Map<string, Date>>(new Map());
   const agentOptions = useMemo<Parameters<typeof useAgent>[0]>(
     () => ({
       agent: "session-agent",
@@ -281,6 +312,7 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
   );
 
   const agent = useAgent(agentOptions);
+  const persistedMessages = useSessionMessagesQuery(sessionId);
 
   const chat = useAgentChat({
     agent,
@@ -307,33 +339,10 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
   const latestMessage = chat.messages.at(-1);
   const latestMessageId = latestMessage?.id;
   const showLoadingMessage = isStreaming && !hasAssistantText(latestMessage);
-
-  const firstSeenAt = useCallback((messageId: string): Date => {
-    const cached = firstSeenRef.current.get(messageId);
-    if (cached) {
-      return cached;
-    }
-    const stamp = new Date();
-    firstSeenRef.current.set(messageId, stamp);
-    return stamp;
-  }, []);
-
-  useEffect(() => {
-    const seen = firstSeenRef.current;
-    const now = new Date();
-    const liveIds = new Set<string>();
-    for (const message of chat.messages) {
-      liveIds.add(message.id);
-      if (!seen.has(message.id)) {
-        seen.set(message.id, now);
-      }
-    }
-    for (const id of seen.keys()) {
-      if (!liveIds.has(id)) {
-        seen.delete(id);
-      }
-    }
-  }, [chat.messages]);
+  const persistedById = useMemo(
+    () => persistedMessageMap(persistedMessages.data?.messages ?? []),
+    [persistedMessages.data?.messages]
+  );
 
   return (
     <Card
@@ -365,9 +374,10 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
             ) : (
               chat.messages.map((message) => (
                 <ChatMessageItem
-                  fallbackSentAt={firstSeenAt(message.id)}
+                  fallbackSentAt={null}
                   key={message.id}
                   message={message}
+                  persistedMessage={persistedById.get(message.id)}
                   showTransientParts={
                     isStreaming &&
                     message.role !== "user" &&

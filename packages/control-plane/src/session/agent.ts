@@ -61,6 +61,11 @@ export interface SessionAgentState {
   pendingBenchmarkOutput?: AgentOutput;
   sessionId?: string;
   status: SessionStatus;
+  toolRuns?: Array<{
+    signature: string;
+    startedAt: string;
+    toolName: string;
+  }>;
 }
 
 const DEFAULT_SYSTEM_PROMPT =
@@ -339,6 +344,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     }
 
     this.recordToolCall(ctx.toolName);
+    this.recordToolRunStart(ctx);
   }
 
   private detectProhibitedGitCommand(
@@ -567,6 +573,16 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   @callable()
+  async getMessagesWithTiming(): Promise<unknown[]> {
+    await this.ensureSessionReady();
+
+    return stampToolRunStarts(
+      (await this.getMessages()) as unknown[],
+      this.state.toolRuns ?? []
+    );
+  }
+
+  @callable()
   enableBenchmarkSubmitMode(): SessionAgentState {
     const { stopReason: _stopReason, ...control } = this.state.control ?? {};
 
@@ -780,6 +796,19 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     return control;
   }
 
+  private recordToolRunStart(ctx: ToolCallContext): void {
+    const run = {
+      signature: toolRunSignature(ctx.toolName, ctx.input),
+      startedAt: new Date().toISOString(),
+      toolName: ctx.toolName,
+    };
+
+    this.setState({
+      ...this.state,
+      toolRuns: [...(this.state.toolRuns ?? []), run].slice(-200),
+    });
+  }
+
   private recordStopReason(reason: string): void {
     if (this.state.control?.stopReason) {
       return;
@@ -936,3 +965,107 @@ You are on the submission turn. You must call the tool \`${BENCHMARK_SUBMIT_TOOL
     }
   }
 }
+
+interface ToolRunStamp {
+  signature: string;
+  startedAt: string;
+  toolName: string;
+}
+
+interface StoredMessageRecord {
+  createdAt?: unknown;
+  id?: unknown;
+  parts?: unknown;
+  role?: unknown;
+  [key: string]: unknown;
+}
+
+interface ToolPartRecord {
+  createdAt?: unknown;
+  input?: unknown;
+  startedAt?: unknown;
+  toolName?: unknown;
+  type?: unknown;
+  [key: string]: unknown;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const stableStringify = (value: unknown): string => {
+  if (!isRecord(value)) {
+    return JSON.stringify(value);
+  }
+
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(value).sort()) {
+    sorted[key] = value[key];
+  }
+  return JSON.stringify(sorted);
+};
+
+const toolRunSignature = (toolName: string, input: unknown): string =>
+  `${toolName}:${stableStringify(input)}`;
+
+const toolNameForPart = (part: ToolPartRecord): string | null => {
+  if (typeof part.toolName === "string") {
+    return part.toolName;
+  }
+  if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+    return part.type.slice("tool-".length);
+  }
+  return null;
+};
+
+const stampToolRunStarts = (
+  messages: unknown[],
+  toolRuns: readonly ToolRunStamp[]
+): unknown[] => {
+  if (toolRuns.length === 0) {
+    return messages;
+  }
+
+  const runsBySignature = new Map<string, ToolRunStamp[]>();
+  for (const run of toolRuns) {
+    const runs = runsBySignature.get(run.signature) ?? [];
+    runs.push(run);
+    runsBySignature.set(run.signature, runs);
+  }
+
+  const seenBySignature = new Map<string, number>();
+
+  return messages.map((message) => {
+    if (!(isRecord(message) && Array.isArray(message.parts))) {
+      return message;
+    }
+
+    const record = message as StoredMessageRecord;
+    const parts = message.parts.map((part) => {
+      if (!isRecord(part)) {
+        return part;
+      }
+
+      const toolPart = part as ToolPartRecord;
+      const toolName = toolNameForPart(toolPart);
+      if (!(toolName && toolPart.startedAt === undefined)) {
+        return part;
+      }
+
+      const signature = toolRunSignature(toolName, toolPart.input);
+      const runs = runsBySignature.get(signature);
+      if (!runs) {
+        return record.createdAt === undefined
+          ? part
+          : { ...toolPart, startedAt: record.createdAt };
+      }
+
+      const seen = seenBySignature.get(signature) ?? 0;
+      seenBySignature.set(signature, seen + 1);
+      const run = runs[Math.min(seen, runs.length - 1)];
+
+      return run ? { ...toolPart, startedAt: run.startedAt } : part;
+    });
+
+    return { ...record, parts };
+  });
+};

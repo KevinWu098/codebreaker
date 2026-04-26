@@ -557,7 +557,7 @@ export const createRouter = (): Hono<{
       );
 
       return context.json({
-        messages: await withDORetry(() => agent.getMessages()),
+        messages: await withDORetry(() => agent.getMessagesWithTiming()),
       });
     }
   );
