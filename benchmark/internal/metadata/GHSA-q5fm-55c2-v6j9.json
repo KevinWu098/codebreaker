@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q5fm-55c2-v6j9",
+  "post_patch_commit": "f12333984257339cb206f1a064a36f20a3753387",
+  "noisy_patch": false,
+  "curation_notes": "The advisory is filed against Toblerity/Fiona (pip), but the vulnerability (CVE-2023-45853) exists in GDAL's minizip port at port/cpl_minizip_zip.cpp. GDAL commit f123339842 directly backports the zlib minizip fix (madler/zlib@73331a6) into GDAL's cpl_zipOpenNewFileInZip3 function. Only 1 source file was changed. The sibling file cpl_minizip_unzip.cpp handles zip reading, not writing, so it does not share the same vulnerability pattern. The pre-assigned class integer-overflow is correct: the root cause is that filename, comment, and extra field lengths are cast to uInt without validating they fit in the 16-bit zip header fields, causing integer truncation and a heap-based buffer overflow.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

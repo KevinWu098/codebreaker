@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-gdal-001",
+  "ghsa_id": "GHSA-q5fm-55c2-v6j9",
+  "codebase": {
+    "repo": "https://github.com/OSGeo/gdal",
+    "language": "c++",
+    "ecosystem": "pip",
+    "commit": "681ae46e7cdb8a0aee583693c8453163796eece1"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Low-level archive creation and data compression utilities"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists in a zip archive creation routine where excessively long filenames, comments, or extra fields are not validated against the 16-bit length limits of the zip format. This can result in integer truncation and a subsequent heap-based buffer overflow when processing crafted input."
+    },
+    "L3": {
+      "area": "Minizip-derived zip archive creation utilities in the portability layer",
+      "description": "An integer overflow vulnerability exists in a zip archive creation routine where excessively long filenames, comments, or extra fields provided when opening a new file entry within a zip archive are not validated against the 16-bit length limits of the zip format. The lengths are cast to narrower integer types without bounds checking, resulting in integer truncation and a subsequent heap-based buffer overflow."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 9.8,
+    "reason": "The zip archive creation function does not validate that filename, comment, and extra field lengths fit within 16-bit zip format limits, causing integer overflow and heap-based buffer overflow when excessively long values are provided.",
+    "locations": [
+      {
+        "file": "port/cpl_minizip_zip.cpp",
+        "function": "cpl_zipOpenNewFileInZip3"
+      }
+    ]
+  }
+}
