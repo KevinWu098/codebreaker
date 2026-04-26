@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-w-zip-001",
+  "ghsa_id": "GHSA-fr6q-jv7j-35g3",
+  "codebase": {
+    "repo": "https://github.com/yuda-lyu/w-zip",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "47935d97a2353afbc8433c904f3174dec4caed57"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Archive compression and extraction utilities"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability exists where file paths extracted from archive entries are not properly sanitized before being used as output paths, allowing an attacker to use crafted directory traversal sequences in archive entries to write files to arbitrary locations outside the intended extraction directory."
+    },
+    "L3": {
+      "area": "Zip and 7z archive decompression routines",
+      "description": "A path traversal vulnerability exists in the zip and 7z decompression logic where file paths from compressed archive entries are used without validation to construct output file paths. A crafted archive containing directory traversal sequences in entry names can write files outside the intended extraction directory. Additionally, decompression status messages expose the full filesystem path of the target directory."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 9.8,
+    "reason": "The archive extraction functions do not sanitize file paths from zip entries before writing, allowing path traversal via crafted archive entries containing '../' sequences to write files outside the intended extraction directory.",
+    "locations": [
+      {
+        "file": "src/mZip.mjs",
+        "function": "unzip"
+      },
+      {
+        "file": "src/m7z.mjs",
+        "function": "unzip"
+      }
+    ]
+  }
+}
