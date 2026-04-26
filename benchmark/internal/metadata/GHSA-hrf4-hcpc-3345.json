@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hrf4-hcpc-3345",
+  "post_patch_commit": "f7acbd075dff4825b35b597b74958de9edce67fc",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies PostRequest.php to add max:500 validation rules on title, url, description, content_meta_title, content_meta_keywords, and original_link fields. Sibling locations PageRequest.php and ProductRequest.php identified in adjacent MicroweberPackages directories serving the same architectural role (content type form request validation) with the same missing max length validation pattern. Kept pre-assigned integer-overflow class per CWE-190 mapping — the large unvalidated input can cause integer overflow in downstream processing.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
