@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-p3xv-97g8-4wmj",
+  "post_patch_commit": "b182112719ab87942472e44aa3446ea0eb19a289",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit b182112 ports the HTTP connection layer from httplib to python-requests, which verifies SSL certificates by default. The pre-patch code in http_connection() (client.py) creates HTTPS connections via httplib.HTTPSConnection or HTTPSConnectionNoSSLComp (https_connection.py), neither of which verify server certificates. The HTTPSConnectionNoSSLComp.setcontext() method configures an OpenSSL context that disables SSL compression but never enables certificate verification. 4 non-test source files were changed (bin/swift, swiftclient/client.py, swiftclient/https_connection.py, swiftclient/utils.py), making this a noisy patch. Pre-assigned class crypto-weakness (CWE-295: Improper Certificate Validation) is correct — the vulnerability is a missing SSL certificate verification configuration.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
