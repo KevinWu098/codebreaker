@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-v222-6mr4-qj29",
+  "post_patch_commit": "c7ea001a597c7033575342c51483dab7b87ae155",
+  "noisy_patch": false,
+  "curation_notes": "Primary patch commit c7ea001 modified one source file: lib/asciidoctor/include_ext/include_processor.rb. The fix replaced the target_uri? method (which used the weak Asciidoctor::Helpers.uriish? check) with target_http? (which properly validates HTTP URIs via URI.parse). The vulnerable read_lines method passes its argument to IO.foreach and URI.open, which in Ruby interpret pipe-prefixed strings as system commands. No sibling files share this vulnerability pattern — the other files in the directory are line selectors, logging, reader extensions, and version metadata. Pre-assigned class command-injection (CWE-78) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

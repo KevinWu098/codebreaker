@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-asciidoctor-include-ext-001",
+  "ghsa_id": "GHSA-v222-6mr4-qj29",
+  "codebase": {
+    "repo": "https://github.com/jirutka/asciidoctor-include-ext",
+    "language": "ruby",
+    "ecosystem": "rubygems",
+    "commit": "7227a60978cfd4bf5fecc8705a4fc83f536c0d3b"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Document processing and content inclusion pipeline"
+    },
+    "L2": {
+      "description": "A command injection vulnerability exists where a crafted include target containing special characters can bypass URI validation. The unsanitized input is subsequently passed to a Ruby I/O method that interprets pipe-prefixed strings as operating system commands, allowing arbitrary command execution on the host system when rendering user-supplied markup."
+    },
+    "L3": {
+      "area": "AsciiDoc include directive processing and target URI validation",
+      "description": "A command injection vulnerability exists where a crafted AsciiDoc include directive target containing a pipe character and a newline can bypass the URI validation check. The unsanitized input is then passed to a Ruby I/O method that interprets pipe-prefixed strings as operating system commands, allowing arbitrary command execution on the host system when rendering user-supplied AsciiDoc markup."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 10.0,
+    "reason": "The URI validation method uses an insufficient check (Asciidoctor::Helpers.uriish?) that can be bypassed with a crafted input containing a newline, allowing pipe-prefixed commands to reach IO.foreach and URI.open which execute them as system commands.",
+    "locations": [
+      {
+        "file": "lib/asciidoctor/include_ext/include_processor.rb",
+        "function": "target_uri?"
+      },
+      {
+        "file": "lib/asciidoctor/include_ext/include_processor.rb",
+        "function": "read_lines"
+      }
+    ]
+  }
+}
