@@ -16,8 +16,8 @@
       "description": "An SQL injection vulnerability exists where a user-controlled sort order parameter passed through a web service API is directly incorporated into database queries without proper validation or sanitization, allowing an attacker to execute arbitrary SQL commands."
     },
     "L3": {
-      "area": "Activity module external web service API layer",
-      "description": "An SQL injection vulnerability exists where a user-controlled sort order parameter passed through a web service API is directly incorporated into database queries without proper validation or sanitization, allowing an attacker to execute arbitrary SQL commands."
+      "area": "H5P activity module external web service endpoints",
+      "description": "An SQL injection vulnerability exists where a user-controlled sort order parameter passed through the H5P activity web service API is directly incorporated into database queries without proper validation or sanitization, allowing a remote attacker to execute arbitrary SQL commands when fetching user attempt data."
     }
   },
   "ground_truth": {
