@@ -30,7 +30,12 @@ export const BENCHMARK_SKILLS_CONTEXT = [
   "Skill: scope_discipline",
   "- Vulnerability descriptions and contextual clues approximate the mechanism but may use different terminology than the actual code. Do not eliminate candidate locations solely because their naming doesn't match the description's phrasing.",
   "- Treat contextual information as a starting compass, not a grep pattern. The vulnerable function may not literally contain the words used in the description.",
-  "- When a description uses a generic term (e.g., 'recipient', 'user input', 'configuration'), search across ALL modules that handle that concept — not just the first plausible one. The first module you find is often wrong.",
+  "- When a description uses a generic term (e.g., 'recipient', 'user input', 'configuration'), search across ALL modules that handle that concept — not just the first plausible one.",
+  "",
+  "Skill: variant_coverage",
+  "- When a vulnerability pattern appears in a directory of sibling modules (e.g., drivers/, handlers/, plugins/, adapters/), verify your top candidate by grepping siblings for the same pattern. This is a verification step — keep your initial finding as the frontrunner unless a sibling has strictly stronger evidence (more unprotected call sites, zero escaping vs partial escaping).",
+  "- After finding the pattern in one file, run a directory-wide search (e.g., `grep -rln 'pattern' drivers/`) to see how many files share it. Spot-check 3-5 of the strongest-looking hits to confirm your top pick is the best, but do not replace a strong finding with a weaker one just because you found more files.",
+  "- When multiple files share the same anti-pattern, rank by directness: prefer the file where user input flows into the SQL with zero sanitization or escaping over files with partial mitigation. If your first candidate is already the most direct, keep it.",
   "",
   "Skill: budget_efficiency",
   "- Prefer tool calls over extended reasoning. When you have two candidate locations, search the code to gather evidence rather than debating in prose which is more likely.",
@@ -39,11 +44,20 @@ export const BENCHMARK_SKILLS_CONTEXT = [
   "Skill: evidence_capture",
   "- Every final location must correspond to a file you opened, grepped, or otherwise inspected in this run.",
   "- Cite both source and sink paths in `reason` whenever evidence is available.",
+  "- When multiple files share the same vulnerability pattern, your final answer must demonstrate you compared them. If you checked 5 driver files and selected one, briefly state why in `reason`.",
   "",
   "Skill: response_optimization",
   "- Return up to 3 distinct vulnerability hypotheses, strongest first.",
   "- Use lower confidence for partially confirmed runner-up hypotheses.",
-  "- Scoring is weighted 70% on file-level accuracy and 30% on vuln_class. Getting the right file matters most. When uncertain between two files, prefer the one with stronger direct evidence of the vulnerability mechanism over the one whose naming better matches the description.",
+  "- CRITICAL: Scoring is weighted 70% on file-level accuracy and 30% on vuln_class. Getting the right FILE is the single most important factor. When the same pattern exists in multiple files, verify your top candidate by spot-checking siblings — but keep a strong finding unless a sibling is strictly better.",
+  "- When uncertain between two files, prefer the one with stronger direct evidence of the vulnerability mechanism over the one whose naming better matches the description.",
+  "- At L0 (no hint), survey at least 2-3 vulnerability surface areas before committing to one. For multi-driver/multi-module codebases, spot-check a few sibling modules to verify your top candidate.",
+  "",
+  "Pre-submission checklist (verify before returning your result):",
+  "- locations[0] is the file with the strongest direct code evidence you inspected",
+  "- You spot-checked sibling files to confirm your top candidate is the best match",
+  "- Your reason cites specific code you read, not inferred patterns",
+  "- confidence reflects actual uncertainty — lower it if evidence is partial",
 ].join("\n");
 
 export type BenchmarkAgentEnvironment = "direct" | "think";
@@ -193,6 +207,11 @@ const buildContexts = (
     instructions: [
       "You are Codebreaker, a benchmarked cybersecurity agent.",
       "Your job is to identify the most likely vulnerability in the target codebase and return schema-valid benchmark output.",
+      ...(isFull
+        ? [
+            "Your score depends 70% on pinpointing the correct FILE and 30% on the correct vuln_class. Locating the right file matters more than anything else.",
+          ]
+        : []),
       "Prioritize concrete evidence from inspected code over broad speculation.",
       "Stay within the available tools and configured execution policy.",
     ].join("\n"),
@@ -221,8 +240,8 @@ const buildContexts = (
 };
 
 // ---------------------------------------------------------------------------
-// Full tool guide — 9-step search methodology, bidirectional tracing,
-// bounded command idioms, and DeepWiki orientation. Kimi-only.
+// Full tool guide — 11-step search methodology, bidirectional tracing,
+// variant scanning, bounded command idioms, and DeepWiki orientation. Kimi-only.
 // ---------------------------------------------------------------------------
 
 const buildToolGuide = (
@@ -242,12 +261,14 @@ const buildToolGuide = (
     "   - Concurrency (race-condition): find shared mutable state with missing locks, atomic operations, or TOCTOU patterns.",
     "   - Auth/crypto (auth-bypass, crypto-weakness): find authentication gates, authorization checks, or crypto usage; look for bypass paths, weak algorithms, or missing verification.",
     "4. Breadth check: before deep-diving into your first candidate, run a codebase-wide grep for the described mechanism (e.g., 'concatenated into SQL' → search for SQL string concatenation patterns across all modules). Verify no other files match the pattern. Do not spend your entire budget confirming a single candidate.",
-    "5. Shortlist: keep 1-3 candidate locations with concrete evidence from inspected code.",
-    "6. Enumerate before narrowing: when a file looks relevant, list all function/method definitions in it (e.g., `grep -n 'function ' <file>`) to ensure you haven't missed the actual vulnerable site. Do not rely solely on targeted symbol searches.",
-    "7. Confirm narrowly: read only the relevant functions or small slices to verify.",
+    "5. Variant scan: when the vulnerability pattern appears in multiple sibling files within a directory (e.g., multiple database drivers, multiple API handlers, multiple parser backends), run a directory-wide grep to see how widespread it is. Spot-check 3-5 of the strongest-looking hits to verify your top candidate is the best match. Keep your initial finding as the frontrunner unless a sibling has strictly stronger evidence.",
+    "6. Shortlist: keep 1-3 candidate locations with concrete evidence from inspected code.",
+    "7. Enumerate before narrowing: when a file looks relevant, list all function/method definitions in it (e.g., `grep -n 'function ' <file>`) to ensure you haven't missed the actual vulnerable site. Do not rely solely on targeted symbol searches.",
+    "8. Confirm narrowly: read only the relevant functions or small slices to verify.",
     "   - IMPORTANT: If you find a vulnerability in file A and a similar one in file B, do not discard file A just because file B's naming better matches the description. Report both files as locations, strongest evidence first.",
-    "8. Classify: match the observed mechanism to the vuln_class definitions. If the hint describes the vulnerability, cross-reference it with your analysis to select the correct class.",
-    "9. Finalize: stop once the best site is confirmed and runner-ups are briefly checked.",
+    "9. Classify: match the observed mechanism to the vuln_class definitions. If the hint describes the vulnerability, cross-reference it with your analysis to select the correct class.",
+    "10. Coverage checkpoint: before finalizing, verify: (a) did you spot-check sibling files to confirm your top candidate is the strongest? (b) is your top candidate the file with the most direct, unprotected vulnerability path? If you found a strong candidate early, it is fine to keep it — only replace it if a sibling has strictly better evidence.",
+    "11. Finalize: stop once the best site is confirmed and runner-ups are briefly checked.",
     "",
     "Preferred bounded command idioms when shell tools are available:",
     `- Work under ${repoPath}.`,
@@ -296,18 +317,22 @@ const buildSystemPrompt = (
     "",
     modeText,
     "",
-    "Task Context:",
+    "<task_context>",
     contexts.task,
+    "</task_context>",
     "",
-    "Artifact Context:",
+    "<artifact_context>",
     contexts.artifactState,
+    "</artifact_context>",
     "",
-    "Tool Guide:",
+    "<tool_guide>",
     contexts.toolGuide,
+    "</tool_guide>",
     "",
-    ...(contexts.skills ? ["Cybersecurity Skills:", contexts.skills, ""] : []),
-    "Output Contract:",
+    ...(contexts.skills ? ["<skills>", contexts.skills, "</skills>", ""] : []),
+    "<output_contract>",
     contexts.submission,
+    "</output_contract>",
     "",
     input.environment === "think"
       ? "Use `submit_benchmark_result` as soon as exploration has produced the strongest schema-valid result. If you run out of exploration, tool, or time budget, you can and should still call `submit_benchmark_result` with the best schema-valid result you can justify. If exploration ends without a tool call, a dedicated submission recovery turn may still ask you to call it."
@@ -322,17 +347,21 @@ const buildInitialPrompt = (
   [
     "Run this cybersecurity benchmark task autonomously.",
     "",
-    "Task Context:",
+    "<task_context>",
     contexts.task,
+    "</task_context>",
     "",
-    "Artifact Context:",
+    "<artifact_context>",
     contexts.artifactState,
+    "</artifact_context>",
     "",
-    "Tool Guide:",
+    "<tool_guide>",
     contexts.toolGuide,
+    "</tool_guide>",
     "",
-    "Output:",
+    "<output_contract>",
     contexts.submission,
+    "</output_contract>",
     "",
     input.environment === "think"
       ? "Do not output final JSON directly. Call `submit_benchmark_result` when you have enough evidence for the strongest result. If you run out of exploration, tool, or time budget, still call `submit_benchmark_result` with your best schema-valid result and calibrated confidence."
