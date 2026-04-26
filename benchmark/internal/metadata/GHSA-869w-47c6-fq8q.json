@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-869w-47c6-fq8q",
+  "post_patch_commit": "f0a29d60f206268b56992fa50f38a48077eb4f59",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds a bank send restriction (bankSendRestrictionOnlyBondDenomToDistribution) in app/keepers/keepers.go to prevent non-bond-denom tokens from being sent to the distribution module address. It also adds the AccDistribution address constant in app/params/addr.go. The vulnerability location is the InitKeepers function where the bank keeper was previously created without this send restriction, allowing arbitrary denomination tokens to reach the distribution module and trigger an integer overflow in cumulative_reward_ratio calculation. Only 2 non-test source files were changed (app/keepers/keepers.go, app/params/addr.go), so the patch is not noisy. Vulnerability class confirmed as integer-overflow per CWE-190 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

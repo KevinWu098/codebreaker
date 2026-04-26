@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-babylon-001",
+  "ghsa_id": "GHSA-869w-47c6-fq8q",
+  "codebase": {
+    "repo": "https://github.com/babylonlabs-io/babylon",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "cb5d0ecae5cebc116d09296baaed25f715f904df"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Application module initialization and token transfer configuration"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists where large amounts of tokens, obtained through a cross-chain transfer mechanism, can be deposited into the validator rewards pool. This causes an arithmetic overflow panic during the cumulative reward ratio calculation in epoch end processing, resulting in a denial-of-service chain halt."
+    },
+    "L3": {
+      "area": "Bank module send restrictions and distribution module keeper initialization within the application configuration layer",
+      "description": "An integer overflow vulnerability exists where large amounts of non-native denomination tokens, obtained through IBC transfers, can be deposited into the validator rewards pool via the distribution module. The lack of denomination validation on transfers to the distribution module address causes an arithmetic overflow panic during cumulative reward ratio calculation in epoch processing, resulting in a denial-of-service chain halt."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 8.2,
+    "reason": "Depositing large amounts of non-native denomination tokens into the validator rewards pool via the distribution module causes an integer overflow panic in the cumulative reward ratio calculation during epoch end processing, halting the chain.",
+    "locations": [
+      {
+        "file": "app/keepers/keepers.go",
+        "function": "InitKeepers"
+      }
+    ]
+  }
+}
