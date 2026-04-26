@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xwxc-j97j-84gf",
+  "post_patch_commit": "5e43ee86e6a67153ff65da2051f6eb0a77f2c6b8",
+  "noisy_patch": false,
+  "curation_notes": "Patch is PR #6 (merged as 5e43ee8) in hyyking/rustracts. Only one source file changed: parc/src/lib.rs. The fix adds a Sync bound to the unsafe Send impl for LockWeak<T>, preventing concurrent access to non-Sync data. Pre-assigned class race-condition (CWE-362) is correct — the vulnerability is an unsound Send impl enabling data races. Location derived directly from the patch diff; no sibling files exist in parc/src/.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

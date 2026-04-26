@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-rustracts-001",
+  "ghsa_id": "GHSA-xwxc-j97j-84gf",
+  "codebase": {
+    "repo": "https://github.com/hyyking/rustracts",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "c15541d7968aea40d06dadd5e2c5cb57b4d6d341"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Concurrency trait implementations and thread-safety guarantees for smart pointer types"
+    },
+    "L2": {
+      "description": "A data race vulnerability exists where a smart pointer type unconditionally implements the Send trait without requiring the inner type to be Sync. This allows concurrent access to non-Sync data from multiple threads, leading to undefined behavior such as data races."
+    },
+    "L3": {
+      "area": "Thread-safety trait bounds for weak reference types in the shared ownership smart pointer module",
+      "description": "A data race vulnerability exists where a weak reference smart pointer type unconditionally implements the Send trait without requiring the inner type to be Sync. This allows enclosing non-Sync data and accessing it concurrently from multiple threads via child references, leading to undefined behavior including data races and potential memory corruption."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 8.1,
+    "reason": "LockWeak<T> unconditionally implements Send without requiring T: Sync, allowing concurrent access to non-Sync data from multiple threads, which causes undefined behavior such as data races.",
+    "locations": [
+      {
+        "file": "parc/src/lib.rs",
+        "function": null
+      }
+    ]
+  }
+}
