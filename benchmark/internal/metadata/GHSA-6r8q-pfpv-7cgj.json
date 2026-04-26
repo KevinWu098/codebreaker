@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6r8q-pfpv-7cgj",
+  "post_patch_commit": "3de1415ee77a9244eb04bdb695e249d3ec9ed868",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only vyper/codegen/stmt.py (1 non-test source file). The fix adds a clamp check in _parse_For_range for Type 3 range-based for-loops (for i in range(x, x+N)) to ensure the start value plus the loop count does not overflow the iterator's integer type. No sibling files share this pattern — loop codegen is centralized in stmt.py. Pre-assigned class integer-overflow (CWE-190) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
