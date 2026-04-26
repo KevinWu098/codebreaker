@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h8p8-6378-649p",
+  "post_patch_commit": "8df2fabd7d7396ae29c374914d1357744d3e454f",
+  "noisy_patch": false,
+  "curation_notes": "Single file patch in PomParser.java. The fix adds XMLConstants.ACCESS_EXTERNAL_DTD and ACCESS_EXTERNAL_SCHEMA attributes to the DocumentBuilderFactory to prevent XXE attacks. The vulnerable code is in the invoke() method of an anonymous MasterToSlaveFileCallable inner class within getPom(). No sibling parsers in the same directory use XML parsing (DocumentBuilderFactory), so no additional locations were added. Pre-assigned xxe class confirmed correct from CWE-611 and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
