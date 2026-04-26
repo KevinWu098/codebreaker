@@ -12,6 +12,7 @@ import type {
   Difficulty,
   TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
+import { getBenchmarkTokenLimits } from "@codebreaker/benchmark-runner/schemas";
 import {
   estimateTokenUsageCost,
   MODEL_OPTIONS,
@@ -69,11 +70,8 @@ import { DASHBOARD_LIST_PAGE_SIZE } from "@/lib/list-page-size";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.kimi[0];
-const BENCHMARK_MAX_INPUT_TOKENS = 250_000;
-const BENCHMARK_MAX_OUTPUT_TOKENS = 50_000;
 const BENCHMARK_MAX_STEPS = 50;
 const BENCHMARK_MAX_TOOL_CALLS = 40;
-const BENCHMARK_MAX_TOTAL_TOKENS = 300_000;
 const BENCHMARK_MAX_TURNS = 20;
 const BENCHMARK_TIMEOUT_SECONDS = 600;
 const BATCH_CREATE_DELAY_MS = 500;
@@ -94,24 +92,27 @@ const delay = (durationMs: number): Promise<void> =>
 
 const createBenchmarkRequestFromRun = (
   run: BenchmarkRunRow
-): CreateBenchmarkRunRequest => ({
-  autoFollowup: false,
-  autoStart: true,
-  cleanupPolicy: run.cleanupPolicy,
-  difficulty: run.difficulty,
-  maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
-  maxOutputTokens: BENCHMARK_MAX_OUTPUT_TOKENS,
-  maxSteps: BENCHMARK_MAX_STEPS,
-  maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
-  maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
-  maxTurns: BENCHMARK_MAX_TURNS,
-  model: {
-    id: run.modelId,
-    provider: run.modelProvider,
-  },
-  taskId: run.taskId,
-  timeoutSeconds: BENCHMARK_TIMEOUT_SECONDS,
-});
+): CreateBenchmarkRunRequest => {
+  const tokenLimits = getBenchmarkTokenLimits(run.difficulty);
+  return {
+    autoFollowup: false,
+    autoStart: true,
+    cleanupPolicy: run.cleanupPolicy,
+    difficulty: run.difficulty,
+    maxInputTokens: tokenLimits.maxInputTokens,
+    maxOutputTokens: tokenLimits.maxOutputTokens,
+    maxSteps: BENCHMARK_MAX_STEPS,
+    maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
+    maxTotalTokens: tokenLimits.maxTotalTokens,
+    maxTurns: BENCHMARK_MAX_TURNS,
+    model: {
+      id: run.modelId,
+      provider: run.modelProvider,
+    },
+    taskId: run.taskId,
+    timeoutSeconds: BENCHMARK_TIMEOUT_SECONDS,
+  };
+};
 
 const createBenchmarkRequestsFromBatch = ({
   autoFollowup,
@@ -136,16 +137,17 @@ const createBenchmarkRequestsFromBatch = ({
     )) {
       for (const model of models) {
         for (let i = 0; i < repeatCount; i += 1) {
+          const tokenLimits = getBenchmarkTokenLimits(difficulty);
           requests.push({
             autoFollowup,
             autoStart: true,
             cleanupPolicy,
             difficulty,
-            maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
-            maxOutputTokens: BENCHMARK_MAX_OUTPUT_TOKENS,
+            maxInputTokens: tokenLimits.maxInputTokens,
+            maxOutputTokens: tokenLimits.maxOutputTokens,
             maxSteps: BENCHMARK_MAX_STEPS,
             maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
-            maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
+            maxTotalTokens: tokenLimits.maxTotalTokens,
             maxTurns: BENCHMARK_MAX_TURNS,
             model,
             taskId: task.taskId,
@@ -1191,17 +1193,18 @@ export const BenchmarksPanel = ({
       return;
     }
 
+    const tokenLimits = getBenchmarkTokenLimits(difficulty);
     createRun.mutate(
       {
         autoFollowup,
         autoStart: true,
         cleanupPolicy: "retain",
         difficulty,
-        maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
-        maxOutputTokens: BENCHMARK_MAX_OUTPUT_TOKENS,
+        maxInputTokens: tokenLimits.maxInputTokens,
+        maxOutputTokens: tokenLimits.maxOutputTokens,
         maxSteps: BENCHMARK_MAX_STEPS,
         maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
-        maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
+        maxTotalTokens: tokenLimits.maxTotalTokens,
         maxTurns: BENCHMARK_MAX_TURNS,
         model: {
           id: selectedModel.id,
