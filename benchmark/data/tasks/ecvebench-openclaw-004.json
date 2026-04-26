@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "File system operations and archive processing infrastructure"
+      "area": "Infrastructure layer handling file I/O, path resolution, and archive management"
     },
     "L2": {
       "description": "A race condition (TOCTOU) vulnerability exists in ZIP archive extraction where the output path is validated and then separately opened and truncated for writing. Between the validation step and the file open/truncate operations, a local attacker can rebind a parent directory via symlink replacement to redirect the final write outside the intended extraction root, allowing arbitrary file overwrites on the host file system."
     },
     "L3": {
-      "area": "File system operations and archive processing infrastructure",
-      "description": "A race condition (TOCTOU) vulnerability exists in ZIP archive extraction where the output path is validated and then separately opened and truncated for writing. Between the validation step and the file open/truncate operations, a local attacker can rebind a parent directory via symlink replacement to redirect the final write outside the intended extraction root, allowing arbitrary file overwrites on the host file system."
+      "area": "ZIP archive extraction file-writing logic and safe file I/O boundary enforcement routines",
+      "description": "A race condition (TOCTOU) vulnerability exists in ZIP archive extraction where the output path is validated and then separately opened and truncated for writing. Between the validation step and the file open/truncate operations, a local attacker can rebind a parent directory via symlink replacement to redirect the final write outside the intended extraction root, allowing arbitrary file overwrites on the host file system. The same TOCTOU pattern also affects the safe file-write utility responsible for enforcing root-directory boundaries during file output operations, where stat verification and realpath resolution of opened handles are susceptible to the same symlink rebind race."
     }
   },
   "ground_truth": {
