@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j5gq-897m-2rff",
+  "post_patch_commit": "abf4f128a0441f90cb7efcdcf4bde1aef8703243",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds the 'synchronized' keyword to the invokeAPI() method in ApiClient.mustache, which is a Mustache code-generation template for the Java ApiClient class. This prevents concurrent threads from interleaving response state (status codes, headers). Location derived directly from the single-file patch diff. No sibling files in custom_templates share the same vulnerability pattern — other templates (api.mustache, model.mustache) serve different roles and do not contain the invokeAPI method. Pre-assigned class 'race-condition' from CWE-362 is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
