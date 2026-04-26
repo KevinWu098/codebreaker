@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q485-j897-qc27",
+  "post_patch_commit": "7dfdda63f42759a5ec9b63d725b7412f74adb3e1",
+  "noisy_patch": false,
+  "curation_notes": "Primary vulnerability in C3P0ConfigXmlUtils.java where extractXmlConfigFromInputStream creates a DocumentBuilderFactory without calling setExpandEntityReferences(false). DefaultC3P0ConfigFinder.java included as a secondary location because its findConfig method calls the vulnerable XML parsing functions without passing a flag to disable entity expansion. The upstream patch (swaldman/c3p0@7dfdda6) modifies both files plus documentation. The fork commit (zhutougg/c3p0@2eb0ea9) is a simpler one-line fix; the upstream commit is used as the authoritative patch. Vulnerability class xxe confirmed from CWE-611 and patch adding setExpandEntityReferences(false).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
