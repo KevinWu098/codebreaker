@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-99jg-r3f4-rpxj",
+  "post_patch_commit": "d0a7e85dfeb519951fb8a8d70f73f30d41cdd3d9",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff. The patch adds integer overflow checks before allocating framebuffers in both RGBFramebufferModel::load and YFramebufferModel::load. The two other files changed (FramebufferModel.h and FramebufferModel.cpp) are type cleanup converting raw float* to std::vector<float> and do not contain the vulnerable allocation logic themselves. Pre-assigned class buffer-overflow (CWE-120) is correct: the root cause is an integer overflow in the width*height multiplication leading to undersized buffer allocation and out-of-bounds writes. Noisy patch marked true because 4 non-test source files were changed.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
