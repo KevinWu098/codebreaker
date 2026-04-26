@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-f5gc-p5m3-v347",
+  "post_patch_commit": "07420ef8463cc387aea84e2d6241cf556574e2a5",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only petl/io/xml.py (1 file, +20-2). The fix adds a _create_xml_parser() helper that returns etree.XMLParser(resolve_entities=False) and passes it to etree.parse() in XmlView.__iter__. Previously, etree.parse(xmlf) was called without any parser argument, allowing default entity resolution when lxml was the XML backend. No sibling files in petl/io/ use etree.parse() in the same vulnerable pattern. Location derived from the patch diff — the vulnerable call site is in XmlView.__iter__. Vulnerability class xxe confirmed: CWE-611 maps directly to xxe and the fix explicitly disables entity resolution.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
