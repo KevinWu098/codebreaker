@@ -1,0 +1,59 @@
+{
+  "task_id": "ecvebench-go-jose-001",
+  "ghsa_id": "GHSA-3fx4-7f69-5mmg",
+  "codebase": {
+    "repo": "https://github.com/square/go-jose",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "d00415a0a4fdbcfbdf69deae1fe07fc953d9e76d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Encryption, authenticated encryption, and key derivation processing"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists on 32-bit architectures where size calculations for buffer allocations use native integer types that can wrap around. When multiple buffer lengths are summed, the result can overflow, leading to undersized allocations and potential authentication bypass for authenticated encryption ciphertexts."
+    },
+    "L3": {
+      "area": "CBC-HMAC authenticated encryption and concat KDF key derivation routines",
+      "description": "An integer overflow vulnerability exists on 32-bit architectures where buffer size calculations in the CBC-HMAC authenticated encryption implementation and related key derivation functions use native integer types. When multiple buffer lengths are summed for allocation, the result can wrap around on 32-bit systems, leading to undersized allocations and authentication bypass for CBC-HMAC encrypted ciphertexts."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 7.5,
+    "reason": "Integer overflow in buffer size calculations on 32-bit architectures allows authentication bypass for CBC-HMAC encrypted ciphertexts due to native int arithmetic wrapping when summing multiple buffer lengths.",
+    "locations": [
+      {
+        "file": "cipher/cbc_hmac.go",
+        "function": "Seal"
+      },
+      {
+        "file": "cipher/cbc_hmac.go",
+        "function": "Open"
+      },
+      {
+        "file": "cipher/cbc_hmac.go",
+        "function": "computeAuthTag"
+      },
+      {
+        "file": "cipher/cbc_hmac.go",
+        "function": "resize"
+      },
+      {
+        "file": "cipher/cbc_hmac.go",
+        "function": "padBuffer"
+      },
+      {
+        "file": "cipher/concat_kdf.go",
+        "function": "NewConcatKDF"
+      },
+      {
+        "file": "cipher/ecdh_es.go",
+        "function": "DeriveECDHES"
+      }
+    ]
+  }
+}
