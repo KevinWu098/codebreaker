@@ -13,6 +13,8 @@
     "check": "ultracite check",
     "db:apply:local": "pnpm --dir packages/control-plane exec wrangler d1 migrations apply codebreaker-sessions --local --config wrangler.jsonc",
     "db:apply:remote": "pnpm --dir packages/control-plane exec wrangler d1 migrations apply codebreaker-sessions --remote --config wrangler.jsonc",
+    "db:reset:local": "pnpm --dir packages/control-plane exec wrangler d1 execute codebreaker-sessions --local --config wrangler.jsonc --file reset.sql",
+    "db:reset:remote": "pnpm --dir packages/control-plane exec wrangler d1 execute codebreaker-sessions --remote --config wrangler.jsonc --file reset.sql",
     "db:generate": "pnpm --dir packages/control-plane exec drizzle-kit generate --config drizzle.config.ts",
     "db:studio": "pnpm --dir packages/control-plane exec drizzle-kit studio --config drizzle.config.ts",
     "dev:dashboard": "pnpm --dir apps/dashboard dev",
