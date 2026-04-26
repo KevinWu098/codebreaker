@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-rqgx-hpg4-456r",
   "post_patch_commit": "c41b5d8dd4235ccca84d0b687996615c0c64d956",
   "noisy_patch": true,
-  "curation_notes": "The vulnerability is in actix-codec's Framed struct which had a blanket `impl Unpin for Framed<T, U>` that was unsound. The patch replaced this with pin_project and changed methods to take Pin<&mut Self>. While 6 non-config source files were changed (noisy), the actual vulnerability is localized to actix-codec/src/framed.rs where Pin::new_unchecked was used in next_item, flush, and close methods. The other file changes (actix-ioframe, actix-utils, actix-rt) are cascading API adaptations. Locations derived from the patch diff, focusing on the functions containing the unsafe Pin::new_unchecked calls.",
+  "curation_notes": "Re-curated with updated guidelines. The vulnerability is in actix-codec's Framed struct which had a blanket `impl Unpin for Framed<T, U>` that was unsound. Combined with unsafe `Pin::new_unchecked` calls in next_item, flush, and close, this allowed use-after-free when the inner I/O type relied on pin stability. The patch replaced the blanket Unpin impl and unsafe pin projections with the safe pin_project macro. 6 non-config source files were changed (noisy) but the actual vulnerability is localized to actix-codec/src/framed.rs; the other changes in actix-ioframe, actix-utils, and actix-rt are cascading API adaptations. L3 hints were updated to be more specific than L1/L2: area narrows to the codec crate's framing layer, and description adds context about the blanket trait implementation.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
