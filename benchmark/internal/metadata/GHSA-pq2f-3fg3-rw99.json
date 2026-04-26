@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pq2f-3fg3-rw99",
+  "post_patch_commit": "49723f696f1e2f2a76ac89375910bb036a4895f3",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit 49723f6 changed 8 files total, but only 4 contain security-relevant code changes: includes/class-db.php (core SQL query construction added sanitize_sql_orderby), core/admin/tables/class-logtable.php (changed sanitize_text_field to sanitize_key for order and sanitize_sql_orderby for orderby), core/admin/tables/class-blockedlocations.php and class-blockedtable.php (changed sanitize_text_field to sanitize_key for order). The remaining files were comment changes, version bumps, and changelog updates. The pre-assigned sql-injection class matches the CWE-89 and the patch diff, which clearly fixes unsanitized SQL ORDER BY interpolation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
