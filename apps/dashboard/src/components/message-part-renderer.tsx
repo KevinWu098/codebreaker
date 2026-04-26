@@ -31,6 +31,11 @@ const RUNNING_TOOL_STATES = new Set<string>([
   "approval-responded",
 ]);
 const TOOL_RUNTIME_TICK_MS = 1000;
+const TIME_FORMAT_OPTIONS = {
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+} as const satisfies Intl.DateTimeFormatOptions;
 
 export const isRenderableMessagePart = (
   part: MessagePart,
@@ -184,6 +189,14 @@ const ToolRuntime = ({
     return null;
   }
 
+  const startedLabel = startedAt
+    ? `started ${startedAt.toLocaleTimeString(undefined, TIME_FORMAT_OPTIONS)}`
+    : null;
+  const runtimeLabel = `${completedDurationMs === null ? "running" : "ran"} ${formatDuration(elapsedMs)}`;
+  const label = startedLabel
+    ? `${startedLabel} · ${runtimeLabel}`
+    : runtimeLabel;
+
   return (
     <span
       className="font-mono text-muted-foreground text-xs"
@@ -193,8 +206,7 @@ const ToolRuntime = ({
           : undefined
       }
     >
-      {completedDurationMs === null ? "running " : "ran "}
-      {formatDuration(elapsedMs)}
+      {label}
     </span>
   );
 };

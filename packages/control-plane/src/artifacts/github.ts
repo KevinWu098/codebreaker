@@ -146,6 +146,36 @@ export class GitHubGitTreeStore implements GitTreeStore {
     });
   }
 
+  /**
+   * All repository names visible to the token under this owner (org or user).
+   * Used for bulk checks (e.g. compare benchmark tasks vs existing target mirrors).
+   */
+  async listRepoNames(): Promise<Set<string>> {
+    const names = new Set<string>();
+
+    if (this.isOrg) {
+      for await (const response of this.octokit.paginate.iterator(
+        this.octokit.repos.listForOrg,
+        { org: this.owner, per_page: 100, type: "all" }
+      )) {
+        for (const repo of response.data) {
+          names.add(repo.name);
+        }
+      }
+    } else {
+      for await (const response of this.octokit.paginate.iterator(
+        this.octokit.repos.listForUser,
+        { per_page: 100, username: this.owner, type: "all" }
+      )) {
+        for (const repo of response.data) {
+          names.add(repo.name);
+        }
+      }
+    }
+
+    return names;
+  }
+
   private static createOctokit(options: {
     apiVersion: string;
     auth: string;

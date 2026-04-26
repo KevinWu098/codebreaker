@@ -10,6 +10,7 @@ import type {
   TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
 import { GitHubGitTreeStore } from "@codebreaker/control-plane/artifacts/github";
+import { stableTargetRepoName } from "@codebreaker/control-plane/artifacts/repository";
 import type { Env } from "@codebreaker/control-plane/types";
 import type { BenchmarkTargetConfig } from "@codebreaker/shared/schemas/artifacts";
 
@@ -86,11 +87,17 @@ const buildTarget = (
   vulnerableRef: task.codebase.commit,
 });
 
-const parseArgs = (argv: string[]): { filter: Set<string> | null } => {
+const parseArgs = (
+  argv: string[]
+): { checkOnly: boolean; filter: Set<string> | null } => {
   const filter = new Set<string>();
+  let checkOnly = false;
+
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === "--task" || arg === "-t") {
+    if (arg === "--check") {
+      checkOnly = true;
+    } else if (arg === "--task" || arg === "-t") {
       const value = argv[i + 1];
       if (!value) {
         throw new Error("--task requires a task id (e.g. ecvebench-deno-002)");
@@ -101,59 +108,100 @@ const parseArgs = (argv: string[]): { filter: Set<string> | null } => {
       filter.add(arg.slice("--task=".length));
     } else if (arg === "--help" || arg === "-h") {
       process.stdout.write(
-        "Usage: ensure-stable-targets [--task <task_id> ...]\n"
+        "Usage: ensure-stable-targets [--check] [--task <task_id> ...]\n" +
+          "  --check   List target repos missing from the org; exit 1 if any.\n" +
+          "  (default) Create or update each missing target mirror via the GitHub API.\n"
       );
       process.exit(0);
     }
   }
-  return { filter: filter.size > 0 ? filter : null };
+  return { checkOnly, filter: filter.size > 0 ? filter : null };
 };
 
-const main = async (): Promise<void> => {
-  const workspaceRoot = resolve(
-    dirname(fileURLToPath(import.meta.url)),
-    "../../../.."
-  );
-  applyDevVars(workspaceRoot);
-
-  if (!process.env.GITHUB_TOKEN) {
-    throw new Error(
-      "GITHUB_TOKEN is not set. Add it to packages/control-plane/.dev.vars or export it before running."
-    );
-  }
-  if (!(process.env.GITHUB_ORG || process.env.GITHUB_OWNER)) {
-    throw new Error(
-      "Set GITHUB_ORG (preferred) or GITHUB_OWNER in packages/control-plane/.dev.vars before running."
-    );
-  }
-
-  const { filter } = parseArgs(process.argv.slice(2));
-
-  const [tasks, metadata] = await Promise.all([
-    loadBenchmarkTasks(workspaceRoot),
-    loadInternalMetadata(workspaceRoot),
-  ]);
-
-  const metadataByGhsa = new Map<string, InternalMetadata>();
+const indexMetadataByGhsa = (
+  metadata: InternalMetadata[]
+): Map<string, InternalMetadata> => {
+  const byGhsa = new Map<string, InternalMetadata>();
   for (const entry of metadata) {
-    if (!metadataByGhsa.has(entry.ghsa_id)) {
-      metadataByGhsa.set(entry.ghsa_id, entry);
+    if (!byGhsa.has(entry.ghsa_id)) {
+      byGhsa.set(entry.ghsa_id, entry);
     }
   }
+  return byGhsa;
+};
 
+const selectTasks = (
+  tasks: TaskInstance[],
+  filter: Set<string> | null
+): TaskInstance[] => {
   const selected = filter
     ? tasks.filter((task) => filter.has(task.task_id))
     : tasks;
-
   if (filter && selected.length === 0) {
     throw new Error(
       `No tasks matched filter: ${Array.from(filter).join(", ")}`
     );
   }
+  return selected;
+};
 
-  const store = GitHubGitTreeStore.fromEnv(process.env as unknown as Env);
-  const owner = process.env.GITHUB_ORG ?? process.env.GITHUB_OWNER;
+const expectedRepoNamesForTasks = (
+  selected: TaskInstance[],
+  metadataByGhsa: Map<string, InternalMetadata>
+): { expectedNames: string[]; expectedSet: Set<string> } => {
+  const expectedNames = selected.map((task) =>
+    stableTargetRepoName(buildTarget(task, metadataByGhsa.get(task.ghsa_id)))
+  );
+  return { expectedNames, expectedSet: new Set(expectedNames) };
+};
 
+const reportCheckResults = (input: {
+  expectedNames: string[];
+  existing: Set<string>;
+  expectedSet: Set<string>;
+  owner: string;
+  selectedCount: number;
+}): void => {
+  const { existing, expectedNames, expectedSet, owner, selectedCount } = input;
+  process.stdout.write(
+    `Checking ${selectedCount} expected target repo(s) under ${owner}/...\n`
+  );
+  const missing = expectedNames.filter((name) => !existing.has(name));
+  const orphanTargets = [...existing].filter(
+    (name) => name.startsWith("target-") && !expectedSet.has(name)
+  );
+  orphanTargets.sort();
+
+  for (const name of missing) {
+    process.stdout.write(`  [missing] ${name}\n`);
+  }
+  if (orphanTargets.length > 0) {
+    process.stdout.write(
+      `\nNote: ${orphanTargets.length} target-* repo(s) in org not in current task list (first 20):\n`
+    );
+    for (const name of orphanTargets.slice(0, 20)) {
+      process.stdout.write(`  [extra] ${name}\n`);
+    }
+    if (orphanTargets.length > 20) {
+      process.stdout.write(`  ... and ${orphanTargets.length - 20} more\n`);
+    }
+  }
+
+  process.stdout.write(
+    `\nDone. ${missing.length} missing (out of ${selectedCount} expected).\n`
+  );
+  if (missing.length > 0) {
+    process.exitCode = 1;
+  }
+};
+
+const ensureAllTargets = async (input: {
+  metadataByGhsa: Map<string, InternalMetadata>;
+  owner: string;
+  selected: TaskInstance[];
+  store: GitHubGitTreeStore;
+}): Promise<void> => {
+  const { metadataByGhsa, owner, selected, store } = input;
   process.stdout.write(
     `Ensuring ${selected.length} target repo(s) under ${owner}/...\n`
   );
@@ -184,6 +232,55 @@ const main = async (): Promise<void> => {
   if (failures.length > 0) {
     process.exitCode = 1;
   }
+};
+
+const main = async (): Promise<void> => {
+  const workspaceRoot = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../.."
+  );
+  applyDevVars(workspaceRoot);
+
+  if (!process.env.GITHUB_TOKEN) {
+    throw new Error(
+      "GITHUB_TOKEN is not set. Add it to packages/control-plane/.dev.vars or export it before running."
+    );
+  }
+  if (!(process.env.GITHUB_ORG || process.env.GITHUB_OWNER)) {
+    throw new Error(
+      "Set GITHUB_ORG (preferred) or GITHUB_OWNER in packages/control-plane/.dev.vars before running."
+    );
+  }
+
+  const { checkOnly, filter } = parseArgs(process.argv.slice(2));
+
+  const [tasks, metadata] = await Promise.all([
+    loadBenchmarkTasks(workspaceRoot),
+    loadInternalMetadata(workspaceRoot),
+  ]);
+
+  const metadataByGhsa = indexMetadataByGhsa(metadata);
+  const selected = selectTasks(tasks, filter);
+  const store = GitHubGitTreeStore.fromEnv(process.env as unknown as Env);
+  const owner = process.env.GITHUB_ORG ?? process.env.GITHUB_OWNER ?? "";
+  const { expectedNames, expectedSet } = expectedRepoNamesForTasks(
+    selected,
+    metadataByGhsa
+  );
+
+  if (checkOnly) {
+    const existing = await store.listRepoNames();
+    reportCheckResults({
+      existing,
+      expectedNames,
+      expectedSet,
+      owner,
+      selectedCount: selected.length,
+    });
+    return;
+  }
+
+  await ensureAllTargets({ metadataByGhsa, owner, selected, store });
 };
 
 main().catch((error: unknown) => {
