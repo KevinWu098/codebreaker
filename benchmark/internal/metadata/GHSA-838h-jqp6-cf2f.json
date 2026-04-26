@@ -1,8 +1,8 @@
 {
   "ghsa_id": "GHSA-838h-jqp6-cf2f",
-  "post_patch_commit": "25b73a366f8b114d05add8b93aa52beb321dcb6e",
+  "post_patch_commit": "fcfce1bb869fddc629e6d889d6ba1328b80b0dcf",
   "noisy_patch": false,
-  "curation_notes": "Locations derived from the patch diff. The patch adds permission checks (FfiPermissions::check) and unstable API checks (check_unstable) to op_ffi_call_ptr and op_ffi_call_ptr_nonblocking in ext/ffi/lib.rs. These two functions were the only ones completely missing permission enforcement — other FFI ops already had permission checks but were only missing the unstable gate. The merge commit from PR #14115 was used as the patch commit, and its first parent as the pre-patch commit.",
+  "curation_notes": "Locations derived from the patch diff of PR #14115 (merge commit fcfce1b). The patch adds FfiPermissions type parameter, permission checks, and check_unstable calls to op_ffi_call_ptr and op_ffi_call_ptr_nonblocking in ext/ffi/lib.rs. These two functions were the only FFI ops completely missing both permission enforcement and unstable API gating — other FFI ops (op_ffi_ptr_of, op_ffi_buf_copy_into, op_ffi_cstr_read, op_ffi_read_*) already had permission checks but were only missing the unstable gate. The init function was also updated to register these two ops with the FfiPermissions type parameter. Pre-assigned class auth-bypass confirmed: the vulnerability allows bypassing Deno's permission model to execute arbitrary native code via ungated FFI operations.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

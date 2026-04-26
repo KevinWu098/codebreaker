@@ -5,26 +5,26 @@
     "repo": "https://github.com/denoland/deno",
     "language": "rust",
     "ecosystem": "rust",
-    "commit": "3462d8750344743b7b0cdbedcbff6c4b98a383ba"
+    "commit": "3953059b74181de7fbd85defc9938325bd3b713f"
   },
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Runtime extension module operation registration and dispatch"
+      "area": "Runtime extension modules and their operation handlers"
     },
     "L2": {
-      "description": "A sandbox escape vulnerability exists in the runtime where certain low-level operations for interacting with native code and memory fail to enforce required permission and stability checks. A malicious actor controlling code within the sandboxed execution environment can bypass the permission model by directly invoking these ungated operations, enabling arbitrary code execution even when the necessary dangerous capabilities have not been explicitly granted by the user."
+      "description": "A sandbox escape vulnerability exists where certain runtime operations do not enforce required permission and stability checks. Code executing within the sandboxed environment can directly invoke these ungated operations to bypass the permission model, enabling arbitrary code execution even when the necessary dangerous capabilities have not been explicitly granted by the user."
     },
     "L3": {
-      "area": "Runtime extension module operation registration and dispatch",
-      "description": "A sandbox escape vulnerability exists in the runtime where certain low-level operations for interacting with native code and memory fail to enforce required permission and stability checks. A malicious actor controlling code within the sandboxed execution environment can bypass the permission model by directly invoking these ungated operations, enabling arbitrary code execution even when the necessary dangerous capabilities have not been explicitly granted by the user."
+      "area": "Foreign function interface extension module and its operation handlers",
+      "description": "A sandbox escape vulnerability exists where certain runtime operations for calling native function pointers and reading native memory do not enforce required permission and stability checks. Code executing within the sandboxed environment can directly invoke these ungated operations to bypass the permission model, enabling arbitrary native code execution even when the necessary dangerous capabilities have not been explicitly granted by the user."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "Certain FFI operations for calling native function pointers did not enforce permission or stability checks, allowing code within the sandbox to bypass the runtime's permission model and execute arbitrary native code.",
+    "reason": "The op_ffi_call_ptr and op_ffi_call_ptr_nonblocking operations in the FFI extension were registered without permission type parameters and lacked any permission or unstable API checks, allowing sandboxed code to call arbitrary native function pointers without authorization.",
     "locations": [
       {
         "file": "ext/ffi/lib.rs",
