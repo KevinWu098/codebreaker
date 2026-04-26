@@ -13,11 +13,11 @@
       "area": "Model registry and tracking server request handling"
     },
     "L2": {
-      "description": "A path traversal vulnerability exists where URIs provided for model artifact sources are not validated for relative path components (e.g., '../'). An attacker can craft a URI with relative path sequences to traverse the server's file system and access or reference files outside the intended directory. This affects URIs using HTTP, HTTPS, and custom artifact protocol schemes."
+      "description": "A path traversal vulnerability exists where URIs provided as model artifact sources are not validated for relative path components. An attacker can craft a URI containing directory traversal sequences to escape the intended directory and access or reference arbitrary files on the server's file system. This affects sources using HTTP, HTTPS, and custom artifact protocol schemes."
     },
     "L3": {
-      "area": "Model registry and tracking server request handling",
-      "description": "A path traversal vulnerability exists where URIs provided for model artifact sources are not validated for relative path components (e.g., '../'). An attacker can craft a URI with relative path sequences to traverse the server's file system and access or reference files outside the intended directory. This affects URIs using HTTP, HTTPS, and custom artifact protocol schemes."
+      "area": "Model version source validation within the tracking server request handlers",
+      "description": "A path traversal vulnerability exists where URIs provided as model version sources are not validated for relative path components. An attacker can craft a source URI containing directory traversal sequences using HTTP, HTTPS, or mlflow-artifacts schemes to escape the intended artifact directory and access arbitrary files on the server. The validation logic for non-local source URIs fails to detect and reject relative path references before processing them."
     }
   },
   "ground_truth": {
