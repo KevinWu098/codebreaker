@@ -1,0 +1,71 @@
+{
+  "task_id": "ecvebench-tinyauth-001",
+  "ghsa_id": "GHSA-9q5m-jfc4-wc92",
+  "codebase": {
+    "repo": "https://github.com/steveiliop56/tinyauth",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "d71a8e03cc4a494a5474a357bd801d3eff0b1548"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "OAuth authentication flow and provider service layer"
+    },
+    "L2": {
+      "description": "A race condition exists in the OAuth authentication flow where concurrent login requests for the same identity provider share mutable state on a singleton service instance. When two users complete the OAuth callback simultaneously, one user's access token can overwrite the other's, causing the application to fetch the wrong user's identity claims and issue a session to the wrong account."
+    },
+    "L3": {
+      "area": "OAuth provider service implementations and the service broker that manages provider instances",
+      "description": "A race condition exists where all OAuth provider service implementations store PKCE verifiers and access tokens as mutable fields on singleton instances that are shared across all concurrent requests. When two users complete the OAuth callback for the same provider simultaneously, one user's access token overwrites the other's on the shared singleton, causing the application to fetch the wrong user's identity and issue a session with the victim's email and permissions."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 7.7,
+    "reason": "OAuth service implementations store PKCE verifiers and access tokens as mutable fields on singleton instances shared across concurrent requests, allowing a race condition where one user's identity claims can be assigned to another user's session.",
+    "locations": [
+      {
+        "file": "internal/service/generic_oauth_service.go",
+        "function": "GenerateVerifier"
+      },
+      {
+        "file": "internal/service/generic_oauth_service.go",
+        "function": "VerifyCode"
+      },
+      {
+        "file": "internal/service/generic_oauth_service.go",
+        "function": "Userinfo"
+      },
+      {
+        "file": "internal/service/github_oauth_service.go",
+        "function": "GenerateVerifier"
+      },
+      {
+        "file": "internal/service/github_oauth_service.go",
+        "function": "VerifyCode"
+      },
+      {
+        "file": "internal/service/github_oauth_service.go",
+        "function": "Userinfo"
+      },
+      {
+        "file": "internal/service/google_oauth_service.go",
+        "function": "GenerateVerifier"
+      },
+      {
+        "file": "internal/service/google_oauth_service.go",
+        "function": "VerifyCode"
+      },
+      {
+        "file": "internal/service/google_oauth_service.go",
+        "function": "Userinfo"
+      },
+      {
+        "file": "internal/service/oauth_broker_service.go",
+        "function": "GetService"
+      }
+    ]
+  }
+}

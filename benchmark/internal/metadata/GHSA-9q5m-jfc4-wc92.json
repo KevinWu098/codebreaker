@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9q5m-jfc4-wc92",
+  "post_patch_commit": "f26c2171610d5c2dfbba2edb6ccd39490e349803",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived primarily from the advisory description, which explicitly names the three OAuth service implementations (generic, github, google) and identifies the mutable struct fields (token, verifier) stored on singleton instances. The GenerateVerifier, VerifyCode, and Userinfo functions in each service store or read shared mutable state without synchronization. The broker service's GetService function returns the same singleton instance for all concurrent requests. The patch refactors the OAuth flow to pass tokens and verifiers through method parameters/return values instead of storing them on the singleton struct. The patch is noisy (13 non-test source files changed) because it also refactors bootstrap, config, and controller code as part of the fix. Vulnerability class race-condition confirmed: CWE-362 matches, advisory describes concurrent access to shared mutable state, and Go race detector confirms 4 data races.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
