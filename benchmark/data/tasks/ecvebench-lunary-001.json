@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-lunary-001",
+  "ghsa_id": "GHSA-w5xm-mx47-v7c8",
+  "codebase": {
+    "repo": "https://github.com/lunary-ai/lunary",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "680bd1c190771d4fb96732725f7547cfaf3d662f"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Backend authorization and access control middleware"
+    },
+    "L2": {
+      "description": "An incorrect authorization vulnerability allows unauthorized users to access and manipulate projects within an organization they should not have access to. The access control logic only verifies that a user belongs to the same organization as the project owner, rather than checking whether the user has been explicitly granted access to the specific project. This enables any organization member to gain full control over all projects in the organization, including the ability to create, update, read, and delete resources."
+    },
+    "L3": {
+      "area": "Project-level access control checks in the backend authorization utilities",
+      "description": "An incorrect authorization vulnerability allows unauthorized users to access and manipulate projects within an organization they should not have access to. The project access verification logic only checks that the requesting user belongs to the same organization as the project, rather than consulting the explicit per-user project access mapping. This enables any authenticated organization member to gain full control over all projects in the organization, bypassing per-project access restrictions."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 9.8,
+    "reason": "The checkProjectAccess function checks only whether the user belongs to the same organization as the project, instead of verifying explicit per-user project access rights, allowing any organization member to access any project.",
+    "locations": [
+      {
+        "file": "packages/backend/src/utils/authorization.ts",
+        "function": "checkProjectAccess"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w5xm-mx47-v7c8",
+  "post_patch_commit": "c43b6c62035f32ca455f66d5fd22ba661648cde7",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only one file: packages/backend/src/utils/authorization.ts. The fix changes the SQL query in checkProjectAccess from checking organization membership (via the project and account tables) to checking the account_project join table for explicit per-user project access. The pre-assigned class auth-bypass (CWE-285, CWE-863) is correct: the vulnerability is an incorrect authorization check that allows any organization member to access any project. No sibling files share this vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
