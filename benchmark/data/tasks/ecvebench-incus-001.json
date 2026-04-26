@@ -16,8 +16,8 @@
       "description": "A path traversal vulnerability exists in the container credential provisioning mechanism. When writing credential files for guest system services, user-controlled credential names are used directly in file path construction without validation or confinement. An attacker with access to instance configuration can craft credential names containing directory traversal sequences to write arbitrary files on the host filesystem as root, enabling privilege escalation or denial of service."
     },
     "L3": {
-      "area": "Container instance lifecycle and configuration management",
-      "description": "A path traversal vulnerability exists in the container credential provisioning mechanism. When writing credential files for guest system services, user-controlled credential names are used directly in file path construction without validation or confinement. An attacker with access to instance configuration can craft credential names containing directory traversal sequences to write arbitrary files on the host filesystem as root, enabling privilege escalation or denial of service."
+      "area": "Container driver credential provisioning and guest systemd service integration",
+      "description": "A path traversal vulnerability exists in the container credential provisioning mechanism. When writing systemd credential files for container guests through a shared directory, user-controlled credential names are used directly in file path construction without validation or confinement. The credential naming syntax permits embedded periods, which allows an attacker to include directory traversal sequences in credential names, enabling arbitrary file writes on the host filesystem as root for privilege escalation or denial of service."
     }
   },
   "ground_truth": {

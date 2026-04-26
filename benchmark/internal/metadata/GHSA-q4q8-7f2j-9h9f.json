@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-q4q8-7f2j-9h9f",
   "post_patch_commit": "f74199f9983e2ce78f2b78b6d765c6635b229c82",
   "noisy_patch": false,
-  "curation_notes": "The patch commit modified a single file (internal/server/instance/drivers/driver_lxc.go), specifically the setupCredentials function. The fix replaces direct filepath.Join + os.WriteFile/os.Chown calls with os.OpenRoot (openat2) confined operations. Location was derived from the patch diff as the advisory did not name specific files or functions.",
+  "curation_notes": "Re-curated. Patch modifies a single file (internal/server/instance/drivers/driver_lxc.go), specifically the setupCredentials function. The fix replaces direct filepath.Join + os.WriteFile/os.Chown calls with os.OpenRoot (openat2) confined operations. No sibling files contain credential handling (driver_qemu.go does not implement setupCredentials). L3 hints updated to be more specific than L1/L2: area now names the systemd credential subsystem, description adds context about the shared directory mechanism and the credential naming syntax permitting periods. Vulnerability class path-traversal confirmed from CWE-22, advisory description, and patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
