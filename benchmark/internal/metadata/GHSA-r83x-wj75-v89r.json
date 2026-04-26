@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-r83x-wj75-v89r",
   "post_patch_commit": "65f6bbd683404be1bb569b8d1be84b5d4c74a324",
   "noisy_patch": false,
-  "curation_notes": "The patch commit adds hostname validation to pkg/nuclide-hhvm/lib/main.js in the _debugDeepWithHhvm function. Only one source file was changed. The location was derived from the patch diff, which shows the fix adds a regex check for invalid hostname characters (per RFC 952) before the hostname is used in UI rendering. The advisory explicitly names the hhvm-attach deep link handler as the vulnerable component.",
+  "curation_notes": "Re-curation with updated hints. The patch adds RFC 952 hostname validation in the HHVM deep link handler. Only one source file was changed (pkg/nuclide-hhvm/lib/main.js). Location derived from the patch diff. Sibling files in the same directory (HhvmBuildSystem.js, HhvmDebug.js, HhvmToolbar.js, etc.) do not handle deep links or render unsanitized user input. Vulnerability class xss confirmed: CWE-79 matches the advisory description ('render HTML and other content inside of the editor's context') and the patch (adds input validation before the hostname is interpolated into UI notifications).",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
