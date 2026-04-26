@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8vvx-qvq9-5948",
+  "post_patch_commit": "c2b830f279e454e8b758da441016b2234f220ac7",
+  "noisy_patch": true,
+  "curation_notes": "Pre-assigned as command-injection from CWE-94, but the patch fixes unsanitized path segments passed to path.join() in file storage utilities, and adds isPathTraversal checks — reclassified to path-traversal. Primary locations are in storageUtils.ts where addArrayFilesToStorage, addSingleFileToStorage, and getFileFromStorage use ...paths directly in path.join(getStoragePath(), ...paths) without sanitization, and in createAttachment.ts where chatflowId and chatId URL parameters are used as path segments without UUID or traversal validation. Patch touches 5 files total (including a new validator.ts, an index.ts export, and a cleanup of an unused import), hence noisy_patch is true.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
