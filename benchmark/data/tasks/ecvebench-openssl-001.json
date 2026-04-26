@@ -1,0 +1,51 @@
+{
+  "task_id": "ecvebench-openssl-001",
+  "ghsa_id": "GHSA-9v9h-cgj8-h64p",
+  "codebase": {
+    "repo": "https://github.com/openssl/openssl",
+    "language": "c",
+    "ecosystem": "pip",
+    "commit": "96014134630799ee5879ed94b6450e860ba4ebfe"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Cryptographic data structure parsing and file format processing"
+    },
+    "L2": {
+      "description": "A null pointer dereference vulnerability exists where certain optional data fields within a cryptographic file format structure are not checked for NULL before being accessed. Processing a maliciously crafted input file that sets these optional fields to NULL can cause the application to crash, leading to a denial of service."
+    },
+    "L3": {
+      "area": "PKCS12 file format parsing and data unpacking routines",
+      "description": "A null pointer dereference vulnerability exists in PKCS12 file processing where ContentInfo data fields within embedded PKCS7 structures can be NULL according to the specification, but the code does not check for this case before accessing the data. Processing a maliciously crafted PKCS12 file with NULL ContentInfo fields causes a crash, leading to a denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 5.5,
+    "reason": "PKCS12 structures contain optional PKCS7 ContentInfo fields that can be NULL, but OpenSSL does not check for NULL before dereferencing these pointers, causing a crash when processing maliciously crafted PKCS12 files.",
+    "locations": [
+      {
+        "file": "crypto/pkcs12/p12_add.c",
+        "function": "PKCS12_unpack_p7data"
+      },
+      {
+        "file": "crypto/pkcs12/p12_add.c",
+        "function": "PKCS12_unpack_p7encdata"
+      },
+      {
+        "file": "crypto/pkcs12/p12_add.c",
+        "function": "PKCS12_unpack_authsafes"
+      },
+      {
+        "file": "crypto/pkcs12/p12_mutl.c",
+        "function": "pkcs12_gen_mac"
+      },
+      {
+        "file": "crypto/pkcs12/p12_npas.c",
+        "function": "newpass_p12"
+      }
+    ]
+  }
+}
