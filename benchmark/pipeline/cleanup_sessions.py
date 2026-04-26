@@ -37,14 +37,41 @@ TERMINABLE = {
 }
 
 
+MAX_RETRIES = 3
+RETRY_BACKOFF = 5.0
+
+TIMEOUT = httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=10.0)
+
+
 def _client() -> httpx.Client:
     return httpx.Client(
         headers={
             "Authorization": f"Bearer {DEVIN_API_KEY}",
             "Content-Type": "application/json",
         },
-        timeout=30.0,
+        timeout=TIMEOUT,
     )
+
+
+def _request_with_retry(
+    method: str,
+    client: httpx.Client,
+    url: str,
+    *,
+    params: dict | None = None,
+) -> httpx.Response:
+    """Fire an HTTP request with retries on transient errors."""
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = client.request(method, url, params=params)
+            return resp
+        except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.RemoteProtocolError) as exc:
+            if attempt == MAX_RETRIES:
+                raise
+            wait = RETRY_BACKOFF * attempt
+            print(f"    retry {attempt}/{MAX_RETRIES} after {type(exc).__name__}, waiting {wait:.0f}s...")
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
 
 
 def list_curation_sessions(client: httpx.Client) -> list[dict]:
@@ -55,7 +82,7 @@ def list_curation_sessions(client: httpx.Client) -> list[dict]:
         params: dict = {"tags": "curation", "first": 200}
         if cursor:
             params["after"] = cursor
-        resp = client.get(BASE_URL, params=params)
+        resp = _request_with_retry("GET", client, BASE_URL, params=params)
         resp.raise_for_status()
         data = resp.json()
         items = data.get("items", [])
@@ -69,8 +96,13 @@ def list_curation_sessions(client: httpx.Client) -> list[dict]:
 
 
 def terminate_session(client: httpx.Client, devin_id: str) -> bool:
-    resp = client.delete(f"{BASE_URL}/{devin_id}", params={"archive": "true"})
-    return resp.is_success
+    try:
+        resp = _request_with_retry(
+            "DELETE", client, f"{BASE_URL}/{devin_id}", params={"archive": "true"},
+        )
+        return resp.is_success
+    except (httpx.ReadTimeout, httpx.ConnectTimeout):
+        return False
 
 
 def run(*, dry_run: bool = False, status_only: bool = False) -> int:
@@ -105,17 +137,20 @@ def run(*, dry_run: bool = False, status_only: bool = False) -> int:
             return 0
 
         terminated = 0
-        for s in to_terminate:
+        failed = 0
+        for i, s in enumerate(to_terminate):
             sid = s.get("session_id", "?")
             title = s.get("title", "?")
+            print(f"  [{i + 1}/{len(to_terminate)}] {sid}  {title}  ", end="", flush=True)
             if terminate_session(client, sid):
-                print(f"  terminated  {sid}  {title}")
+                print("ok")
                 terminated += 1
             else:
-                print(f"  FAILED      {sid}  {title}")
-            time.sleep(0.3)
+                print("FAILED")
+                failed += 1
+            time.sleep(0.5)
 
-        print(f"\nTerminated {terminated}/{len(to_terminate)} sessions")
+        print(f"\nTerminated {terminated}/{len(to_terminate)} sessions ({failed} failed)")
 
     return 0
 

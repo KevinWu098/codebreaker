@@ -117,6 +117,10 @@ def render_prompt(
     return prompt
 
 
+MAX_RETRIES = 3
+RETRY_BACKOFF = 5.0
+
+
 def dispatch_one(
     candidate: dict[str, Any],
     *,
@@ -135,23 +139,41 @@ def dispatch_one(
         print(f"    cvss={candidate.get('cvss')}  eco={candidate.get('ecosystem')}  prompt={len(prompt)} chars")
         return None
 
-    response = client.post(
-        BASE_URL,
-        json={
-            "prompt": prompt,
-            "create_as_user_id": DEVIN_USER_ID,
-            "repos": [DEVIN_REPO],
-            "title": f"Curate {ghsa_id} ({vuln_class})",
-            "tags": ["ecvebench", "curation", ghsa_id, vuln_class],
-        },
-    )
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = client.post(
+                BASE_URL,
+                json={
+                    "prompt": prompt,
+                    "create_as_user_id": DEVIN_USER_ID,
+                    "repos": [DEVIN_REPO],
+                    "title": f"Curate {ghsa_id} ({vuln_class})",
+                    "tags": ["ecvebench", "curation", ghsa_id, vuln_class],
+                },
+            )
 
-    if response.is_success:
-        data = response.json()
-        print(f"  ok  {ghsa_id} -> {data.get('url')}")
-        return data
+            if response.is_success:
+                data = response.json()
+                print(f"  ok  {ghsa_id} -> {data.get('url')}")
+                return data
 
-    print(f"  ERR {ghsa_id} -> HTTP {response.status_code}: {response.text[:200]}")
+            if response.status_code in (502, 503, 504) and attempt < MAX_RETRIES:
+                wait = RETRY_BACKOFF * attempt
+                print(f"  retry {attempt}/{MAX_RETRIES} ({response.status_code}), waiting {wait:.0f}s...")
+                time.sleep(wait)
+                continue
+
+            print(f"  ERR {ghsa_id} -> HTTP {response.status_code}: {response.text[:200]}")
+            return None
+
+        except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.RemoteProtocolError) as exc:
+            if attempt == MAX_RETRIES:
+                print(f"  ERR {ghsa_id} -> {type(exc).__name__} after {MAX_RETRIES} attempts")
+                return None
+            wait = RETRY_BACKOFF * attempt
+            print(f"  retry {attempt}/{MAX_RETRIES} ({type(exc).__name__}), waiting {wait:.0f}s...")
+            time.sleep(wait)
+
     return None
 
 
@@ -192,7 +214,7 @@ def run(
             "Authorization": f"Bearer {DEVIN_API_KEY}",
             "Content-Type": "application/json",
         },
-        timeout=30.0,
+        timeout=httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=10.0),
     ) as client:
         for i, candidate in enumerate(batch):
             print(f"[{i + 1}/{len(batch)}] {candidate['ghsa_id']}")
