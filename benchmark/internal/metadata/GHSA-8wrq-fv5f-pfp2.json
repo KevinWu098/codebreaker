@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8wrq-fv5f-pfp2",
+  "post_patch_commit": "9767b882dbc893c388a286856beeaead69b8292a",
+  "noisy_patch": false,
+  "curation_notes": "Patch adds bleach-based HTML sanitization to all user content inputs across two source files: the social router (posts, comments) and the DM router (direct messages, broadcast DMs, group conversation names). The pre-assigned xss class from CWE-79 is correct — the advisory explicitly describes stored XSS and the patch confirms it by adding HTML sanitization. Sibling files dm_ws.py (WebSocket keepalive) and mentions.py (user search) do not store user content and are not vulnerable. The scripts/sanitize_existing_content.py is a migration utility, not a location.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
