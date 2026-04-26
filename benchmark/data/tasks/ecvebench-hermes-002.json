@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-hermes-002",
+  "ghsa_id": "GHSA-gmpm-xp43-f7g6",
+  "codebase": {
+    "repo": "https://github.com/facebook/hermes",
+    "language": "c++",
+    "ecosystem": "npm",
+    "commit": "5e557a4901f38ec8725c4d497337da0f3c563e60"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Virtual machine runtime and bytecode execution layer"
+    },
+    "L2": {
+      "description": "An integer signedness error exists in a JavaScript engine's bytecode interpreter where a jump offset table entry is read as an unsigned integer instead of a signed integer. When a switch instruction requires a backward branch, the unsigned interpretation causes the offset to be treated as a large positive value instead of a negative one, leading to incorrect memory access. Attackers can exploit this via crafted JavaScript to cause denial of service or potentially achieve remote code execution."
+    },
+    "L3": {
+      "area": "Bytecode interpreter's switch instruction dispatch and jump table offset handling",
+      "description": "An integer signedness error exists in the bytecode interpreter's switch instruction implementation where a jump table offset is read through an unsigned integer pointer instead of a signed integer pointer. When a switch case requires a backward branch, the unsigned read misinterprets the negative offset as a large positive value, leading to out-of-bounds memory access. This is exploitable via crafted JavaScript when the application permits evaluation of untrusted scripts."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 8.1,
+    "reason": "The SwitchImm bytecode instruction reads jump table offsets through an unsigned integer pointer instead of a signed one, causing backward branch offsets to be misinterpreted as large positive values, leading to out-of-bounds memory access.",
+    "locations": [
+      {
+        "file": "lib/VM/Interpreter.cpp",
+        "function": "interpretFunction"
+      }
+    ]
+  }
+}
