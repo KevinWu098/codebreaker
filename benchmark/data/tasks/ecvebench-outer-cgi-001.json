@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "CGI and FastCGI protocol data parsing and record processing"
+      "area": "CGI and FastCGI request data processing and protocol handling"
     },
     "L2": {
-      "description": "A buffer is allocated with a specified capacity and then unsafely marked as having its full length without initializing its contents. This uninitialized buffer is subsequently passed to a user-provided reader implementation. When the reader processes this buffer, it may read from uninitialized memory, leading to undefined behavior and potential information disclosure."
+      "description": "An uninitialized memory buffer is allocated and then unsafely marked as fully populated without zeroing its contents. This buffer is subsequently provided to a user-supplied reader implementation, which may read from the uninitialized memory region, leading to undefined behavior and potential information disclosure."
     },
     "L3": {
-      "area": "CGI and FastCGI protocol data parsing and record processing",
-      "description": "A buffer is allocated with a specified capacity and then unsafely marked as having its full length without initializing its contents. This uninitialized buffer is subsequently passed to a user-provided reader implementation. When the reader processes this buffer, it may read from uninitialized memory, leading to undefined behavior and potential information disclosure."
+      "area": "FastCGI protocol record parsing and key-value pair iteration",
+      "description": "During FastCGI key-value pair iteration, uninitialized memory buffers are allocated and then unsafely marked as fully populated without zeroing their contents. These buffers are subsequently passed to a user-supplied reader implementation, which may read from the uninitialized memory, leading to undefined behavior and potential information disclosure."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "buffer-overflow",
     "cvss": 9.8,
-    "reason": "The key-value pair iterator creates uninitialized memory buffers using Vec::with_capacity followed by an unsafe set_len, then passes them to a user-provided Read implementation, exposing uninitialized heap memory.",
+    "reason": "The Iterator implementation for KeyValueReader creates uninitialized memory buffers using Vec::with_capacity followed by unsafe set_len, then passes them to a user-provided Read implementation, exposing uninitialized heap memory to safe Rust code.",
     "locations": [
       {
         "file": "src/fcgi.rs",
