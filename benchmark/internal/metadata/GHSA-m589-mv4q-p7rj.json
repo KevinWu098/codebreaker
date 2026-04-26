@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-m589-mv4q-p7rj",
+  "post_patch_commit": "431b5139e274b7e456bea27e768aaa121b97be4c",
+  "noisy_patch": true,
+  "curation_notes": "Primary location derived from the patch diff. The core vulnerability is in src/lib.rs in the From<&str> implementation for TargetType (the from function), which accepts any string that fails URL parsing as a raw TargetType::Path(String) without validation. The patch changes this to TryFrom<&str>, which converts non-URL strings to proper file:// URLs via url::Url::from_file_path(), rejecting invalid paths. Four non-test source files were modified (lib.rs, macos.rs, unix.rs, windows.rs), but the changes in the platform-specific files are only adaptations to the new TargetType struct type, not vulnerability fixes themselves. No sibling files share the same vulnerable pattern. Pre-assigned class path-traversal (CWE-22) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

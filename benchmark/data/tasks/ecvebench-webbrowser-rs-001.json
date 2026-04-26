@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-webbrowser-rs-001",
+  "ghsa_id": "GHSA-m589-mv4q-p7rj",
+  "codebase": {
+    "repo": "https://github.com/amodm/webbrowser-rs",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "05cec736f89235c2e8085cac4f54107f57b1cf1a"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Browser launch request processing and URL handling"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability exists where a crafted URL argument that fails standard URL parsing is silently accepted as a raw local file path without any validation or sanitization. This allows an attacker to access arbitrary files on the system by providing a specially crafted input string to the browser-opening functionality."
+    },
+    "L3": {
+      "area": "URL-to-target type conversion and browser launch entry point",
+      "description": "A path traversal vulnerability exists where input strings provided to the browser-opening API that fail URL parsing are silently converted into raw file path targets without validation. An attacker can supply a crafted string that, instead of being rejected or properly converted to a file URL, is directly used as a local file path, allowing access to arbitrary files on the system."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 9.8,
+    "reason": "The From<&str> implementation for TargetType accepts any string that fails URL parsing as a raw file path without validation, allowing attackers to access arbitrary files by supplying crafted URL inputs to the browser-opening API.",
+    "locations": [
+      {
+        "file": "src/lib.rs",
+        "function": "from"
+      }
+    ]
+  }
+}
