@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qwc3-h9mg-4582",
+  "post_patch_commit": "f92a9ef5246d57e51696bd881a15f3b133b2bb50",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds authentication and CSRF middleware to the AI Agent endpoint (POST /apps/:appId/agent) in Parse-Dashboard/app.js. Only 1 non-test source file was changed. The pre-assigned class auth-bypass (CWE-306: Missing Authentication for Critical Function) is correct — the endpoint entirely lacked authentication, allowing unauthenticated access to master-key-level database operations. No sibling files share this vulnerability pattern; the agent endpoint is uniquely defined in app.js.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
