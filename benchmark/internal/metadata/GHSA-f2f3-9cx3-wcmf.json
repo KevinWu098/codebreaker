@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-f2f3-9cx3-wcmf",
+  "post_patch_commit": "ec77a2ad4508f8488cb356fd45b2f1efd92587f8",
+  "noisy_patch": false,
+  "curation_notes": "Patch adds nil checks in three NGAP message handlers: HandleLocationReport checks AreaOfInterestList and LocationReportingReferenceIDToBeCancelled for nil before access; HandleNGReset adds a continue statement to prevent fall-through to a nil dereference after logging a warning; HandleUEContextReleaseComplete adds a continue when SmContext is not found to prevent nil dereference. All three are nil pointer dereference fixes consistent with CWE-476. Pre-assigned class null-deref is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
