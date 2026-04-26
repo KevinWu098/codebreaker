@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8rwr-x37p-mx23",
+  "post_patch_commit": "4a31c14f31e1a08c18893a37e304dd1dd4b7daa3",
+  "noisy_patch": false,
+  "curation_notes": "The openssl-src-rs patch (4a31c14) bumps the vendored OpenSSL submodule from 3.0.6 to 3.0.7. The actual code fix is in the OpenSSL repo at commit fe3b639dc19b325846f4f6801f2f4604f56e3de3, which changes a single line in crypto/punycode.c: the bounds check 'written_out > max_out' is corrected to 'written_out >= max_out' in the ossl_punycode_decode function. This off-by-one allowed one unsigned int to be written past the buffer boundary. Pre-assigned class buffer-overflow is correct per CWE-120/CWE-787 and the patch diff. No sibling files share this vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
