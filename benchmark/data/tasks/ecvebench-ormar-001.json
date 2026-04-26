@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-ormar-001",
+  "ghsa_id": "GHSA-xxh2-68g9-8jqr",
+  "codebase": {
+    "repo": "https://github.com/ormar-orm/ormar",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "ef95d3214daf9ccfd5591ae51d8b2fbe4b66c633"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "ORM query building and data aggregation logic"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-supplied column names are passed directly into raw SQL expressions without validation or sanitization when performing aggregate queries. Certain aggregate operations accept arbitrary string input as the column parameter, and unlike other aggregate operations that perform type validation, these skip validation entirely. As a result, an attacker-controlled string is embedded as raw SQL inside the aggregate function call, allowing unauthorized reading of the entire database contents, including tables unrelated to the queried model, by injecting subqueries as the column parameter."
+    },
+    "L3": {
+      "area": "ORM aggregate query construction and column name validation logic",
+      "description": "A SQL injection vulnerability exists where user-supplied column names are passed directly into raw SQL text expressions without validation when computing aggregate statistics. While some aggregate operations validate that the column corresponds to a known numeric field on the model, the minimum and maximum aggregate operations skip this validation entirely, allowing attacker-controlled strings to be embedded as raw SQL inside aggregate function calls. An attacker can read arbitrary database contents by injecting subqueries through the column parameter."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "The _query_aggr_function method in the QuerySet class only validates column names for sum and avg operations but skips validation for min and max, allowing user-supplied strings to be passed directly into sqlalchemy.text() and executed as raw SQL.",
+    "locations": [
+      {
+        "file": "ormar/queryset/queryset.py",
+        "function": "_query_aggr_function"
+      }
+    ]
+  }
+}
