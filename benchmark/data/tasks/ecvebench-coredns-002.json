@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-coredns-002",
+  "ghsa_id": "GHSA-c9v3-4pv7-87pr",
+  "codebase": {
+    "repo": "https://github.com/coredns/coredns",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "3d31397fe65d44f407fa4a1529b1695f10a47c4d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "DNS request processing pipeline and plugin orchestration"
+    },
+    "L2": {
+      "description": "A Time-of-Check Time-of-Use (TOCTOU) vulnerability exists in the default plugin execution ordering where security policy enforcement occurs before query normalization. This allows an attacker to bypass DNS access controls by querying a name that passes the security check but is subsequently transformed to resolve a restricted internal service."
+    },
+    "L3": {
+      "area": "DNS plugin execution ordering and access control enforcement pipeline",
+      "description": "A TOCTOU vulnerability in the default plugin execution order allows DNS access controls to be bypassed. Access control plugins evaluate the original query name, but a subsequent query rewriting step transforms the name to a restricted internal domain, which is then resolved and returned to the attacker. In multi-tenant environments such as Kubernetes clusters, this enables unauthorized service discovery of restricted infrastructure."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 7.7,
+    "reason": "The default plugin execution order places access control checks before query rewriting, creating a TOCTOU vulnerability where ACL decisions are made on the original query name which is subsequently rewritten to resolve restricted internal services.",
+    "locations": [
+      {
+        "file": "plugin.cfg",
+        "function": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-c9v3-4pv7-87pr",
+  "post_patch_commit": "4411cff7590de587c7b0180a0972f0a7251ab85b",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit (PR #7882) moves the acl plugin entry after the rewrite plugin entry in plugin.cfg. Only 1 non-test source file changed. The vulnerability class race-condition (TOCTOU) matches the pre-assigned CWE-367 and the advisory description which explicitly names the TOCTOU pattern. Location is plugin.cfg since the execution order defined there is the root cause. No sibling files share this pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
