@@ -16,8 +16,8 @@
       "description": "An insecure deserialization vulnerability exists where user-controlled form field data submitted during the frontend registration process is deserialized using PHP's native deserialization mechanism without any integrity protection or encryption. An attacker can craft a malicious serialized payload and submit it through the registration form, leading to remote code execution."
     },
     "L3": {
-      "area": "Frontend user registration form data processing and rendering",
-      "description": "An insecure deserialization vulnerability exists where user-controlled form field data submitted during the frontend registration process is deserialized using PHP's native deserialization mechanism without any integrity protection or encryption. An attacker can craft a malicious serialized payload and submit it through the registration form, leading to remote code execution."
+      "area": "Form data serialization and deserialization layer for file-type fields in the frontend user registration extension",
+      "description": "An insecure deserialization vulnerability exists where user-controlled form field data submitted during the frontend registration process is deserialized using PHP's native deserialization mechanism without any integrity protection or encryption. The serialized data is exposed as plain text within hidden form fields for file-type columns, allowing an attacker to craft a malicious serialized payload and submit it through the registration form to achieve remote code execution."
     }
   },
   "ground_truth": {

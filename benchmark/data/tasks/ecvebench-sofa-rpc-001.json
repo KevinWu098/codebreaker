@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "RPC serialization and codec configuration layer"
+      "area": "RPC protocol codec and data handling layer"
     },
     "L2": {
-      "description": "An insecure deserialization vulnerability exists where the protection mechanism used to restrict deserialization of potentially dangerous classes can be bypassed using a gadget chain composed entirely of JDK classes. This allows an attacker to achieve remote command execution without relying on any third-party components."
+      "description": "An insecure deserialization vulnerability exists where the protection mechanism used to restrict deserialization of potentially dangerous classes can be bypassed using a gadget chain composed entirely of JDK classes, enabling remote command execution without relying on any third-party components."
     },
     "L3": {
-      "area": "RPC serialization and codec configuration layer",
-      "description": "An insecure deserialization vulnerability exists where the protection mechanism used to restrict deserialization of potentially dangerous classes can be bypassed using a gadget chain composed entirely of JDK classes. This allows an attacker to achieve remote command execution without relying on any third-party components."
+      "area": "Hessian codec serialization security configuration and class restriction rules",
+      "description": "An insecure deserialization vulnerability exists in the SOFA Hessian protocol's class restriction mechanism. The protection list used to block dangerous classes during deserialization enumerates specific class names rather than broader package prefixes, allowing a JDK-only gadget chain to bypass the protection and achieve remote command execution."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "insecure-deserialization",
     "cvss": 9.8,
-    "reason": "The deserialization blacklist used by the SOFA Hessian protocol is insufficient, allowing a gadget chain composed entirely of JDK classes to bypass the protection and achieve remote command execution.",
+    "reason": "The deserialization blacklist used by the SOFA Hessian protocol is insufficient, containing only specific class names instead of broader package prefixes, allowing a JDK-only gadget chain to bypass the protection and achieve remote command execution.",
     "locations": [
       {
         "file": "codec/codec-api/src/main/resources/sofa-rpc/serialize_blacklist.txt",
