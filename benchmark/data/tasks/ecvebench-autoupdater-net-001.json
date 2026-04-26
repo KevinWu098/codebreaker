@@ -16,8 +16,8 @@
       "description": "An XML External Entity (XXE) vulnerability exists in the update feed parsing logic. When processing remotely fetched XML update manifests, the XML parser is not configured to disable external entity resolution, allowing an attacker who controls or intercepts the update feed to read arbitrary files or perform server-side request forgery via crafted XML payloads."
     },
     "L3": {
-      "area": "Software update checking and configuration parsing",
-      "description": "An XML External Entity (XXE) vulnerability exists in the update feed parsing logic. When processing remotely fetched XML update manifests, the XML parser is not configured to disable external entity resolution, allowing an attacker who controls or intercepts the update feed to read arbitrary files or perform server-side request forgery via crafted XML payloads."
+      "area": "Auto-update feed retrieval and XML manifest deserialization",
+      "description": "An XML External Entity (XXE) vulnerability exists where the XML document parser used to process remotely fetched auto-update app cast feeds is instantiated without disabling external entity resolution. An attacker who controls or intercepts the update feed URL can inject crafted XML with external entity declarations to read arbitrary local files or perform server-side request forgery. The vulnerability is exploitable during background update checking when the XML update manifest is retrieved and parsed."
     }
   },
   "ground_truth": {
