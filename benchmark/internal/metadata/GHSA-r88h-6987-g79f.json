@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r88h-6987-g79f",
+  "post_patch_commit": "15b282877d1e576de2b337d8162bbf43ed1a0f2d",
+  "noisy_patch": false,
+  "curation_notes": "Location derived from the patch diff which modified a single line in syncpool/src/bucket.rs (line 336), changing the unconditional Send impl to require T: Send. No sibling files contain the same unsound Send pattern. Vulnerability class race-condition confirmed from CWE-362 and the nature of the unsound Send impl allowing data races.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
