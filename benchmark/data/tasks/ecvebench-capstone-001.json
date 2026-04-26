@@ -13,11 +13,11 @@
       "area": "Platform-specific memory allocation and resource management"
     },
     "L2": {
-      "description": "An integer overflow vulnerability exists in a memory allocation routine where a user-controlled size parameter is added to a fixed structure size without overflow checking. A specially crafted large size value causes the arithmetic to wrap around, resulting in a smaller-than-expected heap allocation. This leads to a heap-based buffer overflow, potentially allowing denial of service or other impacts."
+      "description": "An integer overflow vulnerability exists in a memory allocation routine where a user-controlled size parameter is added to a fixed internal structure size without overflow checking. A specially crafted large size value causes the arithmetic to wrap around, resulting in a smaller-than-expected heap allocation. This leads to a heap-based buffer overflow, potentially allowing denial of service or other impacts."
     },
     "L3": {
-      "area": "Platform-specific memory allocation and resource management",
-      "description": "An integer overflow vulnerability exists in a memory allocation routine where a user-controlled size parameter is added to a fixed structure size without overflow checking. A specially crafted large size value causes the arithmetic to wrap around, resulting in a smaller-than-expected heap allocation. This leads to a heap-based buffer overflow, potentially allowing denial of service or other impacts."
+      "area": "Windows kernel-mode memory management subsystem",
+      "description": "An integer overflow vulnerability exists in the Windows kernel-mode memory allocation routine where a user-controlled size parameter is added to a fixed internal structure size without overflow checking. When deployed as a Windows kernel driver, a specially crafted large size value causes the arithmetic to wrap around, resulting in a smaller-than-expected kernel pool allocation and a subsequent heap-based buffer overflow, potentially allowing denial of service or privilege escalation."
     }
   },
   "ground_truth": {
