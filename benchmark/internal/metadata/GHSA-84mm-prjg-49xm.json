@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-84mm-prjg-49xm",
+  "post_patch_commit": "089a5797be612b18a820f9f1e6593ad9a91b1dba",
+  "noisy_patch": false,
+  "curation_notes": "Single file patch (WikiSEO.body.php). The modifyHTML function directly interpolated user-supplied $content and $property variables into HTML meta tag strings. The fix replaces raw string interpolation with Html::element() which properly escapes attribute values. No sibling files — the repository contains only one main source file. Pre-assigned xss class confirmed via CWE-79 and the patch which adds output escaping.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

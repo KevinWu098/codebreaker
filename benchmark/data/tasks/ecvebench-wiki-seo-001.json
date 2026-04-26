@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-wiki-seo-001",
+  "ghsa_id": "GHSA-84mm-prjg-49xm",
+  "codebase": {
+    "repo": "https://github.com/tinymighty/wiki-seo",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "b8a947ea85858388a27c9d602066c2078bf31313"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTML output generation and metadata rendering for SEO-related content"
+    },
+    "L2": {
+      "description": "A cross-site scripting (XSS) vulnerability exists where user-supplied input is directly interpolated into HTML output without proper escaping or sanitization when generating meta property tags. An attacker can inject arbitrary HTML and JavaScript through crafted input values, potentially compromising other users' sessions."
+    },
+    "L3": {
+      "area": "Meta property tag generation within the SEO HTML output handler",
+      "description": "A cross-site scripting (XSS) vulnerability exists where user-supplied input is directly interpolated into HTML meta property tags without proper escaping or sanitization. When the extension renders Open Graph and other meta property tags into the page head, attacker-controlled content values are embedded directly into the HTML string, allowing injection of arbitrary scripts."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.7,
+    "reason": "User-supplied input for meta property tag content and property names is directly interpolated into HTML strings without escaping, allowing cross-site scripting via crafted SEO parameters.",
+    "locations": [
+      {
+        "file": "WikiSEO.body.php",
+        "function": "modifyHTML"
+      }
+    ]
+  }
+}
