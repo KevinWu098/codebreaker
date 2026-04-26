@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pmg2-rph8-p8r6",
+  "post_patch_commit": "b5bf5f43253175b55fa2cb511fea601e677d2d83",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff. The vulnerability exists in every handler that joins user.BasePath with the request path using stdpath.Join without validating for relative path components. The patch introduces a JoinBasePath utility that rejects paths containing '..' and updates all 6 handler files (server/handles/aria2.go, fsmanage.go, fsread.go, fsup.go, server/middlewares/fsup.go, server/webdav/webdav.go) to use it. The pre-assigned class path-traversal (CWE-22) is correct: the advisory explicitly describes bypassing base path restrictions via '../' sequences.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
