@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vp6q-7m36-pq3w",
+  "post_patch_commit": "e784d6aeb0d5f29b40c2779d2544c2b9ef097ee9",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which changes a single line in _pygmentize_lines() in theme/templatetags/issues.py. The fallback path at line 77 returned raw input lines without escaping; the fix wraps them with escape(). The mark_safe() call in the pygmentize() filter then rendered these unsanitized lines as HTML. Sibling templatetag files (code.py, add_to_qs.py, etc.) were checked but none share the same vulnerability pattern. Vulnerability class xss confirmed from CWE-79 and the nature of the fix (adding HTML escaping to prevent script injection).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
