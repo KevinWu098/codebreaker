@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wq8f-46ww-6c2h",
+  "post_patch_commit": "1cf31901e7220af96c05fcb505978757fdae4a77",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit fixes a single function (skip_and_get_input) in src/untrusted.rs. The bug was that the return value of get_slice() was not checked with try!() before advancing self.i, so on error the Reader index advanced past valid bounds causing subsequent arithmetic to underflow. Only one source file exists at this commit so no sibling locations apply. Pre-assigned class integer-overflow (CWE-191) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
