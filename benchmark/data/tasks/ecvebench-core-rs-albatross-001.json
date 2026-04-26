@@ -16,8 +16,8 @@
       "description": "An integer truncation vulnerability exists in the blockchain consensus layer. Signer slot indices from a bit set are cast from a larger integer type to a smaller one without range validation. An attacker can craft a proof containing out-of-range signer indices that, after truncation, collide with valid in-range slots. This inflates the apparent number of unique signers, allowing a malicious validator to bypass the Byzantine fault tolerance quorum threshold with far fewer actual signing keys."
     },
     "L3": {
-      "area": "Consensus block proof verification and validator quorum checking",
-      "description": "An integer truncation vulnerability exists in the blockchain consensus layer. Signer slot indices from a bit set are cast from a larger integer type to a smaller one without range validation. An attacker can craft a proof containing out-of-range signer indices that, after truncation, collide with valid in-range slots. This inflates the apparent number of unique signers, allowing a malicious validator to bypass the Byzantine fault tolerance quorum threshold with far fewer actual signing keys."
+      "area": "Block proof verification primitives for skip-block proofs, Tendermint round proofs, and equivocation (double-vote) proofs",
+      "description": "An integer truncation vulnerability exists in the blockchain consensus layer where signer slot indices from a multi-signature bit set are cast from a larger integer type to a 16-bit slot number without range validation. An attacker can craft block proofs containing out-of-range signer indices that, after truncation, collide with valid in-range slots. This inflates the apparent number of unique signers, allowing a malicious validator to bypass the two-thirds-plus-one quorum threshold with far fewer actual signing keys."
     }
   },
   "ground_truth": {
