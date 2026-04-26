@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-answer-001",
+  "ghsa_id": "GHSA-4cwh-8w4g-jxxh",
+  "codebase": {
+    "repo": "https://github.com/apache/answer",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "00e4f2c9dec913067ed5e996390479d9e8fc6dbb"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "REST API endpoint handlers for user account and session management"
+    },
+    "L2": {
+      "description": "An improper access control vulnerability exists where the password recovery process exposes a sensitive verification code directly in the API response. An unauthenticated attacker can initiate the password reset flow for any user account and obtain the verification code without needing access to the target user's email, enabling full account takeover."
+    },
+    "L3": {
+      "area": "Password recovery and reset endpoints in the user account API layer",
+      "description": "An improper access control vulnerability exists in the password recovery endpoint where the verification code generated for password reset is returned directly in the API response body. An unauthenticated attacker can request a password reset for any registered email address and receive the verification code in the response, bypassing the email-based verification mechanism and enabling full account takeover."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 9.8,
+    "reason": "The password recovery API endpoint returns the password reset verification code directly in the HTTP response, allowing an unauthenticated attacker to obtain the code without access to the target user's email and reset any account's password.",
+    "locations": [
+      {
+        "file": "internal/controller/user_controller.go",
+        "function": "RetrievePassWord"
+      }
+    ]
+  }
+}

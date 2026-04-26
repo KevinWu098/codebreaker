@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4cwh-8w4g-jxxh",
+  "post_patch_commit": "c1fa2b13f6b547b96da60b23350bbe2b29de542d",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (internal/controller/user_controller.go) in the RetrievePassWord function. The fix changes the response from returning the password reset verification code to returning nil, preventing the code from being leaked in the API response. Pre-assigned class auth-bypass is correct: the vulnerability allows bypassing email-based password reset verification by directly obtaining the reset code from the API response. No sibling locations found; other controller functions do not exhibit the same pattern of leaking sensitive codes.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
