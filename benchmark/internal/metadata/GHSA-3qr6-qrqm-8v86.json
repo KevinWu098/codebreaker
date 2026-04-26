@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3qr6-qrqm-8v86",
+  "post_patch_commit": "82be4f0b4729be870ccefdae99a04833f134aa6a",
+  "noisy_patch": true,
+  "curation_notes": "Patch adds max:500 validation to password fields across 4 files: UserForgotPasswordController (update method), RegisterRequest, UserCreateRequest, and UserUpdateRequest (all rules methods). LoginRequest.php was identified as a sibling with the same missing max constraint on its password validation rule. Pre-assigned integer-overflow class confirmed — CWE-190 and advisory explicitly describe integer overflow from unbounded password length during hashing.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
