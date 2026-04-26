@@ -468,6 +468,8 @@ export const CveFollowupEventKindSchema = z.enum([
   "created",
   "repro_dispatched",
   "repro_validated",
+  /** repro.json found on branch while Devin session status was still non-terminal */
+  "repro_github_ready",
   "fix_dispatched",
   "fix_validated",
   "review_repro_done",

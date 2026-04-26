@@ -40,6 +40,10 @@
       "types": "./src/cve-followup/validation.ts",
       "default": "./src/cve-followup/validation.ts"
     },
+    "./cve-followup/repro-github": {
+      "types": "./src/cve-followup/repro-github.ts",
+      "default": "./src/cve-followup/repro-github.ts"
+    },
     "./artifacts/github": {
       "types": "./src/artifacts/github.ts",
       "default": "./src/artifacts/github.ts"
