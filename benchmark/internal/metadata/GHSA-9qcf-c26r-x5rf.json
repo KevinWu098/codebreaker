@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9qcf-c26r-x5rf",
+  "post_patch_commit": "13c1d45aa1db15d0fa0e4997139c99ba219be551",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #501 into master. Only one non-test source file was changed: XMLSchedulingDataProcessor.java. The fix adds six XML parser security features to the initDocumentParser method to disable DOCTYPE declarations, external DTDs, external general/parameter entities, XInclude processing, and entity reference expansion. The sibling file ValidationException.java in the same package does not perform XML parsing and is not affected. The pre-assigned vulnerability class 'xxe' matches the advisory description (XXE via job description), CWE-611, and the patch content.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
