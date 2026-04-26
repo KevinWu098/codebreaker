@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4wrc-f8pq-fpqp",
+  "post_patch_commit": "5822f1bf85b94fd15f9829914b065b1c61910c7d",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit 5822f1b drops all RPC-style remoting (79 files deleted, Closes gh-27422). The vulnerability is in the HTTP invoker service exporters which use Java's ObjectInputStream.readObject() on untrusted HTTP request bodies without type filtering. Primary location is HttpInvokerServiceExporter.handleRequest() which delegates to RemoteInvocationSerializingExporter.doReadRemoteInvocation() for the actual unsafe deserialization. SimpleHttpInvokerServiceExporter is a sibling in the same directory with the identical pattern. Pre-assigned class insecure-deserialization is correct per CWE-502 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
