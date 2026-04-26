@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9gv2-2m38-j6cx",
+  "post_patch_commit": "0ddcd46d645c773e69369f3ed82c865a4d098454",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff (commit 0ddcd46). The patch introduces a prepareAll() helper using Sanitize::escape() and applies it to all SQL-constructing methods in object_relation.php (createRelation, createRelationAndInverse, deleteRelation, deleteRelationAndInverse, deleteObjectRelation, updateRelationPriority, updateRelationParams, updateRelation, relationExists, relationPriority, relationParams). The afterSave() method in b_e_object.php was also patched to escape relation parameters before interpolation into SQL. Only 2 non-test source files were changed. Pre-assigned class sql-injection confirmed — the patch clearly adds SQL escaping to unsanitized user inputs interpolated into raw SQL queries.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

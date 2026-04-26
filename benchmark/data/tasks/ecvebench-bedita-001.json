@@ -1,0 +1,79 @@
+{
+  "task_id": "ecvebench-bedita-001",
+  "ghsa_id": "GHSA-9gv2-2m38-j6cx",
+  "codebase": {
+    "repo": "https://github.com/bedita/bedita",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "d7739dce4c365feb04f15f3416a069e6408ca2af"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data model layer and content object persistence logic"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-supplied values associated with object relationships are interpolated directly into raw SQL query strings without proper escaping or parameterization. An attacker can inject arbitrary SQL through crafted input values during save operations."
+    },
+    "L3": {
+      "area": "Object relationship data model and the content object save lifecycle that manages relationship creation, updates, and deletion",
+      "description": "A SQL injection vulnerability exists where user-supplied values associated with object relationships, including JSON-encoded relation parameters, are interpolated directly into raw SQL query strings without proper escaping. During operations that create, update, or delete object relations with parameters, an attacker can inject arbitrary SQL through crafted parameter values passed to the relationship management methods."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "User-supplied relation parameters (IDs, switch names, priority values, and JSON-encoded params) are interpolated directly into raw SQL queries without escaping, allowing an attacker to inject arbitrary SQL during relation save operations.",
+    "locations": [
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "createRelation"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "createRelationAndInverse"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "deleteRelation"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "deleteRelationAndInverse"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "deleteObjectRelation"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "updateRelationPriority"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "updateRelationParams"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "updateRelation"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "relationExists"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "relationPriority"
+      },
+      {
+        "file": "bedita-app/models/object_relation.php",
+        "function": "relationParams"
+      },
+      {
+        "file": "bedita-app/models/objects/b_e_object.php",
+        "function": "afterSave"
+      }
+    ]
+  }
+}
