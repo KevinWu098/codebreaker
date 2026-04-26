@@ -13,11 +13,11 @@
       "area": "Expression evaluation and runtime property resolution"
     },
     "L2": {
-      "description": "A prototype pollution vulnerability exists in a JavaScript sandboxing library where prototype chain validation during property access is conditionally applied, allowing it to be bypassed for certain object types. An attacker can exploit this gap to obtain references to object prototypes outside the sandbox boundary, which can then be used to construct arbitrary function calls and achieve remote code execution in the host Node.js environment."
+      "description": "A sandbox escape vulnerability exists where prototype chain validation during runtime property access is conditionally bypassed for certain built-in object types. An attacker can exploit this to obtain references to unprotected prototypes through legacy getter/setter introspection methods, enabling construction of arbitrary functions that execute outside the sandbox with full host process privileges."
     },
     "L3": {
-      "area": "Expression evaluation and runtime property resolution",
-      "description": "A prototype pollution vulnerability exists in a JavaScript sandboxing library where prototype chain validation during property access is conditionally applied, allowing it to be bypassed for certain object types. An attacker can exploit this gap to obtain references to object prototypes outside the sandbox boundary, which can then be used to construct arbitrary function calls and achieve remote code execution in the host Node.js environment."
+      "area": "Sandbox expression executor's property access handler and its prototype chain validation logic",
+      "description": "A sandbox escape vulnerability exists where prototype chain validation during runtime property access is split across conditional branches based on whether the target is a named function or constructor. When accessing properties on function objects, a separate code path handles static method checks but skips the subsequent prototype chain traversal, allowing legacy prototype introspection methods to be called unrestricted. This enables an attacker to reach prototypes outside the sandbox boundary and construct arbitrary executable code in the host environment."
     }
   },
   "ground_truth": {
