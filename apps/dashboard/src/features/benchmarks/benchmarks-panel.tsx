@@ -27,6 +27,7 @@ import {
 } from "@radix-ui/react-tabs";
 import {
   BarChart3,
+  ClipboardCopy,
   Play,
   RefreshCw,
   RotateCcw,
@@ -34,7 +35,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
@@ -89,6 +90,138 @@ const delay = (durationMs: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, durationMs);
   });
+
+const formatRunHeader = (run: BenchmarkRunRow): string[] => {
+  const lines: string[] = [];
+  lines.push("=== BENCHMARK RUN ===");
+  lines.push(`Run ID: ${run.id}`);
+  lines.push(`Task: ${run.taskId} (${run.difficulty})`);
+  lines.push(`Model: ${run.modelProvider}/${run.modelId}`);
+  lines.push(`Status: ${run.status}`);
+  if (run.sessionId) {
+    lines.push(`Session: ${run.sessionId}`);
+  }
+  if (run.inputTokens != null && run.outputTokens != null) {
+    lines.push(
+      `Tokens: ${run.inputTokens} in / ${run.outputTokens} out / ${run.inputTokens + run.outputTokens} total`
+    );
+  }
+  if (run.error) {
+    lines.push(`Error: ${run.error}`);
+  }
+  lines.push("");
+  return lines;
+};
+
+const formatGroundTruth = (task: TaskInstance): string[] => {
+  const lines: string[] = [];
+  lines.push("=== GROUND TRUTH ===");
+  lines.push(`Vulnerable: ${task.ground_truth.vulnerable}`);
+  lines.push(`Vuln Class: ${task.ground_truth.vuln_class}`);
+  lines.push(`Reason: ${task.ground_truth.reason}`);
+  if (task.ground_truth.locations.length > 0) {
+    lines.push("Locations:");
+    for (const loc of task.ground_truth.locations) {
+      lines.push(`  - ${loc.file}${loc.function ? ` :: ${loc.function}` : ""}`);
+    }
+  }
+  lines.push("");
+  return lines;
+};
+
+const formatEventsTimeline = (events: BenchmarkRunEvent[]): string[] => {
+  const lines: string[] = [];
+  lines.push("=== EVENTS TIMELINE ===");
+  for (const event of events) {
+    const ts = event.createdAt.replace("T", " ").replace("Z", " UTC");
+    lines.push(`[${ts}] ${event.kind}: ${event.message}`);
+    if (event.details != null) {
+      try {
+        const json = JSON.stringify(event.details, null, 2);
+        for (const detailLine of json.split("\n")) {
+          lines.push(`  ${detailLine}`);
+        }
+      } catch {
+        lines.push(`  ${String(event.details)}`);
+      }
+    }
+  }
+  lines.push("");
+  return lines;
+};
+
+const formatAgentResult = (
+  result: BenchmarkRunResult,
+  runScore: number | null
+): string[] => {
+  const lines: string[] = [];
+  const output = result.agentOutput;
+
+  if (output) {
+    lines.push("=== AGENT OUTPUT ===");
+    lines.push(`Vulnerable: ${output.vulnerable}`);
+    lines.push(`Vuln Class: ${output.vuln_class ?? "—"}`);
+    lines.push(`Confidence: ${output.confidence}`);
+    lines.push(`Reason: ${output.reason ?? "—"}`);
+    if (output.locations.length > 0) {
+      lines.push("Predicted Locations:");
+      for (const loc of output.locations) {
+        lines.push(
+          `  - ${loc.file}${loc.function ? ` :: ${loc.function}` : ""}`
+        );
+      }
+    }
+    lines.push("");
+  }
+
+  if (result.rawOutput) {
+    lines.push("=== RAW AGENT OUTPUT ===");
+    lines.push(result.rawOutput);
+    lines.push("");
+  }
+
+  lines.push("=== SCORING ===");
+  lines.push(
+    `Score: ${result.score?.score?.toFixed(2) ?? runScore?.toFixed(2) ?? "—"}`
+  );
+  lines.push(
+    `Vulnerability Gate: expected=${result.expectedVulnerable} predicted=${result.predictedVulnerable} matched=${result.vulnerableMatched}`
+  );
+  lines.push(
+    `Vuln Class: expected=${result.expectedVulnClass ?? "—"} predicted=${result.predictedVulnClass ?? "—"} matched=${result.vulnClassMatched}`
+  );
+  lines.push(
+    `Location Score: ${result.locationScore?.toFixed(2) ?? "—"} (${result.correctLocations ?? "—"} correct locations)`
+  );
+  lines.push("");
+  return lines;
+};
+
+const formatRunChatLog = ({
+  events,
+  result,
+  run,
+  task,
+}: {
+  events: BenchmarkRunEvent[];
+  result: BenchmarkRunResult | null;
+  run: BenchmarkRunRow;
+  task: TaskInstance | null;
+}): string => {
+  const sections: string[][] = [formatRunHeader(run)];
+
+  if (task) {
+    sections.push(formatGroundTruth(task));
+  }
+  if (events.length > 0) {
+    sections.push(formatEventsTimeline(events));
+  }
+  if (result) {
+    sections.push(formatAgentResult(result, run.score));
+  }
+
+  return sections.flat().join("\n");
+};
 
 const createBenchmarkRequestFromRun = (
   run: BenchmarkRunRow
@@ -1787,6 +1920,68 @@ const BenchmarkRunEventsTimeline = ({
   </div>
 );
 
+const CLIPBOARD_RESET_MS = 2000;
+
+const useClipboardCopy = (
+  text: string
+): { copied: boolean; copy: () => void } => {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    },
+    []
+  );
+
+  const copy = (): void => {
+    if (!text) {
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopied(true);
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+        timerRef.current = setTimeout(() => {
+          setCopied(false);
+          timerRef.current = undefined;
+        }, CLIPBOARD_RESET_MS);
+      },
+      () => {
+        /* clipboard unavailable */
+      }
+    );
+  };
+
+  return { copied, copy };
+};
+
+const buildSessionValue = (
+  sessionId: string | null,
+  onOpenSession?: (sessionId: string) => void
+): React.ReactNode => {
+  if (!sessionId) {
+    return "—";
+  }
+  if (onOpenSession) {
+    return (
+      <button
+        className="id-link break-all text-left"
+        onClick={() => onOpenSession(sessionId)}
+        type="button"
+      >
+        {sessionId}
+      </button>
+    );
+  }
+  return <span className="break-all">{sessionId}</span>;
+};
+
 const BenchmarkRunDetail = ({
   onOpenSession,
   onSelectRun,
@@ -1808,23 +2003,21 @@ const BenchmarkRunDetail = ({
     run?.status === "failed" ||
     run?.status === "cancelled";
 
-  let sessionValue: React.ReactNode = "—";
-  if (run?.sessionId) {
-    if (onOpenSession) {
-      const sid = run.sessionId;
-      sessionValue = (
-        <button
-          className="id-link break-all text-left"
-          onClick={() => onOpenSession(sid)}
-          type="button"
-        >
-          {sid}
-        </button>
-      );
-    } else {
-      sessionValue = <span className="break-all">{run.sessionId}</span>;
+  const chatLogText = useMemo(() => {
+    if (!detail.data?.run) {
+      return "";
     }
-  }
+    return formatRunChatLog({
+      events: detail.data.events,
+      result: detail.data.result,
+      run: detail.data.run,
+      task: detail.data.task,
+    });
+  }, [detail.data]);
+
+  const { copied: logCopied, copy: copyLog } = useClipboardCopy(chatLogText);
+
+  const sessionValue = buildSessionValue(run?.sessionId ?? null, onOpenSession);
 
   return (
     <Card
@@ -1868,6 +2061,15 @@ const BenchmarkRunDetail = ({
             <Trash2 aria-hidden="true" size={12} />
             <span>cleanup</span>
           </Button>
+          {chatLogText && (
+            <Button
+              onClick={copyLog}
+              title="copy full run log for LLM debugging"
+            >
+              <ClipboardCopy aria-hidden="true" size={12} />
+              <span>{logCopied ? "copied!" : "copy log"}</span>
+            </Button>
+          )}
         </div>
       }
       title="run detail"
