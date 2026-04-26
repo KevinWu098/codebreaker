@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-products-sqlalchemyda-001",
+  "ghsa_id": "GHSA-r3jc-3qmm-w3pw",
+  "codebase": {
+    "repo": "https://github.com/zopefoundation/Products.SQLAlchemyDA",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "39e2e98614c9c6b118fe34595db9e6186eeb15c9"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Database adapter configuration and query execution layer"
+    },
+    "L2": {
+      "description": "An authentication bypass vulnerability exists where security declarations are missing on critical methods, allowing unauthenticated users to execute arbitrary SQL statements on the connected database and modify connection settings."
+    },
+    "L3": {
+      "area": "SQLAlchemy database adapter class and its query execution and engine configuration management",
+      "description": "An authentication bypass vulnerability exists where Zope security declarations are missing on methods that execute SQL queries and modify engine options in the SQLAlchemy database adapter, allowing unauthenticated users to run arbitrary SQL statements on the connected database and alter connection parameters."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 9.8,
+    "reason": "The database adapter class is missing Zope access control declarations on methods that execute SQL queries and modify engine options, allowing unauthenticated users to run arbitrary SQL and change database connection settings.",
+    "locations": [
+      {
+        "file": "src/Products/SQLAlchemyDA/da.py",
+        "function": "query"
+      },
+      {
+        "file": "src/Products/SQLAlchemyDA/da.py",
+        "function": "add_extra_engine_options"
+      }
+    ]
+  }
+}
