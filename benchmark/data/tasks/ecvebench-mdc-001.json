@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-mdc-001",
+  "ghsa_id": "GHSA-j82m-pc2v-2484",
+  "codebase": {
+    "repo": "https://github.com/nuxt-content/mdc",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "8a59ae36c09259c6f845217be837f2f522542f9c"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Markdown content parsing and property validation utilities"
+    },
+    "L2": {
+      "description": "A cross-site scripting (XSS) vulnerability exists in the Markdown parsing logic where URL validation for anchor link attributes uses a deny-list approach that can be bypassed. An attacker can craft URLs with HTML entity-encoded characters to circumvent the protocol scheme filtering, resulting in arbitrary JavaScript execution when the parsed Markdown is rendered."
+    },
+    "L3": {
+      "area": "Markdown parser property validation and URL sanitization utilities",
+      "description": "A cross-site scripting (XSS) vulnerability exists where URL validation for anchor link href and src attributes in parsed Markdown content uses a deny-list approach that checks protocol schemes against a static prefix list. The validation can be bypassed by encoding characters within the protocol scheme using HTML entities (hex or decimal), allowing dangerous protocol URLs to pass through the filter and execute arbitrary scripts when the content is rendered."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.3,
+    "reason": "The Markdown parser's URL validation uses a simple string prefix check against a deny list of unsafe protocol schemes, which can be bypassed by inserting HTML entity-encoded characters (e.g., &#x09;, &#x0A;) into the protocol scheme, allowing javascript: URLs to execute arbitrary scripts.",
+    "locations": [
+      {
+        "file": "src/runtime/parser/utils/props.ts",
+        "function": "validateProp"
+      }
+    ]
+  }
+}
