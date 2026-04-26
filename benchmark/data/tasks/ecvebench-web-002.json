@@ -13,18 +13,18 @@
       "area": "Real-time connection handling and HTTP upgrade infrastructure"
     },
     "L2": {
-      "description": "A nil pointer dereference vulnerability exists where authentication callbacks configured for upgraded persistent connections are not invoked during connection establishment. When an authentication method is configured, downstream handlers expect user context data to be populated. Since the authentication callback is never executed for these connection types, user data remains nil, causing a panic when handlers attempt to dereference it. An attacker can exploit this to cause denial of service or bypass authentication controls."
+      "description": "An authentication bypass vulnerability exists where authentication callbacks configured for upgraded persistent connections are never invoked during the connection establishment process. This allows unauthenticated clients to access protected endpoints. Downstream handlers that expect authenticated user context data to be populated receive nil values instead, which may additionally cause a panic and denial of service."
     },
     "L3": {
-      "area": "Real-time connection handling and HTTP upgrade infrastructure",
-      "description": "A nil pointer dereference vulnerability exists where authentication callbacks configured for upgraded persistent connections are not invoked during connection establishment. When an authentication method is configured, downstream handlers expect user context data to be populated. Since the authentication callback is never executed for these connection types, user data remains nil, causing a panic when handlers attempt to dereference it. An attacker can exploit this to cause denial of service or bypass authentication controls."
+      "area": "WebSocket connection upgrade and per-request authentication middleware",
+      "description": "An authentication bypass vulnerability exists where authentication callbacks configured for WebSocket endpoint handlers are never invoked during the connection upgrade process. This allows unauthenticated clients to establish WebSocket connections to protected endpoints, completely bypassing the intended authentication controls. Handlers that attempt to access the expected authenticated user data encounter nil values, potentially causing a panic and denial of service."
     }
   },
   "ground_truth": {
     "vulnerable": true,
-    "vuln_class": "null-deref",
+    "vuln_class": "auth-bypass",
     "cvss": 9.8,
-    "reason": "The socketHandler function does not call the configured AuthenticateMethod before upgrading connections, leaving UserData nil. Handlers that dereference UserData will panic with a nil pointer dereference.",
+    "reason": "The socketHandler function does not call the configured AuthenticateMethod before upgrading WebSocket connections, allowing unauthenticated access to protected endpoints and leaving UserData nil.",
     "locations": [
       {
         "file": "websocket.go",
