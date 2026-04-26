@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-7jc7-g598-2p64",
   "post_patch_commit": "d9b90ae6c9489dc43f6427ec7b315cab34125332",
   "noisy_patch": false,
-  "curation_notes": "Patch commit d9b90ae adds three XMLReader feature flags to disable external DTD loading, external general entities, and external parameter entities in SAXXDocPreprocessor.preprocess(). Only one source file was changed. Location derived directly from the patch diff.",
+  "curation_notes": "Patch commit d9b90ae adds three XMLReader feature flags to disable external DTD loading, external general entities, and external parameter entities in the SAX-based document preprocessor's preprocess method. Only one source file was changed (not noisy). Location derived directly from the patch diff. No sibling files share the same vulnerability pattern — the DOM-based preprocessor delegates XML parsing to a different utility (DOMUtils.load). Vulnerability class xxe confirmed from CWE-611 and the patch content.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
