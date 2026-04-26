@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-2853-hf2g-9843",
+  "post_patch_commit": "522e3fdde3cc658e89aace9317643b39009ab4af",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which adds libxml_disable_entity_loader(true) in getDomFromString(). The only other source change in the patch is a typo fix in PasswordEncoder.php (unrelated). No sibling files use DOMDocument or loadXML. Vulnerability class xxe confirmed from CWE-611 and the patch disabling XML external entity loading.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
