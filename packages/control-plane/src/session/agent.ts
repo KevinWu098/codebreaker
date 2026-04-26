@@ -332,6 +332,14 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     if (stopReason) {
       this.recordStopReason(stopReason);
 
+      if (
+        this.isBenchmarkSession() &&
+        ctx.toolName === BENCHMARK_SUBMIT_TOOL_NAME
+      ) {
+        this.recordToolCall(ctx.toolName);
+        return;
+      }
+
       return {
         action: "block",
         reason: `${stopReason}. Only call the ${BENCHMARK_SUBMIT_TOOL_NAME} tool. Return the best valid final answer using the evidence already present in the transcript.`,
