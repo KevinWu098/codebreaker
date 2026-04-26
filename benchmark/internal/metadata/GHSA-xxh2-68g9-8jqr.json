@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xxh2-68g9-8jqr",
+  "post_patch_commit": "a03bae14fe01358d3eaf7e319fcd5db2e4956b16",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff, which adds column name validation in _query_aggr_function (ormar/queryset/queryset.py). The patch extends the existing type check (previously only for sum/avg) to validate that all aggregate column names exist in the target model's fields, blocking arbitrary SQL injection through min() and max(). The advisory also describes get_text_clause() in select_action.py as the method that passes unsanitized input to sqlalchemy.text(), but it is a downstream method designed to work with validated inputs — the root cause is the missing validation in _query_aggr_function. No sibling files contain the same vulnerability pattern. Vulnerability class sql-injection confirmed from CWE-89, advisory description, and patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
