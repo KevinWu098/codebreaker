@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-go-ethereum-001",
+  "ghsa_id": "GHSA-9h4h-8w5p-f28w",
+  "codebase": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "46d4721519f80074795a0631f5bab875433a1cc6"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Command-line tools and CLI execution logic"
+    },
+    "L2": {
+      "description": "A nil pointer dereference vulnerability exists where the application's output writer is used without being properly initialized, causing a segmentation fault when processing crafted bytecode inputs."
+    },
+    "L3": {
+      "area": "EVM bytecode execution command-line tool and its output formatting logic",
+      "description": "A nil pointer dereference vulnerability exists where the EVM command-line tool's output writer can be nil when processing and displaying results, causing a segmentation fault (SEGV) when attacker-crafted bytecode is executed through the command-line interface."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 7.5,
+    "reason": "The runCmd function in the EVM command-line tool uses ctx.App.ErrWriter and ctx.App.Writer for output formatting, but these writers can be nil, causing a nil pointer dereference (SEGV) when crafted bytecode triggers error or output paths.",
+    "locations": [
+      {
+        "file": "cmd/evm/runner.go",
+        "function": "runCmd"
+      },
+      {
+        "file": "cmd/evm/compiler.go",
+        "function": "compileCmd"
+      },
+      {
+        "file": "cmd/evm/disasm.go",
+        "function": "disasmCmd"
+      },
+      {
+        "file": "cmd/evm/staterunner.go",
+        "function": "stateTestCmd"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9h4h-8w5p-f28w",
+  "post_patch_commit": "83e2761c3a13524bd5d6597ac08994488cf872ef",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit (83e2761) reverts a prior commit (fb9f726) that changed fmt.Printf/Println calls to use ctx.App.ErrWriter and ctx.App.Writer in the cmd/evm package. These writers can be nil, causing a nil pointer dereference (SEGV) when the evm tool is invoked. The advisory explicitly names cmd/evm/runner.go and the runCmd function. Sibling files compiler.go, disasm.go, and staterunner.go contain the same vulnerable pattern (fmt.Fprintf/Fprintln with potentially nil ctx.App.Writer/ErrWriter). The internal/compiler/compiler.go change is a different pattern (error string construction) and was not included in locations. Patch is noisy (5 non-test source files changed). Vulnerability class null-deref confirmed from CWE-476 and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
