@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jhww-fx2j-3rf7",
+  "post_patch_commit": "0d5bec5c4c22e1affe7fd321a30e3f3a4d99e808",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge commit (PR #972). Two non-test source files changed: src/Lib/RemoteFile/RemoteFile.php (added verifyAllowedHosts method and host allowlist parameter to exists()) and src/Model/Table/ProductsTable.php (added sync domain fetching and host validation in changeImage(), changed image validation from getimagesize() to mime_content_type()). Pre-assigned class race-condition retained: CWE-367 (TOCTOU) accurately describes the vulnerability mechanism where the HEAD check and subsequent GET retrieval can receive different responses from a malicious server. CWE-918 (SSRF) describes the impact but is not one of the 13 valid classes. No sibling files share the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
