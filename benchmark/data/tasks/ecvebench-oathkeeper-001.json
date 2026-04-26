@@ -16,8 +16,8 @@
       "description": "A path traversal vulnerability exists where an attacker can craft HTTP requests containing relative path components that bypass access control rules. The raw, un-normalized request path is used during rule evaluation, allowing requests to match permissive rules while the upstream server normalizes the path and serves protected resources."
     },
     "L3": {
-      "area": "HTTP request processing and access rule matching",
-      "description": "A path traversal vulnerability exists where an attacker can craft HTTP requests containing relative path components that bypass access control rules. The raw, un-normalized request path is used during rule evaluation, allowing requests to match permissive rules while the upstream server normalizes the path and serves protected resources."
+      "area": "Reverse proxy backend URL construction and URL path-based access rule evaluation",
+      "description": "A path traversal vulnerability exists where HTTP request URL paths containing relative directory traversal sequences are not normalized before being evaluated against access control rules or used to construct the forwarded backend URL. An attacker can craft a URL that matches a permissive access rule in its raw form but resolves to a protected endpoint after the upstream server normalizes the path. Both the access control rule evaluation and the reverse proxy's backend URL forwarding are affected."
     }
   },
   "ground_truth": {
