@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-732f-w585-gmpc",
+  "post_patch_commit": "da434dfca1b82f5de81e29438762370d652493b8",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit da434df adds factory.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true) to the resolveXPath method in PostContentParameterResolver.java. This is the only source file changed (CHANGELOG.md, pom.xml, and run.sh are non-source). The vulnerability is clearly XXE (CWE-611), matching the pre-assigned class. No sibling files share the same vulnerability pattern — XmlFlattener.java uses TransformerFactory for output serialization, not for parsing untrusted input XML.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
