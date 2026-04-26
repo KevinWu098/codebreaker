@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j69f-fgh5-f7mc",
+  "post_patch_commit": "5b99b63992888ef21d15a04b4b95ae801c52186f",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references commit ac5590925874ef810018a6b60fec216eee54fb32 which no longer exists in the repository (likely rewritten). The actual patch is commit 5b99b63992888ef21d15a04b4b95ae801c52186f ('Prevent XXE vulnerability'), which modifies the same file (XfaFile.java) described in the advisory. The fix adds a SafeEmptyEntityResolver to the SAXReader used in the XfaFile constructor. Only one source file was changed. No sibling files in the same directory use SAXReader or similar XML parsers. Vulnerability class xxe confirmed via CWE-611 and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
