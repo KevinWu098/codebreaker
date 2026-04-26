@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-cassandra-rs-001",
+  "ghsa_id": "GHSA-x9xc-63hg-vcfq",
+  "codebase": {
+    "repo": "https://github.com/cassandra-rs/cassandra-rs",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "9698afb9131cab8be1ef0550ca380008962d308c"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Query result handling and data traversal layer"
+    },
+    "L2": {
+      "description": "A use-after-free vulnerability exists in Rust bindings for a database driver where collection traversal abstractions do not enforce lifetime restrictions on returned items. When a traversal advances to the next element, the previously returned item's underlying memory is invalidated by the native C library, but the API does not prevent continued access to the stale reference, leading to undefined behavior."
+    },
+    "L3": {
+      "area": "Iterator type definitions and query result set traversal in the Cassandra database driver bindings",
+      "description": "A use-after-free vulnerability exists in the Cassandra database driver Rust bindings where iterators over query results, collection elements, and schema metadata do not enforce that returned items are consumed before the iterator advances. When the iterator moves to the next element, the underlying C driver invalidates the previous item's memory, but the Rust API allows the caller to retain and access stale references, leading to undefined behavior."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 7.5,
+    "reason": "Iterator types implement the standard Iterator trait, allowing items to outlive the iterator's next() call. Since the underlying C library invalidates the previous item when the iterator advances, this leads to use-after-free when a caller retains a reference to a previous item.",
+    "locations": [
+      {
+        "file": "src/cassandra/iterator.rs",
+        "function": "next"
+      },
+      {
+        "file": "src/cassandra/result.rs",
+        "function": "next"
+      }
+    ]
+  }
+}
