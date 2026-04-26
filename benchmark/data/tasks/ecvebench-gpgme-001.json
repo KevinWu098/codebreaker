@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-gpgme-001",
+  "ghsa_id": "GHSA-m6wg-2mwg-4rfq",
+  "codebase": {
+    "repo": "https://github.com/proglottis/gpgme",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "e5586b79c357de7cff85f2a8d412796e0454491b"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Cryptographic operation wrappers and data buffer management for native library bindings"
+    },
+    "L2": {
+      "description": "A use-after-free vulnerability exists in a Go wrapper for a native cryptographic library. The Go garbage collector can prematurely finalize and deallocate Go objects that hold references to native C library resources while the native code is still operating on them. This can lead to a crash or potential code execution during cryptographic signature verification operations."
+    },
+    "L3": {
+      "area": "GPGME context and data handle lifecycle management in the Go-to-C bridge layer",
+      "description": "A use-after-free vulnerability exists in a Go wrapper for the GPGME library where the Go garbage collector can prematurely finalize and deallocate Go objects wrapping native GPGME context and data handles while C code is still operating on them. This is particularly exploitable during GPG signature verification operations used by container image pull workflows, leading to a crash or potential arbitrary code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 7.5,
+    "reason": "Go wrapper objects (Context, Data, Key) can be garbage-collected and freed while the underlying C GPGME library is still using pointers to them, because runtime.KeepAlive is not called after passing Go-managed handles to C functions.",
+    "locations": [
+      {
+        "file": "gpgme.go",
+        "function": "Verify"
+      },
+      {
+        "file": "gpgme.go",
+        "function": "Decrypt"
+      },
+      {
+        "file": "data.go",
+        "function": "Close"
+      }
+    ]
+  }
+}
