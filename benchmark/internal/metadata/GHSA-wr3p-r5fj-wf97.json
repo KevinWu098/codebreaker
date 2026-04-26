@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wr3p-r5fj-wf97",
+  "post_patch_commit": "e7fa4835f71f47ab1d13afd638cebf661800d5a4",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references commits 5a366cd and 8f89e12 (v2.2.1), but neither touches client/cache/file.go or the getCacheFileName function described in the advisory. The actual fix replacing MD5 with SHA256 in getCacheFileName is commit e7fa4835 (v2.3.4, PR #5727). Used e7fa4835 as the patch commit since it directly addresses the described vulnerability. Pre-patch commit is its parent bb72dc27. Location derived from the patch diff: only client/cache/file.go was changed (plus its test file). No sibling files in client/cache/ use MD5. Vulnerability class crypto-weakness confirmed from CWE-327/CWE-328 and the MD5-to-SHA256 fix in the diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
