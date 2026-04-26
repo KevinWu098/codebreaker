@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-para-001",
+  "ghsa_id": "GHSA-phvw-r25p-8xv7",
+  "codebase": {
+    "repo": "https://github.com/Erudika/para",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "62a6550546c50e1988f515f94129822f6564cfa8"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Template rendering and output formatting utilities"
+    },
+    "L2": {
+      "description": "A cross-site scripting (XSS) vulnerability exists where the template rendering engine is configured to disable HTML escaping by default, allowing user-controlled data inserted into templates to inject arbitrary scripts into rendered output."
+    },
+    "L3": {
+      "area": "Mustache template compilation and rendering utilities in the core utility module",
+      "description": "A cross-site scripting (XSS) vulnerability exists in the Mustache template compilation logic where HTML escaping is explicitly disabled. When user-controlled data is inserted into Mustache templates, it is rendered without sanitization, enabling script injection."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.4,
+    "reason": "The Mustache template compilation utility explicitly disables HTML escaping (escapeHTML(false)), allowing user-controlled content in templates to inject malicious scripts into rendered output.",
+    "locations": [
+      {
+        "file": "para-core/src/main/java/com/erudika/para/core/utils/Utils.java",
+        "function": "compileMustache"
+      }
+    ]
+  }
+}

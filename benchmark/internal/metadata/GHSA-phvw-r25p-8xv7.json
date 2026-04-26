@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-phvw-r25p-8xv7",
+  "post_patch_commit": "9d844f31333475a0394dd14b901ea50674b281f8",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only Utils.java (1 non-test file). The compileMustache method hardcoded escapeHTML(false), disabling Mustache's built-in HTML escaping. The fix adds an escapeHtml parameter. No sibling files share this pattern — compileMustache is defined only in Utils.java. Vulnerability class xss confirmed from CWE-79 and the patch which adds HTML escaping to template output.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
