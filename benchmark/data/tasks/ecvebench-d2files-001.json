@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-d2files-001",
+  "ghsa_id": "GHSA-68hv-8926-j34c",
+  "codebase": {
+    "repo": "https://github.com/DBRisinajumi/d2files",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "b5101d20a4e122f559e0611deb9687aeec23655d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Server-side request handling and data persistence logic"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-supplied identifiers from HTTP request parameters are passed directly into database query methods without type validation or sanitization, allowing an attacker to manipulate SQL queries."
+    },
+    "L3": {
+      "area": "File upload and download request handling logic",
+      "description": "A SQL injection vulnerability exists where user-supplied numeric identifiers from file upload and download HTTP request parameters are passed directly into database lookup methods without being cast to the expected integer type, allowing an attacker to inject SQL through crafted identifier values."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "The actionUpload and actionDownloadFile functions pass user-controlled model_id and id parameters directly into database query methods without casting to integer, enabling SQL injection.",
+    "locations": [
+      {
+        "file": "controllers/D2filesController.php",
+        "function": "actionUpload"
+      },
+      {
+        "file": "controllers/D2filesController.php",
+        "function": "actionDownloadFile"
+      }
+    ]
+  }
+}
