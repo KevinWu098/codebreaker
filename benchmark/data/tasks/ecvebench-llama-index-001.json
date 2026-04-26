@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Agent tool specifications and database query handling"
+      "area": "Extension pack modules and data source query tooling"
     },
     "L2": {
       "description": "A SQL injection vulnerability exists where user-controlled query strings are passed directly to the database engine for execution without any sanitization or parameterization. An attacker can inject arbitrary SQL queries, which on PostgreSQL databases can lead to remote code execution through large object functionality."
     },
     "L3": {
-      "area": "Agent tool specifications and database query handling",
-      "description": "A SQL injection vulnerability exists where user-controlled query strings are passed directly to the database engine for execution without any sanitization or parameterization. An attacker can inject arbitrary SQL queries, which on PostgreSQL databases can lead to remote code execution through large object functionality."
+      "area": "Financial data analysis extension pack and its database query logic",
+      "description": "A SQL injection vulnerability exists in a financial data analysis extension pack where user-controlled query strings are passed directly to the database engine for execution without any sanitization or parameterization. The pack provides database interaction capabilities for agent-driven financial chat workflows. An attacker can inject arbitrary SQL queries, which on PostgreSQL databases can lead to remote code execution through large object functionality."
     }
   },
   "ground_truth": {
