@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4q2r-qxp6-h5j6",
+  "post_patch_commit": "1e065a26194d7629b35fee285d911b16a00961b7",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 1e065a2 is from unmerged PR #679 on the quokka repo (archived, no patched release exists). The fix adds a remove_tags_from_string() utility that strips HTML/XML tags and special characters, then applies it to user-controlled fields (category, author, home_template) in the content listing view and to the feed title and author name in the Atom feed generator. Primary locations derived from the patch diff: views.py get() method and atom.py generate() method. No sibling files share the same vulnerability pattern — sitemap.py uses Jinja2 template rendering which auto-escapes. Vulnerability class xxe confirmed: matches CWE-611 and advisory description (XML External Entities in feed output).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
