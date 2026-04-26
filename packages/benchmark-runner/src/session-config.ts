@@ -3,6 +3,7 @@ import {
   targetMirrorRepoName,
 } from "@codebreaker/benchmark-runner/agent-core/prompts";
 import type {
+  BenchmarkHarnessMode,
   BenchmarkRunModel,
   Difficulty,
   InternalMetadata,
@@ -21,6 +22,7 @@ export interface BenchmarkTaskRecord {
 export interface BenchmarkSessionConfigInput {
   artifactOwner?: string;
   difficulty: Difficulty;
+  harnessMode?: BenchmarkHarnessMode;
   maxInputTokens?: number;
   maxOutputTokens?: number;
   maxSteps?: number;
@@ -36,6 +38,7 @@ export interface BenchmarkSessionConfigInput {
 export const toBenchmarkSessionConfig = ({
   artifactOwner,
   difficulty,
+  harnessMode = "full",
   maxInputTokens,
   maxOutputTokens,
   maxSteps,
@@ -50,6 +53,9 @@ export const toBenchmarkSessionConfig = ({
   const effectiveMaxTurns = Math.max(2, maxTurns);
 
   return {
+    ...(harnessMode === "minimal"
+      ? { activeTools: ["exec_remote", "remote_read"] }
+      : {}),
     benchmark: {
       artifacts: {
         workingBranch: "main",
@@ -64,6 +70,7 @@ export const toBenchmarkSessionConfig = ({
         vulnerableRef: task.codebase.commit,
       },
     },
+    benchmarkHarnessMode: harnessMode,
     compaction: defaultCompactionConfig,
     budgets: {
       maxInputTokens: maxInputTokens ?? null,
@@ -79,9 +86,16 @@ export const toBenchmarkSessionConfig = ({
       profile: task.codebase.language === "javascript" ? "node" : "python",
       provider: "modal",
     },
-    systemPrompt: benchmarkSystemPrompt(task, difficulty, artifactOwner),
+    systemPrompt: benchmarkSystemPrompt(
+      task,
+      difficulty,
+      artifactOwner,
+      harnessMode
+    ),
     timeoutSeconds,
-    title: `benchmark ${task.task_id} ${difficulty}`,
+    title: `benchmark ${task.task_id} ${difficulty}${
+      harnessMode === "minimal" ? " minimal" : ""
+    }`,
   };
 };
 
@@ -98,12 +112,14 @@ export const toBenchmarkSessionConfigFromRecord = (
 export const benchmarkInitialPrompt = (
   task: TaskInstance,
   difficulty: Difficulty,
-  artifactOwner?: string
+  artifactOwner?: string,
+  harnessMode: BenchmarkHarnessMode = "full"
 ): string =>
   buildBenchmarkAgentPrompt({
     ...(artifactOwner ? { artifactOwner } : {}),
     difficulty,
     environment: "think",
+    harnessMode,
     task,
     toolMode: "sandbox",
   }).initialPrompt;
@@ -111,12 +127,14 @@ export const benchmarkInitialPrompt = (
 const benchmarkSystemPrompt = (
   task: TaskInstance,
   difficulty: Difficulty,
-  artifactOwner: string | undefined
+  artifactOwner: string | undefined,
+  harnessMode: BenchmarkHarnessMode
 ): string =>
   buildBenchmarkAgentPrompt({
     ...(artifactOwner ? { artifactOwner } : {}),
     difficulty,
     environment: "think",
+    harnessMode,
     task,
     toolMode: "sandbox",
   }).systemPrompt;

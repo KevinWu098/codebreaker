@@ -1,3 +1,6 @@
+import { ClipboardCopy } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
@@ -60,6 +63,103 @@ const renderPart = (
   />
 );
 
+const formatPartForClipboard = (part: MessagePart): string => {
+  if (part.type === "text" && typeof part.text === "string") {
+    return part.text;
+  }
+  if (typeof part.type === "string" && part.type.startsWith("tool")) {
+    const name = part.toolName ?? "unknown_tool";
+    const lines = [`[tool: ${name}]`];
+    if (part.input !== undefined) {
+      try {
+        lines.push(`  input: ${JSON.stringify(part.input, null, 2)}`);
+      } catch {
+        lines.push(`  input: ${String(part.input)}`);
+      }
+    }
+    if (part.output !== undefined) {
+      try {
+        lines.push(`  output: ${JSON.stringify(part.output, null, 2)}`);
+      } catch {
+        lines.push(`  output: ${String(part.output)}`);
+      }
+    }
+    return lines.join("\n");
+  }
+  try {
+    return JSON.stringify(part, null, 2);
+  } catch {
+    return String(part);
+  }
+};
+
+const formatMessagesForClipboard = (messages: unknown[]): string => {
+  const lines: string[] = [];
+  for (const [idx, raw] of messages.entries()) {
+    if (!isMessage(raw)) {
+      lines.push(`--- message ${idx + 1} (unparsed) ---`);
+      try {
+        lines.push(JSON.stringify(raw, null, 2));
+      } catch {
+        lines.push(String(raw));
+      }
+      lines.push("");
+      continue;
+    }
+    const role = raw.role ?? "assistant";
+    lines.push(`--- ${role} ---`);
+    if (raw.parts) {
+      for (const part of raw.parts) {
+        lines.push(formatPartForClipboard(part));
+      }
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+};
+
+const CLIPBOARD_RESET_MS = 2000;
+
+const useClipboardCopy = (
+  getText: () => string
+): { copied: boolean; copy: () => void } => {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    },
+    []
+  );
+
+  const copy = useCallback(() => {
+    const text = getText();
+    if (!text) {
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopied(true);
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+        timerRef.current = setTimeout(() => {
+          setCopied(false);
+          timerRef.current = undefined;
+        }, CLIPBOARD_RESET_MS);
+      },
+      () => {
+        /* clipboard unavailable */
+      }
+    );
+  }, [getText]);
+
+  return { copied, copy };
+};
+
 export const MessagesPanel = ({
   sessionId,
 }: MessagesPanelProps): React.JSX.Element => {
@@ -69,13 +169,30 @@ export const MessagesPanel = ({
   const titleText =
     messages.data === undefined ? "messages" : `messages · ${list.length}`;
 
+  const getClipboardText = useCallback(
+    () => formatMessagesForClipboard(list),
+    [list]
+  );
+  const { copied, copy } = useClipboardCopy(getClipboardText);
+
   return (
     <Card
       actions={
-        <RefreshButton
-          loading={messages.isFetching}
-          onClick={() => messages.refetch()}
-        />
+        <div className="flex items-center gap-2">
+          {list.length > 0 && (
+            <Button
+              onClick={copy}
+              title="copy full message log for LLM debugging"
+            >
+              <ClipboardCopy aria-hidden="true" size={12} />
+              <span>{copied ? "copied!" : "copy log"}</span>
+            </Button>
+          )}
+          <RefreshButton
+            loading={messages.isFetching}
+            onClick={() => messages.refetch()}
+          />
+        </div>
       }
       title={titleText}
     >

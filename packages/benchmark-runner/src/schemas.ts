@@ -193,6 +193,9 @@ export type BenchmarkCleanupPolicy = z.infer<
   typeof BenchmarkCleanupPolicySchema
 >;
 
+export const BenchmarkHarnessModeSchema = z.enum(["full", "minimal"]);
+export type BenchmarkHarnessMode = z.infer<typeof BenchmarkHarnessModeSchema>;
+
 export const BenchmarkRunEventKindSchema = z.enum([
   "created",
   "session_created",
@@ -226,6 +229,7 @@ export const CreateBenchmarkRunRequestSchema = z
     autoStart: z.boolean().default(true),
     cleanupPolicy: BenchmarkCleanupPolicySchema.default("retain"),
     difficulty: DifficultySchema,
+    harnessMode: BenchmarkHarnessModeSchema.default("full"),
     id: z.string().min(1).optional(),
     maxSteps: z.number().int().positive().default(DEFAULT_BENCHMARK_MAX_STEPS),
     maxTurns: z.number().int().positive().default(DEFAULT_BENCHMARK_MAX_TURNS),

@@ -110,7 +110,8 @@ const parseArgs = (
       process.stdout.write(
         "Usage: ensure-stable-targets [--check] [--task <task_id> ...]\n" +
           "  --check   List target repos missing from the org; exit 1 if any.\n" +
-          "  (default) Create or update each missing target mirror via the GitHub API.\n"
+          "  (default) Create or update each missing target mirror via the GitHub API.\n" +
+          "On failure, the script prints follow-up commands (full ensure and per-task retry).\n"
       );
       process.exit(0);
     }
@@ -155,14 +156,71 @@ const expectedRepoNamesForTasks = (
   return { expectedNames, expectedSet: new Set(expectedNames) };
 };
 
+const missingTaskIdsForCheck = (
+  selected: TaskInstance[],
+  expectedNames: string[],
+  existing: Set<string>
+): string[] => {
+  const ids: string[] = [];
+  for (let i = 0; i < expectedNames.length; i += 1) {
+    const name = expectedNames[i];
+    const task = selected[i];
+    if (name && task && !existing.has(name)) {
+      ids.push(task.task_id);
+    }
+  }
+  return ids;
+};
+
+const printFailureFollowUps = (input: {
+  owner: string;
+  taskIds: string[];
+}): void => {
+  const { owner, taskIds } = input;
+  const unique = [...new Set(taskIds)].sort((a, b) => a.localeCompare(b));
+
+  process.stdout.write("\nFollow-up:\n");
+
+  const orgSlug = process.env.GITHUB_ORG ?? owner;
+  const repoListUrl = process.env.GITHUB_ORG
+    ? `https://github.com/orgs/${orgSlug}/repositories?type=source`
+    : `https://github.com/${orgSlug}?tab=repositories`;
+
+  process.stdout.write(
+    `  - Confirm the token can create/fork repos under ${orgSlug} and list them at ${repoListUrl} (private org repos need appropriate scopes).\n`
+  );
+  process.stdout.write(
+    "  - From the repo root, create or refresh every target mirror:\n" +
+      "      pnpm ensure-org-targets\n"
+  );
+
+  if (unique.length === 0) {
+    return;
+  }
+
+  const flags = unique.map((id) => `--task ${id}`).join(" ");
+  process.stdout.write(
+    `  - Retry only the ${unique.length} failing or missing task(s):\n` +
+      `      pnpm --dir packages/control-plane ensure-targets ${flags}\n`
+  );
+};
+
 const reportCheckResults = (input: {
   expectedNames: string[];
   existing: Set<string>;
   expectedSet: Set<string>;
   owner: string;
+  selected: TaskInstance[];
   selectedCount: number;
 }): void => {
-  const { existing, expectedNames, expectedSet, owner, selectedCount } = input;
+  const {
+    existing,
+    expectedNames,
+    expectedSet,
+    owner,
+    selected,
+    selectedCount,
+  } = input;
   process.stdout.write(
     `Checking ${selectedCount} expected target repo(s) under ${owner}/...\n`
   );
@@ -192,6 +250,10 @@ const reportCheckResults = (input: {
   );
   if (missing.length > 0) {
     process.exitCode = 1;
+    printFailureFollowUps({
+      owner,
+      taskIds: missingTaskIdsForCheck(selected, expectedNames, existing),
+    });
   }
 };
 
@@ -231,6 +293,10 @@ const ensureAllTargets = async (input: {
 
   if (failures.length > 0) {
     process.exitCode = 1;
+    printFailureFollowUps({
+      owner,
+      taskIds: failures.map((f) => f.task),
+    });
   }
 };
 
@@ -275,6 +341,7 @@ const main = async (): Promise<void> => {
       expectedNames,
       expectedSet,
       owner,
+      selected,
       selectedCount: selected.length,
     });
     return;

@@ -26,6 +26,8 @@
     "deploy:worker": "pnpm --dir packages/control-plane exec wrangler deploy --config wrangler.jsonc",
 
     "check-org-targets": "pnpm --dir packages/control-plane check-targets",
+    "fail-stale": "pnpm --dir packages/control-plane fail-stale",
+    "purge-cve-followups": "pnpm --dir packages/control-plane purge-cve-followups",
     "ensure-org-targets": "pnpm --dir packages/control-plane ensure-targets",
     "fix": "ultracite fix",
     "prepare": "lefthook install",

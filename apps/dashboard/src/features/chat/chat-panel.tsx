@@ -1,7 +1,13 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import type { ChatStatus, UIMessage } from "ai";
-import { Check, Copy, MessageSquare, Trash2 } from "lucide-react";
+import {
+  Check,
+  ClipboardCopy,
+  Copy,
+  MessageSquare,
+  Trash2,
+} from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
@@ -275,6 +281,88 @@ const chatStatusFor = (
   return error ? "error" : "ready";
 };
 
+const formatUIPartForClipboard = (part: UIMessage["parts"][number]): string => {
+  if (part.type === "text") {
+    return part.text;
+  }
+  if (part.type === "tool-invocation") {
+    const inv = part.toolInvocation;
+    const lines = [`[tool: ${inv.toolName}]`];
+    if (inv.args !== undefined) {
+      try {
+        lines.push(`  input: ${JSON.stringify(inv.args, null, 2)}`);
+      } catch {
+        lines.push(`  input: ${String(inv.args)}`);
+      }
+    }
+    if ("result" in inv && inv.result !== undefined) {
+      try {
+        lines.push(`  output: ${JSON.stringify(inv.result, null, 2)}`);
+      } catch {
+        lines.push(`  output: ${String(inv.result)}`);
+      }
+    }
+    return lines.join("\n");
+  }
+  try {
+    return JSON.stringify(part, null, 2);
+  } catch {
+    return String(part);
+  }
+};
+
+const formatChatForClipboard = (messages: UIMessage[]): string => {
+  const lines: string[] = [];
+  for (const message of messages) {
+    lines.push(`--- ${message.role} ---`);
+    for (const part of message.parts) {
+      lines.push(formatUIPartForClipboard(part));
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+};
+
+const useClipboardCopy = (
+  getText: () => string
+): { copied: boolean; copy: () => void } => {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    },
+    []
+  );
+
+  const copy = useCallback(() => {
+    const text = getText();
+    if (!text) {
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopied(true);
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+        timerRef.current = setTimeout(() => {
+          setCopied(false);
+          timerRef.current = undefined;
+        }, COPIED_RESET_MS);
+      },
+      () => {
+        /* clipboard unavailable */
+      }
+    );
+  }, [getText]);
+
+  return { copied, copy };
+};
+
 const ChatTitle = ({
   identified,
   isStreaming,
@@ -344,17 +432,35 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
     [persistedMessages.data?.messages]
   );
 
+  const chatMessages = chat.messages;
+  const getChatLogText = useCallback(
+    () => formatChatForClipboard(chatMessages),
+    [chatMessages]
+  );
+  const { copied: logCopied, copy: copyLog } = useClipboardCopy(getChatLogText);
+
   return (
     <Card
       actions={
-        <Button
-          disabled={isStreaming}
-          onClick={() => chat.clearHistory()}
-          variant="ghost"
-        >
-          <Trash2 aria-hidden="true" size={12} />
-          <span>clear</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {chatMessages.length > 0 && (
+            <Button
+              onClick={copyLog}
+              title="copy full chat log for LLM debugging"
+            >
+              <ClipboardCopy aria-hidden="true" size={12} />
+              <span>{logCopied ? "copied!" : "copy log"}</span>
+            </Button>
+          )}
+          <Button
+            disabled={isStreaming}
+            onClick={() => chat.clearHistory()}
+            variant="ghost"
+          >
+            <Trash2 aria-hidden="true" size={12} />
+            <span>clear</span>
+          </Button>
+        </div>
       }
       title={
         <ChatTitle identified={agent.identified} isStreaming={isStreaming} />

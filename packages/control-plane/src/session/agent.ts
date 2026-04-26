@@ -168,7 +168,8 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
         description: "Reusable cybersecurity workflow skills",
         provider: {
           get: async () =>
-            this.isBenchmarkSession()
+            this.isBenchmarkSession() &&
+            this.readConfig()?.benchmarkHarnessMode !== "minimal"
               ? BENCHMARK_SKILLS_CONTEXT
               : "No benchmark skills are active for this session.",
         },
@@ -331,9 +332,17 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     if (stopReason) {
       this.recordStopReason(stopReason);
 
+      if (
+        this.isBenchmarkSession() &&
+        ctx.toolName === BENCHMARK_SUBMIT_TOOL_NAME
+      ) {
+        this.recordToolCall(ctx.toolName);
+        return;
+      }
+
       return {
         action: "block",
-        reason: `${stopReason}. Stop calling tools and return the best valid final answer using the evidence already present in the transcript.`,
+        reason: `${stopReason}. Only call the ${BENCHMARK_SUBMIT_TOOL_NAME} tool. Return the best valid final answer using the evidence already present in the transcript.`,
       };
     }
 
@@ -706,7 +715,12 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   private activeToolNames(config: SessionConfig): string[] {
-    const toolNames = activeBuiltinToolNames(config.extensionPolicy);
+    const policyToolNames = activeBuiltinToolNames(config.extensionPolicy);
+    const toolNames = config.activeTools
+      ? policyToolNames.filter((toolName) =>
+          config.activeTools?.includes(toolName)
+        )
+      : policyToolNames;
 
     if (!this.isBenchmarkSession()) {
       return toolNames;

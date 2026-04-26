@@ -21,6 +21,7 @@ const ExecRemoteInputSchema = z.object({
 });
 
 const GIT_COMMAND_RE = /\bgit\b/;
+const GIT_METADATA_PATH_RE = /(^|[/\\\s"'`])\.git([/\\\s"'`]|$)/;
 const MODAL_TOOL_MAX_TIMEOUT_SECONDS = 15;
 const EXEC_REMOTE_MAX_TIMEOUT_SECONDS = MODAL_TOOL_MAX_TIMEOUT_SECONDS;
 const REMOTE_READ_DEFAULT_MAX_BYTES = 24_000;
@@ -73,6 +74,9 @@ export const createModalTools = ({
       inputSchema: ExecRemoteInputSchema,
       execute: ({ command, cwd, timeoutSeconds }) => {
         assertNoGitCommand(command);
+        if (cwd) {
+          assertNoGitMetadataPath(cwd);
+        }
         const fallbackTimeoutSeconds = defaultTimeoutSeconds?.();
         const options: ExecRemoteOptions = {
           command,
@@ -104,9 +108,10 @@ export const createModalTools = ({
       },
     }),
     remote_read: tool({
-      description: `Read a file from the session's configured remote Modal sandbox and return base64 content. Calls are capped at ${MODAL_TOOL_MAX_TIMEOUT_SECONDS} seconds and return a timed-out result if they exceed that budget. Output is truncated to a budget-friendly window; for larger reads use exec_remote with \`sed -n 'A,Bp'\`, \`head\`, \`tail\`, or \`grep -n -C\`.`,
+      description: `Read a file from the session's configured remote Modal sandbox and return base64 content. .git metadata paths are blocked. Calls are capped at ${MODAL_TOOL_MAX_TIMEOUT_SECONDS} seconds and return a timed-out result if they exceed that budget. Output is truncated to a budget-friendly window; for larger reads use exec_remote with \`sed -n 'A,Bp'\`, \`head\`, \`tail\`, or \`grep -n -C\`.`,
       inputSchema: RemoteReadInputSchema,
       execute: ({ maxBytes, path }) => {
+        assertNoGitMetadataPath(path);
         const input: {
           path: string;
           profile?: SandboxProfileName;
@@ -167,6 +172,7 @@ export const createModalTools = ({
       description: `Write base64 content to a file in the session's configured remote Modal sandbox. Calls are capped at ${MODAL_TOOL_MAX_TIMEOUT_SECONDS} seconds and return a timed-out result if they exceed that budget.`,
       inputSchema: RemoteWriteInputSchema,
       execute: ({ contentBase64, path }) => {
+        assertNoGitMetadataPath(path);
         const input: {
           content: Uint8Array;
           path: string;
@@ -205,6 +211,14 @@ const assertNoGitCommand = (command: string): void => {
   if (GIT_COMMAND_RE.test(command)) {
     throw new Error(
       "Git commands are blocked in benchmark sandbox tool calls. Use ls, grep, sed, head, tail, or remote_read against the existing checkout instead."
+    );
+  }
+};
+
+const assertNoGitMetadataPath = (path: string): void => {
+  if (GIT_METADATA_PATH_RE.test(path)) {
+    throw new Error(
+      "Reading or writing .git metadata is blocked for benchmark integrity. Inspect checked-out source files only."
     );
   }
 };

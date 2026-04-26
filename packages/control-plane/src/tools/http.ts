@@ -17,6 +17,9 @@ const IPV4_MAPPED_IPV6_REGEX = /^::ffff:([\d.]+)$/i;
 const IPV4_MAPPED_IPV6_HEX_REGEX = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i;
 const IPV6_LINK_LOCAL_REGEX = /^fe[89ab][0-9a-f]/i;
 const IPV6_UNIQUE_LOCAL_REGEX = /^f[cd][0-9a-f]{2}/i;
+const PATCH_DISCLOSURE_PATH_REGEX = /\.(diff|patch)$/i;
+const GITHUB_PATCH_DISCLOSURE_PATH_REGEX =
+  /^\/[^/]+\/[^/]+\/(compare|commit|commits|pull)(\/|$)/i;
 
 const PRIVATE_HOSTNAME_PATTERNS = [
   /^localhost$/i,
@@ -115,7 +118,27 @@ const assertSafeUrl = (rawUrl: string): URL => {
     throw new Error("Private and local network targets are blocked");
   }
 
+  if (isPatchDisclosureUrl(parsedUrl)) {
+    throw new Error(
+      "Patch, diff, compare, commit, and pull request URLs are blocked for benchmark integrity"
+    );
+  }
+
   return parsedUrl;
+};
+
+const isPatchDisclosureUrl = (url: URL): boolean => {
+  const hostname = stripBrackets(url.hostname).toLowerCase();
+  const pathname = url.pathname;
+
+  if (PATCH_DISCLOSURE_PATH_REGEX.test(pathname)) {
+    return true;
+  }
+
+  return (
+    (hostname === "github.com" || hostname === "www.github.com") &&
+    GITHUB_PATCH_DISCLOSURE_PATH_REGEX.test(pathname)
+  );
 };
 
 const isRedirect = (status: number): boolean =>

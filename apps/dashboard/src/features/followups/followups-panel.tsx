@@ -68,57 +68,70 @@ export const FollowupsPanel = ({
       )}
 
       {rows.length > 0 && (
-        <div className="card overflow-hidden">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>follow-up</th>
-                <th>task</th>
-                <th>ghsa</th>
-                <th>status</th>
-                <th>
-                  <DevinWord />
-                </th>
-                <th>auto</th>
-                <th>run</th>
-                <th className="w-28 whitespace-nowrap">updated</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <FollowupTableRow
-                  key={row.followup.id}
-                  onSelect={onSelectRun}
-                  row={row}
-                  selected={row.followup.runId === selectedRunId}
-                />
-              ))}
-            </tbody>
-          </table>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(500px,1fr)]">
+          <Card
+            bodyClassName="p-0"
+            className="min-w-0 overflow-hidden"
+            title="workflows"
+          >
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>follow-up</th>
+                  <th>task</th>
+                  <th>ghsa</th>
+                  <th>status</th>
+                  <th>
+                    <DevinWord />
+                  </th>
+                  <th>auto</th>
+                  <th>run</th>
+                  <th className="w-28 whitespace-nowrap">updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <FollowupTableRow
+                    key={row.followup.id}
+                    onSelect={onSelectRun}
+                    row={row}
+                    selected={row.followup.runId === selectedRunId}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </Card>
+
+          {selectedRunId && enabled ? (
+            <Card
+              actions={
+                <Button
+                  onClick={() => onOpenBenchmarkRun(selectedRunId)}
+                  variant="ghost"
+                >
+                  <FlaskConical aria-hidden="true" size={12} />
+                  <span>open in benchmarks</span>
+                </Button>
+              }
+              className="min-w-0"
+              title={`detail · run ${truncateId(selectedRunId)}`}
+            >
+              <CveFollowupRunSection
+                allowWhenRunIncomplete
+                runId={selectedRunId}
+                runStatus="completed"
+              />
+            </Card>
+          ) : (
+            <Card className="min-w-0" title="workflow detail">
+              <EmptyState
+                hint="select a follow-up from the table to inspect stages, Devin sessions, validation, and events."
+                title="no follow-up selected"
+              />
+            </Card>
+          )}
         </div>
       )}
-
-      {selectedRunId && enabled && rows.length > 0 ? (
-        <Card
-          actions={
-            <Button
-              onClick={() => onOpenBenchmarkRun(selectedRunId)}
-              variant="ghost"
-            >
-              <FlaskConical aria-hidden="true" size={12} />
-              <span>open in benchmarks</span>
-            </Button>
-          }
-          className="mb-2"
-          title={`detail · run ${truncateId(selectedRunId)}`}
-        >
-          <CveFollowupRunSection
-            allowWhenRunIncomplete
-            runId={selectedRunId}
-            runStatus="completed"
-          />
-        </Card>
-      ) : null}
     </div>
   );
 };
