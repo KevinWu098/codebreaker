@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-g3wc-xv93-445q",
   "post_patch_commit": "cf7105aa2aae90d6656088fe5a8ee1d5730773b6",
   "noisy_patch": false,
-  "curation_notes": "The advisory explicitly names the file DNS/Protocol/Request.cs. The patch commit changes only this single file, replacing System.Random with RNGCryptoServiceProvider for generating DNS request IDs. The vulnerable code is in the parameterless Request() constructor where RANDOM.Next(UInt16.MaxValue) was used to set the header ID.",
+  "curation_notes": "Re-curated with updated hint guidelines. The advisory explicitly names DNS/Protocol/Request.cs. The patch commit changes only this single file, replacing System.Random with RNGCryptoServiceProvider for generating DNS request transaction IDs. The vulnerable code is in the parameterless Request() constructor where RANDOM.Next(UInt16.MaxValue) was used to set the header ID. No sibling files share this vulnerability pattern — the Request class is the sole location where transaction IDs are generated. Vulnerability class crypto-weakness confirmed: CWE-330 (Insufficient Entropy) maps directly and the patch replaces a non-cryptographic PRNG with a cryptographic one.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
