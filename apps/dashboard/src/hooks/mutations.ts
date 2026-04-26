@@ -39,6 +39,16 @@ const messageFor = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
+const benchmarkRunUrl = (runId: string): string => {
+  const url = new URL(window.location.href);
+  url.searchParams.set("view", "benchmarks");
+  url.searchParams.set("benchmark", runId);
+  url.searchParams.set("tab", "results");
+  url.searchParams.delete("followupRun");
+  url.searchParams.delete("session");
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
 const replaceBenchmarkRun = (
   data: ListBenchmarkRunsResponse | undefined,
   response: BenchmarkRunActionResponse
@@ -98,7 +108,14 @@ export const useCreateBenchmarkRunMutation = () => {
       toast.error(messageFor(error, "benchmark run failed"));
     },
     onSuccess: (response) => {
-      toast.success(`benchmark ${response.run.id.slice(0, 8)}… started`);
+      toast.success(`benchmark ${response.run.id.slice(0, 8)}… started`, {
+        action: {
+          label: "open",
+          onClick: () => {
+            window.location.assign(benchmarkRunUrl(response.run.id));
+          },
+        },
+      });
       queryClient.invalidateQueries({ queryKey: qk.benchmarkRuns(connection) });
     },
   });

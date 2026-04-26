@@ -302,8 +302,25 @@ export const createRouter = (): Hono<{
     "/benchmark-runs/:id/followup",
     zValidator("param", BenchmarkRunParamsSchema),
     async (context) => {
-      const { id } = context.req.valid("param");
-      const detail = await cveFollowupDetail(context.env, id);
+      const { id: runId } = context.req.valid("param");
+      const cve = new CveFollowupStore(context.env.DB);
+      const follow = await cve.getByRunId(runId);
+      if (
+        follow &&
+        (follow.status === "pending" || follow.status === "running")
+      ) {
+        try {
+          await new CveFollowupOrchestrator(context.env).reconcileOne(
+            follow.id
+          );
+        } catch (error) {
+          console.error(
+            "[cve-followup] GET /benchmark-runs/.../followup reconcile",
+            error
+          );
+        }
+      }
+      const detail = await cveFollowupDetail(context.env, runId);
       if (!detail) {
         return jsonError(
           "No CVE follow-up for this run",
