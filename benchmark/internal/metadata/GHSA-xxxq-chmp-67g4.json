@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xxxq-chmp-67g4",
+  "post_patch_commit": "6087412d072a57074d3c4c1b40bdde0460d53a7f",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as buffer-overflow from CWE-119, but CWE-119 does not apply to a JavaScript BigInteger-based RSA library — there are no raw memory buffers. The patch adds input length validation to RSA decryption (RSADecrypt, RSADecryptOAEP in ext/rsa2.js) and signature verification (verifyWithMessageHash in src/rsasign-1.2.js) to reject ciphertexts and signatures whose hex length does not match the RSA modulus size. This prevents malleability via prepended zero bytes. Reclassified to crypto-weakness. Locations derived from the patch diff: only ext/rsa2.js and src/rsasign-1.2.js had substantive source changes (all other changed files are minified bundles, docs, configs, or tests). verifyWithMessageHashPSS already had the length check pre-patch and was not vulnerable.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
