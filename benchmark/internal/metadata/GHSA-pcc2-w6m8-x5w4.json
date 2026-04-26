@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pcc2-w6m8-x5w4",
+  "post_patch_commit": "c67a89822f86a7d10498ea2783b833052b719086",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only PomParser.java (plus a trivial pom.xml java-level bump). The fix replaces FileCallable with MasterToSlaveFileCallable to restrict agent-to-controller execution, and removes the empty checkRoles stub. The vulnerable function is getPom(), which uses DocumentBuilderFactory.newInstance().newDocumentBuilder().parse() without disabling external entities. No sibling parsers in the same directory use FileCallable or XML parsing, so no additional locations were added. Pre-assigned class xxe (CWE-611) is correct — the advisory explicitly describes external entity extraction and SSRF.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
