@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fj35-m94r-9h4c",
+  "post_patch_commit": "3ccde66dab4096ab5663e69f352992cc73e1160b",
+  "noisy_patch": true,
+  "curation_notes": "The vulnerability is in get_misp_connection() in util.py which uses a module-level global variable misp_connection as a singleton cache. In remote-transform mode, multiple users share the same process, so the first user's authenticated connection is returned to all subsequent users. The patch replaces the global function with a MISPConnection class that creates a new connection per invocation. Four source files were changed (util.py plus three transform callers: attributetoevent.py, eventtoattributes.py, galaxytoevent.py), making this a noisy patch. The primary vulnerability location is the get_misp_connection function in util.py; the other files are callers updated to use the new class. The pre-assigned class auth-bypass (from CWE-284) is correct — the vulnerability allows one user's authenticated session to be used by other users.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
