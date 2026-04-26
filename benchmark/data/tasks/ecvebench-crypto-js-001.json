@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-crypto-js-001",
+  "ghsa_id": "GHSA-xwcq-pm8m-c4vf",
+  "codebase": {
+    "repo": "https://github.com/brix/crypto-js",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "d1f4f4daec4f053be3eea4f6233d1d05ccec22fa"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Key derivation and password hashing configuration"
+    },
+    "L2": {
+      "description": "A key derivation function uses insecure default configuration values, defaulting to a cryptographically weak hash algorithm and an extremely low iteration count (a single iteration instead of hundreds of thousands), making derived keys vulnerable to brute-force and preimage attacks."
+    },
+    "L3": {
+      "area": "PBKDF2 key derivation default configuration",
+      "description": "The PBKDF2 key derivation implementation defaults to SHA1 as its hash algorithm and uses only a single iteration, rather than a secure hash like SHA256 and a high iteration count (e.g., 250,000+). This makes derived keys extremely vulnerable to offline brute-force attacks."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.1,
+    "reason": "PBKDF2 defaults to SHA1 and a single iteration, making it 1,000 times weaker than originally specified in 1993 and over 1,300,000 times weaker than current OWASP recommendations, leaving derived keys trivially vulnerable to brute-force attacks.",
+    "locations": [
+      {
+        "file": "src/pbkdf2.js",
+        "function": null
+      }
+    ]
+  }
+}

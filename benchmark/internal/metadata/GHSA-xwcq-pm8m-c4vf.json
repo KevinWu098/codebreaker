@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xwcq-pm8m-c4vf",
+  "post_patch_commit": "421dd538b2d34e7c24a5b72cc64dc2b9167db40a",
+  "noisy_patch": false,
+  "curation_notes": "The patch changes only src/pbkdf2.js (source), grunt/config/modularize.js (build config), and test/pbkdf2-test.js (test). The sole source-level change is in src/pbkdf2.js where the default hasher is changed from SHA1 to SHA256 and the default iteration count from 1 to 250000. The vulnerability class crypto-weakness matches the CWE IDs (CWE-327, CWE-328, CWE-916) and the advisory description — no override needed. No sibling files share the same vulnerability pattern since PBKDF2 is the only key derivation module with these insecure defaults.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
