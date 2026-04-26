@@ -10,25 +10,29 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "HTTP request body handling and middleware processing"
+      "area": "HTTP request processing and S3 API middleware layer"
     },
     "L2": {
-      "description": "A null pointer dereference vulnerability exists in the S3-compatible gateway. When neither the Transfer-Encoding nor the Content-Length headers are provided in chunked uploads, the underlying HTTP framework assumes there is no request body and sets the body reader to nil. This causes a panic when subsequent middleware attempts to read the request body, leading to a denial of service."
+      "description": "A null pointer dereference vulnerability exists in the S3-compatible gateway. When chunked uploads arrive without a Content-Length HTTP header—for example when requests pass through a reverse proxy that strips or does not forward certain transfer-related headers—the underlying HTTP framework assumes there is no request body and sets the body reader to nil. Subsequent processing that attempts to read the request body triggers a panic, causing a denial of service."
     },
     "L3": {
-      "area": "HTTP request body handling and middleware processing",
-      "description": "A null pointer dereference vulnerability exists in the S3-compatible gateway. When neither the Transfer-Encoding nor the Content-Length headers are provided in chunked uploads, the underlying HTTP framework assumes there is no request body and sets the body reader to nil. This causes a panic when subsequent middleware attempts to read the request body, leading to a denial of service."
+      "area": "S3 API middleware responsible for preparing and wrapping the HTTP request body reader for authentication and checksum processing",
+      "description": "A null pointer dereference vulnerability exists in the S3-compatible gateway's middleware that prepares request body readers. When AWS chunked uploads are routed through a reverse proxy that strips the Transfer-Encoding header, the HTTP framework does not create a body reader because it sees no Content-Length. The middleware code that wraps or assigns the body reader does not check for a nil value before passing it to downstream handlers for authentication and checksum verification, causing a panic and denial of service."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "null-deref",
     "cvss": 7.7,
-    "reason": "When chunked uploads arrive without Transfer-Encoding or Content-Length headers (e.g. through a reverse proxy), the HTTP framework sets the request body reader to nil, causing a panic when the authentication middleware attempts to read from it.",
+    "reason": "When chunked uploads arrive without Transfer-Encoding or Content-Length headers (e.g. through a reverse proxy), the HTTP framework sets the request body reader to nil, causing a panic when middleware attempts to read from it.",
     "locations": [
       {
         "file": "s3api/middlewares/body-reader.go",
         "function": "wrapBodyReader"
+      },
+      {
+        "file": "s3api/middlewares/public-bucket.go",
+        "function": "AuthorizePublicBucketAccess"
       }
     ]
   }
