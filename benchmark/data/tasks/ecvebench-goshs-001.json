@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-goshs-001",
+  "ghsa_id": "GHSA-wvhv-qcqf-f3cx",
+  "codebase": {
+    "repo": "https://github.com/patrickhener/goshs",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "141c188ce270ffbec087844a50e5e695b7da7744"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTTP server request handling and file management operations"
+    },
+    "L2": {
+      "description": "An authorization bypass vulnerability exists where file-based access control policies are enforced for read and directory listing operations but not for state-changing operations. An unauthenticated remote attacker can perform write, upload, delete, and directory creation operations within access-controlled directories, and can remove the access control policy itself to expose previously protected content."
+    },
+    "L3": {
+      "area": "HTTP request handlers for file upload, deletion, and directory creation operations",
+      "description": "An authorization bypass vulnerability exists where per-folder file-based access control policies are enforced for directory listing and file read operations but not for PUT uploads, multipart POST uploads, directory creation, or file deletion operations. An unauthenticated remote attacker can modify, create, or delete files in access-controlled directories, and can remove the access control policy file itself to then read previously protected content without credentials."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 9.8,
+    "reason": "The goshs HTTP file server enforces file-based ACL authorization for read and directory listing routes but omits the same checks for state-changing routes (PUT upload, multipart POST upload, file deletion, and directory creation), allowing unauthenticated attackers to bypass access controls on protected directories.",
+    "locations": [
+      {
+        "file": "httpserver/handler.go",
+        "function": "deleteFile"
+      },
+      {
+        "file": "httpserver/handler.go",
+        "function": "handleMkdir"
+      },
+      {
+        "file": "httpserver/updown.go",
+        "function": "put"
+      },
+      {
+        "file": "httpserver/updown.go",
+        "function": "upload"
+      }
+    ]
+  }
+}
