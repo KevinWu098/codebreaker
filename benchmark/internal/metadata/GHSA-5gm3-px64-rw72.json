@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5gm3-px64-rw72",
+  "post_patch_commit": "774e53bb132461d8d5ebefec1162e29ec0ebc63d",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only src/PIL/FpxImagePlugin.py (1 non-test source file). The vulnerability is in _open_index where i32(s, 4) is passed directly to range() without validation. The fix extracts the value into a 'bands' variable and raises IOError if bands > 4. Checked PcfFontFile.py which has a similar range(i32(...)) pattern but serves a different architectural role (font file parsing, not image plugin), so it was not added as a sibling location. Pre-assigned class integer-overflow (CWE-190) confirmed: the unvalidated 32-bit integer from crafted input causes overflow on 32-bit systems and resource exhaustion on 64-bit systems.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
