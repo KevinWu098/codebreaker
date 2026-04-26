@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-mq29-j5xf-cjwr",
   "post_patch_commit": "73331a6a0481067628f065ffe87bb1d8f787d10c",
   "noisy_patch": false,
-  "curation_notes": "The vulnerability is in zlib's MiniZip contrib library, bundled by pyminizip. The patch commit (73331a6) adds length validation checks for filename, comment, and extra field parameters in zipOpenNewFileInZip4_64, ensuring they do not exceed the 16-bit (0xffff) limit of the zip format header fields. Only one source file was changed (contrib/minizip/zip.c), so the patch is not noisy. Location derived directly from the patch diff.",
+  "curation_notes": "Re-curated with improved L3 hints. The vulnerability is in zlib's MiniZip contrib library, bundled by pyminizip. The patch commit (73331a6) adds length validation checks for filename, comment, and extra field parameters in zipOpenNewFileInZip4_64, ensuring they do not exceed the 16-bit (0xffff) limit of the zip format header fields. Only one source file was changed (contrib/minizip/zip.c), so the patch is not noisy. Location derived directly from the patch diff. Pre-assigned class integer-overflow (CWE-190) confirmed — the root cause is integer overflow when field lengths exceed the 16-bit range, leading to a heap-based buffer overflow.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
