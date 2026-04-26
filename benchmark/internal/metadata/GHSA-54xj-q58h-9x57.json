@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-54xj-q58h-9x57",
+  "post_patch_commit": "16b2b325ab47896090bc7f54b77b0a97ed74f5cd",
+  "noisy_patch": true,
+  "curation_notes": "Primary location derived from the patch diff. The fix is in lib/web.js inside the Web constructor function, specifically in the /log/* route handler. The patch adds path normalization and a startsWith check to ensure the resolved filename stays within the configured log folder. The commit also includes unrelated changes (NPM package updates, babel plugin renames, socket.js refactoring, frontend JS changes), making it a noisy patch. No sibling files share the same vulnerable pattern — lib/socket.js handles WebSocket events, not file serving. Pre-assigned vulnerability class path-traversal is correct per CWE-22 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
