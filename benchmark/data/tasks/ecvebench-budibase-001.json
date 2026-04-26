@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-budibase-001",
+  "ghsa_id": "GHSA-rvhr-26g4-p2r8",
+  "codebase": {
+    "repo": "https://github.com/Budibase/budibase",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "bfe68d6b7537be9292ffb8afe9a175ae17a8a5d8"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Server-side data querying and view rendering layer"
+    },
+    "L2": {
+      "description": "A code injection vulnerability exists where user-controlled filter parameters from view configurations are directly interpolated into dynamically generated JavaScript code strings that are subsequently evaluated at runtime. An authenticated user can craft malicious filter values that break out of the intended expression context, achieving arbitrary code execution on the server. This allows extraction of server environment variables including secrets and database credentials."
+    },
+    "L3": {
+      "area": "In-memory view evaluation and view filter expression builder within the server-side database querying layer",
+      "description": "A code injection vulnerability exists where user-controlled filter parameters (keys, values, and conditions) from table view configurations are directly interpolated into dynamically generated JavaScript function strings, which are then executed via eval(). An authenticated user can craft malicious filter values that break out of the intended string context to inject arbitrary JavaScript code. When the view is subsequently queried on the cloud deployment path where views are evaluated in-memory rather than through native database views, the injected code runs on the server with full access to the Node.js runtime, allowing extraction of secrets and database credentials."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 9.9,
+    "reason": "User-controlled view filter parameters (keys, values, conditions) are directly interpolated into JavaScript code strings via template literals and then passed to eval(), allowing any authenticated user to execute arbitrary code on the server.",
+    "locations": [
+      {
+        "file": "packages/server/src/api/controllers/view/viewBuilder.ts",
+        "function": "parseFilterExpression"
+      },
+      {
+        "file": "packages/server/src/db/inMemoryView.ts",
+        "function": "runView"
+      }
+    ]
+  }
+}
