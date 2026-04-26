@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jjx5-3f36-6927",
+  "post_patch_commit": "3c607a003e03b773108401d109167d1840487dce",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the advisory description which explicitly names Decoder::new() and the unsafe slice.get_unchecked(slice.length()) call. The patch changed data_ptr and related fields from raw pointers (*const u8) to usize to avoid undefined behavior from pointer arithmetic, and replaced the unsafe get_unchecked call with safe as_ptr() + len() arithmetic. Three source files were changed (decoder.rs, handlers_legacy.rs, encoder.rs), but the vulnerability is localized to the Decoder constructor in decoder.rs. The handlers_legacy.rs changes are consequential type adjustments (displ_index from usize to u8), and encoder.rs only adds const_assert statements. Pre-assigned class buffer-overflow from CWE-131 (Incorrect Calculation of Buffer Size) is correct — the bug is an out-of-bounds memory access due to an incorrect pointer derivation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
