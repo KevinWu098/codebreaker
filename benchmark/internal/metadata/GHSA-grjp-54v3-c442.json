@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-grjp-54v3-c442",
+  "post_patch_commit": "b9530922b6a8ea72cd43661226b693fff8abbe4c",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only pxr/usd/sdf/crateData.cpp (plus test files and CMakeLists.txt). The fix adds validation of primChildren entries during crate file loading in _PopulateFromCrateFile, checking for invalid identifiers, nonexistent child paths, and duplicate entries. Without this validation, a crafted .usdc file with malformed primChildren can trigger a use-after-free when those children are accessed. Pre-assigned class use-after-free matches CWE-416 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
