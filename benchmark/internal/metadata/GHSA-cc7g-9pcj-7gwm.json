@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cc7g-9pcj-7gwm",
+  "post_patch_commit": "852740e7c636e4f44b3a8e3afc15155795e22c9b",
+  "noisy_patch": false,
+  "curation_notes": "Patch adds libxml_disable_entity_loader(true) to REST_Controller::__construct(), which globally disables XML external entity loading before any request parsing occurs. Primary location is the constructor where the fix was applied. Format::_from_xml() is a sibling location in the same directory that performs the actual XML parsing via simplexml_load_string() without XXE protection. Pre-assigned class xxe confirmed: CWE-611 maps directly to XXE, the advisory explicitly states 'allows XXE attacks', and the patch disables external entity loading.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
