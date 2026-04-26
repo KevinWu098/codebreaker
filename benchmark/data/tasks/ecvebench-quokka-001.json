@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-quokka-001",
+  "ghsa_id": "GHSA-4q2r-qxp6-h5j6",
+  "codebase": {
+    "repo": "https://github.com/quokkaproject/quokka",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "4d07b172037f109b5f1b25760c99d418a0b44438"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Content feed generation and syndication layer"
+    },
+    "L2": {
+      "description": "An XML External Entity (XXE) vulnerability exists where user-controlled content fields such as titles and author names are embedded directly into XML feed output without sanitization. A remote attacker can inject malicious XML entity declarations through these fields, which are processed by XML parsers consuming the generated feeds, potentially enabling file disclosure or server-side request forgery."
+    },
+    "L3": {
+      "area": "Atom and RSS feed generation and the content listing view that constructs syndication feed URLs and metadata",
+      "description": "An XML External Entity (XXE) vulnerability exists where user-controlled content fields such as article titles and author names are embedded directly into Atom feed XML output without sanitization. When content is created with XML payloads in these fields, the generated Atom and RSS feeds contain unfiltered XML that, when processed by consumer XML parsers, can lead to arbitrary code execution or information disclosure."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "User-controlled title and author fields are inserted unsanitized into Atom/RSS feed XML output, allowing injection of XML external entity declarations that are processed by feed consumers.",
+    "locations": [
+      {
+        "file": "quokka/core/content/views.py",
+        "function": "get"
+      },
+      {
+        "file": "quokka/utils/atom.py",
+        "function": "generate"
+      }
+    ]
+  }
+}
