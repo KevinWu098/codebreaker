@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-mcms-001",
+  "ghsa_id": "GHSA-54wc-49qj-5ghj",
+  "codebase": {
+    "repo": "https://github.com/ming-soft/MCMS",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "4623765bd73fea6bc6f395f11000d6c125081a33"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Content publishing and retrieval logic"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-controlled request parameters are rendered through a template engine to construct raw SQL queries, which are then executed directly without parameterized binding. This allows remote unauthenticated attackers to execute arbitrary SQL queries, potentially leading to privilege escalation or remote code execution when the database permits stacked queries."
+    },
+    "L3": {
+      "area": "Content listing API endpoint and its backing business service that constructs SQL from template rendering",
+      "description": "A SQL injection vulnerability exists where user-controlled request parameters such as content search fields are rendered through a FreeMarker template engine to construct raw SQL queries for content listing. The resulting SQL is executed directly without parameterized binding, allowing remote unauthenticated attackers to inject arbitrary SQL via stacked queries when the database is configured to allow them."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "User-controlled request parameters (e.g., content_title) are passed through FreeMarker template rendering to construct raw SQL, which is executed directly via queryForList without parameterized binding, enabling SQL injection.",
+    "locations": [
+      {
+        "file": "src/main/java/net/mingsoft/cms/biz/impl/ContentBizImpl.java",
+        "function": "list"
+      },
+      {
+        "file": "src/main/java/net/mingsoft/cms/action/web/ContentAction.java",
+        "function": "list"
+      }
+    ]
+  }
+}
