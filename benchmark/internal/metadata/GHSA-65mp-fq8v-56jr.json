@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-65mp-fq8v-56jr",
+  "post_patch_commit": "d64c6b2f71cb73734fc38baa0e3e156926361288",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit d64c6b2 modifies only one non-test source file (src/flask_uploads/flask_uploads.py). The fix adds secure_filename() sanitization to the name parameter in the save() method, re-validates extensions after name override, sanitizes folder components, and adds realpath containment checks. Pre-assigned class path-traversal is correct: the root vulnerability is unsanitized path input enabling directory escape. CWE-1336 (SSTI) describes the exploitation impact, not the root cause fixed by the patch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
