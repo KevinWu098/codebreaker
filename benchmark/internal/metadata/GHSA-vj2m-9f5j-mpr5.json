@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vj2m-9f5j-mpr5",
+  "post_patch_commit": "953a349b539b3e0d3653585c8ffb50c427986df1",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only Sources/Vapor/Utilities/FileIO.swift (plus a test file). The vulnerability is in the asByteBufferBounds function on HTTPHeaders.Range.Value, which computes byte offsets from HTTP Range header values without overflow checks or bounds validation. The .within case computed end - start + 1 without checking for integer overflow. The patch adds guard clauses for non-negative and in-bounds values, and uses addingReportingOverflow for safe arithmetic. Pre-assigned class integer-overflow is correct based on CWE-190 and the patch diff. No sibling files share this pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
