@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Sandbox runtime execution and security enforcement layer"
+      "area": "JavaScript sandbox code execution and runtime management"
     },
     "L2": {
-      "description": "A code injection vulnerability exists where untrusted sandboxed code can escape the sandbox by exploiting incomplete isolation of host-realm objects. When certain operations fail, objects with intact prototype chains from the host environment are exposed to sandboxed code. An attacker can traverse these prototype chains to reach the host's code generation facilities and execute arbitrary JavaScript in the host Node.js runtime, bypassing all sandbox isolation guarantees."
+      "description": "A code injection vulnerability exists in a JavaScript sandboxing library where host-realm objects exposed to sandboxed code retain their complete prototype chains. When certain operations fail, error objects from the host environment cross the sandbox boundary without proper isolation. An attacker executing code within the sandbox can traverse these prototype chains to reach the host runtime's code generation facilities, enabling arbitrary JavaScript execution in the host Node.js process and full sandbox escape."
     },
     "L3": {
-      "area": "Sandbox runtime execution and security enforcement layer",
-      "description": "A code injection vulnerability exists where untrusted sandboxed code can escape the sandbox by exploiting incomplete isolation of host-realm objects. When certain operations fail, objects with intact prototype chains from the host environment are exposed to sandboxed code. An attacker can traverse these prototype chains to reach the host's code generation facilities and execute arbitrary JavaScript in the host Node.js runtime, bypassing all sandbox isolation guarantees."
+      "area": "Error object construction and cross-boundary object isolation in the sandbox VM runtime",
+      "description": "A code injection vulnerability exists in a JavaScript sandboxing library where error objects that cross the host-sandbox boundary retain their complete host-realm prototype chains. The sandbox's prototype chain isolation mechanism only applies a surface-level property shadow rather than severing the actual internal prototype link, and several code paths throw completely unprotected host Error objects into the sandbox context. An attacker executing code within the sandbox can deliberately trigger failure conditions to receive these improperly isolated error objects, then traverse the prototype chain to reach the host Function constructor, enabling arbitrary JavaScript execution in the host Node.js process."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "command-injection",
     "cvss": 10.0,
-    "reason": "Error objects exposed to sandboxed code had their prototype chain incompletely severed, allowing sandbox code to traverse to the host Function constructor and execute arbitrary JavaScript in the host runtime.",
+    "reason": "Host-side Error objects exposed to sandboxed code had incomplete prototype chain isolation, allowing sandbox code to traverse to the host Function constructor via Object.getPrototypeOf and execute arbitrary JavaScript in the host runtime.",
     "locations": [
       {
         "file": "libs/enclave-vm/src/safe-runtime.ts",
@@ -41,6 +41,14 @@
       {
         "file": "libs/enclave-vm/src/adapters/vm-adapter.ts",
         "function": "createSafeObject"
+      },
+      {
+        "file": "libs/enclave-vm/src/double-vm/double-vm-wrapper.ts",
+        "function": "createSafeError"
+      },
+      {
+        "file": "libs/enclave-vm/src/double-vm/parent-vm-bootstrap.ts",
+        "function": "generateParentVmBootstrap"
       }
     ]
   }
