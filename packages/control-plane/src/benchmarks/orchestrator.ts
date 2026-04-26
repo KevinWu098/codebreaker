@@ -6,13 +6,11 @@ import type {
   CreateBenchmarkRunRequest,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
-  DEFAULT_BENCHMARK_MAX_INPUT_TOKENS,
-  DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS,
   DEFAULT_BENCHMARK_MAX_STEPS,
   DEFAULT_BENCHMARK_MAX_TOOL_CALLS,
-  DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS,
   DEFAULT_BENCHMARK_MAX_TURNS,
   DEFAULT_BENCHMARK_TIMEOUT_SECONDS,
+  getBenchmarkTokenLimits,
   scoreBestCandidate,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
@@ -86,15 +84,16 @@ export class BenchmarkRunOrchestrator {
       id: run.modelId,
       provider: run.modelProvider,
     };
+    const tokenLimits = getBenchmarkTokenLimits(run.difficulty);
     const maxInputTokens =
-      request?.maxInputTokens ?? DEFAULT_BENCHMARK_MAX_INPUT_TOKENS;
+      request?.maxInputTokens ?? tokenLimits.maxInputTokens;
     const maxOutputTokens =
-      request?.maxOutputTokens ?? DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS;
+      request?.maxOutputTokens ?? tokenLimits.maxOutputTokens;
     const maxSteps = request?.maxSteps ?? DEFAULT_BENCHMARK_MAX_STEPS;
     const maxToolCalls =
       request?.maxToolCalls ?? DEFAULT_BENCHMARK_MAX_TOOL_CALLS;
     const maxTotalTokens =
-      request?.maxTotalTokens ?? DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS;
+      request?.maxTotalTokens ?? tokenLimits.maxTotalTokens;
     const maxTurns = request?.maxTurns ?? DEFAULT_BENCHMARK_MAX_TURNS;
     const timeoutSeconds =
       request?.timeoutSeconds ?? DEFAULT_BENCHMARK_TIMEOUT_SECONDS;

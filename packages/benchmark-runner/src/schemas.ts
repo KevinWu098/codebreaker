@@ -13,6 +13,31 @@ export const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 300_000;
 export const DEFAULT_BENCHMARK_MAX_TURNS = 10;
 export const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 
+export const L0_BENCHMARK_MAX_INPUT_TOKENS = 350_000;
+export const L0_BENCHMARK_MAX_OUTPUT_TOKENS = 50_000;
+export const L0_BENCHMARK_MAX_TOTAL_TOKENS = 400_000;
+
+export interface BenchmarkTokenLimits {
+  maxInputTokens: number;
+  maxOutputTokens: number;
+  maxTotalTokens: number;
+}
+
+export const getBenchmarkTokenLimits = (
+  difficulty: Difficulty
+): BenchmarkTokenLimits =>
+  difficulty === "L0"
+    ? {
+        maxInputTokens: L0_BENCHMARK_MAX_INPUT_TOKENS,
+        maxOutputTokens: L0_BENCHMARK_MAX_OUTPUT_TOKENS,
+        maxTotalTokens: L0_BENCHMARK_MAX_TOTAL_TOKENS,
+      }
+    : {
+        maxInputTokens: DEFAULT_BENCHMARK_MAX_INPUT_TOKENS,
+        maxOutputTokens: DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS,
+        maxTotalTokens: DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS,
+      };
+
 export const GhsaIdSchema = z.string().regex(GHSA_ID_PATTERN);
 export type GhsaId = z.infer<typeof GhsaIdSchema>;
 

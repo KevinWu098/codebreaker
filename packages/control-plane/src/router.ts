@@ -3,6 +3,7 @@ import {
   CreateBenchmarkRunRequestSchema,
   CreateCveFollowupRequestSchema,
   CveFollowupStageKindSchema,
+  getBenchmarkTokenLimits,
   ListBenchmarkRunsQuerySchema,
   ListCveFollowupsQuerySchema,
 } from "@codebreaker/benchmark-runner/schemas";
@@ -276,16 +277,17 @@ export const createRouter = (): Hono<{
         return jsonError("Benchmark run not found", "run_not_found", 404);
       }
 
+      const tokenLimits = getBenchmarkTokenLimits(run.difficulty);
       const request: CreateBenchmarkRunRequest = {
         autoFollowup: false,
         autoStart: false,
         cleanupPolicy: run.cleanupPolicy,
         difficulty: run.difficulty,
-        maxInputTokens: 250_000,
-        maxOutputTokens: 50_000,
+        maxInputTokens: tokenLimits.maxInputTokens,
+        maxOutputTokens: tokenLimits.maxOutputTokens,
         maxSteps: 50,
         maxToolCalls: 40,
-        maxTotalTokens: 300_000,
+        maxTotalTokens: tokenLimits.maxTotalTokens,
         maxTurns: 20,
         model: {
           id: run.modelId,
