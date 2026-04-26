@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Script compilation and runtime code generation"
+      "area": "Bytecode generation and scope management in the scripting engine runtime"
     },
     "L2": {
-      "description": "A memory corruption vulnerability exists in the scripting engine due to improper handling of objects in memory during code generation. The engine makes incorrect assumptions about internal state, leading to out-of-bounds memory access. An attacker who successfully exploits this could gain the same user rights as the current user, potentially taking full control of the system."
+      "description": "A memory corruption vulnerability exists in the scripting engine's bytecode generation phase where incorrect assumptions about scope state during function compilation lead to improper memory access. An attacker who exploits this can gain the same user rights as the current user, potentially taking full control of the system."
     },
     "L3": {
-      "area": "Script compilation and runtime code generation",
-      "description": "A memory corruption vulnerability exists in the scripting engine due to improper handling of objects in memory during code generation. The engine makes incorrect assumptions about internal state, leading to out-of-bounds memory access. An attacker who successfully exploits this could gain the same user rights as the current user, potentially taking full control of the system."
+      "area": "Bytecode emission and parameter scope handling during function compilation in the scripting engine",
+      "description": "A memory corruption vulnerability exists in the scripting engine's bytecode emission phase where incorrect scope instantiation decisions are made when a split scope occurs during function compilation. The engine makes incorrect assumptions about whether a parameter scope needs to be instantiated, leading to out-of-bounds memory access that allows an attacker to gain elevated privileges."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "buffer-overflow",
     "cvss": 9.8,
-    "reason": "The bytecode emitter incorrectly instantiates a parameter scope when only the function expression symbol is captured in a split scope, leading to memory corruption that allows an attacker to gain elevated privileges.",
+    "reason": "The bytecode emitter incorrectly instantiates the parameter scope in split-scope scenarios when only the function expression symbol is captured, leading to memory corruption that allows privilege escalation.",
     "locations": [
       {
         "file": "lib/Runtime/ByteCode/ByteCodeEmitter.cpp",
