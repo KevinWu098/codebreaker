@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h47j-hc6x-h3qq",
+  "post_patch_commit": "d8c9bda46a204ecba1d35558452685cd0674e6f2",
+  "noisy_patch": false,
+  "curation_notes": "The vulnerability is in lib/bson.js in the toBSON function, which uses vm.runInNewContext('doc = eval((' + string + '));', sandbox) to parse user-provided BSON strings. An authenticated user can escape the VM sandbox via prototype chain traversal (this.constructor.constructor) to execute arbitrary OS commands. The patch replaces this unsafe eval-based parsing with the mongodb-query-parser library. Pre-assigned class command-injection is correct: CWE-78 (OS Command Injection) applies because the PoC demonstrates arbitrary command execution via child_process.execSync. No sibling files contain the same vulnerable pattern. lib/json.js was deleted and lib/routes/collection.js had a minor refactor to use the new parseObjectId function, but the core vulnerability is solely in toBSON.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
