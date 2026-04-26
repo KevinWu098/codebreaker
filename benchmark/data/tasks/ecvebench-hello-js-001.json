@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "OAuth authentication flow and redirect handling"
+      "area": "Social authentication and OAuth flow management"
     },
     "L2": {
       "description": "A cross-site scripting (XSS) vulnerability exists where a URL parameter controlling an OAuth redirect destination is passed directly to a browser navigation call without validation or sanitization. An attacker can craft a URL with a malicious redirect value using a dangerous protocol scheme such as javascript:, which will be executed in the user's browser context when processed."
     },
     "L3": {
-      "area": "OAuth authentication flow and redirect handling",
-      "description": "A cross-site scripting (XSS) vulnerability exists where a URL parameter controlling an OAuth redirect destination is passed directly to a browser navigation call without validation or sanitization. An attacker can craft a URL with a malicious redirect value using a dangerous protocol scheme such as javascript:, which will be executed in the user's browser context when processed."
+      "area": "OAuth callback response processing and redirect URL navigation",
+      "description": "A cross-site scripting (XSS) vulnerability exists in the OAuth callback response processing logic where a URL parameter controlling the redirect destination is decoded and passed directly to a browser navigation assignment without URL scheme validation. An attacker can supply a javascript: protocol URI as the redirect destination, causing arbitrary script execution in the user's browser when the OAuth callback is processed."
     }
   },
   "ground_truth": {
