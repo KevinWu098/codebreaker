@@ -13,11 +13,11 @@
       "area": "Image codec and decoding routines"
     },
     "L2": {
-      "description": "An integer overflow vulnerability exists in the TIFF image decoding logic where a multiplication of image dimension parameters derived from the file header is used to compute a memory reallocation size without first checking for overflow. A crafted TIFF file with very large dimension values can cause the multiplication to wrap around, leading to a smaller-than-expected buffer allocation followed by an out-of-bounds write."
+      "description": "An integer overflow vulnerability exists in an image decoding routine where a multiplication of image dimension parameters derived from a file header is used to compute a memory reallocation size without first checking for overflow. A crafted image file with very large dimension values can cause the multiplication to wrap around, leading to a smaller-than-expected buffer allocation followed by an out-of-bounds write."
     },
     "L3": {
-      "area": "Image codec and decoding routines",
-      "description": "An integer overflow vulnerability exists in the TIFF image decoding logic where a multiplication of image dimension parameters derived from the file header is used to compute a memory reallocation size without first checking for overflow. A crafted TIFF file with very large dimension values can cause the multiplication to wrap around, leading to a smaller-than-expected buffer allocation followed by an out-of-bounds write."
+      "area": "TIFF image codec and decoding routines",
+      "description": "An integer overflow vulnerability exists in the TIFF image decoding logic where a multiplication of image dimension parameters derived from the TIFF file header is used to compute a memory reallocation size without first checking for overflow. A crafted TIFF file with very large dimension values can cause the multiplication to wrap around, leading to a smaller-than-expected buffer allocation followed by an out-of-bounds write."
     }
   },
   "ground_truth": {
