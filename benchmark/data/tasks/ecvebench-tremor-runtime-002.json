@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-tremor-runtime-002",
+  "ghsa_id": "GHSA-9qvw-46gf-4fv8",
+  "codebase": {
+    "repo": "https://github.com/tremor-rs/tremor-runtime",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "bffc2a555bc4922bbb36b7186445477d8c0d0193"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Script expression evaluation and in-place data transformation optimization logic"
+    },
+    "L2": {
+      "description": "A use-after-free vulnerability exists in the scripting engine's in-place optimization for data transformation operations. When a merge or patch operation is applied in-place to a persistent data structure, values from a temporary source such as an incoming event are inserted directly. After the temporary source is deallocated, these inserted references become dangling, allowing access to freed or reallocated memory."
+    },
+    "L3": {
+      "area": "Script interpreter expression evaluation and the in-place optimization path for merge and patch operations",
+      "description": "A use-after-free vulnerability exists in the scripting engine's in-place optimization for merge and patch data transformation operations. When the target of a merge or patch expression matches the assignment destination, an optimization attempts to modify the value in-place using unsafe memory coercion. Values from a temporary event source are inserted directly into persistent state, and after the event is deallocated, these references become dangling, allowing access to freed or reallocated memory."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 7.5,
+    "reason": "The patch and merge in-place optimizations use unsafe transmute to obtain a mutable reference from an immutable borrow, then insert event-lifetime values into state, causing dangling references after the event is freed.",
+    "locations": [
+      {
+        "file": "tremor-script/src/interpreter/expr.rs",
+        "function": "patch_in_place"
+      },
+      {
+        "file": "tremor-script/src/interpreter/expr.rs",
+        "function": "merge_in_place"
+      }
+    ]
+  }
+}

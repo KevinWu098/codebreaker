@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9qvw-46gf-4fv8",
+  "post_patch_commit": "ec22294e1fab94bf344d85b7664d224e4790ddec",
+  "noisy_patch": true,
+  "curation_notes": "Primary locations are the patch_in_place and merge_in_place functions in tremor-script/src/interpreter/expr.rs. These functions use unsafe mem::transmute to convert an immutable Cow reference to a mutable reference, then perform patch/merge operations that insert event-lifetime values into persistent state. When the event is freed, these references become dangling. The patch removes both functions entirely and also removes the PatchInPlace/MergeInPlace AST variants from ast.rs, base_expr.rs, raw.rs, and to_static.rs, and updates run.rs for proper state threading. Six non-test source files were changed, making this a noisy patch. No sibling files share this pattern as the in-place optimization was unique to expr.rs. Vulnerability class use-after-free confirmed from CWE-416 and the unsafe transmute pattern in the diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
