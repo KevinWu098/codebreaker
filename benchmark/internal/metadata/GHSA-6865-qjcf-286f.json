@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6865-qjcf-286f",
+  "post_patch_commit": "d68bd5a79391742b3cb2e14d892bdd9997064927",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies 3 source files: kernel/util/misc.go (core sanitizer renamed from RemoveScriptsInSVG to SanitizeSVG with comprehensive attribute/element filtering), kernel/api/icon.go (caller updated), and kernel/server/serve.go (caller updated). Primary vulnerability is the incomplete SVG sanitizer in kernel/util/misc.go that only removed <script> tags but not event handler attributes or other dangerous elements. The getDynamicIcon endpoint in kernel/api/icon.go embeds user-controlled content directly into SVG via string formatting without escaping, and relies on this incomplete sanitizer. The serveSVG function in kernel/server/serve.go also uses the same incomplete sanitizer for serving SVG files. Pre-assigned class xss is correct — CWE-79 matches the reflected XSS via SVG injection described in the advisory and confirmed by the patch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
