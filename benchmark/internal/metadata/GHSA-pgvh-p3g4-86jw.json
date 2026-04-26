@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pgvh-p3g4-86jw",
+  "post_patch_commit": "0e299f7166f2e79f7639bb58a05073d06641269f",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as xss from CWE-79, but the advisory title is 'Command injection when embedding a video link', the description demonstrates RCE via backtick shell expansion (?`whoami`), and the patch adds backtick to the character strip list in the input sanitization loop — reclassified to command-injection. The patch commit 236228f15 referenced in the global advisory is for a different GHSA (GHSA-xr9h-p2rc-rpqm). The actual patch commits referencing GHSA-pgvh-p3g4-86jw in git history are 0e299f7166 (initial fix) and 55d555de36 (follow-up). Used 0e299f7166 as the primary patch. Location derived from the patch diff: objects/security.php at the top-level $securityRemoveSingleQuotes loop which lacked backtick stripping.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
