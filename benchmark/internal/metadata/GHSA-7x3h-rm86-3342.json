@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-7x3h-rm86-3342",
   "post_patch_commit": "67cb186c41c78c51464f70405504e8ef0a6e43c3",
   "noisy_patch": true,
-  "curation_notes": "The advisory explicitly references src/executor.ts line 304, where the property key parameter b is typed as string but never enforced at runtime. The patch changes b's type to PropertyKey and adds an isPropertyKey() guard that coerces non-PropertyKey values to strings before use, closing the TOCTOU gap. assignCheck was also patched to use a safe hasOwnProperty helper instead of calling obj.context.hasOwnProperty(obj.prop) directly, which was similarly vulnerable to TOCTOU via custom toString(). The patch modifies 4 non-test source files (SandboxExec.ts, executor.ts, parser.ts, utils.ts), making it noisy. Locations were derived primarily from the advisory description pointing to executor.ts, confirmed by the patch diff.",
+  "curation_notes": "Re-curated with updated guidelines. The advisory explicitly references src/executor.ts line 304 where the property key parameter b is typed as string but never enforced at runtime, enabling a TOCTOU attack via custom toString() coercion. The patch changes b's type to PropertyKey and adds an isPropertyKey() guard that coerces non-PropertyKey values to strings before use, closing the TOCTOU gap. assignCheck was also patched to use Object.prototype.hasOwnProperty.call() instead of calling .hasOwnProperty() directly on the object, closing a secondary TOCTOU vector. Vulnerability class race-condition confirmed from CWE-367 (TOCTOU) and validated against the patch diff. The patch modifies 4 non-test source files (SandboxExec.ts, executor.ts, parser.ts, utils.ts), making it noisy. Primary locations derived from the advisory description pointing to executor.ts, confirmed by the patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
