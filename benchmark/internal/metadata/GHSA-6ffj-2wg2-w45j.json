@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6ffj-2wg2-w45j",
+  "post_patch_commit": "01ac969bbb73d07588049715c80827d01f367756",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff: the get_link method in operatorlink.py called XComModel.deserialize_value() on untrusted XCom data. The fix replaces full deserialization with json.loads + stringify, avoiding arbitrary class instantiation. Only 1 non-test source file was changed. Pre-assigned class insecure-deserialization (CWE-502) is correct — the vulnerability is deserialization of untrusted XCom payloads enabling arbitrary object instantiation. No sibling files share the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
