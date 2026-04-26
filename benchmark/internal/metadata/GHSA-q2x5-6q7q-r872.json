@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-q2x5-6q7q-r872",
   "post_patch_commit": "ec22294e1fab94bf344d85b7664d224e4790ddec",
   "noisy_patch": true,
-  "curation_notes": "Patch is PR #1217 (rebase-merged as 4 commits). The core fix is in tremor-script/src/interpreter/expr.rs which removed the patch_in_place and merge_in_place functions that used unsafe transmute to convert immutable references to mutable ones for in-place optimization. Supporting changes removed PatchInPlace/MergeInPlace AST variants from ast.rs, base_expr.rs, raw.rs, and to_static.rs, and fixed state handling in tremor-cli/src/run.rs. Six non-test source files were changed, making the patch noisy. Locations were derived from the patch diff focusing on the two functions containing the unsafe code.",
+  "curation_notes": "Re-curated. Patch is PR #1217 (rebase-merged as 4 commits, feature branch tip ec22294e). The core fix is in tremor-script/src/interpreter/expr.rs which removed the patch_in_place and merge_in_place functions that used unsafe transmute to convert immutable references to mutable ones for in-place optimization. Supporting changes removed PatchInPlace/MergeInPlace AST variants from ast.rs, base_expr.rs, raw.rs, and to_static.rs, and fixed state handling in tremor-cli/src/run.rs. Six non-test source files were changed, making the patch noisy. Locations derived from the patch diff focusing on the two functions containing the unsafe code. Vulnerability class use-after-free confirmed from CWE-416 and the patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

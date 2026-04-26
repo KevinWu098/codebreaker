@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-wcp5-m52f-mhh5",
   "post_patch_commit": "c3e457f7a16facfe563eade82b0fa8736a8c96f9",
   "noisy_patch": true,
-  "curation_notes": "The advisory explicitly names GanttProjectReader and PhoenixReader as affected components. The patch modifies 9 source files (noisy), centralizing XML unmarshalling into new UnmarshalHelper and XmlReaderHelper classes that disable doctype declarations. Locations derived from the advisory description, confirmed by patch diff showing SAXParserFactory usage without disallow-doctype-decl in those readers' read() methods. Other readers (ConceptDrawProjectReader, GanttDesignerReader, MSPDIReader, PlannerReader, PrimaveraPMFileReader) were also patched but not named in the advisory.",
+  "curation_notes": "Re-curated with updated guidelines. The advisory explicitly names GanttProjectReader and PhoenixReader as affected. The patch modifies 9 non-test/non-doc source files (noisy), centralizing XML unmarshalling into new UnmarshalHelper and XmlReaderHelper classes that disable doctype declarations. Primary locations derived from advisory description. Sibling locations (GanttDesignerReader, ConceptDrawProjectReader) confirmed by patch diff: both had SAXParserFactory usage without disallow-doctype-decl, the same vulnerability pattern as the named components. MSPDIReader, PlannerReader, and PrimaveraPMFileReader already had disallow-doctype-decl set and were not vulnerable. L3 area narrowed to Gantt chart and scheduling tool format readers (~4 files). L1 broadened from prior curation to avoid hinting at XML/deserialization specifics. Vulnerability class xxe confirmed from CWE-611 and advisory description.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
