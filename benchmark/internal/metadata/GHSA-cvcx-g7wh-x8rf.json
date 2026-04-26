@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cvcx-g7wh-x8rf",
+  "post_patch_commit": "bb6fb30bd3ebd35c755109836aa1a5ee6126c8a0",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit bb6fb30 modifies only common/hash.go, changing two functions (SHA512_256 and SHA512_256i) to add 8-byte little-endian length encoding after each element delimiter. The pre-assigned class crypto-weakness (CWE-327) is correct: the vulnerability is a flawed hash construction that uses a single-byte delimiter without per-element length encoding, allowing hash collisions between different input splits. No sibling files share the same vulnerability pattern; hash_utils.go contains only a RejectionSample helper, and SHA512_256iOne takes a single input so is not affected.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-tss-lib-001",
+  "ghsa_id": "GHSA-cvcx-g7wh-x8rf",
+  "codebase": {
+    "repo": "https://github.com/bnb-chain/tss-lib",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "14e70f2891f45aed785ab78ba9ecb8197a5674d1"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Common cryptographic utility functions and hashing primitives used across the threshold signature protocol"
+    },
+    "L2": {
+      "description": "A cryptographic weakness exists in the hash construction used for threshold signature operations. The hashing scheme does not include per-element length information when concatenating multiple inputs, allowing an attacker to craft different sets of inputs that produce identical hash outputs. This collision vulnerability can undermine the security guarantees of the signature scheme."
+    },
+    "L3": {
+      "area": "Common hashing primitives for multi-input digest computation in the threshold signature scheme",
+      "description": "A cryptographic weakness exists in the hash construction used for threshold signature operations. When multiple byte inputs are concatenated for hashing, only a single-byte delimiter is used to separate elements without encoding the length of each individual element. This allows an attacker to craft different input splits that produce identical concatenated byte sequences, resulting in hash collisions that undermine the security guarantees of the ECDSA and EdDSA threshold signature protocol."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.1,
+    "reason": "The hash functions concatenate multiple inputs with only a delimiter but without per-element length encoding, enabling an attacker to produce hash collisions by rearranging input boundaries, which undermines the security of the threshold signature scheme.",
+    "locations": [
+      {
+        "file": "common/hash.go",
+        "function": "SHA512_256"
+      },
+      {
+        "file": "common/hash.go",
+        "function": "SHA512_256i"
+      }
+    ]
+  }
+}
