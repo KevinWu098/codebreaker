@@ -1,5 +1,6 @@
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
 import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
+import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
 import { verifyRequestJwt } from "@codebreaker/control-plane/http/auth";
 import {
   handlePreflight,
@@ -75,9 +76,11 @@ export default {
   ): void {
     const cve = new CveFollowupOrchestrator(env);
     const bench = new BenchmarkRunOrchestrator(env);
+    const sessions = new SessionIndexStore(env.DB);
     context.waitUntil(
       Promise.all([
         bench.watchdogScan(),
+        sessions.failStaleRunningSessions(),
         cve.reconcileActiveFollowups(),
         cve.watchdogScan(),
       ]).then(() => undefined)

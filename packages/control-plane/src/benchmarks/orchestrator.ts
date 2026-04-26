@@ -41,9 +41,8 @@ interface BenchmarkSubmissionAgent {
 
 const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 // Hard ceiling, in seconds, on how long any benchmark run is allowed to stay
-// in the `running` state before the watchdog finalizes it. Sized to comfortably
-// exceed the largest configured `timeoutSeconds + AGENT_TURN_COMPLETION_GRACE`.
-const WATCHDOG_MAX_RUNNING_SECONDS = 900;
+// in the `running` state before the watchdog finalizes it.
+const WATCHDOG_MAX_RUNNING_SECONDS = 300;
 const BENCHMARK_SUBMIT_FOLLOWUP_PROMPT =
   "The exploration turn is over. You must call `submit_benchmark_result` once with your strongest single final result object (schema-enforced). Do not write JSON in an assistant message. Do not use any other tools. Base your answer on the prior transcript and tool results.";
 const BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS = 300;
