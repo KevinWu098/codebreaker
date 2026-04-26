@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-ph6g-p72v-pc3p",
   "post_patch_commit": "b0951373bddd4ef6608f1a09549c713cc6d52c8d",
   "noisy_patch": false,
-  "curation_notes": "The patch commit changed 3 non-test source files (Screen.php, Layout.php, Repository.php) plus a config file. The core fix is in extractState() which replaced unserialize() with Crypt::decrypt(), and serializableState() which replaced serialize(new SerializableClosure(...)) with Crypt::encrypt(). The vulnerability location was derived from the patch diff: the _state parameter deserialization in extractState() is the entry point for the insecure deserialization.",
+  "curation_notes": "The patch commit changed 3 non-test source files (Screen.php, Layout.php, Repository.php) plus a config file. The core fix is in extractState() which replaced unserialize() with Crypt::decrypt(), and serializableState() which replaced serialize(new SerializableClosure(...)) with Crypt::encrypt(). Both functions are listed as locations: extractState is the entry point where untrusted _state parameter data is deserialized, and serializableState is the counterpart that previously used serialize() with only optional base64 encoding (no integrity protection). The vulnerability class insecure-deserialization was confirmed from CWE-502, the advisory description, and the patch diff which directly removes the unserialize() call.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
