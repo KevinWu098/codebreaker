@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r6qh-j42j-pw64",
+  "post_patch_commit": "8f89e12e6cafb106d5c201dbc3b2a338bfde74e2",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which changes a hardcoded InsecureSkipVerify: true to a configurable field in core/logs/smtp.go sendMail function. The only other file changed (core/logs/alils/request.go) was a cosmetic capitalization fix unrelated to the vulnerability. No sibling files in core/logs/ contain TLS configuration, so no additional locations were added. The pre-assigned class crypto-weakness is correct: CWE-295 (Improper Certificate Validation) and CWE-599 (Missing Validation of OpenSSL Certificate) both describe missing TLS certificate verification.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
