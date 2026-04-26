@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-happy-dom-001",
+  "ghsa_id": "GHSA-96g7-g7g9-jxw8",
+  "codebase": {
+    "repo": "https://github.com/capricorn86/happy-dom",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "a20dba9440b5e93b6f0364c220212f0ce4264b27"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Network request processing and synchronous resource fetching"
+    },
+    "L2": {
+      "description": "A code injection vulnerability exists where an attacker-controlled URL is interpolated without sanitization into a dynamically constructed script that is executed as a child process, allowing arbitrary server-side code execution."
+    },
+    "L3": {
+      "area": "Synchronous fetch script construction and subprocess-based HTTP request utilities",
+      "description": "A code injection vulnerability exists where an attacker-controlled URL from a remotely loaded script resource is interpolated without sanitization into a dynamically constructed Node.js script that is executed via a synchronous child process call, allowing arbitrary server-side code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 9.3,
+    "reason": "The SyncFetchScriptBuilder interpolates a user-controlled URL directly into a JavaScript code string that is executed via child_process.execFileSync(), allowing an attacker to inject and execute arbitrary server-side code through a crafted script tag URL.",
+    "locations": [
+      {
+        "file": "packages/happy-dom/src/fetch/utilities/SyncFetchScriptBuilder.ts",
+        "function": "getScript"
+      }
+    ]
+  }
+}

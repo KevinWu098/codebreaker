@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-96g7-g7g9-jxw8",
+  "post_patch_commit": "d23834c232f1cf5519c9418b073f1dcec6b2f0fd",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as xss from CWE-79, but the patch fixes unsanitized URL interpolation into a JavaScript script string executed via child_process.execFileSync(). The test confirms arbitrary OS command execution via require('child_process').execSync('id'). Reclassified to command-injection. Two commits form the complete fix: 5ee0b1676d4ce20cc2a70d1c9c8d6f1e3f57efac (PR #1586) changed single-quote wrapping to template literals, and d23834c232f1cf5519c9418b073f1dcec6b2f0fd (PR #1588) replaced template literal interpolation with JSON.stringify() for proper escaping. Only one non-test source file modified (SyncFetchScriptBuilder.ts). No sibling files share the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
