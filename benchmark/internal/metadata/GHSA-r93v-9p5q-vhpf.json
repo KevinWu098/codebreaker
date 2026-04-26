@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r93v-9p5q-vhpf",
+  "post_patch_commit": "4d54611f93cecab7fb6072db436064e92fefb5e2",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the squash-merge of PR #2206 into master. Only one source file changed (futures-task/src/waker.rs), adding a 'static bound to the generic parameter W in the waker() function. The sibling file waker_ref.rs was examined but its waker_ref() function returns a lifetime-bounded WakerRef<'_>, so the use-after-free does not apply there. Vulnerability class use-after-free (CWE-416) is correct as confirmed by the advisory description and the nature of the fix.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
