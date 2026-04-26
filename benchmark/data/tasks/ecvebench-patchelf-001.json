@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-patchelf-001",
+  "ghsa_id": "GHSA-5pcj-3m26-w633",
+  "codebase": {
+    "repo": "https://github.com/NixOS/patchelf",
+    "language": "c++",
+    "ecosystem": "pip",
+    "commit": "75f25a3b593fd0f74c92adaa8e5011771fe83496"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "ELF binary section parsing and modification routines"
+    },
+    "L2": {
+      "description": "An out-of-bounds read vulnerability exists where a pointer derived from an ELF binary's dynamic section offset is used to iterate through dynamic table entries without first validating that it falls within the allocated file buffer. A crafted ELF binary can trigger a read beyond the buffer boundary."
+    },
+    "L3": {
+      "area": "ELF runtime path (RPATH/RUNPATH) modification and dynamic section traversal logic",
+      "description": "An out-of-bounds read vulnerability exists where a pointer computed from the dynamic section's file offset is used to iterate through dynamic table entries without first validating that the pointer falls within the allocated file buffer. A crafted ELF binary with a malicious dynamic section offset can trigger a read beyond the buffer boundary during runtime path modification operations."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.1,
+    "reason": "The modifyRPath function computes a pointer into the file buffer using the dynamic section's file offset without validating the pointer is within bounds, allowing a crafted ELF binary to trigger an out-of-bounds read.",
+    "locations": [
+      {
+        "file": "src/patchelf.cc",
+        "function": "modifyRPath"
+      }
+    ]
+  }
+}
