@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xc2r-jf2x-gjr8",
+  "post_patch_commit": "d3562fc08497aec5f33eb82017fa1417b3319e2c",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff. The getAllEventNames function in svg-loader.js enumerates DOM events by iterating document.body properties but misses SVG animation events (onbegin, onend, onrepeat) and non-standard events (onfocusin, onfocusout, onbounce, onfinish, onshow). The renderBody function checks href and xlink:href attributes for javascript: URLs but misses the values attribute. Both locations are in the same file. No sibling files contain the same vulnerability pattern — the lib/ directory modules (counter.js, css-url-fixer.js, scope-css.js) handle unrelated functionality. Pre-assigned vuln_class xss is correct: CWE-79 maps directly to XSS, the advisory explicitly describes XSS, and the patch addresses incomplete event attribute sanitization.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
