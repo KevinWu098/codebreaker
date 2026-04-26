@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vc3x-gx6c-g99f",
+  "post_patch_commit": "1ac3c8ac4f2b1e1df9675228290bda6b9586ba42",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single line in p2p/discover/net.go in the checkTopicRegister function. The fix casts data.Idx (type uint) to int before comparing < 0, since comparing a uint < 0 is always false and allows a wrapped negative index to bypass bounds validation. Pre-assigned class integer-overflow (CWE-190) is correct — the vulnerability is an unsigned-to-signed integer wraparound. No sibling files share this pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
