@@ -13,11 +13,11 @@
       "area": "Data buffering and memory management utilities"
     },
     "L2": {
-      "description": "A use-after-free vulnerability exists in a data conversion routine where raw pointer ownership is transferred to a new allocation, but the original memory owner is not prevented from deallocating the backing storage. This results in the returned data structure being backed by freed memory, leading to potential memory corruption or undefined behavior."
+      "description": "A use-after-free vulnerability exists in a type conversion implementation where a raw memory region is reinterpreted as a new owned allocation, but the original owner of the memory is not prevented from running its destructor. When the original owner is dropped, the backing memory is freed while the new allocation still references it, leading to potential memory corruption or undefined behavior."
     },
     "L3": {
-      "area": "Data buffering and memory management utilities",
-      "description": "A use-after-free vulnerability exists in a data conversion routine where raw pointer ownership is transferred to a new allocation, but the original memory owner is not prevented from deallocating the backing storage. This results in the returned data structure being backed by freed memory, leading to potential memory corruption or undefined behavior."
+      "area": "HTTP response body buffering and byte-level memory ownership conversion logic",
+      "description": "A use-after-free vulnerability exists in a trait implementation that converts an HTTP response buffer into a byte vector. The conversion uses raw pointer operations to transfer ownership of the underlying memory, but fails to prevent the original buffer's destructor from freeing the memory. This results in the returned vector being backed by freed memory, leading to potential memory corruption or undefined behavior."
     }
   },
   "ground_truth": {

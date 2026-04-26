@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-5rrv-m36h-qwf8",
   "post_patch_commit": "9e9f1fb44114078c000c78c72e691eeb9e7ac260",
   "noisy_patch": false,
-  "curation_notes": "Patch commit 9e9f1fb fixes issue #2 in sagebind/isahc (formerly chttp). The vulnerability is in src/buffer.rs in the From<Buffer> for Vec<u8> trait implementation. The code calls Vec::from_raw_parts with the slice's raw pointer but does not prevent the slice from being dropped, causing a use-after-free. The fix adds mem::forget(slice) after creating the Vec. Only one non-test source file was changed.",
+  "curation_notes": "Re-curation of existing task. Patch commit 9e9f1fb fixes issue #2 in sagebind/isahc (formerly chttp). The vulnerability is in src/buffer.rs in the From<Buffer> for Vec<u8> trait implementation. The code calls Vec::from_raw_parts with the slice's raw pointer but does not prevent the slice from being dropped via mem::forget, causing a use-after-free. The fix adds mem::forget(slice) after creating the Vec. Only one non-test source file was changed. No sibling files share this pattern. L3 hints were differentiated from L1/L2 to provide more targeted guidance toward the HTTP buffering subsystem.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
