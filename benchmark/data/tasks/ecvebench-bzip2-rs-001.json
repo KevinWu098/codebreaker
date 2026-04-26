@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-bzip2-rs-001",
+  "ghsa_id": "GHSA-96jv-r488-c2rj",
+  "codebase": {
+    "repo": "https://github.com/trifectatechfoundation/bzip2-rs",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "016e18155ef7c05983ea244cae1344c5b68defd8"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data compression and decompression stream processing"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists in the compression and decompression routines where slice lengths are cast to a narrower unsigned integer type without clamping. When a sufficiently large buffer is provided, the length value wraps to zero, causing the underlying C library to enter an infinite loop and resulting in a denial of service."
+    },
+    "L3": {
+      "area": "Low-level bzip2 compression and decompression memory stream handling",
+      "description": "An integer overflow vulnerability exists in the low-level bzip2 stream processing routines where input and output buffer lengths are truncated when cast from a platform-native size type to a 32-bit unsigned integer before being passed to the underlying C library. When a buffer of exactly 2^32 bytes is provided, the length wraps to zero, causing the C library to see no available data and enter an infinite loop, resulting in a denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 7.5,
+    "reason": "Slice lengths are cast from usize to c_uint (u32) without clamping, causing integer truncation when buffers exceed 2^32 bytes. This leads to an infinite loop in the underlying bzip2 C library, enabling denial of service.",
+    "locations": [
+      {
+        "file": "src/mem.rs",
+        "function": "compress"
+      },
+      {
+        "file": "src/mem.rs",
+        "function": "decompress"
+      }
+    ]
+  }
+}

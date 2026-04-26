@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-96jv-r488-c2rj",
+  "post_patch_commit": "90c9c182cd5a5ebc75810aebd89b347a7bdf590b",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only src/mem.rs (1 file, +4 -4 lines). The fix adds .min(c_uint::MAX as usize) before casting usize to c_uint in both Compress::compress() and Decompress::decompress(). Locations derived directly from the patch diff. No sibling files contain the same vulnerable pattern. Pre-assigned class integer-overflow (CWE-190) confirmed — the vulnerability is a classic integer truncation from usize (64-bit) to u32 when passing buffer lengths to the bzip2 C FFI.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
