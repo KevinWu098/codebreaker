@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6gm8-3g4h-w82m",
+  "post_patch_commit": "214a71e3a1de5fddc237569fa81deeee9c7f8cbe",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 214a71e3 fixes nil pointer dereference bugs across 3 NGAP handover handler files by adding nil checks before accessing AmfUe(), Radio, and TargetUe fields. Locations derived from the patch diff. Two sibling files (handle_handover_notify.go and handle_handover_required.go) contain the same unguarded nil dereference pattern on AmfUe() and Radio fields and were added as additional locations. Pre-assigned class null-deref confirmed: CWE-476 maps directly and the patch clearly adds nil pointer guards.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
