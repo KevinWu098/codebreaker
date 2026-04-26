@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Request handling and server-side state management"
+      "area": "Server-side component lifecycle and state persistence layer"
     },
     "L2": {
-      "description": "An insecure deserialization vulnerability exists where a request parameter containing serialized state data is deserialized without proper validation. An attacker can craft a malicious serialized payload that, when processed, results in remote code execution."
+      "description": "An insecure deserialization vulnerability exists where user-controlled data from an HTTP request parameter is deserialized without proper integrity validation. When an optional encryption setting is disabled (the default configuration), the serialized data can be freely crafted by an attacker, leading to arbitrary object injection and remote code execution."
     },
     "L3": {
-      "area": "Request handling and server-side state management",
-      "description": "An insecure deserialization vulnerability exists where a request parameter containing serialized state data is deserialized without proper validation. An attacker can craft a malicious serialized payload that, when processed, results in remote code execution."
+      "area": "Screen component state serialization and request-bound state restoration logic",
+      "description": "An insecure deserialization vulnerability exists where a state-carrying HTTP POST parameter is deserialized without integrity validation in the admin panel screen rendering framework. When the optional encryption configuration is not enabled (which is the default), an attacker can craft a malicious serialized payload that is merely base64-decoded before being passed to a deserialization call, achieving remote code execution."
     }
   },
   "ground_truth": {
@@ -29,6 +29,10 @@
       {
         "file": "src/Screen/Screen.php",
         "function": "extractState"
+      },
+      {
+        "file": "src/Screen/Screen.php",
+        "function": "serializableState"
       }
     ]
   }
