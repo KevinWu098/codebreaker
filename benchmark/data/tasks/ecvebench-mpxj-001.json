@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "XML-based project file reading and deserialization"
+      "area": "Project file import and parsing components"
     },
     "L2": {
-      "description": "An XML External Entity (XXE) vulnerability exists in project file parsing components. When processing XML-based project files, the XML parser does not disable external entity resolution or doctype declarations, allowing an attacker to supply a crafted project file that triggers XXE attacks, potentially leading to information disclosure, server-side request forgery, or denial of service."
+      "description": "An XML External Entity (XXE) vulnerability exists in project file parsing components. When processing XML-based project files, the XML parser does not disable external entity resolution or doctype declarations, allowing an attacker to supply a crafted project file that references external entities, potentially leading to information disclosure, server-side request forgery, or denial of service."
     },
     "L3": {
-      "area": "XML-based project file reading and deserialization",
-      "description": "An XML External Entity (XXE) vulnerability exists in project file parsing components. When processing XML-based project files, the XML parser does not disable external entity resolution or doctype declarations, allowing an attacker to supply a crafted project file that triggers XXE attacks, potentially leading to information disclosure, server-side request forgery, or denial of service."
+      "area": "Project file readers for Gantt chart and scheduling tool import formats",
+      "description": "An XML External Entity (XXE) vulnerability exists in project file readers that parse third-party Gantt chart and scheduling tool formats. When importing project files from these tools, the XML parser does not disable external entity resolution or doctype declarations, allowing an attacker to supply a crafted project file that references external entities, potentially leading to information disclosure, server-side request forgery, or denial of service."
     }
   },
   "ground_truth": {
@@ -32,6 +32,14 @@
       },
       {
         "file": "src/main/java/net/sf/mpxj/phoenix/PhoenixReader.java",
+        "function": "read"
+      },
+      {
+        "file": "src/main/java/net/sf/mpxj/ganttdesigner/GanttDesignerReader.java",
+        "function": "read"
+      },
+      {
+        "file": "src/main/java/net/sf/mpxj/conceptdraw/ConceptDrawProjectReader.java",
         "function": "read"
       }
     ]
