@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-f5p9-j34q-pwcc",
+  "post_patch_commit": "ea4d074f081dac6293f3aec38f01def5f08d5af5",
+  "noisy_patch": true,
+  "curation_notes": "Patch replaces all regular Go map declarations (OPERATORS, PortFwds, FTPStreams, AgentControlMap, PendingKeyRotations, CmdTime, RShellStreams) and their associated manual mutex usage with sync.Map for automatic thread-safe access. The advisory explicitly names three vulnerable maps: the operator session relay map (OPERATORS in operator.go), the port-forwarding session map (PortFwds in network/handler_portfwd.go and portfwd_session.go), and the FTP stream map (FTPStreams in ftp/handler_ftp.go). Additionally, AgentControlMap in live/agent.go and its accessor functions in agents/mgr.go exhibit the same vulnerable pattern. The patch is noisy (30+ non-test source files changed) because the same map-to-sync.Map migration was applied uniformly across all concurrent access points. Locations were derived primarily from the advisory description which explicitly names the three maps and shows vulnerable code patterns, supplemented by the patch diff. Pre-assigned vulnerability class race-condition (CWE-362, CWE-663) is correct — the fix addresses concurrent map access without synchronization.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
