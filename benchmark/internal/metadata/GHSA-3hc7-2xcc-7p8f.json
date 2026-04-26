@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3hc7-2xcc-7p8f",
+  "post_patch_commit": "f6f0a47cc344711042eb0970cb423e6950ba3f93",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff. The patch fixes two SQL injection sites in table.go where t.Name is directly concatenated into SHOW FULL COLUMNS FROM and SHOW INDEX FROM queries (loadColumns and loadKeys functions). The patch also fixes ast.go's quoteName function which did not escape backtick characters in identifiers. No sibling files share this pattern — the repository is a flat Go package and no other files construct raw SQL with unescaped identifiers. Pre-assigned class sql-injection confirmed by CWE-89 and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
