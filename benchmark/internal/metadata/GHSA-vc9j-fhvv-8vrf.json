@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vc9j-fhvv-8vrf",
+  "post_patch_commit": "90b9da45f4084958535338d1c4d71a22d6136aab",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies getExtensionIdForOpcode in src/serialization/sb3.js. The fix adds regex-based sanitization (replacing characters not matching [\\w-] with hyphens) to the extension ID prefix extracted from opcode strings. No sibling files share this vulnerability pattern — sb2.js does not contain the same function or extension ID resolution logic. Pre-assigned class insecure-deserialization (CWE-502) is correct: untrusted SB3 project files are deserialized and the unsanitized extension IDs allow loading arbitrary URLs as executable worker scripts.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
