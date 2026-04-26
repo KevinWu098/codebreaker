@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-mcvg-g9wx-v5vx",
+  "post_patch_commit": "c40826c5816c98d797a6b1ed8b62bddf73ed4f65",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit only modifies compiled dist files (Valine.min.js, Valine.Pure.min.js), docs/index.html, and package.json (adding dompurify). The source files in src/ were not changed in this commit. The vulnerability is in src/index.js: the insertDom function renders the user-agent field from stored comments directly into HTML template literals without sanitization, and the xssFilter function used for comment content is weak and bypassable. The fix wraps UA values through DOMPurify before rendering and replaces the weak custom xssFilter with DOMPurify-based sanitization. Vulnerability class xss confirmed from CWE-79 and the patch adding HTML sanitization.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
