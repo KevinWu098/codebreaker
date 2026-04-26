@@ -407,9 +407,6 @@ import task_ecvebench_xwiki_platform_002 from "../../../../benchmark/data/tasks/
 import task_ecvebench_xwiki_platform_003 from "../../../../benchmark/data/tasks/ecvebench-xwiki-platform-003.json" with {
   type: "json",
 };
-import task_ecvebench_xwiki_platform_004 from "../../../../benchmark/data/tasks/ecvebench-xwiki-platform-004.json" with {
-  type: "json",
-};
 import task_ecvebench_yeswiki_002 from "../../../../benchmark/data/tasks/ecvebench-yeswiki-002.json" with {
   type: "json",
 };
@@ -1105,7 +1102,6 @@ export const benchmarkDatasetFixtures = {
     task_ecvebench_xdocreport_001,
     task_ecvebench_xwiki_platform_002,
     task_ecvebench_xwiki_platform_003,
-    task_ecvebench_xwiki_platform_004,
     task_ecvebench_yeswiki_002,
     task_ecvebench_zlib_001,
   ],
