@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w3f6-pc54-gfw7",
+  "post_patch_commit": "56c60a29b1207a731be62fb68cc98246942145ed",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge of the security advisory fix into apple/swift-nio-http2. The primary vulnerability is in the decodeInteger function in Sources/NIOHPACK/IntegerCoding.swift, which performed unchecked multiplication and addition during HPACK variable-length integer decoding. The fix adds overflow-reporting arithmetic operations and throws a new UnrepresentableInteger error on overflow. HPACKErrors.swift was also modified but only to add the new error type. No sibling files share the same vulnerability pattern; other files in the NIOHPACK module (HuffmanCoding, HPACKDecoder, etc.) use different decoding logic. Pre-assigned class integer-overflow from CWE-190 is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
