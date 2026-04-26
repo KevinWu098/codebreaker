@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8qwj-4jxw-m8jw",
+  "post_patch_commit": "5ea1c32bb2aa894b4bd29849839afe4f98728195",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as integer-overflow from CWE-681, but the patch fixes a missing negative exponent guard in the BigInteger modular exponentiation function (bnModPow in ext/jsbn2.js). The function ignores the sign of the exponent and processes only the magnitude bits, producing incorrect results that break signature verification. Reclassified to crypto-weakness because the root cause is a flawed implementation of a cryptographic primitive, not an integer overflow. Primary location derived from the patch diff. No sibling files contain the same vulnerability pattern; jsbn.js has bnModPowInt which takes plain integers, not BigIntegers.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
