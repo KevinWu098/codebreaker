@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xwqr-xmgg-j69q",
+  "post_patch_commit": "849c7c21d20628d1c76204fe33363bd6ca58c80b",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is PR #236 which fixes unchecked integer arithmetic throughout src/elf.rs. The advisory specifically names the relocate function and the expression (sym.st_value + refd_pa), but the patch also fixes overflow in load (entrypoint offset calculation), fixup_relative_calls (instruction index and target_pc computation), and get_text_bytes (vaddr subtraction and slice offset addition). All locations are in src/elf.rs. Pre-assigned class integer-overflow is correct per CWE-190 and the patch replacing raw +, -, /, % with saturating_sub, saturating_add, checked_div, checked_rem. Only 1 source file changed so noisy_patch is false.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
