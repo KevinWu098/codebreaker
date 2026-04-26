@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wcvp-r8j8-47pc",
+  "post_patch_commit": "ced70c172486fb4827c172cd8238053df3d1dcdb",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit ced70c17 modifies only src/toodee.rs (plus src/tests.rs which is a test file). Two functions were fixed: insert_row and insert_col. Both had the same vulnerability pattern — after shifting elements via ptr::copy to make room for new entries, the iterator was consumed without safeguards against panics or incorrect ExactSizeIterator::len() values. The fix temporarily reduces the tracked array length before processing the iterator, caps consumed elements with take(), and asserts the expected count. CWE-415 (Double Free) maps correctly to use-after-free, as the advisory explicitly states elements could be freed twice.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
