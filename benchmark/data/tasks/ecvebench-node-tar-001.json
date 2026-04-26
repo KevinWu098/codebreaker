@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Archive entry extraction and path processing pipeline"
+      "area": "Archive entry extraction and file path management"
     },
     "L2": {
-      "description": "A race condition vulnerability exists due to incomplete Unicode normalization of file paths during archive extraction. On filesystems that are case-insensitive or normalization-insensitive, certain Unicode characters such as ligatures can collide with their multi-character equivalents at the filesystem level, but the library's internal concurrency control system does not recognize these collisions. This allows archive entries with colliding paths to be processed in parallel rather than being serialized, bypassing internal safeguards and enabling symlink poisoning attacks that can lead to arbitrary file overwrites."
+      "description": "A race condition vulnerability exists due to incomplete Unicode normalization of file paths during archive extraction. On filesystems that are case-insensitive or normalization-insensitive, certain Unicode ligature characters can collide with their multi-character equivalents at the filesystem level, but the library's internal concurrency control does not recognize these collisions. This allows archive entries with colliding paths to be processed in parallel rather than being serialized, bypassing internal safeguards and enabling symlink poisoning attacks that can lead to arbitrary file overwrites."
     },
     "L3": {
-      "area": "Archive entry extraction and path processing pipeline",
-      "description": "A race condition vulnerability exists due to incomplete Unicode normalization of file paths during archive extraction. On filesystems that are case-insensitive or normalization-insensitive, certain Unicode characters such as ligatures can collide with their multi-character equivalents at the filesystem level, but the library's internal concurrency control system does not recognize these collisions. This allows archive entries with colliding paths to be processed in parallel rather than being serialized, bypassing internal safeguards and enabling symlink poisoning attacks that can lead to arbitrary file overwrites."
+      "area": "Unicode path normalization and concurrent entry scheduling within the archive extraction engine",
+      "description": "A race condition vulnerability exists due to incomplete Unicode normalization of file paths during archive extraction on macOS APFS. The NFD Unicode normalization form does not collapse ligature characters such as the German sharp-s into their multi-character equivalents, even though the filesystem treats these as identical. This causes the internal path serialization mechanism to fail to detect colliding entries, allowing them to be processed concurrently and enabling symlink poisoning attacks that lead to arbitrary file overwrites."
     }
   },
   "ground_truth": {
