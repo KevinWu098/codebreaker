@@ -16,8 +16,8 @@
       "description": "A cryptographic weakness exists in the password reset functionality where the recovery key is generated using a weak hash algorithm (MD5) combined with a hard-coded salt value and a small random integer range (0 to 10,000). An attacker who knows the target user's name and email address can brute-force the recovery key by iterating through the limited random integer space and computing candidate hashes, allowing them to reset any user's password and take over their account."
     },
     "L3": {
-      "area": "User account recovery and credential management workflows",
-      "description": "A cryptographic weakness exists in the password reset functionality where the recovery key is generated using a weak hash algorithm (MD5) combined with a hard-coded salt value and a small random integer range (0 to 10,000). An attacker who knows the target user's name and email address can brute-force the recovery key by iterating through the limited random integer space and computing candidate hashes, allowing them to reset any user's password and take over their account."
+      "area": "Password recovery key generation within the login tool's action handlers",
+      "description": "A cryptographic weakness exists in the password reset functionality where the recovery key is generated using MD5 with a hard-coded four-character salt and a random integer from a small range (0 to 10,000). The key derivation combines the user's name, email, a predictable random value, and the current timestamp, making it brute-forceable when the attacker knows the target's name and email and can estimate the time of the password reset request, allowing full account takeover."
     }
   },
   "ground_truth": {
