@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-48rp-jc79-2264",
+  "post_patch_commit": "70a44fe02c03bce92337b5d370d2a45caa4de3d4",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only one source file (cnl_blueprint.py) in the addcrypted function. The advisory explicitly names the file and endpoint. The fix adds os.path.normpath and a startswith check to ensure the constructed DLC file path stays within the intended storage directory. Sibling blueprints (json_blueprint.py, api_blueprint.py, app_blueprint.py) were checked — json_blueprint.py uses secure_filename for its file path construction and is not vulnerable. Pre-assigned class path-traversal (CWE-22) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
