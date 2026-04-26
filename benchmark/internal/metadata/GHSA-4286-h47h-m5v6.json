@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4286-h47h-m5v6",
+  "post_patch_commit": "aec3df841958059c1db9ab1af25acc2af81e4e0e",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit (aec3df8) is a large refactoring that moves file upload logic from PageController to a new AttachmentController, adds attachment management features, and introduces indirect file serving through a visitFile() endpoint. 15 files were changed (805 additions, 162 deletions) making this a noisy patch. The vulnerable functions uploadImg() and upload() in PageController used an insufficient file extension check (strstr(strip_tags(strtolower(filename)), '.php')) that can be bypassed, and upload() lacked any allowExts whitelist for non-OSS local uploads. Uploaded files were stored in the web-accessible Public/Uploads/ directory with direct URL access. No sibling controllers had the same file upload vulnerability pattern. Kept pre-assigned vuln_class 'auth-bypass' from CWE-287; while the primary issue is CWE-434 (Unrestricted Upload of File with Dangerous Type), auth-bypass is the closest valid class since the security controls restricting dangerous file uploads can be circumvented.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
