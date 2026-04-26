@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-wmhw-hpwh-44pg",
   "post_patch_commit": "e5647554e6801a522c508a8eb457979a9af8c398",
   "noisy_patch": false,
-  "curation_notes": "Patch commit e564755 modifies a single file (XalanXPathEvaluator.java) to add XXE protections to the DocumentBuilderFactory by disabling external general entities, external parameter entities, and disallowing doctype declarations. The vulnerable function is evaluate(InputSource) which parses XML without these protections. Location derived directly from the patch diff.",
+  "curation_notes": "Patch commit e564755 modifies a single file (XalanXPathEvaluator.java) to add XXE protections by disabling external general entities, external parameter entities, and disallowing doctype declarations on the DocumentBuilderFactory. The vulnerable function is evaluate(InputSource) which parses XML without these protections. Only sibling candidate was XQueryExpression.java, which is a stub returning false without any XML parsing — no sibling vulnerability. Location derived directly from the patch diff. Vulnerability class xxe confirmed via CWE-611 and patch content.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
