@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h3hw-29fv-2x75",
+  "post_patch_commit": "ab49fa259a51d976c437e084114e070b99720ba9",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only one source file: packages/plugins/graphql-modules/src/index.ts. The fix replaces the manual operation controller lifecycle management (createOperationController in onContextBuilding, manual destroy in onExecute/onSubscribe) with app.createExecution() and app.createSubscription() which properly bind context to the asynchronous execution scope of each request. The vulnerability class race-condition matches the pre-assigned CWE-362 and the advisory description which explicitly describes a context race condition. No sibling files exist in the source directory. The scripts/match-graphql.js change is a build compatibility script unrelated to the vulnerability fix.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
