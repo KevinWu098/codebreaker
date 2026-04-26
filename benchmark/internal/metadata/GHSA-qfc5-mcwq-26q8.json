@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qfc5-mcwq-26q8",
+  "post_patch_commit": "7d512c8e4442a896d56505be3e78f1156f443465",
+  "noisy_patch": true,
+  "curation_notes": "Pre-assigned vuln_class use-after-free from CWE-415 (Double Free) confirmed as the closest valid class — there is no separate double-free class. The patch replaces Py_DECREF/Py_XDECREF with Py_CLEAR across 6 platform-specific C extension files (_psutil_aix.c, _psutil_bsd.c, _psutil_linux.c, _psutil_osx.c, _psutil_sunos.c, _psutil_windows.c). All 6 files exhibit the identical vulnerability pattern: Python object pointers are not set to NULL after Py_DECREF, so error cleanup paths double-free them. Locations list one representative function per file; many additional functions in each file share the same pattern. Advisory description confirms the mechanism: refcount mishandling within loops converting system data to Python objects.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
