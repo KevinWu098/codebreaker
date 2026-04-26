@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5fxv-xx5p-g2fv",
+  "post_patch_commit": "80e39084729a57dfe749626c3b9d35247a14c49e",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff which adds max:500 validation rules to first_name, last_name, phone, username, and email fields in both UserCreateRequest and UserUpdateRequest. The sibling RegisterRequest.php already enforces max:255 on its fields and is not vulnerable. Kept pre-assigned integer-overflow class (CWE-190) as the advisory describes excessively large input values causing DoS, consistent with integer overflow in string length processing.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
