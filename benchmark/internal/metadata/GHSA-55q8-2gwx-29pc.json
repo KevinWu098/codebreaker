@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-55q8-2gwx-29pc",
+  "post_patch_commit": "52962660e3bd3e23c7e96b0da270ac1e0e705273",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived directly from the patch diff. The patch adds nil checks for AuthenticationFailureParameter in handleAuthenticationFailure and AuthenticationResponseParameter in handleAuthenticationResponse. Both are in internal/amf/nas/gmm/. Sibling handler files (handle_registration_request.go, handle_service_request.go, etc.) were checked but do not exhibit the same nil-dereference pattern for authentication IE parameters. Vulnerability class null-deref confirmed: CWE-476 maps directly and the fix is adding nil pointer checks before dereferencing.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
