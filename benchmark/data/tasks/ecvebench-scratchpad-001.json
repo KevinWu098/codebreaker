@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Collection element ownership transfer and iteration utilities"
+      "area": "Memory ownership and element transfer operations for collection and array types"
     },
     "L2": {
-      "description": "A use-after-free vulnerability exists in collection element move operations where elements read via raw pointer duplication are not properly guarded against panic unwinding. If a user-provided closure panics during element consumption, previously moved elements may be dropped twice, leading to undefined behavior including potential memory corruption."
+      "description": "A use-after-free vulnerability exists in bulk element transfer logic where raw pointer reads are used to take ownership of elements while invoking a caller-provided closure. If the closure panics, elements that have already been moved out of the source container are dropped again during stack unwinding, resulting in a double free and potential memory corruption."
     },
     "L3": {
-      "area": "Collection element ownership transfer and iteration utilities",
-      "description": "A use-after-free vulnerability exists in collection element move operations where elements read via raw pointer duplication are not properly guarded against panic unwinding. If a user-provided closure panics during element consumption, previously moved elements may be dropped twice, leading to undefined behavior including potential memory corruption."
+      "area": "Slice move source trait implementations for array-backed and boxed-slice containers",
+      "description": "A use-after-free vulnerability exists in the bulk element move operations for array-backed and heap-allocated slice sources. Raw pointer reads are used to take ownership of each element while invoking a caller-provided closure, but the source container's drop behavior is not inhibited until after all elements are consumed. If the closure panics during element processing, elements whose ownership has already been transferred are dropped again during unwinding, resulting in a double free."
     }
   },
   "ground_truth": {
@@ -29,6 +29,10 @@
       {
         "file": "src/traits.rs",
         "function": "move_elements"
+      },
+      {
+        "file": "src/traits.rs",
+        "function": "move_all_elements"
       }
     ]
   }
