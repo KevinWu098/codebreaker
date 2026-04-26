@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-74j8-w7f9-pp62",
   "post_patch_commit": "4cdf52e55666864e5f90ed502e9fc13e18985b7b",
   "noisy_patch": false,
-  "curation_notes": "Advisory fix merge commit 4cdf52e adds namespace_controller.go and wires NamespaceReconciler in user/main.go; aligns with task ground-truth locations in controllers/user.",
+  "curation_notes": "Patch commit 4cdf52e is a merge that adds namespace_controller.go (a new NamespaceReconciler enforcing pod security labels on ns-* namespaces) and wires it into controllers/user/main.go. The vulnerability is the absence of this controller in the pre-patch code — tenant namespaces are created without pod security admission labels, allowing unrestricted workload deployment. Vulnerability class auth-bypass confirmed: CWE-287/CWE-863 align with missing authorization enforcement on tenant namespaces.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
