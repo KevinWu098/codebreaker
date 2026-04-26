@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w3g8-fp6j-wvqw",
+  "post_patch_commit": "e4f77788130d065d760e57fb109370827110a525",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit e4f7778 fixes a single file (sm2/src/pke/encrypting.rs). The vulnerability is in the private encrypt() function which calls next_k(rng, N_BYTES) where N_BYTES is 32 (byte count of the curve order), but next_k interprets this parameter as a bit count and passes it to U256::try_random_bits, generating only 32 bits of entropy instead of 256. The fix replaces the custom next_k function with NonZeroScalar::try_generate_from_rng. The sibling file decrypting.rs in the same directory does not contain any nonce generation logic and is not affected. Vulnerability class crypto-weakness confirmed: this is a classic misuse of cryptographic random number generation due to a unit confusion (bytes vs bits).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
