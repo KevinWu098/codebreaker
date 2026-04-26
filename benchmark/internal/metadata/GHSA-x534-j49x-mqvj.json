@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x534-j49x-mqvj",
+  "post_patch_commit": "cc5b4f8e43463995a84efd594f89a21f906c2d20",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit cc5b4f8 fixes the double free in DDGifSlurp (decoding.c) by adding an early return when newRasterSize is 0, freeing the buffer and setting the pointer to NULL. Only 1 source file changed. The pre-assigned class use-after-free (from CWE-415 Double Free) is correct — a double free is a specific form of use-after-free where freed memory is freed again. No sibling files contain the same vulnerability pattern; reallocarray on rasterBits only appears in decoding.c.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
