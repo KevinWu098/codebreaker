@@ -24,7 +24,7 @@
     "vulnerable": true,
     "vuln_class": "insecure-deserialization",
     "cvss": 10.0,
-    "reason": "User-supplied configuration arrays from HTTP request body parameters are passed unsanitized to the Yii2 framework's component instantiation mechanism, allowing an attacker to inject event handlers or behaviors via special 'on X' and 'as X' keys that execute arbitrary PHP code on the server.",
+    "reason": "User-supplied configuration arrays from HTTP request body parameters are passed unsanitized to the Yii2 framework's component instantiation mechanism, allowing an attacker to inject event handlers or behaviors via special configuration keys that execute arbitrary PHP code on the server.",
     "locations": [
       {
         "file": "src/controllers/ConditionsController.php",
