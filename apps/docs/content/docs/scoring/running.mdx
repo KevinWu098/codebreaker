@@ -1,0 +1,54 @@
+---
+title: Running the Scorer
+description: How to score agent outputs against ECVEBench ground truth.
+---
+
+The scorer compares agent outputs against ECVEBench ground truth tasks and reports per-task and aggregate metrics.
+
+## CLI Usage
+
+```bash
+python benchmark/scorer/score.py \
+    --tasks benchmark/data/tasks/ \
+    --outputs path/to/outputs.jsonl \
+    --results results.json
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--tasks` | `benchmark/data/tasks/` | Path to tasks directory or JSONL file |
+| `--outputs` | (required) | Path to agent outputs directory or JSONL file |
+| `--results` | `results.json` | Path to write machine-readable JSON results |
+
+## Library Usage
+
+```python
+from benchmark.scorer import load_records, score_one, aggregate
+
+tasks = {r["task_id"]: r for r in load_records(Path("benchmark/data/tasks"))}
+outputs = load_records(Path("outputs.jsonl"))
+
+# Score individual tasks
+scores = [score_one(tasks[task_id], candidates) for ...]
+
+# Aggregate
+summary = aggregate(scores)
+```
+
+## Output Format
+
+The scorer produces:
+
+- **Console output**: A formatted summary table showing overall and per-difficulty metrics
+- **JSON results file**: Machine-readable results with per-task scores and aggregates
+
+### Metrics Reported
+
+| Metric | Description |
+| --- | --- |
+| Score (mean) | Mean composite score across all tasks |
+| Verdict precision/recall/F1 | Binary classification metrics for vulnerability detection |
+| Vuln class accuracy | Fraction of correctly classified vulnerability types (gated) |
+| File recall (mean) | Mean file-level recall across tasks (gated) |
+| Function IoU (diagnostic) | Mean function-level IoU for matched files (not scored) |
+| ECE | Expected Calibration Error of confidence vs. verdict accuracy |

@@ -1,0 +1,20 @@
+---
+title: Quality Checklist
+description: Validation checklist for every curated ECVEBench task.
+---
+
+Every curated task is validated against the following checklist before merging:
+
+| Check | What it verifies |
+| --- | --- |
+| **Pre-patch SHA** | The `commit` field in the task is the parent of the patch commit, not the patch itself. |
+| **Post-patch SHA** | The `post_patch_commit` in metadata is the actual patch commit. |
+| **SHA format** | Both SHAs are full 40-character lowercase hex strings. |
+| **L1 hint scrubbing** | The L1 `area` field contains no file paths, function names, vulnerability types, or mechanism details. |
+| **L2 hint scrubbing** | The L2 `description` field contains no file paths, function names, line numbers, variable names, or code snippets. |
+| **L3 hint consistency** | The L3 hint contains the same `area` as L1 and the same `description` as L2. |
+| **Vulnerability class** | Exactly one of the 13 allowed values. |
+| **Locations non-empty** | At least one location entry exists. |
+| **File paths valid** | All `file` paths in locations are relative from the repo root and exist in the pre-patch commit. |
+| **JSON validity** | Files are valid JSON, pretty-printed with 2-space indentation. |
+| **Schema compliance** | Both files pass validation against their respective JSON schemas. |

@@ -1,0 +1,15 @@
+{
+  "title": "ECVEBench",
+  "pages": [
+    "---Benchmark---",
+    "benchmark",
+    "---Data---",
+    "data",
+    "---Pipeline---",
+    "pipeline",
+    "---Scoring---",
+    "scoring",
+    "---Contributing---",
+    "contributing"
+  ]
+}
