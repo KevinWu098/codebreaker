@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "HTTP callback and notification handling subsystem"
+      "area": "Subscriber data management and event notification handling"
     },
     "L2": {
-      "description": "A null pointer dereference vulnerability exists in the data change notification processing logic. When a crafted HTTP request is sent to a subscription-related endpoint with a malformed URL path and a large JSON payload, the service attempts to look up user equipment context but fails to validate whether the lookup succeeded before dereferencing the result. This causes a nil pointer dereference panic, leading to a complete service crash and denial of service."
+      "description": "A null pointer dereference vulnerability exists where the service fails to validate whether a subscriber context lookup succeeded before using the result. When a crafted HTTP POST request is sent with a malformed URL path, the service attempts to find a user equipment context by subscriber identifier but discards the success indicator from the lookup call. If no matching subscriber exists, the returned nil pointer is dereferenced, causing a runtime panic and complete service crash that requires manual restart."
     },
     "L3": {
-      "area": "HTTP callback and notification handling subsystem",
-      "description": "A null pointer dereference vulnerability exists in the data change notification processing logic. When a crafted HTTP request is sent to a subscription-related endpoint with a malformed URL path and a large JSON payload, the service attempts to look up user equipment context but fails to validate whether the lookup succeeded before dereferencing the result. This causes a nil pointer dereference panic, leading to a complete service crash and denial of service."
+      "area": "UDM data change notification callback processing and subscription event handling",
+      "description": "A null pointer dereference vulnerability exists in the UDM data change notification processing path. When a crafted HTTP POST request targets a subscription callback endpoint with a malformed URL path containing path traversal sequences, the service attempts to find a user equipment context by SUPI (Subscription Permanent Identifier) but discards the boolean success indicator from the lookup. If the SUPI does not correspond to an existing subscriber, the returned nil context pointer is dereferenced without validation, causing a runtime panic and complete service crash requiring manual restart."
     }
   },
   "ground_truth": {
