@@ -16,8 +16,8 @@
       "description": "An authentication bypass vulnerability allows an unauthenticated remote attacker to mint administrative JSON Web Tokens by supplying attacker-controlled identity data through HTTP request headers during a token renewal flow. The server trusts user-supplied identity claims without verifying them against a valid authenticated session, enabling arbitrary privilege escalation and subsequent remote code execution through administrative APIs."
     },
     "L3": {
-      "area": "Authentication and session token management",
-      "description": "An authentication bypass vulnerability allows an unauthenticated remote attacker to mint administrative JSON Web Tokens by supplying attacker-controlled identity data through HTTP request headers during a token renewal flow. The server trusts user-supplied identity claims without verifying them against a valid authenticated session, enabling arbitrary privilege escalation and subsequent remote code execution through administrative APIs."
+      "area": "JWT authentication middleware and heartbeat session refresh API",
+      "description": "An authentication bypass vulnerability allows an unauthenticated remote attacker to mint administrative JSON Web Tokens by supplying attacker-controlled identity data through HTTP request headers during the heartbeat token renewal flow. When authentication is enabled, the server trusts user-supplied identity claims from request headers without verifying them against a valid authenticated session, enabling arbitrary privilege escalation and subsequent remote code execution through administrative APIs designed for automation and scripting."
     }
   },
   "ground_truth": {
