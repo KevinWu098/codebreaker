@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jgjc-332c-8cmc",
+  "post_patch_commit": "ff541af95d7155d8dd326f331b5e248fea8e7111",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as sql-injection from CWE-89, but the patch fixes output encoding: it removes the Twig |raw filter (which disabled auto-escaping) from table name rendering, adds jQuery .text().html() encoding in the JS table list builder, and applies double HTML escaping for an innerHTML context. All three changes are standard XSS mitigations — reclassified to xss. Locations derived directly from the two files in the patch diff. No sibling templates in the designer directory use |raw on table or database names.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

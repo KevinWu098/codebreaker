@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-phpmyadmin-001",
+  "ghsa_id": "GHSA-jgjc-332c-8cmc",
+  "codebase": {
+    "repo": "https://github.com/phpmyadmin/phpmyadmin",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "2adf0ba1ac47772f69ff3587951de989668e6d52"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Database visual designer and table rendering interface"
+    },
+    "L2": {
+      "description": "A vulnerability exists where a specially crafted database or table name is rendered in the web interface without proper output encoding, allowing an attacker to inject malicious scripts through the visual database design feature."
+    },
+    "L3": {
+      "area": "Database visual designer table display logic, including both the server-side template layer and the client-side table list rendering",
+      "description": "A cross-site scripting vulnerability exists where a specially crafted database or table name is rendered without proper output encoding in the visual database designer feature. The raw name value is inserted directly into HTML output, allowing script injection when a user views or interacts with the designer interface for a database containing the crafted name."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.8,
+    "reason": "A crafted database or table name is rendered without HTML escaping in the designer feature's templates and JavaScript, allowing cross-site scripting when the designer page is viewed.",
+    "locations": [
+      {
+        "file": "js/designer/move.js",
+        "function": "addTableToTablesList"
+      },
+      {
+        "file": "templates/database/designer/database_tables.twig",
+        "function": null
+      }
+    ]
+  }
+}
