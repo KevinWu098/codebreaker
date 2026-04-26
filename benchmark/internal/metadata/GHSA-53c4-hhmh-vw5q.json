@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-53c4-hhmh-vw5q",
+  "post_patch_commit": "638ebffbc2e445156f3978f02fd83d9af1e56f5b",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge (638ebff) with two parents. Pre-patch commit is first parent bafafa8. The patch adds nil checks in three locations: (1) MustAdd in index.go checks i.Entries != nil before map access, (2) loadIndex in index.go checks cvs[idx] != nil before accessing .APIVersion, and (3) Remove in repo.go checks rf != nil before accessing .Name. All three are null-deref fixes consistent with CWE-476. Only 2 non-test source files changed (pkg/repo/index.go and pkg/repo/repo.go), so the patch is not noisy. Pre-assigned class null-deref is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
