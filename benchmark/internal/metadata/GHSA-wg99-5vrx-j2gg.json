@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wg99-5vrx-j2gg",
+  "post_patch_commit": "a12ad691c05af19e9061d7949b6b828ce48815d5",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (SecureWSConnector.java). Two functions are vulnerable: buildResponseDocumentBody creates a DocumentBuilderFactory without disabling external DTD/schema access, and getTransformer creates a TransformerFactory without disabling external DTD/stylesheet access. The fix sets XMLConstants.ACCESS_EXTERNAL_DTD, ACCESS_EXTERNAL_SCHEMA, and ACCESS_EXTERNAL_STYLESHEET to empty strings. No sibling files exist in the directory. Pre-assigned class xxe (CWE-611) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
