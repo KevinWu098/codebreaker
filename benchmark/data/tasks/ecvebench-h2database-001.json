@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-h2database-001",
+  "ghsa_id": "GHSA-h376-j262-vhq6",
+  "codebase": {
+    "repo": "https://github.com/h2database/h2database",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "4a2e677bfb6bfee59bff1ce1dfb6f28ce5109d8c"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "JDBC connection management and data source resolution utilities"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where a JNDI lookup is performed with an attacker-controlled URL without validating the URL scheme. This allows an attacker to specify LDAP or RMI URLs that cause the application to load and deserialize arbitrary objects from a remote server, leading to remote code execution."
+    },
+    "L3": {
+      "area": "JDBC utility layer handling driver loading and JNDI-based data source resolution",
+      "description": "An insecure deserialization vulnerability exists where a JNDI lookup is performed with an attacker-controlled URL without validating the URL scheme. When the H2 database console or linked table feature accepts a connection string specifying a JNDI context driver, an attacker can provide LDAP or RMI URLs that cause the application to load and deserialize arbitrary objects from a remote server, leading to remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The JdbcUtils.getConnection method performs a JNDI lookup using an attacker-controlled URL without validating the URL scheme, allowing LDAP/RMI URLs to trigger remote class loading and deserialization of untrusted objects, leading to RCE.",
+    "locations": [
+      {
+        "file": "h2/src/main/org/h2/util/JdbcUtils.java",
+        "function": "getConnection"
+      }
+    ]
+  }
+}
