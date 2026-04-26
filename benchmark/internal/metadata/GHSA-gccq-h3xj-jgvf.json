@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gccq-h3xj-jgvf",
+  "post_patch_commit": "7e47d6dccb0393a2e95c42813c562c854882b037",
+  "noisy_patch": true,
+  "curation_notes": "The patch is a merge commit that adds OAuth scope checks (tokenCan) to all API controller methods across 8 source files, and fixes the BearerTokenResponse to return actual granted scopes instead of hardcoded 'read write follow push'. The AuthServiceProvider was also updated to register admin:read and admin:write scopes but was excluded from locations as it is a configuration/registration file. The pre-assigned class auth-bypass is correct — CWE-280/285/863 all relate to improper authorization, and the patch clearly adds missing OAuth scope enforcement. All 8 listed locations are primary (directly patched); no additional sibling files were found since the controllers already cover all API versions.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
