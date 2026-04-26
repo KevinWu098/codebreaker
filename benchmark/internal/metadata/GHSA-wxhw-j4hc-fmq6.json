@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wxhw-j4hc-fmq6",
+  "post_patch_commit": "345aee6566e47979dee5c337b925b141e7f78ccd",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 345aee6 modifies 3 non-test source files (src/SandboxExec.ts, src/eval.ts, src/utils.ts) and 1 test file. The primary vulnerability locations are src/utils.ts in createExecContext (where the evals map maps Function to its sandboxed replacement but omits AsyncFunction) and src/eval.ts in createEvalContext (where sandboxAsyncFunction was not defined or included in the eval context). Kept pre-assigned vuln_class command-injection: the sandbox escape enables arbitrary code execution including OS command execution as demonstrated in the PoC, and this is consistent with prior SandboxJS tasks in this benchmark.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
