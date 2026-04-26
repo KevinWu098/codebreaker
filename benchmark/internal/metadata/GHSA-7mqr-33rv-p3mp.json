@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7mqr-33rv-p3mp",
+  "post_patch_commit": "01d9cc2f6b65e1c8847bcb2922bdd897dd0a2f1a",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit is the 1.22.0 release tag (01d9cc2). It modifies 11 non-test source files including UI changes to make JavaScript rules read-only, hence noisy. The core vulnerability fix is in RulesetDeployment.java (removed compileRulesJavascript entirely, disabled JavaScript compilation) and RulesResourceImpl.java (added rejectLegacyJavascriptCreate/Update checks to all create and update endpoints). Locations derived from the advisory description and patch diff. The advisory explicitly names RulesetDeployment.compileRulesJavascript as the primary sink (ScriptEngine.eval with no ClassFilter) and RulesResourceImpl.createRealmRuleset/createAssetRuleset as the authorization flaw (only blocking Groovy, not JavaScript). compileRulesGroovy included as a secondary location since its sandbox filter (GroovyDenyAllFilter) is defined but never registered (registration code commented out). Pre-assigned vuln_class command-injection retained: while the CWEs (CWE-94, CWE-917) describe code/expression injection, the end result is arbitrary OS command execution via Java.type('java.lang.Runtime'), and command-injection is the closest available class.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
