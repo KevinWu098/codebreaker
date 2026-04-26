@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rfm2-f94j-qhjp",
+  "post_patch_commit": "5ad58804af885db3eb7a78bea5000c401eeeb70e",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (storlets/gateway/gateways/docker/gateway.py) in the bring_from_cache method. The fix restricts directory creation permissions from 0o755 to 0o700 and moves os.chmod() to execute before file content is written (previously it was applied after). Pre-assigned race-condition class from CWE-367 (TOCTOU) is correct — the vulnerability is a classic TOCTOU race where file permissions are set after content is written, allowing local attackers to read data in the window between write and chmod. No sibling files share the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
