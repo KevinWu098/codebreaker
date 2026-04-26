@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "One-time password creation and character selection logic"
+      "area": "Password and token generation utilities"
     },
     "L2": {
       "description": "The package uses a non-cryptographic pseudorandom number generator to select characters when creating one-time passwords, making the generated passwords predictable and vulnerable to brute-force attacks."
     },
     "L3": {
-      "area": "One-time password creation and character selection logic",
-      "description": "The package uses a non-cryptographic pseudorandom number generator to select characters when creating one-time passwords, making the generated passwords predictable and vulnerable to brute-force attacks."
+      "area": "OTP character assembly and random index generation within the core generator module",
+      "description": "The one-time password generator relies on JavaScript's standard non-cryptographic pseudorandom number generator to produce random indices for character selection during OTP creation, making generated passwords statistically predictable and susceptible to brute-force attacks."
     }
   },
   "ground_truth": {

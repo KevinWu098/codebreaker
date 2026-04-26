@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-6x93-h9g3-9phr",
   "post_patch_commit": "b27de1ce439ae7f533cec26677e9698671275b70",
   "noisy_patch": false,
-  "curation_notes": "The patch commit b27de1c replaced Math.random() with crypto.randomInt() in index.js. The vulnerable rand() function was removed entirely and its call site in the generate() function was updated to use crypto.randomInt() directly. Only 1 non-test source file (index.js) was changed; the other changes were to README.md, package.json, and package-lock.json. Location derived from the patch diff: the rand function in index.js is where Math.random() was used.",
+  "curation_notes": "The patch commit b27de1c replaced Math.random() with crypto.randomInt() in index.js. The vulnerable rand() function was removed and its usage in generate() was updated to use crypto.randomInt() directly. Only 1 non-test source file (index.js) was changed; other changes were README.md, package.json, and package-lock.json. Location derived from the patch diff: the rand function in index.js used Math.random() for character selection. Pre-assigned class crypto-weakness is correct (CWE-330: Use of Insufficiently Random Values). Re-curated with improved L1/L3 hints: L1 broadened to avoid hinting at character selection mechanism, L3 area and description made more specific than L1/L2 per updated guidelines.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
