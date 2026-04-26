@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-2fjw-whxm-9v4q",
+  "post_patch_commit": "94a286f87e88f431913d19668246de9006790125",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only nftnl/src/batch.rs, adding a checked_add overflow guard before the C nftnl_batch_alloc call. Location derived directly from the single-file diff. Pre-assigned class buffer-overflow (CWE-122) confirmed — the integer overflow in the size calculation is the mechanism, but the security impact is a heap buffer overflow matching the CWE and advisory description. No sibling files share this allocation pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
