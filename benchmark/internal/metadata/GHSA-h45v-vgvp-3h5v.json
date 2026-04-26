@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h45v-vgvp-3h5v",
+  "post_patch_commit": "369e55736f9bd29c37b1712afc2923f4028148c6",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 369e557 adds an assert!(index <= len) bounds check to the default Vector::insert method in src/vector.rs before the unsafe pointer write. Only one source file was modified. The pre-assigned class buffer-overflow (CWE-787 Out-of-bounds Write) is correct — the vulnerability allows writing past the allocated buffer via an unchecked index. No sibling files contain the same vulnerability pattern as the fix is in a trait default method.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
