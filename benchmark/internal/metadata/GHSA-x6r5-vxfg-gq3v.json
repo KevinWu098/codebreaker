@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x6r5-vxfg-gq3v",
+  "post_patch_commit": "1096813bf9a425e2aa4ac755b6c991b626dfab50",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies a single source file (cmd/tiller/tiller.go) in the tlsOptions function, changing the TLS client authentication policy from tls.VerifyClientCertIfGiven to tls.RequireAndVerifyClientCert. The other 4 files changed are documentation only. The pre-assigned class crypto-weakness (from CWE-295 Improper Certificate Validation) is correct — this is a misconfigured TLS setting. No sibling files in cmd/tiller/ contain TLS configuration logic.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
