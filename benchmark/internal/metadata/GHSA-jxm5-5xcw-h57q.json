@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-jxm5-5xcw-h57q",
   "post_patch_commit": "1c3f0aec14d00bdbca175713af70cb7c7b868e9f",
   "noisy_patch": true,
-  "curation_notes": "The advisory explicitly names the REST Server's XML parser as the vulnerable component. The patch commit (1c3f0ae) modifies 35 files (26 non-test source files) to secure XMLReader processing across the entire codebase by switching from ad-hoc SAXParserFactory usage to a centralized XMLReaderPool with secure defaults. The location was derived from the advisory description ('XML Parser for REST Server') and confirmed by the patch diff, which shows the parseXML method in RESTServer.java replacing an unsecured SAXParserFactory.newInstance() with the secure XMLReaderPool from BrokerPool. PR #2243 merged this fix into the develop branch.",
+  "curation_notes": "Re-curated with updated guidelines. The advisory explicitly names the REST Server's XML parser as the vulnerable component. The patch commit (1c3f0aec) modifies 35 files (26 non-test source files) to secure XMLReader processing across the codebase by switching from ad-hoc SAXParserFactory usage to a centralized XMLReaderPool with secure defaults. Primary location derived from the advisory description ('XML Parser for REST Server') and confirmed by the patch diff showing the parseXML method in RESTServer.java replacing an unsecured SAXParserFactory.newInstance() with the secure XMLReaderPool. Sibling locations added for Descriptor.java (same HTTP directory, same unsecured SAXParserFactory.newInstance() pattern in its constructor) and RewriteConfig.java (adjacent HTTP subsystem directory, same unsecured pattern in parseConfig). L3 hints updated to be more specific than L1/L2 as required by updated guidelines. Vulnerability class xxe confirmed from CWE-611 and advisory description.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
