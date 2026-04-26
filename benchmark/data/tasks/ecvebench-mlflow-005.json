@@ -16,8 +16,8 @@
       "description": "A path traversal vulnerability exists where file paths received from a remote server response are used without validation in file system operations. An attacker who controls the server response can supply specially crafted paths containing directory traversal sequences to write or overwrite arbitrary files on the host filesystem, leading to potential remote code execution."
     },
     "L3": {
-      "area": "HTTP-based artifact repository client and its artifact listing logic",
-      "description": "A path traversal vulnerability exists in the HTTP artifact repository client where file paths returned in a JSON response during artifact listing are not validated before being used in local filesystem operations. An attacker controlling the remote server can supply paths containing directory traversal sequences to escape the intended artifact directory and write or overwrite arbitrary files."
+      "area": "HTTP-based artifact repository client and its remote artifact handling",
+      "description": "A path traversal vulnerability exists in the HTTP artifact repository client where file paths returned in a JSON response during artifact retrieval are not validated before being used in local filesystem operations. An attacker controlling the remote artifact server can supply paths containing directory traversal sequences to escape the intended artifact directory and write or overwrite arbitrary files."
     }
   },
   "ground_truth": {
