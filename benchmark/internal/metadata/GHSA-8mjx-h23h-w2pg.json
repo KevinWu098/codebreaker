@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8mjx-h23h-w2pg",
+  "post_patch_commit": "2a4d53809e3000f40085f2b229b6b1a33759881d",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff which modifies only src/stack.rs. The primary vulnerability is in push_cloned which calls push_inner; push_inner increments next_ofs (committing stack space) before data is written. push_cloned then calls val.clone() in a loop, which can panic, leaving the stack in an inconsistent state where the destructor double-frees or drops uninitialized memory. CWE-415 (Double Free) maps correctly to use-after-free. No sibling files contain the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
