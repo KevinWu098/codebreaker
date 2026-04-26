@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-mpj8-q39x-wq5h",
+  "post_patch_commit": "d506677fae3d03a454b37ad126e0c119d416b757",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only lib/pbkdf2.js (1 non-test source file). The fix changes the PBKDF2Algo constructor defaults from SHA1Algo with 1 iteration to SHA256Algo with 250,000 iterations. Location derived directly from the patch diff and confirmed by the advisory's link to the vulnerable lines. No sibling files share this vulnerability pattern as PBKDF2 configuration is unique to this module. Vulnerability class crypto-weakness confirmed: CWE-327 (broken crypto algorithm), CWE-328 (reversible one-way hash), CWE-916 (insufficient password hashing iterations) all align with crypto-weakness.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
