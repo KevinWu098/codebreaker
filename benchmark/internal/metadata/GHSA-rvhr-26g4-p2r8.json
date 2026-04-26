@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rvhr-26g4-p2r8",
+  "post_patch_commit": "348659810cf930dda5f669e782706594c547115d",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit is merge commit 348659810cf930dda5f669e782706594c547115d (PR #18087). Pre-patch commit is first parent bfe68d6b7537be9292ffb8afe9a175ae17a8a5d8. The patch modifies 4 non-test source files (viewBuilder.ts, inMemoryView.ts, utils.ts, view.ts) plus one test file. Primary vulnerability locations are viewBuilder.ts (parseFilterExpression function where filter keys, values, and conditions are unsafely interpolated into JS code strings via template literals) and inMemoryView.ts (runView function which passes the stored user-controlled view.map string directly to eval). The fix adds JSON.stringify for values/keys, a whitelist validation function (tokenOrThrow) for conditions, and rebuilds the view from metadata instead of using the stored map string. Kept pre-assigned class command-injection as it is the closest valid class for eval-based code injection (CWE-94/CWE-95) given the 13 available classes. No sibling files contain the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
