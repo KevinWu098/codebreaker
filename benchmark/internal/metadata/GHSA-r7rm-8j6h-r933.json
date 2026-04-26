@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-r7rm-8j6h-r933",
   "post_patch_commit": "a79b65c47c7dc6fe623aadf09aa6192fc54548f3",
   "noisy_patch": false,
-  "curation_notes": "Patch commit a79b65c adds bounds checks (count > xsize) to the expandrow and expandrow2 functions in src/libImaging/SgiRleDecode.c. Only 1 non-test source file was changed. Locations derived directly from the patch diff and confirmed by the advisory description which names libImaging/SgiRleDecode.c. The pre-patch code at commit 93b22b8 has the file at src/libImaging/SgiRleDecode.c.",
+  "curation_notes": "Re-curated with updated guidelines. Patch commit a79b65c adds bounds checks (count > xsize) to the expandrow and expandrow2 functions in src/libImaging/SgiRleDecode.c. Only 1 non-test source file was changed. Locations derived directly from the patch diff and confirmed by the advisory description which names libImaging/SgiRleDecode.c. Sibling RLE decoders (SunRleDecode.c, TgaRleDecode.c) were checked but do not share the same vulnerability pattern — TgaRleDecode.c already has its own bounds check. L3 hints updated to be more specific than L1/L2 by naming the SGI format explicitly. Pre-assigned class buffer-overflow confirmed from CWE-120 and the patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
