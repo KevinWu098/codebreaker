@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-v2ch-c8v8-fgr7",
   "post_patch_commit": "0972af078325ab5c6acd37abffe6bea345ac7db0",
   "noisy_patch": false,
-  "curation_notes": "Location derived from the patch diff which modifies a single file (s3api/middlewares/body-reader.go) and a single function (wrapBodyReader). The patch adds a nil check for the body reader obtained from the request context, replacing it with an empty buffer when nil to prevent panics. The advisory description confirms the nil body reader is the root cause, triggered when chunked uploads arrive without Content-Length or Transfer-Encoding headers via a reverse proxy.",
+  "curation_notes": "Primary location derived from the patch diff which modifies s3api/middlewares/body-reader.go in the wrapBodyReader function. The patch adds a nil check for the body reader obtained from the request context, replacing it with an empty buffer when nil to prevent panics. Sibling location s3api/middlewares/public-bucket.go (AuthorizePublicBucketAccess) identified because it directly sets the body reader from ctx.Request().BodyStream() without a nil check in the else branch for non-streaming payloads, exposing the same nil dereference vulnerability. Vulnerability class null-deref confirmed: CWE-476 matches and the patch clearly adds a nil pointer guard.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
