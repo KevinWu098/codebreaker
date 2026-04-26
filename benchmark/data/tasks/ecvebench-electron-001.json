@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-electron-001",
+  "ghsa_id": "GHSA-995f-9x5r-2rcj",
+  "codebase": {
+    "repo": "https://github.com/electron/electron",
+    "language": "c++",
+    "ecosystem": "npm",
+    "commit": "de3776f5801300e58d564053a47910fc8ce3a968"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Bundled browser engine patches and GPU rendering pipeline"
+    },
+    "L2": {
+      "description": "A heap buffer overflow vulnerability exists in the GPU command processing layer where texture dimension validation uses incorrect bounds checking. A remote attacker who has compromised the renderer process could potentially perform a sandbox escape by triggering out-of-bounds memory access through a crafted HTML page."
+    },
+    "L3": {
+      "area": "Chromium GPU command buffer service patches for texture validation",
+      "description": "A heap buffer overflow vulnerability exists where GPU command validation routines use generic target-type-based bounds checking for texture operations instead of querying the actual texture object's valid mip levels. This allows out-of-bounds memory access when processing GPU commands related to framebuffer texture attachment, compressed texture upload, and texture storage allocation, potentially enabling a sandbox escape from a compromised renderer process."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.7,
+    "reason": "The GPU command buffer service uses ValidForTarget with generic target-based max mip level checks instead of ValidForTextureTarget which queries the actual texture's valid mip levels, allowing out-of-bounds heap memory access via crafted GPU commands from a compromised renderer.",
+    "locations": [
+      {
+        "file": "patches/chromium/.patches",
+        "function": null
+      }
+    ]
+  }
+}

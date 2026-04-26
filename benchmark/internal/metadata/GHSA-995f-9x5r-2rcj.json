@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-995f-9x5r-2rcj",
+  "post_patch_commit": "f887fa45dfaeeddfe20c9835ae7ca3a0823b661b",
+  "noisy_patch": false,
+  "curation_notes": "The vulnerability is CVE-2022-4135, a heap buffer overflow in Chromium's GPU command buffer service. Electron cherry-picks the Chromium fix as a patch file (patches/chromium/cherry-pick-6b4af5d82083.patch). The patch replaces ValidForTarget (which uses generic target-based max mip level limits) with ValidForTextureTarget (which queries the actual texture object's mip levels) across multiple GPU command handlers in gles2_cmd_decoder.cc and texture_manager.cc. Only 2 files changed in the electron repo (the patch index and the new patch file), so noisy_patch is false. The location is set to patches/chromium/.patches since the vulnerable code is in the bundled Chromium source managed through electron's patch system, and the fix adds an entry to this patch index. Pre-assigned class buffer-overflow is correct per CWE-787 and advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
