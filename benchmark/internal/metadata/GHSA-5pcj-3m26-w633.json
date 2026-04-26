@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5pcj-3m26-w633",
+  "post_patch_commit": "96c8422e374064c3407e73e8b1e4995f95e0a9e0",
+  "noisy_patch": false,
+  "curation_notes": "Patch adds a single checkPointer() call in modifyRPath to validate the dyn pointer before iterating through the dynamic section. Location derived directly from the patch diff which modifies only src/patchelf.cc in the modifyRPath function. No sibling source files exist in src/ — patchelf.cc is the only C++ source file. Pre-assigned class buffer-overflow confirmed: CWE-125 (out-of-bounds read) matches the missing bounds check on the pointer.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
