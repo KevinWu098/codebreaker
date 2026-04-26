@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qgfr-5hqp-vrw9",
+  "post_patch_commit": "967146e70f48be32ed1a69daa3941d681944d513",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only index.js (1 non-test source file). The vulnerability is in the extractFile function which constructs output paths via path.join(output, x.path) without validating that the resolved path stays within the output directory. The patch adds safeMakeDir (which checks realpath against the output path) and preventWritingThroughSymlink (which rejects writing through existing symlinks). Pre-assigned class path-traversal is correct given CWE-22 (path traversal) and CWE-59 (symlink following), both addressed by the patch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
