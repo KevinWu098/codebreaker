@@ -1,0 +1,55 @@
+{
+  "task_id": "ecvebench-kiali-001",
+  "ghsa_id": "GHSA-465w-gg5p-85c9",
+  "codebase": {
+    "repo": "https://github.com/kiali/kiali",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "a660a80b2add1fd2fcfb5662c63824ca1dff95b9"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Session management and credential validation logic across authentication strategies"
+    },
+    "L2": {
+      "description": "An authentication bypass vulnerability exists where an attacker can forge session credentials due to insufficient validation of token claims. Critical claims such as expiration, subject identity, session identifier, and issuer are not properly verified, and a well-known default signing secret is accepted, allowing an attacker to craft valid-looking tokens and gain unauthorized access."
+    },
+    "L3": {
+      "area": "JWT token generation, validation, and session verification for each authentication strategy (login, OpenShift, token, LDAP)",
+      "description": "An authentication bypass vulnerability exists in the JWT-based session management where forged tokens are accepted because the token validation routine does not enforce the presence of expiration or session identifier claims, does not verify the subject matches the configured user for the login strategy, does not validate the issuer claim for the LDAP strategy, and accepts a well-known default signing key. Additionally, the OpenShift authentication path uses an ineffective token validation method that does not actually verify the bearer token against the cluster."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "auth-bypass",
+    "cvss": 8.6,
+    "reason": "Insufficient JWT validation allows an attacker to forge session tokens and bypass authentication across all supported strategies (login, token, OpenShift, LDAP), gaining unauthorized access to view and alter configuration.",
+    "locations": [
+      {
+        "file": "config/token.go",
+        "function": "GetTokenClaimsIfValid"
+      },
+      {
+        "file": "handlers/authentication.go",
+        "function": "checkOpenshiftSession"
+      },
+      {
+        "file": "handlers/authentication.go",
+        "function": "checkTokenSession"
+      },
+      {
+        "file": "handlers/authentication.go",
+        "function": "performOpenshiftAuthentication"
+      },
+      {
+        "file": "business/openshift_oauth.go",
+        "function": "ValidateToken"
+      },
+      {
+        "file": "ldap/jwt.go",
+        "function": "validate"
+      }
+    ]
+  }
+}

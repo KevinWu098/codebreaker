@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-465w-gg5p-85c9",
+  "post_patch_commit": "93f5cd0b6698e8fe8772afb8f35816f6c086aef1",
+  "noisy_patch": true,
+  "curation_notes": "Pre-assigned as crypto-weakness from CWE-295/CWE-384/CWE-613, but the advisory explicitly describes authentication bypass using forged credentials, and the patch adds missing JWT claim validation (expiration, subject, session ID, issuer) plus removes an ineffective OpenShift token validation method — reclassified to auth-bypass. The patch commit (PR #2560) fixes both CVE-2020-1762 and CVE-2020-1764 across 8 non-test source files spanning multiple auth strategies (login, token, openshift, ldap). Locations derived from the patch diff, focusing on the JWT validation functions and authentication handler session checks where critical claims were not enforced.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
