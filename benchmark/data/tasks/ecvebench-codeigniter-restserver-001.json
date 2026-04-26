@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-codeigniter-restserver-001",
+  "ghsa_id": "GHSA-cc7g-9pcj-7gwm",
+  "codebase": {
+    "repo": "https://github.com/chriskacerguis/codeigniter-restserver",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "5a3c00363550c04cd63d0b8953d43a0a33fc5ec2"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "REST API request handling and data format processing"
+    },
+    "L2": {
+      "description": "An XML External Entity (XXE) vulnerability exists where XML input from remote clients is parsed without disabling external entity loading, allowing attackers to read arbitrary files from the server or perform server-side request forgery via crafted XML payloads."
+    },
+    "L3": {
+      "area": "REST API controller initialization and XML input format parsing",
+      "description": "An XML External Entity (XXE) vulnerability exists where the REST server framework parses XML request bodies submitted by remote clients without disabling external entity loading. An attacker can send a crafted XML payload containing external entity declarations to read arbitrary files from the server or perform server-side request forgery."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The REST controller does not disable XML external entity loading before parsing XML request bodies, allowing attackers to inject external entity declarations that can read arbitrary server files or trigger SSRF.",
+    "locations": [
+      {
+        "file": "application/libraries/REST_Controller.php",
+        "function": "__construct"
+      },
+      {
+        "file": "application/libraries/Format.php",
+        "function": "_from_xml"
+      }
+    ]
+  }
+}
