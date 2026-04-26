@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q3gh-5r98-j4h3",
+  "post_patch_commit": "861ab2718b2bf8718830544c0e512cf127197316",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as buffer-overflow from CWE-119, but the patch fixes an RSA-PSS signature malleability issue in a JavaScript BigInteger-based library with no memory buffers involved. The fix replaces a post-BigInteger-conversion bit-length check with a pre-conversion hex string length check, preventing acceptance of signatures with prepended zeros. Reclassified to crypto-weakness. Primary location derived from the patch diff: src/rsasign-1.2.js verifyWithMessageHashPSS. No sibling files share the same vulnerability pattern — DSA and ECDSA implementations use different verification flows.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
