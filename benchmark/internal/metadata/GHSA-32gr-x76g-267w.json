@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-32gr-x76g-267w",
+  "post_patch_commit": "2e14b0fd0ea35034f90890f364b130fb4645ff35",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (code/control/KapostService.php), changing Convert::raw2xml() to Convert::raw2sql() in two places within the getPreview function (lines 737 and 746). The raw2xml function only escapes HTML/XML entities and does not protect against SQL injection when used in ORM filter() calls. The sibling file KapostAdmin.php in the same directory does not contain this pattern. The preview() function in the same file also uses raw2xml in filter calls (lines 124, 128) but was not addressed by this patch. Pre-assigned class sql-injection is correct per CWE-89 and confirmed by the diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

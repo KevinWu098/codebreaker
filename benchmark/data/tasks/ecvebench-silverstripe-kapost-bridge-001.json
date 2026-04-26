@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-silverstripe-kapost-bridge-001",
+  "ghsa_id": "GHSA-32gr-x76g-267w",
+  "codebase": {
+    "repo": "https://github.com/webbuilders-group/silverstripe-kapost-bridge",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "d02049f1510e019f6abd26f9734964880b28cea1"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Server-side request handling and content synchronization logic"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-supplied identifiers are sanitized using an HTML/XML escaping function instead of a proper SQL escaping function before being interpolated into ORM database query filter parameters. A remote attacker can exploit this to manipulate database queries."
+    },
+    "L3": {
+      "area": "Kapost XML-RPC service controller and content preview workflow",
+      "description": "A SQL injection vulnerability exists where user-supplied content identifiers are sanitized using an HTML/XML escaping function instead of a proper SQL escaping function before being passed as ORM database query filter parameters during content preview generation. A remote attacker can exploit this through the XML-RPC service interface to manipulate database queries."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "The getPreview function in KapostService.php uses Convert::raw2xml() instead of Convert::raw2sql() to sanitize user-supplied content identifiers before passing them to database query filters, allowing SQL injection via crafted input.",
+    "locations": [
+      {
+        "file": "code/control/KapostService.php",
+        "function": "getPreview"
+      }
+    ]
+  }
+}
