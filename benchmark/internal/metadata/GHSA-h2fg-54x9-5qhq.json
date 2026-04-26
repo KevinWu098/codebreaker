@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h2fg-54x9-5qhq",
+  "post_patch_commit": "e74ae88d2a8af9fd032d46b44b09345a044fe826",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit e74ae88 from PR nats-io/jwt#107 adds nil checks to four Validate methods across two files: exports.go (Export.Validate and Exports.Validate) and imports.go (Import.Validate and Imports.Validate). The vulnerability allows a malicious Account to craft a User JWT with nil import/export entries that cause nil pointer dereference and panic during validation. Locations derived directly from the patch diff. No sibling files contain the same vulnerability pattern — exports.go and imports.go are the only files implementing these specific validation routines. Pre-assigned class null-deref (CWE-476) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
