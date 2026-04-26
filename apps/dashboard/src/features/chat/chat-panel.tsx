@@ -1,4 +1,5 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
+import type { SessionAgentRole } from "@codebreaker/shared/schemas/api";
 import { useAgent } from "agents/react";
 import type { ChatStatus, UIMessage } from "ai";
 import {
@@ -40,7 +41,7 @@ import {
 } from "@/components/message-part-renderer";
 import type { MessagePart } from "@/components/tool-call-part";
 import { Spinner } from "@/components/ui/spinner";
-import { useSessionMessagesQuery } from "@/hooks/queries";
+import { useSessionMessagesQuery, useSessionQuery } from "@/hooks/queries";
 import { useConnection } from "@/lib/connection";
 import { formatRelativeTime } from "@/lib/format";
 
@@ -56,6 +57,18 @@ interface AgentHost {
 const DEFAULT_HOST: AgentHost = { host: "localhost:8787", secure: false };
 const COPIED_RESET_MS = 2000;
 const EMPTY_CHAT_MESSAGES: UIMessage[] = [];
+
+/**
+ * WebSocket `/agents/{namespace}/...` segment. `partyserver` keys namespaces from
+ * **wrangler binding names** (e.g. `AUDIT_COORDINATOR` → `audit-coordinator`), not
+ * from the DO class name (`AuditCoordinatorAgent` → `audit-coordinator-agent`).
+ */
+const WS_AGENT_SLUG: Record<SessionAgentRole, string> = {
+  audit_coordinator: "audit-coordinator",
+  audit_investigator: "audit-investigator",
+  audit_validator: "audit-validator",
+  session: "session-agent",
+};
 
 const parseHost = (baseUrl: string): AgentHost => {
   try {
@@ -381,6 +394,9 @@ const ChatTitle = ({
 
 export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
   const connection = useConnection();
+  const sessionRow = useSessionQuery(sessionId);
+  const agentRole = sessionRow.data?.session?.agentRole ?? "session";
+  const wsAgentSlug = WS_AGENT_SLUG[agentRole] ?? WS_AGENT_SLUG.session;
   const { host, secure } = useMemo(
     () => parseHost(connection.baseUrl),
     [connection.baseUrl]
@@ -388,7 +404,7 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
   const [draft, setDraft] = useState("");
   const agentOptions = useMemo<Parameters<typeof useAgent>[0]>(
     () => ({
-      agent: "session-agent",
+      agent: wsAgentSlug,
       host,
       name: sessionId,
       protocol: secure ? "wss" : "ws",
@@ -396,7 +412,7 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
         ? { query: { token: connection.token }, queryDeps: [connection.token] }
         : {}),
     }),
-    [connection.token, host, secure, sessionId]
+    [connection.token, host, secure, sessionId, wsAgentSlug]
   );
 
   const agent = useAgent(agentOptions);

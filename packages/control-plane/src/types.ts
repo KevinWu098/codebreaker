@@ -1,9 +1,15 @@
+import type { AuditCoordinatorAgent } from "@codebreaker/control-plane/audits/coordinator-agent";
+import type { AuditInvestigatorAgent } from "@codebreaker/control-plane/audits/investigator-agent";
+import type { AuditValidatorAgent } from "@codebreaker/control-plane/audits/validator-agent";
 import type { SessionAgent } from "@codebreaker/control-plane/session/agent";
 
 export interface Env {
   ALLOWED_ORIGINS?: string;
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_BASE_URL?: string;
+  AUDIT_COORDINATOR: DurableObjectNamespace<AuditCoordinatorAgent>;
+  AUDIT_INVESTIGATOR: DurableObjectNamespace<AuditInvestigatorAgent>;
+  AUDIT_VALIDATOR: DurableObjectNamespace<AuditValidatorAgent>;
   CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID?: string;
   CLOUDFLARE_AI_GATEWAY_ID?: string;
   CLOUDFLARE_AI_GATEWAY_TOKEN?: string;

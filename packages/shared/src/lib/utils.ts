@@ -13,6 +13,18 @@ export const getBenchmarkRunIdFromSessionId = (
 
 export const isBenchmarkHarnessSession = (sessionId: string): boolean =>
   getBenchmarkRunIdFromSessionId(sessionId) !== null;
+
+/** Coordinator, investigator, and validator session ids all embed the audit UUID after `audit-`. */
+const AUDIT_SESSION_AUDIT_ID_RE =
+  /^audit-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:$|-inv-|-val-)/;
+
+export const getAuditIdFromSessionId = (sessionId: string): string | null => {
+  const m = sessionId.match(AUDIT_SESSION_AUDIT_ID_RE);
+  return m?.[1] ?? null;
+};
+
+export const isAuditSessionId = (sessionId: string): boolean =>
+  getAuditIdFromSessionId(sessionId) !== null;
 const TRAILING_SLASHES_RE = /\/+$/;
 
 export const trimTrailingSlash = (value: string): string =>

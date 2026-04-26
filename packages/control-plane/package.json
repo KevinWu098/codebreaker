@@ -52,6 +52,38 @@
       "types": "./src/artifacts/github.ts",
       "default": "./src/artifacts/github.ts"
     },
+    "./audits/agent-base": {
+      "types": "./src/audits/agent-base.ts",
+      "default": "./src/audits/agent-base.ts"
+    },
+    "./audits/coordinator-agent": {
+      "types": "./src/audits/coordinator-agent.ts",
+      "default": "./src/audits/coordinator-agent.ts"
+    },
+    "./audits/coordinator-tools": {
+      "types": "./src/audits/coordinator-tools.ts",
+      "default": "./src/audits/coordinator-tools.ts"
+    },
+    "./audits/investigator-agent": {
+      "types": "./src/audits/investigator-agent.ts",
+      "default": "./src/audits/investigator-agent.ts"
+    },
+    "./audits/orchestrator": {
+      "types": "./src/audits/orchestrator.ts",
+      "default": "./src/audits/orchestrator.ts"
+    },
+    "./audits/prompts": {
+      "types": "./src/audits/prompts.ts",
+      "default": "./src/audits/prompts.ts"
+    },
+    "./audits/shards": {
+      "types": "./src/audits/shards.ts",
+      "default": "./src/audits/shards.ts"
+    },
+    "./audits/validator-agent": {
+      "types": "./src/audits/validator-agent.ts",
+      "default": "./src/audits/validator-agent.ts"
+    },
     "./artifacts/repository": {
       "types": "./src/artifacts/repository.ts",
       "default": "./src/artifacts/repository.ts"
@@ -63,6 +95,10 @@
     "./db/d1-schema": {
       "types": "./src/db/d1-schema.ts",
       "default": "./src/db/d1-schema.ts"
+    },
+    "./db/audits": {
+      "types": "./src/db/audits.ts",
+      "default": "./src/db/audits.ts"
     },
     "./db/benchmark-runs": {
       "types": "./src/db/benchmark-runs.ts",
@@ -107,6 +143,10 @@
     "./tools/builtins": {
       "types": "./src/tools/builtins.ts",
       "default": "./src/tools/builtins.ts"
+    },
+    "./tools/audit-finding": {
+      "types": "./src/tools/audit-finding.ts",
+      "default": "./src/tools/audit-finding.ts"
     },
     "./tools/benchmark-submit": {
       "types": "./src/tools/benchmark-submit.ts",

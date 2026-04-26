@@ -20,6 +20,13 @@ import type {
   SessionSandboxResponse,
   SessionStateResponse,
 } from "@codebreaker/shared/schemas/api";
+import type {
+  AuditDetailResponse,
+  ListAuditsQuery,
+  ListAuditsResponse,
+  ListFindingsQuery,
+  ListFindingsResponse,
+} from "@codebreaker/shared/schemas/audits";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { ApiClientError, api } from "@/lib/api";
 import { isAuthorized, useConnection } from "@/lib/connection";
@@ -183,6 +190,50 @@ export const useSessionArtifactsQuery = (
     queryFn: () => api.getArtifacts(id),
     queryKey: qk.session.artifacts(connection, id),
     refetchInterval: POLLING.sessions.artifacts,
+  });
+};
+
+export const useAuditsQuery = (
+  query: Partial<ListAuditsQuery> = {}
+): UseQueryResult<ListAuditsResponse, Error> => {
+  const connection = useConnection();
+
+  return useQuery({
+    enabled: isAuthorized(connection),
+    queryFn: () => api.listAudits(query),
+    queryKey: [...qk.audits(connection), query],
+    refetchInterval: POLLING.audits.list,
+  });
+};
+
+export const useAuditQuery = (
+  id: string,
+  options?: { enabled?: boolean }
+): UseQueryResult<AuditDetailResponse, Error> => {
+  const connection = useConnection();
+  const canFetch = options?.enabled ?? true;
+
+  return useQuery({
+    enabled: isAuthorized(connection) && canFetch && Boolean(id),
+    queryFn: () => api.getAudit(id),
+    queryKey: qk.audit(connection, id),
+    refetchInterval: POLLING.audits.detail,
+  });
+};
+
+export const useAuditFindingsQuery = (
+  id: string,
+  query: Partial<ListFindingsQuery> = {},
+  options?: { enabled?: boolean }
+): UseQueryResult<ListFindingsResponse, Error> => {
+  const connection = useConnection();
+  const canFetch = options?.enabled ?? true;
+
+  return useQuery({
+    enabled: isAuthorized(connection) && canFetch && Boolean(id),
+    queryFn: () => api.listAuditFindings(id, query),
+    queryKey: [...qk.auditFindings(connection, id), query],
+    refetchInterval: POLLING.audits.findings,
   });
 };
 

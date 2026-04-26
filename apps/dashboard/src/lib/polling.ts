@@ -5,6 +5,11 @@ export const POLLING = {
     health: 10_000,
     sandboxes: 8000,
   },
+  audits: {
+    detail: 4000,
+    findings: 5000,
+    list: 5000,
+  },
   benchmarks: {
     /** Default when no active review stage needs faster Devin / stage updates */
     cveFollowup: 5000,

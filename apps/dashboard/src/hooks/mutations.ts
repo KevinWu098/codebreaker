@@ -21,6 +21,12 @@ import type {
   SessionArtifactResponse,
   UpdateArtifactStateRequest,
 } from "@codebreaker/shared/schemas/api";
+import type {
+  AuditActionResponse,
+  AuditRow,
+  CreateAuditRequest,
+  FindingActionResponse,
+} from "@codebreaker/shared/schemas/audits";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiClientError, api } from "@/lib/api";
@@ -371,6 +377,100 @@ export const useCommitArtifactsMutation = (sessionId: string) => {
       });
       queryClient.invalidateQueries({
         queryKey: qk.session.state(connection, sessionId),
+      });
+    },
+  });
+};
+
+const auditUrl = (auditId: string): string => {
+  const url = new URL(window.location.href);
+  url.searchParams.set("view", "audits");
+  url.searchParams.set("audit", auditId);
+  url.searchParams.delete("finding");
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+export const useCreateAuditMutation = () => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<{ audit: AuditRow }, Error, CreateAuditRequest>({
+    mutationFn: (body) => api.createAudit(body),
+    onError: (error) => {
+      toast.error(messageFor(error, "audit failed"));
+    },
+    onSuccess: (response) => {
+      toast.success(`audit ${response.audit.id.slice(0, 8)}… started`, {
+        action: {
+          label: "open",
+          onClick: () => {
+            window.location.assign(auditUrl(response.audit.id));
+          },
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: qk.audits(connection) });
+    },
+  });
+};
+
+export const useCancelAuditMutation = (auditId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<AuditActionResponse, Error, void>({
+    mutationFn: () => api.cancelAudit(auditId),
+    onError: (error) => {
+      toast.error(messageFor(error, "audit cancel failed"));
+    },
+    onSuccess: () => {
+      toast.success(`audit ${auditId.slice(0, 8)}… cancelled`);
+      queryClient.invalidateQueries({ queryKey: qk.audits(connection) });
+      queryClient.invalidateQueries({
+        queryKey: qk.audit(connection, auditId),
+      });
+    },
+  });
+};
+
+export const useCleanupAuditMutation = (auditId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<AuditActionResponse, Error, void>({
+    mutationFn: () => api.cleanupAudit(auditId),
+    onError: (error) => {
+      toast.error(messageFor(error, "audit cleanup failed"));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.audits(connection) });
+      queryClient.invalidateQueries({
+        queryKey: qk.audit(connection, auditId),
+      });
+    },
+  });
+};
+
+export const useDismissFindingMutation = (auditId: string) => {
+  const connection = useConnection();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    FindingActionResponse,
+    Error,
+    { findingId: string; notes: string }
+  >({
+    mutationFn: ({ findingId, notes }) =>
+      api.dismissAuditFinding(auditId, findingId, notes),
+    onError: (error) => {
+      toast.error(messageFor(error, "finding dismiss failed"));
+    },
+    onSuccess: () => {
+      toast.success("finding dismissed");
+      queryClient.invalidateQueries({
+        queryKey: qk.audit(connection, auditId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.auditFindings(connection, auditId),
       });
     },
   });

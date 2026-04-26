@@ -1,7 +1,9 @@
+import { getAuditIdFromSessionId } from "@codebreaker/shared/lib/utils";
 import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useCallback } from "react";
 import { Sidebar, type ViewId } from "@/components/sidebar";
 import { AdminPanel } from "@/features/admin/admin-panel";
+import { AuditsPanel } from "@/features/audits/audits-panel";
 import { BenchmarksPanel } from "@/features/benchmarks/benchmarks-panel";
 import { FollowupsPanel } from "@/features/followups/followups-panel";
 import { SessionDetail } from "@/features/sessions/session-detail";
@@ -12,11 +14,14 @@ const VIEW_IDS: readonly ViewId[] = [
   "sessions",
   "benchmarks",
   "followups",
+  "audits",
   "admin",
 ];
 
 const searchParams = {
+  audit: parseAsString,
   benchmark: parseAsString,
+  finding: parseAsString,
   followupRun: parseAsString,
   view: parseAsStringLiteral(VIEW_IDS).withDefault("sessions"),
   session: parseAsString,
@@ -25,6 +30,7 @@ const searchParams = {
 
 interface SessionsViewProps {
   onClearSelection: () => void;
+  onNavigateToAudit: (auditId: string) => void;
   onOpenBenchmarkRun: (runId: string) => void;
   onSelect: (id: string) => void;
   selectedId: string | null;
@@ -32,6 +38,7 @@ interface SessionsViewProps {
 
 const SessionsView = ({
   onClearSelection,
+  onNavigateToAudit,
   onOpenBenchmarkRun,
   onSelect,
   selectedId,
@@ -41,7 +48,15 @@ const SessionsView = ({
       <SessionDetail
         key={selectedId}
         onArchived={onClearSelection}
-        onBack={onClearSelection}
+        onBack={() => {
+          const auditId = getAuditIdFromSessionId(selectedId);
+          if (auditId) {
+            onNavigateToAudit(auditId);
+          } else {
+            onClearSelection();
+          }
+        }}
+        onOpenAudit={onNavigateToAudit}
         onOpenBenchmarkRun={onOpenBenchmarkRun}
         sessionId={selectedId}
       />
@@ -61,7 +76,9 @@ export const App = (): React.JSX.Element => {
   useThemeSync();
   const [
     {
+      audit: selectedAuditId,
       benchmark: selectedBenchmarkId,
+      finding: selectedFindingId,
       followupRun: followupSelectedRunId,
       view,
       session: selectedId,
@@ -74,21 +91,53 @@ export const App = (): React.JSX.Element => {
     [setParams]
   );
 
+  const navigateToAudit = useCallback(
+    (auditId: string) =>
+      setParams(
+        {
+          audit: auditId,
+          finding: null,
+          session: null,
+          tab: null,
+          view: "audits",
+        },
+        { history: "push" }
+      ),
+    [setParams]
+  );
+
   return (
     <div className="app-shell">
       <Sidebar
         onSelectView={(next) => {
           if (next === "sessions") {
-            setParams({ followupRun: null, view: next });
+            setParams({
+              audit: null,
+              finding: null,
+              followupRun: null,
+              view: next,
+            });
           } else if (next === "followups") {
             setParams({
+              audit: null,
               benchmark: null,
+              finding: null,
+              session: null,
+              tab: null,
+              view: next,
+            });
+          } else if (next === "audits") {
+            setParams({
+              benchmark: null,
+              followupRun: null,
               session: null,
               tab: null,
               view: next,
             });
           } else {
             setParams({
+              audit: null,
+              finding: null,
               followupRun: null,
               session: null,
               tab: null,
@@ -103,6 +152,7 @@ export const App = (): React.JSX.Element => {
         {view === "sessions" && (
           <SessionsView
             onClearSelection={clearSelection}
+            onNavigateToAudit={navigateToAudit}
             onOpenBenchmarkRun={(runId) =>
               setParams(
                 {
@@ -164,6 +214,30 @@ export const App = (): React.JSX.Element => {
               setParams({ followupRun: runId }, { history: "push" })
             }
             selectedRunId={followupSelectedRunId}
+          />
+        )}
+        {view === "audits" && (
+          <AuditsPanel
+            onOpenSession={(sessionId) =>
+              setParams(
+                {
+                  audit: selectedAuditId ?? null,
+                  finding: null,
+                  session: sessionId,
+                  tab: null,
+                  view: "sessions",
+                },
+                { history: "push" }
+              )
+            }
+            onSelectAudit={(id) =>
+              setParams({ audit: id, finding: null }, { history: "push" })
+            }
+            onSelectFinding={(id) =>
+              setParams({ finding: id }, { history: "push" })
+            }
+            selectedAuditId={selectedAuditId}
+            selectedFindingId={selectedFindingId}
           />
         )}
         {view === "admin" && <AdminPanel />}

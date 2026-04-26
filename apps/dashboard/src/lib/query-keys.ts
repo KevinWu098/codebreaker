@@ -10,6 +10,11 @@ export const qk = {
     sandboxes: (connection: Connection) =>
       ["admin", "sandboxes", ...scope(connection)] as const,
   },
+  audits: (connection: Connection) => ["audits", ...scope(connection)] as const,
+  audit: (connection: Connection, id: string) =>
+    ["audit", id, ...scope(connection)] as const,
+  auditFindings: (connection: Connection, id: string) =>
+    ["audit-findings", id, ...scope(connection)] as const,
   benchmarkRun: (connection: Connection, id: string) =>
     ["benchmark-run", id, ...scope(connection)] as const,
   cveFollowup: (connection: Connection, runId: string) =>

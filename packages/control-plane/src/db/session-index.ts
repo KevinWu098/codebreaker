@@ -1,5 +1,6 @@
 import { nowIso } from "@codebreaker/shared/lib/utils";
 import {
+  type SessionAgentRole,
   type SessionRow,
   SessionRowSchema,
 } from "@codebreaker/shared/schemas/api";
@@ -11,6 +12,7 @@ import {
 } from "@codebreaker/shared/schemas/session";
 
 interface SessionRowRecord {
+  agent_role: SessionAgentRole | null;
   artifact_latest_commit_sha: string | null;
   artifact_path: string | null;
   artifact_status: string | null;
@@ -39,6 +41,7 @@ interface SessionRowRecord {
 }
 
 export interface UpsertSessionInput {
+  agentRole?: SessionAgentRole;
   config: SessionConfig;
   id: string;
   status?: SessionStatus;
@@ -60,6 +63,7 @@ export class SessionIndexStore {
         `insert into sessions (
           id,
           status,
+          agent_role,
           title,
           model_provider,
           model_id,
@@ -72,9 +76,10 @@ export class SessionIndexStore {
           created_at,
           updated_at,
           completed_at
-        ) values (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, null)
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, null)
         on conflict(id) do update set
           status = excluded.status,
+          agent_role = excluded.agent_role,
           title = excluded.title,
           model_provider = excluded.model_provider,
           model_id = excluded.model_id,
@@ -86,6 +91,7 @@ export class SessionIndexStore {
       .bind(
         input.id,
         input.status ?? "pending",
+        input.agentRole ?? "session",
         config.title ?? null,
         config.model.provider,
         config.model.id,
@@ -330,6 +336,7 @@ export class SessionIndexStore {
 
   private toSessionRow(row: SessionRowRecord): SessionRow {
     return SessionRowSchema.parse({
+      agentRole: row.agent_role ?? "session",
       artifactLatestCommitSha: row.artifact_latest_commit_sha,
       artifactPath: row.artifact_path,
       artifactStatus: row.artifact_status,

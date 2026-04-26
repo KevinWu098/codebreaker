@@ -19,6 +19,18 @@
       {
         "class_name": "SessionAgent",
         "name": "SESSION_AGENT"
+      },
+      {
+        "class_name": "AuditCoordinatorAgent",
+        "name": "AUDIT_COORDINATOR"
+      },
+      {
+        "class_name": "AuditInvestigatorAgent",
+        "name": "AUDIT_INVESTIGATOR"
+      },
+      {
+        "class_name": "AuditValidatorAgent",
+        "name": "AUDIT_VALIDATOR"
       }
     ]
   },
@@ -26,6 +38,14 @@
     {
       "new_sqlite_classes": ["SessionAgent"],
       "tag": "v1"
+    },
+    {
+      "new_sqlite_classes": [
+        "AuditCoordinatorAgent",
+        "AuditInvestigatorAgent",
+        "AuditValidatorAgent"
+      ],
+      "tag": "v2"
     }
   ],
   "d1_databases": [

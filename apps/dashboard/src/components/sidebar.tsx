@@ -3,6 +3,7 @@ import {
   ListTree,
   ServerCog,
   Settings2,
+  ShieldAlert,
   Workflow,
 } from "lucide-react";
 import { ConnectionForm } from "@/components/connection-form";
@@ -10,7 +11,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import { cn } from "@/lib/utils";
 
-export type ViewId = "sessions" | "benchmarks" | "followups" | "admin";
+export type ViewId =
+  | "sessions"
+  | "benchmarks"
+  | "followups"
+  | "audits"
+  | "admin";
 
 interface SidebarProps {
   onSelectView: (view: ViewId) => void;
@@ -42,6 +48,12 @@ const NAV: readonly NavItem[] = [
     Icon: ListTree,
     id: "followups",
     label: "follow-ups",
+  },
+  {
+    description: "novel-vuln audits over arbitrary github repos",
+    Icon: ShieldAlert,
+    id: "audits",
+    label: "audits",
   },
   {
     description: "modal shim health, sandboxes",

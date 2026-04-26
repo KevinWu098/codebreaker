@@ -8,6 +8,7 @@ import {
   ListCveFollowupsQuerySchema,
 } from "@codebreaker/benchmark-runner/schemas";
 import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
+import { AuditOrchestrator } from "@codebreaker/control-plane/audits/orchestrator";
 import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/dataset";
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
 import {
@@ -16,6 +17,7 @@ import {
   modalSandboxDecorator,
 } from "@codebreaker/control-plane/cve-followup/enrich";
 import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
+import { AuditStore } from "@codebreaker/control-plane/db/audits";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { CveFollowupStore } from "@codebreaker/control-plane/db/cve-followups";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
@@ -42,6 +44,11 @@ import type {
   BenchmarkConfig,
 } from "@codebreaker/shared/schemas/artifacts";
 import { BenchmarkArtifactStateSchema } from "@codebreaker/shared/schemas/artifacts";
+import {
+  CreateAuditRequestSchema,
+  ListAuditsQuerySchema,
+  ListFindingsQuerySchema,
+} from "@codebreaker/shared/schemas/audits";
 import { zValidator } from "@hono/zod-validator";
 import { getAgentByName } from "agents";
 import { Hono } from "hono";
@@ -56,6 +63,19 @@ const BenchmarkRunParamsSchema = z.object({
   id: z.string().min(1),
 });
 
+const AuditParamsSchema = z.object({
+  id: z.string().min(1),
+});
+
+const AuditFindingParamsSchema = z.object({
+  findingId: z.string().min(1),
+  id: z.string().min(1),
+});
+
+const DismissFindingBodySchema = z.object({
+  notes: z.string().min(1).max(2000),
+});
+
 const FollowupStageRetryParamsSchema = z.object({
   id: z.string().min(1),
   kind: CveFollowupStageKindSchema,
@@ -65,6 +85,35 @@ interface RouterVariables {
   executor: ModalExecutor;
   sessionStore: SessionIndexStore;
 }
+
+/**
+ * Look up which Durable Object namespace owns a given session id. Audit
+ * coordinator/investigator/validator sessions live in their own namespaces,
+ * but the dashboard hits the same `/sessions/:id/...` routes. We widen each
+ * audit DO namespace to `SESSION_AGENT`'s typed namespace so `getAgentByName`
+ * keeps its rich callable surface; both `SessionAgent` and `BaseAuditAgent`
+ * implement the methods these handlers actually call (`archive`,
+ * `stopAndFinalize`, `inspectConfig`, `inspectState`,
+ * `getMessagesWithTiming`). Falls back to `SESSION_AGENT` for unknown ids
+ * so legacy/regular sessions keep working.
+ */
+const resolveSessionAgentNamespace = async (
+  env: Env,
+  store: SessionIndexStore,
+  id: string
+): Promise<typeof env.SESSION_AGENT> => {
+  const row = await store.get(id);
+  switch (row?.agentRole) {
+    case "audit_coordinator":
+      return env.AUDIT_COORDINATOR as unknown as typeof env.SESSION_AGENT;
+    case "audit_investigator":
+      return env.AUDIT_INVESTIGATOR as unknown as typeof env.SESSION_AGENT;
+    case "audit_validator":
+      return env.AUDIT_VALIDATOR as unknown as typeof env.SESSION_AGENT;
+    default:
+      return env.SESSION_AGENT;
+  }
+};
 
 export const createRouter = (): Hono<{
   Bindings: Env;
@@ -108,6 +157,8 @@ export const createRouter = (): Hono<{
   app.use("/benchmark-runs", jwtAuth);
   app.use("/benchmark-runs/*", jwtAuth);
   app.use("/cve-followups", jwtAuth);
+  app.use("/audits", jwtAuth);
+  app.use("/audits/*", jwtAuth);
   app.use("/admin/*", jwtAuth);
 
   const cveFollowupDetail = async (env: Env, runId: string) => {
@@ -526,12 +577,16 @@ export const createRouter = (): Hono<{
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await withDORetry(() =>
-        getAgentByName(context.env.SESSION_AGENT, id)
+      const store = context.get("sessionStore");
+      const namespace = await resolveSessionAgentNamespace(
+        context.env,
+        store,
+        id
       );
+      const agent = await withDORetry(() => getAgentByName(namespace, id));
 
       await withDORetry(() => agent.archive());
-      await context.get("sessionStore").setStatus({
+      await store.setStatus({
         completedAt: new Date().toISOString(),
         eventId: `archive:${id}`,
         id,
@@ -549,9 +604,12 @@ export const createRouter = (): Hono<{
     async (context) => {
       const { id } = context.req.valid("param");
       const request = context.req.valid("json");
-      const agent = await withDORetry(() =>
-        getAgentByName(context.env.SESSION_AGENT, id)
+      const namespace = await resolveSessionAgentNamespace(
+        context.env,
+        context.get("sessionStore"),
+        id
       );
+      const agent = await withDORetry(() => getAgentByName(namespace, id));
       const result = await withDORetry(() =>
         agent.stopAndFinalize(request.reason)
       );
@@ -565,9 +623,12 @@ export const createRouter = (): Hono<{
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await withDORetry(() =>
-        getAgentByName(context.env.SESSION_AGENT, id)
+      const namespace = await resolveSessionAgentNamespace(
+        context.env,
+        context.get("sessionStore"),
+        id
       );
+      const agent = await withDORetry(() => getAgentByName(namespace, id));
 
       return context.json({
         messages: await withDORetry(() => agent.getMessagesWithTiming()),
@@ -580,9 +641,12 @@ export const createRouter = (): Hono<{
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await withDORetry(() =>
-        getAgentByName(context.env.SESSION_AGENT, id)
+      const namespace = await resolveSessionAgentNamespace(
+        context.env,
+        context.get("sessionStore"),
+        id
       );
+      const agent = await withDORetry(() => getAgentByName(namespace, id));
 
       return context.json({
         config: await withDORetry(() => agent.inspectConfig()),
@@ -595,9 +659,12 @@ export const createRouter = (): Hono<{
     zValidator("param", SessionParamsSchema),
     async (context) => {
       const { id } = context.req.valid("param");
-      const agent = await withDORetry(() =>
-        getAgentByName(context.env.SESSION_AGENT, id)
+      const namespace = await resolveSessionAgentNamespace(
+        context.env,
+        context.get("sessionStore"),
+        id
       );
+      const agent = await withDORetry(() => getAgentByName(namespace, id));
 
       return context.json({
         state: await withDORetry(() => agent.inspectState()),
@@ -784,6 +851,168 @@ export const createRouter = (): Hono<{
         artifact: nextArtifact,
         result,
       });
+    }
+  );
+
+  app.get(
+    "/audits",
+    zValidator("query", ListAuditsQuerySchema),
+    async (context) => {
+      const query = context.req.valid("query");
+      const store = new AuditStore(context.env.DB);
+      const [audits, total] = await Promise.all([
+        store.list({
+          limit: query.limit,
+          offset: query.offset,
+          ...(query.status ? { status: query.status } : {}),
+        }),
+        store.count(query.status ? { status: query.status } : {}),
+      ]);
+
+      return context.json({
+        audits,
+        limit: query.limit,
+        offset: query.offset,
+        total,
+      });
+    }
+  );
+
+  app.post(
+    "/audits",
+    zValidator("json", CreateAuditRequestSchema),
+    async (context) => {
+      const request = context.req.valid("json");
+      const orchestrator = new AuditOrchestrator(context.env);
+      const audit = await orchestrator.create({
+        ...request,
+        autoStart: false,
+      });
+
+      if (request.autoStart) {
+        context.executionCtx.waitUntil(
+          orchestrator.start(audit.id, request).then(() => undefined)
+        );
+      }
+
+      return context.json({ audit }, 201);
+    }
+  );
+
+  app.get(
+    "/audits/:id",
+    zValidator("param", AuditParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const store = new AuditStore(context.env.DB);
+      const audit = await store.get(id);
+
+      if (!audit) {
+        return jsonError("Audit not found", "audit_not_found", 404);
+      }
+
+      const [shards, findings, events] = await Promise.all([
+        store.listShards(id),
+        store.listFindings({ auditId: id }),
+        store.listEvents(id),
+      ]);
+
+      return context.json({
+        audit,
+        events,
+        findings,
+        shards,
+      });
+    }
+  );
+
+  app.get(
+    "/audits/:id/findings",
+    zValidator("param", AuditParamsSchema),
+    zValidator("query", ListFindingsQuerySchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const query = context.req.valid("query");
+      const store = new AuditStore(context.env.DB);
+      const filterArgs = {
+        auditId: id,
+        limit: query.limit,
+        offset: query.offset,
+        ...(query.minConfidence === undefined
+          ? {}
+          : { minConfidence: query.minConfidence }),
+        ...(query.shard ? { shard: query.shard } : {}),
+        ...(query.status ? { status: query.status } : {}),
+        ...(query.vulnClass ? { vulnClass: query.vulnClass } : {}),
+      };
+      const [findings, total] = await Promise.all([
+        store.listFindings(filterArgs),
+        store.countFindings({
+          auditId: id,
+          ...(query.minConfidence === undefined
+            ? {}
+            : { minConfidence: query.minConfidence }),
+          ...(query.shard ? { shard: query.shard } : {}),
+          ...(query.status ? { status: query.status } : {}),
+          ...(query.vulnClass ? { vulnClass: query.vulnClass } : {}),
+        }),
+      ]);
+
+      return context.json({
+        findings,
+        limit: query.limit,
+        offset: query.offset,
+        total,
+      });
+    }
+  );
+
+  app.post(
+    "/audits/:id/cancel",
+    zValidator("param", AuditParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const audit = await new AuditOrchestrator(context.env).cancel(id);
+
+      return context.json({ audit });
+    }
+  );
+
+  app.post(
+    "/audits/:id/cleanup",
+    zValidator("param", AuditParamsSchema),
+    async (context) => {
+      const { id } = context.req.valid("param");
+      const audit = await new AuditOrchestrator(context.env).cleanup(id);
+
+      return context.json({ audit });
+    }
+  );
+
+  app.post(
+    "/audits/:id/findings/:findingId/dismiss",
+    zValidator("param", AuditFindingParamsSchema),
+    zValidator("json", DismissFindingBodySchema),
+    async (context) => {
+      const { findingId, id } = context.req.valid("param");
+      const { notes } = context.req.valid("json");
+      const store = new AuditStore(context.env.DB);
+      const existing = await store.getFinding(findingId);
+
+      if (!existing || existing.auditId !== id) {
+        return jsonError("Finding not found", "finding_not_found", 404);
+      }
+
+      const finding = await store.dismissFinding(findingId, notes);
+      await store.addEvent({
+        auditId: id,
+        details: { findingId, notes },
+        kind: "finding_dismissed",
+        message: "Finding dismissed by operator",
+      });
+      await store.refreshCounts(id);
+
+      return context.json({ finding });
     }
   );
 

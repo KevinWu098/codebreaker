@@ -35,7 +35,16 @@ export type FinalizeSessionRequest = z.infer<
   typeof FinalizeSessionRequestSchema
 >;
 
+export const SessionAgentRoleSchema = z.enum([
+  "session",
+  "audit_coordinator",
+  "audit_investigator",
+  "audit_validator",
+]);
+export type SessionAgentRole = z.infer<typeof SessionAgentRoleSchema>;
+
 export const SessionRowSchema = z.object({
+  agentRole: SessionAgentRoleSchema,
   artifactLatestCommitSha: z.string().nullable(),
   artifactPath: z.string().nullable(),
   artifactStatus: BenchmarkArtifactStatusSchema.nullable(),
