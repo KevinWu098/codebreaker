@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-aubio-002",
+  "ghsa_id": "GHSA-c6jq-h4jp-72pr",
+  "codebase": {
+    "repo": "https://github.com/aubio/aubio",
+    "language": "c",
+    "ecosystem": "pip",
+    "commit": "4506b0c590b1dffb6ff286cfb8ebb9e332085c9c"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Audio event detection and musical note tracking subsystem"
+    },
+    "L2": {
+      "description": "A null pointer dereference vulnerability exists where return values of internal object creation and buffer allocation calls are used without verifying that the allocations succeeded, leading to a crash when a component fails to initialize."
+    },
+    "L3": {
+      "area": "Note detection initialization and its dependent onset analysis setup",
+      "description": "A null pointer dereference vulnerability exists where the return value of an onset detector creation call and several buffer allocation calls are not checked for null during note detection object initialization, leading to a crash when these allocations fail."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 7.5,
+    "reason": "The new_aubio_notes function in aubio v0.4.0 to v0.4.8 does not check whether new_aubio_onset and several buffer allocations return NULL before using them, causing a null pointer dereference when initialization fails.",
+    "locations": [
+      {
+        "file": "src/notes/notes.c",
+        "function": "new_aubio_notes"
+      }
+    ]
+  }
+}
