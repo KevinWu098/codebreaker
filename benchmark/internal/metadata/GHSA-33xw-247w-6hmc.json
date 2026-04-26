@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-33xw-247w-6hmc",
+  "post_patch_commit": "b35f4f4fcc53a8c3fe8ed9c18a013fe0a728e194",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the advisory description which explicitly names serde.py and the deserialize_value function containing the unsafe pickle.loads call. Secondary location derived from the patch diff which modifies app.py's api_endpoint function to reject the pickle content type on the main server. Only 1 source file was changed in the patch. Vulnerability class insecure-deserialization confirmed from CWE-502 and the patch which blocks pickle deserialization of untrusted HTTP request data.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
