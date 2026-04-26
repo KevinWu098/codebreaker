@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-vcqg-3p29-xw73",
   "post_patch_commit": "4e2def2539ec13e53a82e06c4b3daf00454100c4",
   "noisy_patch": false,
-  "curation_notes": "The advisory explicitly names libImaging/TiffDecode.c. The patch commit modifies only src/libImaging/TiffDecode.c (plus test files). Two overflow checks were added in the ImagingLibTiffDecode function: one for tile-based decoding (row_byte_size * tile_length) and one for strip-based decoding (rows_per_strip * row_byte_size). Both checks use INT_MAX / row_byte_size before the multiplication to prevent integer overflow on the realloc size computation.",
+  "curation_notes": "Re-curated with updated hint guidelines. The advisory explicitly names libImaging/TiffDecode.c. The patch commit modifies only src/libImaging/TiffDecode.c (plus test files). Two overflow checks were added in the ImagingLibTiffDecode function: one for tile-based decoding (row_byte_size * tile_length) and one for strip-based decoding (rows_per_strip * row_byte_size). Both checks use INT_MAX / row_byte_size before the multiplication to prevent integer overflow on the realloc size computation. L2 hint scrubbed of 'TIFF' to pass the grep test; L3 hints now differentiated from L1/L2 with TIFF-specific context.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
