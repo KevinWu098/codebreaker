@@ -589,7 +589,7 @@ const MatrixView = ({
 }: {
   onSelectRun?: ((runId: string) => void) | undefined;
 }): React.JSX.Element => {
-  const [difficulty, setDifficulty] = useState<Difficulty>("L2");
+  const [difficulty, setDifficulty] = useState<Difficulty>("L0");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("task");
 
