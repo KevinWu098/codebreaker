@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rwgm-f83r-v3qj",
+  "post_patch_commit": "b6328667c8d797ff196b6e2284e52796aa135ade",
+  "noisy_patch": true,
+  "curation_notes": "Primary location derived from patch diff. The core vulnerability is in http_request() in php/utils.php, which unconditionally retries HTTPS requests with certificate verification disabled upon TLS handshake errors. The patch adds an 'insecure' option (default false) so the retry only happens when explicitly opted in. Four non-test source files were changed (class-wp-cli.php, CLI_Command.php, utils-wp.php, utils.php), but only utils.php contains the vulnerable auto-retry logic; the other changes add the --insecure flag plumbing, null-safety guards for the logger, and namespace cleanup. Pre-assigned class crypto-weakness (CWE-295 Improper Certificate Validation) is correct — the vulnerability is a misused TLS configuration that silently downgrades security.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
