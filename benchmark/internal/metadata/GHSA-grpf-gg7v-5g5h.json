@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-grpf-gg7v-5g5h",
+  "post_patch_commit": "fb7912c6bdda06a233f4b3e18e71a87d3e4a8951",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff (PR #4970). The patch fixes 4 source files across the H2 and MySQL JDBC storage query DAOs where user-supplied keywords were directly string-concatenated into SQL LIKE clauses. The fix replaces concatenation with parameterized queries using concat('%',?,'%') and adds the keyword to the parameters list. H2MetadataQueryDAO has two vulnerable functions (searchServices and searchEndpoint). No sibling files (MySQLTraceQueryDAO, H2LogQueryDAO) contained the same vulnerable pattern. The pre-assigned sql-injection class is correct based on the CWE-89 mapping and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
