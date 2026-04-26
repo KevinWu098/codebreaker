@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-6vmq-jh76-hq43",
   "post_patch_commit": "dd59b3066e616a08e756f72de8dc3ab11b7036c4",
   "noisy_patch": true,
-  "curation_notes": "The patch commit (dd59b30) fixes uninitialized memory access in src/fcgi.rs by replacing Vec::with_capacity + unsafe set_len with Vec::new + resize(len, 0). The commit also includes unrelated cleanup: bare trait object syntax changes (adding dyn) across fcgi.rs, lib.rs, main.rs, options.rs, and unix.rs, plus a minor logic fix in the listen loop. Since 5 non-test source files were changed but only 1 contains the security fix, the patch is marked as noisy. Location derived from the advisory issue #1 which explicitly identifies the vulnerable code in the Iterator::next implementation for KeyValueReader.",
+  "curation_notes": "Re-curation with improved hints. The patch commit (dd59b30) fixes uninitialized memory access in src/fcgi.rs by replacing Vec::with_capacity + unsafe set_len with Vec::new + resize(len, 0). The commit also includes unrelated cleanup: bare trait object syntax changes (adding dyn) across fcgi.rs, lib.rs, main.rs, options.rs, and unix.rs. Since 5 non-test source files were changed but only 1 contains the security fix, the patch is marked as noisy. Location derived from the advisory issue #1 which explicitly identifies the vulnerable code in the Iterator::next implementation for KeyValueReader. Vulnerability class kept as buffer-overflow per CWE-119; the issue is uninitialized memory exposure within buffer bounds, which is the closest match among valid classes. L1/L3 areas and L2/L3 descriptions differentiated for proper difficulty scaling.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

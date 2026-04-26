@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Image resampling and transformation pipeline"
+      "area": "Image processing and pixel data manipulation layer"
     },
     "L2": {
-      "description": "An integer overflow vulnerability exists in the image resampling logic. When processing images with attacker-controlled dimensions, certain size parameters are not validated before being used in arithmetic operations for memory allocation. This can result in a heap-based buffer overflow, potentially allowing remote attackers to cause a denial of service or execute arbitrary code via crafted image dimensions."
+      "description": "An integer overflow vulnerability exists in image processing where attacker-controlled size parameters are used in multiplication operations for memory allocation without proper overflow checks. When processing images with negative or very large dimension values, the integer overflow results in undersized memory allocations, leading to a heap-based buffer overflow that could allow remote attackers to cause denial of service or potentially execute arbitrary code."
     },
     "L3": {
-      "area": "Image resampling and transformation pipeline",
-      "description": "An integer overflow vulnerability exists in the image resampling logic. When processing images with attacker-controlled dimensions, certain size parameters are not validated before being used in arithmetic operations for memory allocation. This can result in a heap-based buffer overflow, potentially allowing remote attackers to cause a denial of service or execute arbitrary code via crafted image dimensions."
+      "area": "Image resampling and interpolation routines",
+      "description": "An integer overflow vulnerability exists in the image resampling logic where attacker-controlled output dimension parameters are multiplied with filter coefficient counts for buffer allocation without proper overflow checks. Negative or very large new size values cause the multiplication to wrap, resulting in undersized heap allocations and subsequent buffer overflows during pixel data processing."
     }
   },
   "ground_truth": {
     "vulnerable": true,
-    "vuln_class": "buffer-overflow",
+    "vuln_class": "integer-overflow",
     "cvss": 9.8,
-    "reason": "An integer overflow in the horizontal image resampling function allows negative or very large size values to bypass allocation size calculations, leading to a heap-based buffer overflow when writing resampled pixel data.",
+    "reason": "An integer overflow in the horizontal image resampling function allows negative or very large size values to cause multiplication wrapping in buffer allocation calculations, resulting in undersized heap allocations and subsequent out-of-bounds writes when processing pixel data.",
     "locations": [
       {
         "file": "libImaging/Resample.c",

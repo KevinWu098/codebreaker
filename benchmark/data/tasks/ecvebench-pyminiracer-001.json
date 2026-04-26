@@ -3,7 +3,7 @@
   "ghsa_id": "GHSA-vwcg-7xqw-qcxw",
   "codebase": {
     "repo": "https://github.com/sqreen/PyMiniRacer",
-    "language": "python",
+    "language": "c++",
     "ecosystem": "pip",
     "commit": "9bfa14cad83acaefbb339be001af5860acff10c0"
   },
@@ -16,8 +16,8 @@
       "description": "A heap overflow vulnerability exists where a buffer is allocated based on an initial collection size, but iteration over the collection uses a dynamically re-evaluated length that may have grown since allocation, leading to out-of-bounds writes and potential heap corruption."
     },
     "L3": {
-      "area": "Data marshalling between the scripting engine and the host language runtime",
-      "description": "A heap overflow vulnerability exists where a buffer is allocated based on an initial collection size, but iteration over the collection uses a dynamically re-evaluated length that may have grown since allocation, leading to out-of-bounds writes and potential heap corruption."
+      "area": "Array value conversion routines in the native C++ extension for the embedded JavaScript engine",
+      "description": "A heap overflow vulnerability exists where a buffer for array elements is allocated based on the initial array length at the time of allocation. However, the loop that iterates over the array during value conversion re-queries the live array length on each iteration, which may have grown due to side effects triggered during element access. This causes writes beyond the allocated buffer, leading to out-of-bounds memory corruption."
     }
   },
   "ground_truth": {
