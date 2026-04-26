@@ -1,0 +1,55 @@
+{
+  "task_id": "ecvebench-java-xmlbuilder-001",
+  "ghsa_id": "GHSA-3vrc-rrpw-r5pw",
+  "codebase": {
+    "repo": "https://github.com/jmurty/java-xmlbuilder",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "5d5caa583b14ade1d6713b8e73b58679de50361f"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "XML document construction and parsing infrastructure"
+    },
+    "L2": {
+      "description": "An XML External Entity (XXE) injection vulnerability exists because the XML document builder factory does not disable external general and parameter entity processing by default. An attacker can craft XML input containing external entity declarations to read local files or perform server-side request forgery."
+    },
+    "L3": {
+      "area": "Core XML builder document creation and document parsing implementations",
+      "description": "An XML External Entity (XXE) injection vulnerability exists because the document builder factory used to create and parse XML documents does not explicitly disable the 'external-general-entities' and 'external-parameter-entities' features. An attacker supplying crafted XML input with external entity declarations can read arbitrary local files or perform SSRF attacks."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML document builder factory in the builder classes does not disable external entity processing, allowing XXE injection attacks that can read local files or trigger SSRF via crafted XML input.",
+    "locations": [
+      {
+        "file": "src/main/java/com/jamesmurty/utils/BaseXMLBuilder.java",
+        "function": "createDocumentImpl"
+      },
+      {
+        "file": "src/main/java/com/jamesmurty/utils/BaseXMLBuilder.java",
+        "function": "parseDocumentImpl"
+      },
+      {
+        "file": "src/main/java/com/jamesmurty/utils/XMLBuilder.java",
+        "function": "create"
+      },
+      {
+        "file": "src/main/java/com/jamesmurty/utils/XMLBuilder.java",
+        "function": "parse"
+      },
+      {
+        "file": "src/main/java/com/jamesmurty/utils/XMLBuilder2.java",
+        "function": "create"
+      },
+      {
+        "file": "src/main/java/com/jamesmurty/utils/XMLBuilder2.java",
+        "function": "parse"
+      }
+    ]
+  }
+}

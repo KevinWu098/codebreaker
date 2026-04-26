@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3vrc-rrpw-r5pw",
+  "post_patch_commit": "e6fddca201790abab4f2c274341c0bb8835c3e73",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit e6fddca adds enableOrDisableExternalEntityParsing() in BaseXMLBuilder.java to explicitly enable/disable external-general-entities and external-parameter-entities on DocumentBuilderFactory. The createDocumentImpl and parseDocumentImpl methods in BaseXMLBuilder are the root cause (they create the factory without disabling external entities). XMLBuilder and XMLBuilder2 are subclasses whose create/parse methods delegate to those base methods, exposing the vulnerability through their public API. All three source files were modified in the patch (3 non-test files, not noisy). Vulnerability class xxe confirmed from CWE-611 and patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
