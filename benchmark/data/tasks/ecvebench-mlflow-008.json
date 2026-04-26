@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-mlflow-008",
+  "ghsa_id": "GHSA-3v79-q7ph-j75h",
+  "codebase": {
+    "repo": "https://github.com/mlflow/mlflow",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "b7c0b779459b61d306cabcc9dee3d5687ee88556"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Recipe execution pipeline and result display logic"
+    },
+    "L2": {
+      "description": "A cross-site scripting (XSS) vulnerability exists where dataset table field values are rendered as HTML without proper sanitization. When a recipe processes an untrusted dataset, malicious content in table cells can execute arbitrary JavaScript code, leading to client-side remote code execution in notebook environments."
+    },
+    "L3": {
+      "area": "Recipe step card rendering and HTML table display components",
+      "description": "A cross-site scripting (XSS) vulnerability exists in the recipe card display system where dataset table cell values and step failure tracebacks are rendered as HTML without proper escaping. When a recipe processing an untrusted dataset is run in a Jupyter Notebook, malicious content embedded in data fields can execute arbitrary JavaScript, leading to client-side remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.7,
+    "reason": "The render_table function in the recipe cards module renders dataset table cell values as HTML without escaping, and the FailedStepCard injects failure tracebacks via f-string bypassing Jinja2 escaping, allowing attacker-controlled data to execute arbitrary JavaScript in notebook environments.",
+    "locations": [
+      {
+        "file": "mlflow/recipes/cards/__init__.py",
+        "function": "render_table"
+      },
+      {
+        "file": "mlflow/recipes/cards/__init__.py",
+        "function": "__init__"
+      }
+    ]
+  }
+}
