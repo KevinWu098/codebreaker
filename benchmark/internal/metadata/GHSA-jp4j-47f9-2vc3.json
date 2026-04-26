@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jp4j-47f9-2vc3",
+  "post_patch_commit": "07ef71ff98f45f8c2711be4aeaf484610d891dda",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds a maximum length check (maxParseSizeLen = 9) to the parseSize function in server/util.go, preventing integer overflow when parsing extremely large decimal size strings from incoming messages. Only one non-test source file was changed. The pre-assigned vulnerability class integer-overflow (CWE-190) is correct — the fix directly addresses integer overflow in size parsing. Location derived from the patch diff: the parseSize function in server/util.go is the sole vulnerable code path.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
