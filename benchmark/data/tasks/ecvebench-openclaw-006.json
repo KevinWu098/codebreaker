@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-openclaw-006",
+  "ghsa_id": "GHSA-xf99-j42q-5w5p",
+  "codebase": {
+    "repo": "https://github.com/openclaw/openclaw",
+    "language": "typescript",
+    "ecosystem": "npm",
+    "commit": "72b0e00eab617c350646b1a5a46c6417e75d4c7e"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Command execution approval and process invocation infrastructure"
+    },
+    "L2": {
+      "description": "A time-of-check time-of-use race condition exists in the command execution approval system. When certain script runner commands are used, the approval flow does not bind the approval to the specific file content being executed. This allows an approved command to have its script payload replaced between the time of approval and execution, enabling unintended local code execution as the runtime user."
+    },
+    "L3": {
+      "area": "Node-host command execution approval planning for interpreter and runtime script runners",
+      "description": "A time-of-check time-of-use race condition exists in the command execution approval planning logic. When interpreter and runtime-style script runner commands cannot be matched to bind exactly one concrete local file operand, the approval plan silently succeeds without file-content integrity binding instead of failing closed. This allows an approved benign script to be swapped for different local code between approval and execution, enabling unintended code execution under the approval's trust."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 7.3,
+    "reason": "The command execution approval planning logic does not fail closed when interpreter-style script runner commands cannot bind exactly one concrete local file operand, allowing a TOCTOU attack where an approved script is replaced with different code between approval and execution.",
+    "locations": [
+      {
+        "file": "src/node-host/invoke-system-run-plan.ts",
+        "function": "resolveMutableFileOperandIndex"
+      },
+      {
+        "file": "src/node-host/invoke-system-run-plan.ts",
+        "function": "resolveMutableFileOperandSnapshotSync"
+      }
+    ]
+  }
+}
