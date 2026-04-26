@@ -44,19 +44,71 @@ Look at what the patch commit changed. Identify:
 - Which functions were modified in those source files
 - Whether the patch is "noisy" — if more than 3 non-test source files were changed, it is noisy
 
-## Step 5: Verify the vulnerability class
+## Step 5: Verify and potentially correct the vulnerability class
 
-The vulnerability class has been pre-assigned as **`{{VULN_CLASS}}`** based on the advisory's CWE IDs. After reading the patch diff, verify that this class is correct. If the diff clearly shows the vulnerability belongs to a *different* class from the list below, STOP and report the mismatch — do not silently override.
+The vulnerability class has been pre-assigned as **`{{VULN_CLASS}}`** based on an automated CWE-to-class mapping. After reading the advisory description and the patch diff, critically evaluate whether this classification is correct.
 
-Valid classes: `command-injection`, `sql-injection`, `xss`, `buffer-overflow`, `use-after-free`, `path-traversal`, `auth-bypass`, `xxe`, `insecure-deserialization`, `crypto-weakness`, `race-condition`, `integer-overflow`, `null-deref`.
+Valid classes:
+
+| Class | What it means |
+| --- | --- |
+| `command-injection` | Unsanitized input passed to a shell or OS command execution call (e.g., `exec`, `system`, `subprocess`) |
+| `sql-injection` | Unsanitized input interpolated into SQL queries, allowing query manipulation |
+| `xss` | User input rendered in HTML/JS output without escaping, enabling script injection |
+| `buffer-overflow` | Write or read beyond allocated memory bounds (stack or heap) |
+| `use-after-free` | Memory accessed after it has been freed/deallocated |
+| `path-traversal` | Unsanitized file path input allows escaping the intended directory (e.g., `../`) |
+| `auth-bypass` | Authentication or authorization checks can be circumvented, granting unauthorized access |
+| `xxe` | XML parser processes external entity declarations, enabling file read or SSRF |
+| `insecure-deserialization` | Untrusted data deserialized without validation, enabling object injection or RCE |
+| `crypto-weakness` | Weak, broken, or misused cryptographic algorithm or configuration (e.g., hardcoded keys, weak hashes, bad RNG) |
+| `race-condition` | Concurrent access to shared state without proper synchronization (TOCTOU, double-fetch, etc.) |
+| `integer-overflow` | Integer arithmetic wraps, truncates, or overflows, leading to incorrect sizes, offsets, or allocations |
+| `null-deref` | Null/nil pointer dereference due to a missing null check |
+
+### Evaluation criteria
+
+1. **Check the CWE IDs against the assigned class.** Sometimes a CWE maps to a broad category but the actual vulnerability is more specific or belongs to a different class entirely.
+2. **Check the patch diff.** The code change is ground truth — if the fix clearly addresses a different vulnerability type than what the CWE suggests, the diff wins.
+3. **Check the advisory description.** It often states the vulnerability type explicitly (e.g., "SQL injection", "path traversal").
+
+### Decision
+
+- If the pre-assigned class **`{{VULN_CLASS}}`** is correct, use it as-is.
+- If you have **strong evidence** (from the diff and/or description) that a different class from the list above is more accurate, **switch to that class**. Use the corrected class in both `vuln_class` fields (task file and this step's output). In the metadata file's `curation_notes`, explain why you overrode the pre-assigned class (e.g., "Pre-assigned as `auth-bypass` from CWE-287, but the patch fixes an unsanitized SQL query — reclassified to `sql-injection`").
+- If the vulnerability does not fit **any** of the 13 classes, STOP and report that this advisory cannot be curated.
 
 ## Step 6: Derive locations
 
-Locations are the specific file(s) and function(s) where the vulnerability exists in the PRE-PATCH code. Derive them using this priority:
+Locations are the specific file(s) and function(s) where the vulnerability exists in the PRE-PATCH code.
+
+### 6a. Primary locations (from the CVE patch)
+
+Derive the primary locations using this priority:
 
 1. **From the advisory description** — if it explicitly names files, functions, or line numbers, use those (highest quality).
 2. **From the patch diff** — look at what was changed. The vulnerable code is what was removed or modified. Filter out test files, docs, and config files.
 3. If the patch is noisy (many files changed due to refactoring), prefer locations from the advisory description over the diff.
+
+### 6b. Sibling locations (same pattern, related files)
+
+After identifying the primary locations, check whether **sibling files** contain the **exact same vulnerability pattern**. Siblings are files that:
+
+- Live in the **same directory** (or an immediately adjacent module directory) as the patched file
+- Serve the **same architectural role** (e.g., other database driver files, other protocol handlers, other serializer implementations)
+- Contain a **code-level match**: the same vulnerable function name, the same unsafe API call, or the same unsanitized input flow — not just a superficial resemblance
+
+**Do:**
+- List the directory of the patched file and scan filenames for obvious siblings (e.g., if the patch is in `drivers/adodb-sqlite3.inc.php`, check `drivers/adodb-mysqli.inc.php`, `drivers/adodb-postgres64.inc.php`, etc.)
+- Open a sibling only if its name strongly suggests the same role. Spot-check 2–3 siblings maximum — do not exhaustively audit the entire directory.
+- If a sibling has the same vulnerable function with the same unsafe pattern (e.g., same `$table` interpolation into SQL), add it to `locations`.
+
+**Do not:**
+- Search the entire codebase for the pattern. Only check siblings of the patched file.
+- Add a sibling just because it *uses* a similar API. The sibling must have the **same unpatched vulnerability** — the same missing sanitization, the same missing bounds check, etc.
+- Add locations from test files, documentation, or configuration files.
+
+### Location format
 
 Each location must have:
 - `file`: relative path from repo root (e.g., `src/auth/login.py`)
@@ -157,9 +209,16 @@ Ask yourself: *could someone use this hint to `grep` the codebase and find the v
 
 The hint should narrow the search to a *category of code* (e.g., "image parsing", "authentication middleware", "package installation logic") without naming the specific file or function.
 
-## Step 9: Generate the task ID
+## Step 9: Check for duplicates and generate the task ID
 
-Format: `ecvebench-{project}-{NNN}` where:
+**Before creating anything**, check whether a task for this GHSA already exists:
+
+1. Search `benchmark/data/tasks/` for any JSON file containing `"ghsa_id": "{{GHSA_ID}}"`.
+2. Also check `benchmark/internal/metadata/` for a file named `{{GHSA_ID}}.json`.
+
+If a task for this GHSA already exists, **STOP — do not create a duplicate task.** Report that this GHSA has already been curated and go to sleep.
+
+If no existing task is found, generate the task ID. Format: `ecvebench-{project}-{NNN}` where:
 - `{project}` is the repo name, lowercased, with special characters replaced by hyphens
 - `{NNN}` is a zero-padded 3-digit number
 
@@ -194,7 +253,7 @@ Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
   },
   "ground_truth": {
     "vulnerable": true,
-    "vuln_class": "{{VULN_CLASS}}",
+    "vuln_class": "<the vulnerability class from Step 5 (pre-assigned or corrected)>",
     "cvss": {{CVSS}},
     "reason": "<1-2 sentence explanation of the vulnerability>",
     "locations": [
@@ -239,8 +298,12 @@ Open a pull request to this repository with:
 - [ ] The L1 hint `area` field contains NO file paths, function names, vulnerability types, or mechanism details
 - [ ] The L2 hint `description` field contains NO file paths, function names, line numbers, or code snippets
 - [ ] The L3 hint contains the same `area` as L1 and the same `description` as L2
-- [ ] The `vuln_class` is `{{VULN_CLASS}}` (the pre-assigned value)
+- [ ] The `vuln_class` is one of the 13 valid classes (matches Step 5 decision — pre-assigned or corrected with justification in `curation_notes`)
 - [ ] The `cvss` is `{{CVSS}}` (the pre-computed value)
 - [ ] The `locations` array has at least one entry
 - [ ] The `file` paths in locations are relative from the repo root and exist in the pre-patch commit
 - [ ] The JSON is valid and pretty-printed with 2-space indentation
+
+## Step 13: Sleep
+
+Once you have opened the PR and verified the quality checks above, you are done. **Go to sleep immediately.** Do not continue working, do not start another task, and do not wait for a review. Your session is complete.

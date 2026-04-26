@@ -14,6 +14,9 @@ import task_ecvebench_adodb_001 from "../../../../benchmark/data/tasks/ecvebench
 import task_ecvebench_adodb_002 from "../../../../benchmark/data/tasks/ecvebench-adodb-002.json" with {
   type: "json",
 };
+import task_ecvebench_adodb_003 from "../../../../benchmark/data/tasks/ecvebench-adodb-003.json" with {
+  type: "json",
+};
 import task_ecvebench_amazon_redshift_jdbc_driver_001 from "../../../../benchmark/data/tasks/ecvebench-amazon-redshift-jdbc-driver-001.json" with {
   type: "json",
 };
@@ -971,6 +974,7 @@ export const benchmarkDatasetFixtures = {
     task_ecvebench_admidio_001,
     task_ecvebench_adodb_001,
     task_ecvebench_adodb_002,
+    task_ecvebench_adodb_003,
     task_ecvebench_amazon_redshift_jdbc_driver_001,
     task_ecvebench_application_changerequest_001,
     task_ecvebench_ausf_001,
