@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-rqpp-rjj8-7wv8",
   "post_patch_commit": "5e389d5e7c9233ec91026ab2fea299ebaf3249f6",
   "noisy_patch": false,
-  "curation_notes": "Locations derived from the patch diff. The patch modified a single source file (src/gateway/server/ws-connection/message-handler.ts). The clearUnboundScopes function had a condition (!controlUiAuthPolicy.allowBypass && !sharedAuthOk) that allowed shared-auth connections to bypass scope clearing. The handleMissingDeviceIdentity function called clearUnboundScopes too early, before the trusted proxy auth decision. The fix simplified clearUnboundScopes to always clear scopes and moved its invocation to after the proxy auth check, preserving scopes only for explicitly allowed Control UI connections.",
+  "curation_notes": "Re-curated with improved hints. Locations derived from the patch diff. Only one non-test source file was changed: src/gateway/server/ws-connection/message-handler.ts. The clearUnboundScopes inner function had a condition (!controlUiAuthPolicy.allowBypass && !sharedAuthOk) that allowed shared-auth connections to bypass scope clearing. The handleMissingDeviceIdentity function called clearUnboundScopes before the trusted proxy auth decision (isTrustedProxyControlUiOperatorAuth), so scopes were stripped prematurely for Control UI connections but preserved for shared-auth connections. The fix simplified clearUnboundScopes to always clear scopes and moved its invocation to after the proxy auth check, preserving scopes only for explicitly allowed Control UI connections. Vulnerability class auth-bypass confirmed from CWE-269/CWE-862 and the patch behavior.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

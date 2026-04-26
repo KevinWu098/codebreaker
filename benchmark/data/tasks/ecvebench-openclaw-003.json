@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Gateway WebSocket connection and session initialization"
+      "area": "Gateway connection establishment and session management"
     },
     "L2": {
-      "description": "An authorization bypass vulnerability exists where certain authenticated WebSocket connections could self-declare elevated privilege scopes. A logic flaw in the scope validation path allowed shared-authentication connections to preserve client-supplied scopes that were not bound to a device identity or explicitly trusted connection type, enabling unauthorized access to administrative operations."
+      "description": "An authorization bypass vulnerability exists where certain shared-secret-authenticated connections can self-declare elevated privilege scopes. The scope-clearing logic contains a conditional bypass that trusts shared-authentication status, allowing device-less connections to retain client-supplied elevated scopes that should have been stripped by the server, enabling unauthorized access to administrative operations."
     },
     "L3": {
-      "area": "Gateway WebSocket connection and session initialization",
-      "description": "An authorization bypass vulnerability exists where certain authenticated WebSocket connections could self-declare elevated privilege scopes. A logic flaw in the scope validation path allowed shared-authentication connections to preserve client-supplied scopes that were not bound to a device identity or explicitly trusted connection type, enabling unauthorized access to administrative operations."
+      "area": "Gateway WebSocket connection message handling and scope assignment for shared-authentication paths",
+      "description": "An authorization bypass vulnerability exists where shared-token or shared-password authenticated WebSocket connections can self-declare elevated privilege scopes such as administrative operator permissions. The scope-clearing logic incorrectly exempts shared-authentication connections from scope stripping, and the clearing step is invoked before the trusted proxy authentication decision is finalized, allowing device-less shared-secret operators to retain elevated scopes and perform administrative gateway operations."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "The gateway WebSocket connection handler did not clear client-declared scopes for shared-token and shared-password authenticated connections, allowing device-less operators to self-declare elevated scopes such as operator.admin and perform administrative operations.",
+    "reason": "The gateway WebSocket connection handler did not clear client-declared scopes for shared-token and shared-password authenticated connections that lacked a device identity, allowing them to self-declare elevated scopes such as operator.admin and perform administrative operations.",
     "locations": [
       {
         "file": "src/gateway/server/ws-connection/message-handler.ts",
