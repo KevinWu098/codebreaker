@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rprw-h62v-c2w7",
+  "post_patch_commit": "7b68405c81db889f83c32846462b238ccae5be80",
+  "noisy_patch": true,
+  "curation_notes": "Primary locations derived from the patch diff. The patch changes the default Loader used by yaml.load() and yaml.load_all() in __init__.py from the unsafe Loader (which uses Constructor, capable of arbitrary object instantiation) to SafeLoader. The Loader class definition in loader.py and its C extension counterpart CLoader in cyaml.py are included as they define the unsafe class hierarchy. The dumper-side changes (dumper.py) were excluded from locations as they are not relevant to the deserialization vulnerability. cyaml.py is included as a sibling location since CLoader exhibits the exact same unsafe pattern. 4 non-test source files were modified, making this a noisy patch. Pre-assigned vulnerability class insecure-deserialization is correct per CWE-502 and the patch behavior.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
