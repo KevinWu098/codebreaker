@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cpj3-3r2f-xj59",
+  "post_patch_commit": "6e2b2dd84f0e47cebc90d6e79609dd5274732662",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff. In path_oidc.go, the pathCallback function read the error_description query parameter and passed it directly to loginFailedResponse without sanitization, enabling reflected XSS. In html_responses.go, the errorHTML function used fmt.Sprintf to embed summary and detail strings into HTML without html.EscapeString, and formpostHTML embedded path/code/state into a script block using plain string interpolation instead of JSON-safe encoding. The patch adds html.EscapeString for HTML contexts and a jsStr helper (json.Marshal) for script contexts, and replaces raw error_description reflection with a whitelist of known OIDC error codes. No sibling files share this vulnerability pattern. Pre-assigned class xss is correct — CWE-80 (Improper Neutralization of Script-Related HTML Tags) directly maps to XSS.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
