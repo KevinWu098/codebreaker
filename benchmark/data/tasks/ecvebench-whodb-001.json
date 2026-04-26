@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Database connection and plugin initialization logic"
+      "area": "Database connectivity and storage plugin layer"
     },
     "L2": {
-      "description": "A path traversal vulnerability allows an unauthenticated attacker to open and read arbitrary database files on the host system by supplying a crafted relative path with directory traversal sequences in a connection request. The user-controlled value is joined with a default directory without verifying that the resolved path remains within the intended directory, enabling access to any database file accessible to the application process."
+      "description": "A path traversal vulnerability allows an unauthenticated attacker to open and read arbitrary database files on the host system by supplying a crafted relative path containing directory traversal sequences in a database connection request. The user-controlled database name is joined with a default directory path without verifying that the resolved path remains within the intended directory, enabling access to any compatible database file accessible to the application process."
     },
     "L3": {
-      "area": "Database connection and plugin initialization logic",
-      "description": "A path traversal vulnerability allows an unauthenticated attacker to open and read arbitrary database files on the host system by supplying a crafted relative path with directory traversal sequences in a connection request. The user-controlled value is joined with a default directory without verifying that the resolved path remains within the intended directory, enabling access to any database file accessible to the application process."
+      "area": "Sqlite3 database plugin connection and file resolution logic",
+      "description": "A path traversal vulnerability allows an unauthenticated attacker to open and read arbitrary Sqlite3 database files on the host system by supplying a crafted relative path containing directory traversal sequences when connecting to a Sqlite3 database. The user-controlled database name is joined with a default directory path without verifying that the resolved path remains within the intended directory, enabling access to any Sqlite3 database file accessible to the application process."
     }
   },
   "ground_truth": {

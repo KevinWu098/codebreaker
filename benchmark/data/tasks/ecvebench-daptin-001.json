@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Cloud storage and file upload processing"
+      "area": "Server-side file handling and data import processing"
     },
     "L2": {
-      "description": "A path traversal and zip slip vulnerability exists where user-supplied filenames are written directly to disk without proper sanitization during file upload operations. An unauthenticated attacker can craft filenames containing directory traversal sequences to write arbitrary files outside the intended storage directory, potentially leading to remote code execution."
+      "description": "A path traversal and zip slip vulnerability exists where user-supplied filenames are written directly to disk without proper sanitization during file upload operations. An unauthenticated attacker can craft filenames containing directory traversal sequences or malicious zip archive entries to write arbitrary files outside the intended storage directory, potentially leading to remote code execution."
     },
     "L3": {
-      "area": "Cloud storage and file upload processing",
-      "description": "A path traversal and zip slip vulnerability exists where user-supplied filenames are written directly to disk without proper sanitization during file upload operations. An unauthenticated attacker can craft filenames containing directory traversal sequences to write arbitrary files outside the intended storage directory, potentially leading to remote code execution."
+      "area": "Cloud storage file upload action handlers and associated archive extraction logic",
+      "description": "A path traversal and zip slip vulnerability exists in the cloud storage file upload processing where user-supplied filenames and zip archive entry names are written directly to disk without sanitization. The upload endpoint does not require authentication, allowing a remote attacker to craft filenames with directory traversal sequences or upload zip archives whose entries escape the intended storage directory, potentially achieving arbitrary file write and remote code execution."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "path-traversal",
     "cvss": 10.0,
-    "reason": "The cloudstore file upload action writes user-supplied filenames directly to disk without sanitizing directory traversal sequences, allowing unauthenticated attackers to perform path traversal and zip slip attacks for arbitrary file write.",
+    "reason": "The cloudstore file upload action writes user-supplied filenames and zip archive entry names directly to disk without sanitizing directory traversal sequences, allowing unauthenticated attackers to perform path traversal and zip slip attacks for arbitrary file write.",
     "locations": [
       {
         "file": "server/actions/action_cloudstore_file_upload.go",
@@ -32,6 +32,14 @@
       },
       {
         "file": "server/actions/action_cloudstore_file_upload.go",
+        "function": "DoAction"
+      },
+      {
+        "file": "server/actions/action_csv_to_entity.go",
+        "function": "DoAction"
+      },
+      {
+        "file": "server/actions/action_xls_to_entity.go",
         "function": "DoAction"
       }
     ]

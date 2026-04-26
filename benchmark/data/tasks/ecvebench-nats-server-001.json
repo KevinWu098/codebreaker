@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Account claims processing and token validation logic"
+      "area": "Account authorization and credential verification subsystem"
     },
     "L2": {
-      "description": "A nil pointer dereference vulnerability exists in JWT claim validation. When processing a maliciously crafted user JWT containing null fields in its claim structures, the validation routine attempts to dereference nil pointers, causing a panic and process termination. A remote attacker with the ability to issue account tokens can trigger a denial of service by submitting a specially crafted JWT."
+      "description": "A nil pointer dereference vulnerability exists in JWT claim validation. When processing a maliciously crafted user JWT containing null entries in its claim structures, the validation routine attempts to dereference nil pointers, causing a panic and process termination. A remote attacker with the ability to issue account tokens can trigger a denial of service."
     },
     "L3": {
-      "area": "Account claims processing and token validation logic",
-      "description": "A nil pointer dereference vulnerability exists in JWT claim validation. When processing a maliciously crafted user JWT containing null fields in its claim structures, the validation routine attempts to dereference nil pointers, causing a panic and process termination. A remote attacker with the ability to issue account tokens can trigger a denial of service by submitting a specially crafted JWT."
+      "area": "JWT import and export claim validation and the server-side account credential verification that invokes it",
+      "description": "A nil pointer dereference vulnerability exists in JWT claim validation for account-level import and export permissions. When processing a maliciously crafted user JWT containing null entries in its import or export claim lists, the server-side validation routine attempts to iterate and dereference these nil entries, causing a panic and denial of service. The vulnerability is reachable through the NATS account system where Operators sign Accounts that can then issue User tokens."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "null-deref",
     "cvss": 7.5,
-    "reason": "The JWT validation routines lack nil checks for import and export entries in user claims. A maliciously crafted JWT with null import or export entries causes a nil pointer dereference during validation, resulting in a server panic and denial of service.",
+    "reason": "The JWT library's Validate functions for import and export claims lack nil checks, and the server calls these validation functions before verifying issuer trust. A maliciously crafted JWT with null import or export entries causes a nil pointer dereference during validation, resulting in a server panic and denial of service.",
     "locations": [
       {
         "file": "vendor/github.com/nats-io/jwt/v2/exports.go",
