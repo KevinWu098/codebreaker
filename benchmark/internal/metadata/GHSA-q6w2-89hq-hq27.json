@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q6w2-89hq-hq27",
+  "post_patch_commit": "717d9515fa131e3d8c8936e41b2e52270fdec976",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies one non-test source file: welcome-page-scripts.js. The fix adds a sanitize() function using DOM textContent/innerHTML to HTML-encode the return value of loggedInUserName(). No sibling files with the same vulnerability pattern exist in the directory. Pre-assigned class 'xss' confirmed — the vulnerability is a classic stored XSS via unsanitized user profile fields rendered in the account management welcome page.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
