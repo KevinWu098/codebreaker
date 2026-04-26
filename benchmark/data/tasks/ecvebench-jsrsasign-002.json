@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-jsrsasign-002",
+  "ghsa_id": "GHSA-xxxq-chmp-67g4",
+  "codebase": {
+    "repo": "https://github.com/kjur/jsrsasign",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "861ab2718b2bf8718830544c0e512cf127197316"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "RSA encryption, decryption, and signature verification logic"
+    },
+    "L2": {
+      "description": "A cryptographic weakness exists in the RSA implementation where the decryption and signature verification routines do not validate the length of the input ciphertext or signature against the expected modulus size. An attacker can craft modified inputs by prepending zero bytes, which are accepted without error, undermining the integrity guarantees of RSA PKCS#1 v1.5, RSA-OAEP, and signature verification operations."
+    },
+    "L3": {
+      "area": "RSA PKCS#1 v1.5 and RSA-OAEP decryption routines, and RSA signature verification logic",
+      "description": "A cryptographic weakness exists in the RSA PKCS#1 v1.5 and RSA-OAEP decryption routines, as well as the RSA signature verification logic, where the input ciphertext or signature length is not validated against the RSA modulus size. An attacker can prepend zero bytes to a valid ciphertext or signature, and the modified input will be accepted without error, enabling ciphertext and signature malleability."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.8,
+    "reason": "The RSA decryption and signature verification functions accept input with prepending zeros because they do not validate that the ciphertext or signature length matches the RSA modulus size, allowing malleability attacks on PKCS#1 v1.5 and OAEP operations.",
+    "locations": [
+      {
+        "file": "ext/rsa2.js",
+        "function": "RSADecrypt"
+      },
+      {
+        "file": "ext/rsa2.js",
+        "function": "RSADecryptOAEP"
+      },
+      {
+        "file": "src/rsasign-1.2.js",
+        "function": "verifyWithMessageHash"
+      }
+    ]
+  }
+}
