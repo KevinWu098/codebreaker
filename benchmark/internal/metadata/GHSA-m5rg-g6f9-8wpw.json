@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-m5rg-g6f9-8wpw",
+  "post_patch_commit": "36402c22eef49d60edd73a2f312f8e28fe0bd1cb",
+  "noisy_patch": true,
+  "curation_notes": "Primary location derived from the advisory description which explicitly names product/card.php and the country_id parameter. The patch adds type sanitization ('int') to GETPOST('country_id') and other unsanitized parameters. Secondary location in html.form.class.php where the $filter parameter in select_thirdparty_list was interpolated into SQL without sanitization; the patch adds a call to test_sql_and_script_inject(). Changes to main.inc.php (enhancing the sanitization function) and societe/ajax/company.php (minor object reuse fix) are infrastructure-level and not listed as vulnerable locations. Noisy patch: 4 non-test source files changed. Pre-assigned class sql-injection confirmed by CWE-89 and the patch diff which adds SQL input sanitization.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
