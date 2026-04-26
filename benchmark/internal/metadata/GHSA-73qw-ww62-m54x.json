@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-73qw-ww62-m54x",
+  "post_patch_commit": "570b5e854cecddd44d2047c44126aed951b61718",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from patch diff which modifies only lib/colorscore/histogram.rb. The fix adds require 'shellwords' and applies shellescape to image_path and to_i to colors and depth before shell interpolation. No sibling files contain shell execution patterns. Pre-assigned class command-injection confirmed: CWE-77 and the patch clearly fix unsanitized input passed to backtick shell execution.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
