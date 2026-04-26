@@ -1,6 +1,7 @@
 import type {
   AgentOutput,
   BenchmarkCleanupPolicy,
+  BenchmarkHarnessMode,
   BenchmarkRunEvent,
   BenchmarkRunEventKind,
   BenchmarkRunLocation,
@@ -30,6 +31,7 @@ interface BenchmarkRunRecord {
   created_at: string;
   difficulty: Difficulty;
   error: string | null;
+  harness_mode: BenchmarkHarnessMode;
   id: string;
   input_tokens: number | null;
   model_id: string;
@@ -89,6 +91,7 @@ interface BenchmarkRunLocationRecord {
 export interface CreateBenchmarkRunInput {
   cleanupPolicy: BenchmarkCleanupPolicy;
   difficulty: Difficulty;
+  harnessMode: BenchmarkHarnessMode;
   id: string;
   modelId: string;
   modelProvider: ModelProvider;
@@ -125,6 +128,7 @@ const benchmarkRunListBase = `select
           br.created_at,
           br.difficulty,
           br.error,
+          br.harness_mode,
           br.id,
           s.input_tokens as input_tokens,
           br.model_id,
@@ -162,9 +166,10 @@ export class BenchmarkRunStore {
           model_provider,
           model_id,
           cleanup_policy,
+          harness_mode,
           created_at,
           updated_at
-        ) values (?, ?, ?, 'pending', ?, ?, ?, ?, ?)`
+        ) values (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         input.id,
@@ -173,6 +178,7 @@ export class BenchmarkRunStore {
         input.modelProvider,
         input.modelId,
         input.cleanupPolicy,
+        input.harnessMode,
         timestamp,
         timestamp
       )
@@ -251,6 +257,7 @@ export class BenchmarkRunStore {
           br.created_at,
           br.difficulty,
           br.error,
+          br.harness_mode,
           br.id,
           s.input_tokens as input_tokens,
           br.model_id,
@@ -579,6 +586,7 @@ export class BenchmarkRunStore {
       createdAt: row.created_at,
       difficulty: row.difficulty,
       error: row.error,
+      harnessMode: row.harness_mode,
       id: row.id,
       inputTokens: row.input_tokens,
       modelId: row.model_id,

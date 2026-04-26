@@ -64,6 +64,7 @@ export class BenchmarkRunOrchestrator {
     const run = await this.runs.create({
       cleanupPolicy: input.cleanupPolicy,
       difficulty: input.difficulty,
+      harnessMode: input.harnessMode ?? "minimal",
       id: input.id ?? crypto.randomUUID(),
       modelId: input.model.id,
       modelProvider: input.model.provider,

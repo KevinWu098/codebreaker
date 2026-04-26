@@ -292,7 +292,7 @@ export const createRouter = (): Hono<{
         autoStart: false,
         cleanupPolicy: run.cleanupPolicy,
         difficulty: run.difficulty,
-        harnessMode: "full",
+        harnessMode: run.harnessMode,
         maxInputTokens: tokenLimits.maxInputTokens,
         maxOutputTokens: tokenLimits.maxOutputTokens,
         maxSteps: 50,

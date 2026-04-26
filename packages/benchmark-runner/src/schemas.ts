@@ -288,6 +288,7 @@ export const BenchmarkRunRowSchema = z
     createdAt: z.string().datetime(),
     difficulty: DifficultySchema,
     error: z.string().nullable(),
+    harnessMode: BenchmarkHarnessModeSchema.default("minimal"),
     id: z.string().min(1),
     inputTokens: z.number().int().nonnegative().nullable(),
     modelId: z.string().min(1),

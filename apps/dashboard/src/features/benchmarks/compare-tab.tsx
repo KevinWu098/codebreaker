@@ -92,11 +92,18 @@ const runDurationMs = (run: BenchmarkRunRow): number | null => {
 };
 
 interface ModelKey {
+  harnessMode: "full" | "minimal";
   modelId: string;
   modelProvider: string;
 }
 
-const modelLabel = (m: ModelKey): string => `${m.modelProvider}/${m.modelId}`;
+const modelLabel = (m: ModelKey): string =>
+  m.harnessMode === "full"
+    ? `${m.modelProvider}/${m.modelId} (harnessed)`
+    : `${m.modelProvider}/${m.modelId}`;
+
+const runModelKey = (run: BenchmarkRunRow): string =>
+  `${run.modelProvider}/${run.modelId}:${run.harnessMode}`;
 
 interface ModelGroup {
   allRuns: BenchmarkRunRow[];
@@ -106,7 +113,7 @@ interface ModelGroup {
 const groupByModel = (runs: BenchmarkRunRow[]): ModelGroup[] => {
   const byModel = new Map<string, BenchmarkRunRow[]>();
   for (const run of runs) {
-    const key = modelLabel(run);
+    const key = runModelKey(run);
     const group = byModel.get(key) ?? [];
     group.push(run);
     byModel.set(key, group);
@@ -142,13 +149,12 @@ interface LeaderboardRow {
   runCount: number;
   totalCost: number;
   totalTokens: number;
-  vulnGateRate: number | null;
 }
 
 const buildLeaderboard = (runs: BenchmarkRunRow[]): LeaderboardRow[] => {
   const byModel = new Map<string, BenchmarkRunRow[]>();
   for (const run of runs) {
-    const key = modelLabel(run);
+    const key = runModelKey(run);
     const group = byModel.get(key) ?? [];
     group.push(run);
     byModel.set(key, group);
@@ -169,7 +175,11 @@ const buildLeaderboard = (runs: BenchmarkRunRow[]): LeaderboardRow[] => {
       classMatchRate: booleanRate(
         scored.map((r) => r.scoreBreakdown?.vulnClassMatched)
       ),
-      model: { modelId: first.modelId, modelProvider: first.modelProvider },
+      model: {
+        harnessMode: first.harnessMode,
+        modelId: first.modelId,
+        modelProvider: first.modelProvider,
+      },
       runCount: group.length,
       totalCost: group
         .flatMap((r) => runCost(r) ?? [])
@@ -177,9 +187,6 @@ const buildLeaderboard = (runs: BenchmarkRunRow[]): LeaderboardRow[] => {
       totalTokens: group
         .flatMap((r) => totalTokens(r) ?? [])
         .reduce((s, t) => s + t, 0),
-      vulnGateRate: booleanRate(
-        scored.map((r) => r.scoreBreakdown?.vulnerableMatched)
-      ),
     });
   }
 
@@ -607,27 +614,42 @@ const MatrixView = ({
   }, [runs]);
 
   const models = useMemo(() => {
-    const set = new Set<string>();
+    const map = new Map<string, ModelKey>();
     for (const run of runs) {
-      set.add(modelLabel(run));
+      const key = runModelKey(run);
+      if (!map.has(key)) {
+        map.set(key, {
+          harnessMode: run.harnessMode,
+          modelId: run.modelId,
+          modelProvider: run.modelProvider,
+        });
+      }
     }
-    return [...set].sort((a, b) => {
-      const aKimi = a.startsWith("kimi/");
-      const bKimi = b.startsWith("kimi/");
+    return [...map.values()].sort((a, b) => {
+      const aHarnessed = a.harnessMode === "full";
+      const bHarnessed = b.harnessMode === "full";
+      if (aHarnessed && !bHarnessed) {
+        return -1;
+      }
+      if (!aHarnessed && bHarnessed) {
+        return 1;
+      }
+      const aKimi = a.modelProvider === "kimi";
+      const bKimi = b.modelProvider === "kimi";
       if (aKimi && !bKimi) {
         return -1;
       }
       if (!aKimi && bKimi) {
         return 1;
       }
-      return a.localeCompare(b);
+      return modelLabel(a).localeCompare(modelLabel(b));
     });
   }, [runs]);
 
   const bestByTaskModel = useMemo(() => {
     const map = new Map<string, BenchmarkRunRow>();
     for (const run of runs) {
-      const key = `${run.taskId}\0${modelLabel(run)}`;
+      const key = `${run.taskId}\0${runModelKey(run)}`;
       const existing = map.get(key);
       if (!existing || (run.score ?? -1) > (existing.score ?? -1)) {
         map.set(key, run);
@@ -747,11 +769,20 @@ const MatrixView = ({
                 >
                   vuln class
                 </th>
-                {models.map((m) => (
-                  <th className={cn(TH, "text-center")} key={m}>
-                    {m.split("/").pop()}
-                  </th>
-                ))}
+                {models.map((m) => {
+                  const key = `${m.modelProvider}/${m.modelId}:${m.harnessMode}`;
+                  const shortName =
+                    m.harnessMode === "full" ? `${m.modelId} (H)` : m.modelId;
+                  return (
+                    <th
+                      className={cn(TH, "text-center")}
+                      key={key}
+                      title={modelLabel(m)}
+                    >
+                      {shortName}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -791,7 +822,7 @@ const MatrixRow = ({
   bestScore: number;
   even: boolean;
   meta?: BenchmarkTaskSummary | undefined;
-  models: string[];
+  models: ModelKey[];
   onSelectRun?: ((runId: string) => void) | undefined;
   taskId: string;
 }): React.JSX.Element => (
@@ -822,10 +853,11 @@ const MatrixRow = ({
       {meta?.vulnClass ?? "—"}
     </td>
     {models.map((m) => {
-      const run = bestByTaskModel.get(`${taskId}\0${m}`);
+      const mKey = `${m.modelProvider}/${m.modelId}:${m.harnessMode}`;
+      const run = bestByTaskModel.get(`${taskId}\0${mKey}`);
       if (!run) {
         return (
-          <td className={cn(TD, "text-center text-fg-muted/50")} key={m}>
+          <td className={cn(TD, "text-center text-fg-muted/50")} key={mKey}>
             —
           </td>
         );
@@ -835,7 +867,7 @@ const MatrixRow = ({
       return (
         <MatrixCell
           isBest={isWinner}
-          key={m}
+          key={mKey}
           onSelectRun={onSelectRun}
           run={run}
         />
@@ -939,7 +971,6 @@ const LeaderboardView = (): React.JSX.Element => {
                 <th className={TH}>model</th>
                 <th className={TH}>runs</th>
                 <th className={TH}>avg score</th>
-                <th className={TH}>vuln gate</th>
                 <th className={TH}>class match</th>
                 <th className={TH}>avg location</th>
                 <th className={TH}>total tokens</th>
@@ -979,9 +1010,6 @@ const LeaderboardView = (): React.JSX.Element => {
                     )}
                   >
                     {scoreCell(row.avgScore)}
-                  </td>
-                  <td className={cn(TD, "tabular-nums")}>
-                    {pct(row.vulnGateRate)}
                   </td>
                   <td className={cn(TD, "tabular-nums")}>
                     {pct(row.classMatchRate)}

@@ -233,7 +233,7 @@ const createBenchmarkRequestFromRun = (
     autoStart: true,
     cleanupPolicy: run.cleanupPolicy,
     difficulty: run.difficulty,
-    harnessMode: "full",
+    harnessMode: run.harnessMode,
     maxInputTokens: tokenLimits.maxInputTokens,
     maxOutputTokens: tokenLimits.maxOutputTokens,
     maxSteps: BENCHMARK_MAX_STEPS,
@@ -249,20 +249,63 @@ const createBenchmarkRequestFromRun = (
   };
 };
 
+const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
+  `${model.provider}/${model.id}`;
+const DEFAULT_MODEL_VALUE = modelValue(DEFAULT_MODEL);
+
+interface BatchModelEntry {
+  harnessMode: "full" | "minimal";
+  label: string;
+  model: BenchmarkRunModel;
+  value: string;
+}
+
+const BATCH_MODEL_ENTRIES: readonly BatchModelEntry[] = MODEL_OPTIONS.flatMap(
+  (option): BatchModelEntry[] => {
+    const base = {
+      model: { id: option.id, provider: option.provider },
+    };
+    if (modelValue(option) === DEFAULT_MODEL_VALUE) {
+      return [
+        {
+          ...base,
+          harnessMode: "full",
+          label: `${option.label} (harnessed)`,
+          value: `${option.provider}/${option.id}:full`,
+        },
+        {
+          ...base,
+          harnessMode: "minimal",
+          label: option.label,
+          value: `${option.provider}/${option.id}:minimal`,
+        },
+      ];
+    }
+    return [
+      {
+        ...base,
+        harnessMode: "minimal",
+        label: option.label,
+        value: `${option.provider}/${option.id}:minimal`,
+      },
+    ];
+  }
+);
+
+const DEFAULT_BATCH_MODEL_ENTRY_VALUE = `${DEFAULT_MODEL_VALUE}:full`;
+
 const createBenchmarkRequestsFromBatch = ({
   autoFollowup,
   cleanupPolicy,
   difficulties,
-  minimalHarnessForOtherModels,
-  models,
+  entries,
   repeatCount,
   tasks,
 }: {
   autoFollowup: boolean;
   cleanupPolicy: BenchmarkCleanupPolicy;
   difficulties: Difficulty[];
-  minimalHarnessForOtherModels: boolean;
-  models: BenchmarkRunModel[];
+  entries: BatchModelEntry[];
   repeatCount: number;
   tasks: BenchmarkTaskSummary[];
 }): CreateBenchmarkRunRequest[] => {
@@ -272,7 +315,7 @@ const createBenchmarkRequestsFromBatch = ({
     for (const difficulty of difficulties.filter((difficultyOption) =>
       task.difficulties.includes(difficultyOption)
     )) {
-      for (const model of models) {
+      for (const entry of entries) {
         for (let i = 0; i < repeatCount; i += 1) {
           const tokenLimits = getBenchmarkTokenLimits(difficulty);
           requests.push({
@@ -280,18 +323,14 @@ const createBenchmarkRequestsFromBatch = ({
             autoStart: true,
             cleanupPolicy,
             difficulty,
-            harnessMode:
-              minimalHarnessForOtherModels &&
-              benchmarkModelValue(model) !== DEFAULT_MODEL_VALUE
-                ? "minimal"
-                : "full",
+            harnessMode: entry.harnessMode,
             maxInputTokens: tokenLimits.maxInputTokens,
             maxOutputTokens: tokenLimits.maxOutputTokens,
             maxSteps: BENCHMARK_MAX_STEPS,
             maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
             maxTotalTokens: tokenLimits.maxTotalTokens,
             maxTurns: BENCHMARK_MAX_TURNS,
-            model,
+            model: entry.model,
             taskId: task.taskId,
             timeoutSeconds: BENCHMARK_TIMEOUT_SECONDS,
           });
@@ -306,15 +345,13 @@ const createBenchmarkRequestsFromBatch = ({
 const buildBatchRequests = ({
   autoFollowup,
   difficulties,
-  minimalHarnessForOtherModels,
-  models,
+  entries,
   repeatCount,
   tasks,
 }: {
   autoFollowup: boolean;
   difficulties: Difficulty[];
-  minimalHarnessForOtherModels: boolean;
-  models: BenchmarkRunModel[];
+  entries: BatchModelEntry[];
   repeatCount: number;
   tasks: BenchmarkTaskSummary[];
 }):
@@ -329,7 +366,7 @@ const buildBatchRequests = ({
   if (difficulties.length === 0) {
     return { error: "Select at least one level.", requests: null };
   }
-  if (models.length === 0) {
+  if (entries.length === 0) {
     return { error: "Select at least one model.", requests: null };
   }
   if (!(Number.isInteger(repeatCount) && repeatCount > 0)) {
@@ -342,8 +379,7 @@ const buildBatchRequests = ({
     autoFollowup,
     cleanupPolicy: "retain",
     difficulties,
-    minimalHarnessForOtherModels,
-    models,
+    entries,
     repeatCount,
     tasks,
   });
@@ -360,12 +396,12 @@ const buildBatchRequests = ({
 
 const benchmarkBatchPreviewCount = ({
   difficulties,
-  models,
+  entryCount,
   repeatCount,
   tasks,
 }: {
   difficulties: Difficulty[];
-  models: BenchmarkRunModel[];
+  entryCount: number;
   repeatCount: number;
   tasks: BenchmarkTaskSummary[];
 }): number => {
@@ -382,30 +418,8 @@ const benchmarkBatchPreviewCount = ({
     0
   );
 
-  return models.length * repeatCount * taskLevelCount;
+  return entryCount * repeatCount * taskLevelCount;
 };
-
-const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
-  `${model.provider}/${model.id}`;
-const benchmarkModelValue = (model: BenchmarkRunModel): string =>
-  `${model.provider}/${model.id}`;
-const DEFAULT_MODEL_VALUE = modelValue(DEFAULT_MODEL);
-
-const benchmarkModelsFromValues = (values: string[]): BenchmarkRunModel[] =>
-  values.flatMap((value) => {
-    const selectedModel = MODEL_OPTIONS.find(
-      (option) => modelValue(option) === value
-    );
-
-    return selectedModel
-      ? [
-          {
-            id: selectedModel.id,
-            provider: selectedModel.provider,
-          },
-        ]
-      : [];
-  });
 
 const taskWithDifficulty = (
   run: Pick<BenchmarkRunRow, "difficulty" | "taskId">
@@ -1291,17 +1305,13 @@ export const BenchmarksPanel = ({
   const [batchDifficulties, setBatchDifficulties] = useState<Difficulty[]>([
     "L0",
   ]);
-  const [batchModelValues, setBatchModelValues] = useState<string[]>([
-    DEFAULT_MODEL_VALUE,
+  const [batchEntryValues, setBatchEntryValues] = useState<string[]>([
+    DEFAULT_BATCH_MODEL_ENTRY_VALUE,
   ]);
   const [batchRepeatCount, setBatchRepeatCount] = useState(
     String(DEFAULT_BATCH_REPEAT_COUNT)
   );
   const [batchAutoFollowup, setBatchAutoFollowup] = useState(false);
-  const [
-    batchMinimalHarnessForOtherModels,
-    setBatchMinimalHarnessForOtherModels,
-  ] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
   const [batchRunCount, setBatchRunCount] = useState<number | null>(null);
   const taskOptions = tasks.data?.tasks ?? [];
@@ -1313,11 +1323,13 @@ export const BenchmarksPanel = ({
   const selectedBatchTasks = taskOptions.filter((task) =>
     batchTaskIds.includes(task.taskId)
   );
-  const selectedBatchModels = benchmarkModelsFromValues(batchModelValues);
+  const selectedBatchEntries = BATCH_MODEL_ENTRIES.filter((entry) =>
+    batchEntryValues.includes(entry.value)
+  );
   const repeatCountNumber = Number(batchRepeatCount);
   const batchPreviewCount = benchmarkBatchPreviewCount({
     difficulties: batchDifficulties,
-    models: selectedBatchModels,
+    entryCount: selectedBatchEntries.length,
     repeatCount: repeatCountNumber,
     tasks: selectedBatchTasks,
   });
@@ -1357,7 +1369,10 @@ export const BenchmarksPanel = ({
         autoStart: true,
         cleanupPolicy: "retain",
         difficulty,
-        harnessMode: "full",
+        harnessMode:
+          modelValue(selectedModel) === DEFAULT_MODEL_VALUE
+            ? "full"
+            : "minimal",
         maxInputTokens: tokenLimits.maxInputTokens,
         maxOutputTokens: tokenLimits.maxOutputTokens,
         maxSteps: BENCHMARK_MAX_STEPS,
@@ -1385,10 +1400,10 @@ export const BenchmarksPanel = ({
     );
   };
 
-  const setBatchModel = (next: string, checked: boolean): void => {
-    setBatchModelValues((current) =>
-      MODEL_OPTIONS.map((option) => modelValue(option)).filter((modelOption) =>
-        modelOption === next ? checked : current.includes(modelOption)
+  const setBatchEntry = (next: string, checked: boolean): void => {
+    setBatchEntryValues((current) =>
+      BATCH_MODEL_ENTRIES.map((e) => e.value).filter((v) =>
+        v === next ? checked : current.includes(v)
       )
     );
   };
@@ -1399,8 +1414,7 @@ export const BenchmarksPanel = ({
     const result = buildBatchRequests({
       autoFollowup: batchAutoFollowup,
       difficulties: batchDifficulties,
-      minimalHarnessForOtherModels: batchMinimalHarnessForOtherModels,
-      models: selectedBatchModels,
+      entries: selectedBatchEntries,
       repeatCount: repeatCountNumber,
       tasks: selectedBatchTasks,
     });
@@ -1710,57 +1724,36 @@ export const BenchmarksPanel = ({
                   />
                   <span>start CVE follow-ups after completed benchmarks</span>
                 </label>
-                <label className="flex items-start gap-2 text-xs">
-                  <input
-                    checked={batchMinimalHarnessForOtherModels}
-                    onChange={(event) =>
-                      setBatchMinimalHarnessForOtherModels(
-                        event.currentTarget.checked
-                      )
-                    }
-                    type="checkbox"
-                  />
-                  <span>
-                    all other models will run WITHOUT the harness (base prompt,
-                    no skills, minimal read/search tools)
-                  </span>
-                </label>
               </div>
             </div>
             <fieldset className="mt-4 space-y-2 text-xs">
               <legend className="field-label">models</legend>
               <div className="grid gap-2 md:grid-cols-2">
-                {MODEL_OPTIONS.map((option) => {
-                  const value = modelValue(option);
-
-                  return (
-                    <label className="flex items-start gap-2" key={value}>
-                      <input
-                        checked={batchModelValues.includes(value)}
-                        onChange={(event) =>
-                          setBatchModel(value, event.currentTarget.checked)
-                        }
-                        type="checkbox"
-                      />
-                      <span>
-                        {option.label}{" "}
-                        <span className="font-mono text-fg-muted">
-                          ({option.provider}/{option.id})
-                        </span>
+                {BATCH_MODEL_ENTRIES.map((entry) => (
+                  <label className="flex items-start gap-2" key={entry.value}>
+                    <input
+                      checked={batchEntryValues.includes(entry.value)}
+                      onChange={(event) =>
+                        setBatchEntry(entry.value, event.currentTarget.checked)
+                      }
+                      type="checkbox"
+                    />
+                    <span>
+                      {entry.label}{" "}
+                      <span className="font-mono text-fg-muted">
+                        ({entry.model.provider}/{entry.model.id})
                       </span>
-                    </label>
-                  );
-                })}
+                    </span>
+                  </label>
+                ))}
               </div>
             </fieldset>
             <p className="mt-3 text-fg-muted text-xs">
               This will create {batchPreviewCount} run(s): supported selected
               task/level pairs x models x repeat count, waiting 0.5s between
-              each run creation. The default selection uses only{" "}
-              {DEFAULT_MODEL.label}.{" "}
-              {batchMinimalHarnessForOtherModels
-                ? `Non-${DEFAULT_MODEL.label} models will use the minimal harness.`
-                : "All models will use the full harness."}
+              each run creation. By default, all models run without the agent
+              harness. Only {DEFAULT_MODEL.label} (harnessed) includes the full
+              skill set, methodology, and DeepWiki integration.
             </p>
             {batchError && (
               <div className="error-card mt-3 text-xs" role="alert">
