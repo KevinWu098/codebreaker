@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q74f-rf27-8hxc",
+  "post_patch_commit": "ce7a71db0bb34ecbcb0e822d40598e410a48b399",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit ce7a71d fixes XXE by adding four XML parser security features (disallow-doctype-decl, external-general-entities, external-parameter-entities, load-external-dtd) to the DocumentBuilderFactory in WebDavMethod.getDocumentBuilder(). Only one source file was changed. Pre-assigned class xxe is correct based on CWE-611 and the patch content. No sibling files contain independent DocumentBuilderFactory usage — all WebDAV method subclasses inherit from WebDavMethod.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
