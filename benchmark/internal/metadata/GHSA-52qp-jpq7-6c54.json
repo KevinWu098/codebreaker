@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-52qp-jpq7-6c54",
+  "post_patch_commit": "3f2da97db51c20a6a0e96e6d562971e8fbe169d0",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies only library/Requests/Utility/FilteredIterator.php. The fix adds empty unserialize() and __unserialize() methods to block deserialization, and a __wakeup() method that unsets the callback property. The only sibling file (CaseInsensitiveDictionary.php) does not store a callable and is not affected. Pre-assigned class insecure-deserialization is correct per CWE-502 and advisory description. Used the individual fix commit (not the merge commit) as the patch since the merge commit's first parent already contained the fix via the tests PR branch.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
