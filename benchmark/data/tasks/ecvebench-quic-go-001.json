@@ -13,18 +13,18 @@
       "area": "QUIC connection lifecycle and handshake state management"
     },
     "L2": {
-      "description": "A nil pointer dereference vulnerability exists where a specially ordered sequence of frames within a handshake packet causes the protocol implementation to prematurely release internal state. When subsequent frames in the same packet attempt to access this already-released state, a nil pointer dereference occurs, leading to a panic that crashes the node. An attacker can trigger this with minimal effort, as it only requires completing the QUIC handshake."
+      "description": "A nil pointer dereference vulnerability exists where a specially ordered sequence of protocol frames within a single packet causes the implementation to prematurely release internal state. When subsequent frames in the same packet attempt to access this already-released state, a nil pointer dereference occurs, leading to a panic that crashes the node. An attacker can trigger this with minimal effort during the connection establishment phase."
     },
     "L3": {
-      "area": "QUIC connection lifecycle and handshake state management",
-      "description": "A nil pointer dereference vulnerability exists where a specially ordered sequence of frames within a handshake packet causes the protocol implementation to prematurely release internal state. When subsequent frames in the same packet attempt to access this already-released state, a nil pointer dereference occurs, leading to a panic that crashes the node. An attacker can trigger this with minimal effort, as it only requires completing the QUIC handshake."
+      "area": "QUIC handshake completion handling and packet number space management in the connection layer",
+      "description": "A nil pointer dereference vulnerability exists on the server side where a Handshake packet containing a cryptographic frame that completes the handshake, followed by an acknowledgment frame, causes the implementation to drop the Handshake packet number space before the acknowledgment frame is processed. The subsequent acknowledgment processing attempts to access the dropped state, resulting in a nil pointer dereference and panic. This can be triggered with minimal effort by any remote peer completing the QUIC handshake."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "null-deref",
     "cvss": 7.5,
-    "reason": "When the QUIC handshake completes, the Handshake packet number space is dropped immediately. If an ACK frame is serialized after the CRYPTO frame in the same packet, processing that ACK attempts to access the already-dropped packet number space, causing a nil pointer dereference and panic.",
+    "reason": "When the QUIC handshake completes, the Handshake packet number space is dropped immediately during frame processing. If an ACK frame is serialized after the CRYPTO frame in the same Handshake packet, processing that ACK attempts to access the already-dropped packet number space, causing a nil pointer dereference and panic.",
     "locations": [
       {
         "file": "connection.go",

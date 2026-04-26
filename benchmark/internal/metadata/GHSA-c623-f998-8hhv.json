@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-c623-f998-8hhv",
   "post_patch_commit": "dc9669364a154ec6d134e542f6a63c31b5afe6e8",
   "noisy_patch": false,
-  "curation_notes": "The advisory explicitly names the vulnerable function and file. The patch modifies only sip/response.go, adding a nil check on the To header before accessing its Params map in the response creation path. Location derived directly from the advisory description and confirmed by the single-file patch diff.",
+  "curation_notes": "Re-curated with improved hints. The advisory explicitly names the vulnerable function and file. The patch modifies only sip/response.go, adding a nil check on the To header before accessing its Params map in NewResponseFromRequest. No sibling files share the same vulnerable pattern — grep for .To(). in non-test sip/ files shows only the single instance in response.go. Location derived from advisory description and confirmed by single-file patch diff. Vulnerability class null-deref confirmed: CWE-476 matches, and the fix is a nil check guard.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
