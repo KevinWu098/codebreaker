@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h376-j262-vhq6",
+  "post_patch_commit": "b24aa46f48904ce64443f8f4353d70a2eed09037",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit b24aa46f adds a URL scheme check in JdbcUtils.getConnection to restrict JNDI lookups to the 'java:' scheme only. The vulnerability allowed attacker-controlled LDAP/RMI URLs to be passed to context.lookup(), enabling remote class loading and insecure deserialization. Pre-assigned class 'insecure-deserialization' (CWE-502) is correct — the JNDI injection vector leads to deserialization of untrusted objects from remote servers. Only one non-test source file was modified. No sibling files contain the same vulnerable JNDI lookup pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
