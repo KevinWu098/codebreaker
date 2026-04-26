@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hm2w-vr2p-hq7w",
+  "post_patch_commit": "bf3dfaa8a05675bae6ea0cbfa082ddcebfcde23e",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit bf3dfaa modifies only uefi_firmware/compression/Tiano/Decompress.c. The advisory explicitly names ReadCLen() as the primary vulnerable function where the loop bound Index < Number is not clamped to NC (the array size). ReadPTLen() has the identical pattern with Index < Number not clamped to NPT. Both functions received the same bounds-check fix in the patch. Vulnerability class buffer-overflow confirmed from CWE-787 and the patch which adds array bounds checks to prevent heap out-of-bounds writes.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-uefi-firmware-parser-002",
+  "ghsa_id": "GHSA-hm2w-vr2p-hq7w",
+  "codebase": {
+    "repo": "https://github.com/theopolis/uefi-firmware-parser",
+    "language": "c",
+    "ecosystem": "pip",
+    "commit": "37666e7dd7af9a82e82b9a8c974d071e4e3a462d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Firmware image decompression and data extraction logic"
+    },
+    "L2": {
+      "description": "A heap out-of-bounds write vulnerability exists in the EFI/Tiano decompression routine. A loop that populates a code-length array reads the iteration count from the compressed input stream without clamping it to the array's declared size, allowing a crafted firmware image to write past the end of the heap-allocated buffer. A separate run-length expansion path within the same routine also lacks an upper-bound check, enabling additional out-of-bounds zero writes. Exploitation can cause a deterministic crash or, depending on heap layout, may allow code execution."
+    },
+    "L3": {
+      "area": "Tiano/EFI decompression engine and its Huffman code-length decoding routines",
+      "description": "A heap out-of-bounds write vulnerability exists in the Tiano/EFI decompression routine. When reading Huffman code lengths from a compressed data stream, a loop reads the iteration count from a bitfield in the input without clamping it to the declared size of the destination code-length array, allowing a crafted firmware image to write past the end of the heap-allocated buffer. A run-length expansion path within the same code-length reader also lacks an upper-bound check, enabling additional out-of-bounds zero fills. The project ships its own copy of the decompressor without upstream hardening fixes."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.8,
+    "reason": "The Tiano decompressor reads an iteration count from the compressed bitstream without clamping it to the destination array size, allowing a crafted firmware image to trigger a heap out-of-bounds write in the code-length population loops.",
+    "locations": [
+      {
+        "file": "uefi_firmware/compression/Tiano/Decompress.c",
+        "function": "ReadCLen"
+      },
+      {
+        "file": "uefi_firmware/compression/Tiano/Decompress.c",
+        "function": "ReadPTLen"
+      }
+    ]
+  }
+}
