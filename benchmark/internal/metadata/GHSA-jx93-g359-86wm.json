@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jx93-g359-86wm",
+  "post_patch_commit": "5fc5c18bed4a4109082d9b14197ed33de1499231",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the advisory description, which explicitly references encode_receiver.py in the disaggregation module. The pre-patch commit contains pickle.loads() calls on untrusted ZMQ network data in _try_recv_mm_data (line ~491) and _recv_mm_data (line ~729). Sibling location encode_server.py uses recv_pyobj() (ZMQ's pickle-based deserialization) on the same type of network socket in the run_encoder function. The patch commit (PR #20904) adds a safe_pickle_load utility and fixes one usage in a playground script, but does not directly patch encode_receiver.py or encode_server.py. Vulnerability class insecure-deserialization confirmed from CWE-502 and the pickle.loads pattern on untrusted network input.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
