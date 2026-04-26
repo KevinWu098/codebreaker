@@ -26,4 +26,8 @@ export class AuditValidatorAgent extends BaseAuditAgent {
   protected getRoleActiveToolNames(_audit: AuditConfig): string[] {
     return [SUBMIT_AUDIT_VALIDATION_TOOL_NAME];
   }
+
+  protected getRoleSubmissionToolNames(_audit: AuditConfig): string[] {
+    return [SUBMIT_AUDIT_VALIDATION_TOOL_NAME];
+  }
 }

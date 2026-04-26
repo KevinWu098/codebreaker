@@ -7,11 +7,15 @@ import {
 } from "@codebreaker/control-plane/tools/tiers";
 import type { Env } from "@codebreaker/control-plane/types";
 import type {
+  AuditBudgets,
   AuditConfig,
   ShardKind,
 } from "@codebreaker/shared/schemas/audits";
 import { ShardKindSchema } from "@codebreaker/shared/schemas/audits";
-import type { SessionConfig } from "@codebreaker/shared/schemas/session";
+import type {
+  RunBudgetConfig,
+  SessionConfig,
+} from "@codebreaker/shared/schemas/session";
 import { getAgentByName } from "agents";
 import { tool } from "ai";
 import { z } from "zod";
@@ -19,6 +23,7 @@ import { z } from "zod";
 export const PLAN_SHARDS_TOOL_NAME = "plan_shards" as const;
 export const DISPATCH_INVESTIGATOR_TOOL_NAME = "dispatch_investigator" as const;
 export const DISPATCH_VALIDATOR_TOOL_NAME = "dispatch_validator" as const;
+export const LIST_PENDING_FINDINGS_TOOL_NAME = "list_pending_findings" as const;
 export const FINALIZE_AUDIT_TOOL_NAME = "finalize_audit" as const;
 
 const INVESTIGATOR_DEFAULT_TIMEOUT_SECONDS = 600;
@@ -47,6 +52,12 @@ const DispatchValidatorInputSchema = z
   })
   .strict();
 
+const ListPendingFindingsInputSchema = z
+  .object({
+    limit: z.number().int().positive().max(200).optional(),
+  })
+  .strict();
+
 const FinalizeAuditInputSchema = z
   .object({
     summary: z.string().min(1).max(8000),
@@ -55,9 +66,48 @@ const FinalizeAuditInputSchema = z
 
 export interface CoordinatorToolContext {
   baseSessionConfig: SessionConfig;
+  /**
+   * Invoked by `dispatch_validator` to flip the coordinator's budget bucket
+   * from "investigation" to "validation". Idempotent on the agent side.
+   */
+  beginValidation: () => void;
   coordinatorSessionId: string;
   env: Env;
 }
+
+const resolveChildBudgets = (
+  parent: SessionConfig,
+  audit: AuditConfig,
+  shardOverride: AuditBudgets | undefined
+): RunBudgetConfig => {
+  // Children's default lives on the coordinator's audit config (so the
+  // coordinator's own tight cap on `parent.budgets` does not cascade). We
+  // fall back to `parent.budgets` only for legacy configs that predate the
+  // `investigatorBudgets` field. Always materialize a fresh, fully-resolved
+  // RunBudgetConfig per child so siblings cannot observe one another's caps.
+  const childDefault = audit.investigatorBudgets;
+  const base: RunBudgetConfig = childDefault
+    ? {
+        maxInputTokens:
+          childDefault.maxInputTokens ?? parent.budgets.maxInputTokens,
+        maxOutputTokens:
+          childDefault.maxOutputTokens ?? parent.budgets.maxOutputTokens,
+        maxToolCalls: childDefault.maxToolCalls ?? parent.budgets.maxToolCalls,
+        maxTotalTokens:
+          childDefault.maxTotalTokens ?? parent.budgets.maxTotalTokens,
+      }
+    : { ...parent.budgets };
+
+  if (!shardOverride) {
+    return base;
+  }
+  return {
+    maxInputTokens: shardOverride.maxInputTokens ?? base.maxInputTokens,
+    maxOutputTokens: shardOverride.maxOutputTokens ?? base.maxOutputTokens,
+    maxToolCalls: shardOverride.maxToolCalls ?? base.maxToolCalls,
+    maxTotalTokens: shardOverride.maxTotalTokens ?? base.maxTotalTokens,
+  };
+};
 
 const buildChildSessionConfig = (
   parent: SessionConfig,
@@ -70,6 +120,7 @@ const buildChildSessionConfig = (
     minConfidence: number;
   },
   budget: {
+    budgets?: RunBudgetConfig;
     maxSteps?: number;
     maxTurns?: number;
     timeoutSeconds: number;
@@ -77,6 +128,10 @@ const buildChildSessionConfig = (
 ): SessionConfig => {
   const inheritedSandboxId =
     overrides.sandboxSessionId ?? parent.audit?.sandboxSessionId;
+  // Child audit config is built fresh from explicit fields. The coordinator's
+  // `shardBudgets` map is intentionally NOT propagated to children: the parent
+  // has already resolved which budget applies to this child, and leaking the
+  // map could let a child read a sibling's cap.
   const audit: NonNullable<SessionConfig["audit"]> = {
     auditId: overrides.auditId,
     maxConcurrentInvestigators: overrides.maxConcurrentInvestigators,
@@ -95,6 +150,7 @@ const buildChildSessionConfig = (
   return {
     ...parent,
     audit,
+    budgets: budget.budgets ?? { ...parent.budgets },
     maxSteps: budget.maxSteps ?? parent.maxSteps,
     maxTurns: budget.maxTurns ?? parent.maxTurns,
     timeoutSeconds: budget.timeoutSeconds,
@@ -122,6 +178,7 @@ const dispatchInvestigator = async (
     }));
 
   const sessionId = `audit-${auditId}-inv-${shard}`;
+  const shardOverride = audit.shardBudgets?.[shard];
   const childConfig = buildChildSessionConfig(
     context.baseSessionConfig,
     {
@@ -138,6 +195,11 @@ const dispatchInvestigator = async (
       ...(audit.ref ? { ref: audit.ref } : {}),
     },
     {
+      budgets: resolveChildBudgets(
+        context.baseSessionConfig,
+        audit,
+        shardOverride
+      ),
       timeoutSeconds: timeoutSeconds ?? INVESTIGATOR_DEFAULT_TIMEOUT_SECONDS,
     }
   );
@@ -209,6 +271,13 @@ const dispatchInvestigator = async (
       turnTimeoutMs,
       `Investigator ${shard} did not finish in ${turnTimeoutMs / 1000}s`
     );
+
+    const assistantCount = await withDORetry(() =>
+      child.assistantMessageCount()
+    );
+    if (assistantCount === 0) {
+      turnError = `Investigator ${shard} produced no model output (transient provider error?)`;
+    }
   } catch (error) {
     turnError = error instanceof Error ? error.message : String(error);
   }
@@ -258,8 +327,26 @@ const dispatchInvestigator = async (
 
   await store.refreshCounts(auditId);
 
+  // Return the actual finding summaries so the coordinator can pipe IDs
+  // straight into `dispatch_validator` without burning tokens on D1 reads.
+  // We scope to status='candidate' so already-validated findings from a
+  // re-run aren't re-suggested.
+  const candidates = await store.listFindings({
+    auditId,
+    shard,
+    status: "candidate",
+  });
+  const findings = candidates.map((finding) => ({
+    confidence: finding.confidence,
+    id: finding.id,
+    severity: finding.severity,
+    title: finding.title,
+    vulnClass: finding.vulnClass,
+  }));
+
   return {
     error: turnError ?? null,
+    findings,
     newCandidates: Math.max(0, afterCount - beforeCount),
     sessionId,
     shard,
@@ -273,6 +360,9 @@ const dispatchValidator = async (
   auditId: string,
   { findingId, timeoutSeconds }: DispatchValidatorInput
 ) => {
+  // Reset coordinator usage counters and switch to the validation budget on
+  // the first dispatch. Idempotent: after the first call this is a no-op.
+  context.beginValidation();
   const store = new AuditStore(context.env.DB);
   const finding = await store.getFinding(findingId);
   if (!finding || finding.auditId !== auditId) {
@@ -305,6 +395,9 @@ const dispatchValidator = async (
       ...(audit.ref ? { ref: audit.ref } : {}),
     },
     {
+      // Validators inherit the audit-wide default budget; per-shard overrides
+      // are deliberately scoped to investigators only.
+      budgets: resolveChildBudgets(context.baseSessionConfig, audit, undefined),
       timeoutSeconds: timeoutSeconds ?? VALIDATOR_DEFAULT_TIMEOUT_SECONDS,
     }
   );
@@ -363,6 +456,13 @@ const dispatchValidator = async (
       turnTimeoutMs,
       `Validator for ${findingId} did not finish in ${turnTimeoutMs / 1000}s`
     );
+
+    const assistantCount = await withDORetry(() =>
+      child.assistantMessageCount()
+    );
+    if (assistantCount === 0) {
+      turnError = `Validator for ${findingId} produced no model output (transient provider error?)`;
+    }
   } catch (error) {
     turnError = error instanceof Error ? error.message : String(error);
   }
@@ -415,6 +515,7 @@ export const createCoordinatorTools = (
       [PLAN_SHARDS_TOOL_NAME]: ToolTier.Read,
       [DISPATCH_INVESTIGATOR_TOOL_NAME]: ToolTier.Read,
       [DISPATCH_VALIDATOR_TOOL_NAME]: ToolTier.Read,
+      [LIST_PENDING_FINDINGS_TOOL_NAME]: ToolTier.Read,
       [FINALIZE_AUDIT_TOOL_NAME]: ToolTier.Read,
     },
     tools: {
@@ -459,6 +560,29 @@ export const createCoordinatorTools = (
         execute: async (input) =>
           dispatchValidator(context, audit, auditId, input),
       }),
+      [LIST_PENDING_FINDINGS_TOOL_NAME]: tool({
+        description:
+          "List all pending candidate findings for this audit (id, shard, vulnClass, severity, confidence, title). Use this if you've lost track of finding IDs (e.g. you exhausted your token budget mid-run and need to recover the IDs to dispatch validators). Exempt from budget caps.",
+        inputSchema: ListPendingFindingsInputSchema,
+        execute: async ({ limit }) => {
+          const store = new AuditStore(context.env.DB);
+          const candidates = await store.listFindings({
+            auditId,
+            limit: limit ?? 100,
+            status: "candidate",
+          });
+          return {
+            findings: candidates.map((finding) => ({
+              confidence: finding.confidence,
+              id: finding.id,
+              severity: finding.severity,
+              shard: finding.shardKind,
+              title: finding.title,
+              vulnClass: finding.vulnClass,
+            })),
+          };
+        },
+      }),
       [FINALIZE_AUDIT_TOOL_NAME]: tool({
         description:
           "Mark the audit as completed and record an executive summary as an event. Call this only after all dispatches are done.",
@@ -498,6 +622,7 @@ export const COORDINATOR_TOOL_NAMES = [
   PLAN_SHARDS_TOOL_NAME,
   DISPATCH_INVESTIGATOR_TOOL_NAME,
   DISPATCH_VALIDATOR_TOOL_NAME,
+  LIST_PENDING_FINDINGS_TOOL_NAME,
   FINALIZE_AUDIT_TOOL_NAME,
 ];
 

@@ -30,11 +30,20 @@ import type { ToolSet } from "ai";
 const DEFAULT_AUDIT_SYSTEM_PROMPT =
   "You are an audit agent in the Codebreaker security review pipeline. Use only the tools you are given and stay within your assigned role.";
 
+export type AuditAgentPhase = "investigation" | "validation";
+
 export interface AuditAgentState {
   control?: {
     finalizing?: boolean;
     inputTokens?: number;
     outputTokens?: number;
+    /**
+     * Coordinator-only marker. Set to "validation" once the coordinator
+     * dispatches its first validator; flips which `budgets` slot the
+     * `budgetStopReason` checks consult. Investigators/validators leave
+     * this unset and always use the audit-level `budgets`.
+     */
+    phase?: AuditAgentPhase;
     startedAt?: number;
     stopReason?: string;
     toolCalls?: number;
@@ -44,8 +53,16 @@ export interface AuditAgentState {
   status: SessionStatus;
 }
 
-const FINAL_TURN_PROMPT_SUFFIX = (reason: string) =>
-  `You are finalizing a stopped audit turn. Do not call tools. Stop reason: ${reason}`;
+const FINAL_TURN_PROMPT_SUFFIX = (
+  reason: string,
+  submissionTools: readonly string[]
+) => {
+  const submitClause =
+    submissionTools.length > 0
+      ? `Before stopping, if you have analyzed but not yet submitted findings/decisions you are confident about, you MUST persist them now by calling ${submissionTools.join(", ")}. Submission tools are exempt from token budgets, so they will succeed.`
+      : "Do not call any tools.";
+  return `Stop now. ${submitClause} Then write a concise final report covering: (1) what you investigated, (2) findings or decisions you already persisted via tools earlier in this turn, and (3) what remains unfinished and why. Stop reason: ${reason}`;
+};
 
 const GIT_COMMAND_RE = /\bgit\b/;
 
@@ -140,8 +157,26 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
       );
     }
 
+    // A stop reason recorded mid-turn (e.g. budget tripped during a step)
+    // must force the next turn into finalizing mode so the agent reports
+    // back instead of starting a fresh turn under a stale config.
+    if (this.state.control?.stopReason) {
+      this.setState({
+        ...this.state,
+        control: {
+          ...this.state.control,
+          finalizing: true,
+          startedAt,
+          turns,
+        },
+        status: "running",
+      });
+      return this.finalTurnConfig(ctx, this.state.control.stopReason);
+    }
+
     const stopReason =
       this.timeoutStopReason(config, startedAt) ??
+      this.budgetStopReason(this.state.control) ??
       (turns > config.maxTurns
         ? `Turn budget reached (${turns - 1}/${config.maxTurns})`
         : null);
@@ -186,7 +221,13 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
       this.budgetStopReason(this.state.control);
     if (stopReason) {
       this.recordStopReason(stopReason);
-      return { action: "block", reason: stopReason };
+      // Submission tools are intentionally exempt from budget/timeout
+      // blocks: when an investigator/coordinator/validator runs out of
+      // tokens or time, we still want it to be able to persist any
+      // findings/decisions it already analyzed before exiting.
+      if (!this.isSubmissionTool(ctx.toolName)) {
+        return { action: "block", reason: stopReason };
+      }
     }
 
     if (ctx.toolName === "exec_remote") {
@@ -259,13 +300,15 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
 
   @callable()
   async requestFollowUp(content: string): Promise<SaveMessagesResult> {
-    return await this.saveMessages([
+    const result = await this.saveMessages([
       {
         id: crypto.randomUUID(),
         parts: [{ text: content, type: "text" }],
         role: "user",
       },
     ]);
+    this.flushStuckTurnState();
+    return result;
   }
 
   @callable()
@@ -298,14 +341,24 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
 
     await this.waitUntilStable({ timeout: 5000 });
 
-    return this.saveMessages((current) => [
+    const submissionTools = this.readConfig()?.audit
+      ? this.getRoleSubmissionToolNames(this.requireAudit())
+      : [];
+    const result = await this.saveMessages((current) => [
       ...current,
       {
         id: crypto.randomUUID(),
-        parts: [{ text: FINAL_TURN_PROMPT_SUFFIX(reason), type: "text" }],
+        parts: [
+          {
+            text: FINAL_TURN_PROMPT_SUFFIX(reason, submissionTools),
+            type: "text",
+          },
+        ],
         role: "user",
       },
     ]);
+    this.flushStuckTurnState();
+    return result;
   }
 
   @callable()
@@ -329,6 +382,12 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
   @callable()
   async getMessagesWithTiming(): Promise<unknown[]> {
     return (await this.getMessages()) as unknown[];
+  }
+
+  @callable()
+  async assistantMessageCount(): Promise<number> {
+    const messages = (await this.getMessages()) as Array<{ role?: string }>;
+    return messages.filter((message) => message.role === "assistant").length;
   }
 
   protected get sessionId(): string {
@@ -372,6 +431,14 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
    */
   protected abstract getRoleActiveToolNames(audit: AuditConfig): string[];
 
+  /**
+   * Names of role-specific submission/finalization tools that must remain
+   * callable even after the agent has exhausted its token/timeout budget.
+   * These are surfaced as the only `activeTools` during the final turn and
+   * are exempt from `beforeToolCall` budget blocks.
+   */
+  protected abstract getRoleSubmissionToolNames(audit: AuditConfig): string[];
+
   protected activeToolNames(config: SessionConfig): string[] {
     const policyToolNames = activeBuiltinToolNames(config.extensionPolicy);
     const roleNames = this.getRoleActiveToolNames(this.requireAudit());
@@ -387,11 +454,27 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
   }
 
   private finalTurnConfig(ctx: TurnContext, reason: string): TurnConfig {
+    const audit = this.readConfig()?.audit;
+    const submissionTools = audit ? this.getRoleSubmissionToolNames(audit) : [];
+    // Generous step budget so the coordinator can dispatch all remaining
+    // planned subagents AND call finalize_audit in a single finalizing turn.
+    // Investigators/validators only need 1-2 steps but extra headroom is
+    // harmless: the FINAL_TURN_PROMPT_SUFFIX tells the model to stop after
+    // a single submit + final report.
+    const maxSteps = submissionTools.length > 0 ? 12 : 1;
     return {
-      activeTools: [],
-      maxSteps: 1,
-      system: `${ctx.system}\n\n${FINAL_TURN_PROMPT_SUFFIX(reason)}`,
+      activeTools: submissionTools,
+      maxSteps,
+      system: `${ctx.system}\n\n${FINAL_TURN_PROMPT_SUFFIX(reason, submissionTools)}`,
     };
+  }
+
+  private isSubmissionTool(toolName: string): boolean {
+    const audit = this.readConfig()?.audit;
+    if (!audit) {
+      return false;
+    }
+    return this.getRoleSubmissionToolNames(audit).includes(toolName);
   }
 
   private remainingTimeoutSeconds(config: SessionConfig): number | undefined {
@@ -423,7 +506,7 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
     if (!control || control.finalizing) {
       return null;
     }
-    const budgets = this.readConfig()?.budgets;
+    const budgets = this.activeBudgets();
     const inputTokens = control.inputTokens ?? 0;
     const outputTokens = control.outputTokens ?? 0;
     const totalTokens = inputTokens + outputTokens;
@@ -442,6 +525,52 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
       return `Total token budget reached (${totalTokens}/${budgets.maxTotalTokens})`;
     }
     return null;
+  }
+
+  /**
+   * Returns the budget config that applies to the current agent phase. For the
+   * coordinator after `beginValidationPhase()`, this is the audit-level
+   * `validationBudgets` (falling back to the default `budgets` when unset).
+   */
+  private activeBudgets() {
+    const config = this.readConfig();
+    if (!config) {
+      return;
+    }
+    if (this.state.control?.phase === "validation") {
+      const validationBudgets = config.audit?.validationBudgets;
+      if (validationBudgets) {
+        return validationBudgets;
+      }
+    }
+    return config.budgets;
+  }
+
+  /**
+   * Coordinator entry-point invoked from `dispatch_validator`. Idempotent:
+   * after the first call, subsequent calls are no-ops. Resets the per-DO
+   * usage counters so investigation tokens do not consume the validation
+   * budget.
+   */
+  beginValidationPhase(): void {
+    if (this.state.control?.phase === "validation") {
+      return;
+    }
+    const previous = this.state.control ?? {};
+    this.setState({
+      ...this.state,
+      control: {
+        finalizing: false,
+        inputTokens: 0,
+        outputTokens: 0,
+        phase: "validation",
+        toolCalls: 0,
+        ...(previous.startedAt === undefined
+          ? {}
+          : { startedAt: previous.startedAt }),
+        ...(previous.turns === undefined ? {} : { turns: previous.turns }),
+      },
+    });
   }
 
   private recordUsage(input: {
@@ -463,6 +592,37 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
       toolCalls: (this.state.control?.toolCalls ?? 0) + 1,
     };
     this.setState({ ...this.state, control });
+  }
+
+  /**
+   * Defensive cleanup invoked after every programmatic `saveMessages` call.
+   *
+   * `Think._streamResult` skips its `onChatResponse` lifecycle hook when the
+   * inference loop yields zero `UIMessage` parts (e.g. a transient provider
+   * error before the first token, or a stream that errors out without
+   * producing any content). When that happens, the DO state stays at
+   * `status: "running"` forever — the coordinator/investigator looks alive
+   * to `inspectState()`, the shard never moves off `investigating`, and the
+   * audit hangs indefinitely.
+   *
+   * This forces a terminal status with a synthetic stop reason so the
+   * orchestrator can detect and surface the failure.
+   */
+  private flushStuckTurnState(): void {
+    if (this.state.status !== "running") {
+      return;
+    }
+    const reason =
+      this.state.control?.stopReason ?? "Model returned no response";
+    this.setState({
+      ...this.state,
+      control: {
+        ...this.state.control,
+        finalizing: false,
+        stopReason: reason,
+      },
+      status: "failed",
+    });
   }
 
   private recordStopReason(reason: string): void {

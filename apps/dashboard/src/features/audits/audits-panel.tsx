@@ -4,6 +4,7 @@ import {
   MODEL_PROVIDERS,
 } from "@codebreaker/shared/lib/models";
 import type {
+  AuditBudgets,
   AuditFindingRow,
   AuditFindingStatus,
   AuditRow,
@@ -56,6 +57,65 @@ const DEFAULT_MIN_CONFIDENCE = 0.7;
 const PERCENT_FACTOR = 100;
 const PROGRESS_FACTOR = PERCENT_FACTOR;
 const ID_DISPLAY_LENGTH = 8;
+// Investigator/validator subagent defaults. Cascaded to children unless a
+// per-shard override (or `coordinatorBudgets` for the coordinator) wins.
+const DEFAULT_MAX_INPUT_TOKENS = 250_000;
+const DEFAULT_MAX_OUTPUT_TOKENS = 50_000;
+// Coordinator-specific defaults. Smaller than the subagent default because
+// the coordinator's job is to orient + delegate, not to read code itself.
+// Dispatch + finalize tools bypass this cap on the backend.
+const COORDINATOR_DEFAULT_MAX_INPUT_TOKENS = 150_000;
+const COORDINATOR_DEFAULT_MAX_OUTPUT_TOKENS = 30_000;
+const TOKENS_PER_K = 1000;
+
+interface ShardBudgetOverride {
+  maxInputK: string;
+  maxOutputK: string;
+}
+
+const emptyShardOverride = (): ShardBudgetOverride => ({
+  maxInputK: "",
+  maxOutputK: "",
+});
+
+const parsePositiveTokens = (value: string): number | undefined => {
+  const trimmed = value.trim();
+  if (trimmed === "") {
+    return;
+  }
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return;
+  }
+  return Math.round(parsed * TOKENS_PER_K);
+};
+
+const overrideToBudgets = (
+  override: ShardBudgetOverride
+): AuditBudgets | null => {
+  const maxInputTokens = parsePositiveTokens(override.maxInputK);
+  const maxOutputTokens = parsePositiveTokens(override.maxOutputK);
+  if (maxInputTokens === undefined && maxOutputTokens === undefined) {
+    return null;
+  }
+  return {
+    ...(maxInputTokens === undefined ? {} : { maxInputTokens }),
+    ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
+  };
+};
+
+const collectShardBudgets = (
+  overrides: Record<ShardKind, ShardBudgetOverride>
+): Partial<Record<ShardKind, AuditBudgets>> => {
+  const result: Partial<Record<ShardKind, AuditBudgets>> = {};
+  for (const kind of AUDIT_SHARD_KINDS) {
+    const resolved = overrideToBudgets(overrides[kind]);
+    if (resolved) {
+      result[kind] = resolved;
+    }
+  }
+  return result;
+};
 
 const modelValue = (model: { provider: string; id: string }): string =>
   `${model.provider}/${model.id}`;
@@ -276,6 +336,29 @@ const CreateAuditCard = ({
   const [model, setModel] = useState(modelValue(DEFAULT_MODEL));
   const [shards, setShards] = useState<ShardKind[]>([]);
   const [minConfidence, setMinConfidence] = useState(DEFAULT_MIN_CONFIDENCE);
+  const [defaultMaxInputK, setDefaultMaxInputK] = useState(
+    String(DEFAULT_MAX_INPUT_TOKENS / TOKENS_PER_K)
+  );
+  const [defaultMaxOutputK, setDefaultMaxOutputK] = useState(
+    String(DEFAULT_MAX_OUTPUT_TOKENS / TOKENS_PER_K)
+  );
+  const [coordinatorMaxInputK, setCoordinatorMaxInputK] = useState(
+    String(COORDINATOR_DEFAULT_MAX_INPUT_TOKENS / TOKENS_PER_K)
+  );
+  const [coordinatorMaxOutputK, setCoordinatorMaxOutputK] = useState(
+    String(COORDINATOR_DEFAULT_MAX_OUTPUT_TOKENS / TOKENS_PER_K)
+  );
+  const [validationMaxInputK, setValidationMaxInputK] = useState("");
+  const [validationMaxOutputK, setValidationMaxOutputK] = useState("");
+  const [budgetsOpen, setBudgetsOpen] = useState(false);
+  const [shardOverrides, setShardOverrides] = useState<
+    Record<ShardKind, ShardBudgetOverride>
+  >(
+    () =>
+      Object.fromEntries(
+        AUDIT_SHARD_KINDS.map((kind) => [kind, emptyShardOverride()])
+      ) as Record<ShardKind, ShardBudgetOverride>
+  );
 
   const toggleShard = (shard: ShardKind, checked: boolean): void => {
     setShards((current) =>
@@ -285,13 +368,44 @@ const CreateAuditCard = ({
     );
   };
 
+  const updateShardOverride = (
+    shard: ShardKind,
+    patch: Partial<ShardBudgetOverride>
+  ): void => {
+    setShardOverrides((current) => ({
+      ...current,
+      [shard]: { ...current[shard], ...patch },
+    }));
+  };
+
   const onSubmit = async (): Promise<void> => {
     const selected = MODEL_OPTIONS.find((opt) => modelValue(opt) === model);
     if (!(repoUrl && selected)) {
       return;
     }
+    const defaultBudgets: AuditBudgets = {
+      maxInputTokens:
+        parsePositiveTokens(defaultMaxInputK) ?? DEFAULT_MAX_INPUT_TOKENS,
+      maxOutputTokens:
+        parsePositiveTokens(defaultMaxOutputK) ?? DEFAULT_MAX_OUTPUT_TOKENS,
+    };
+    const coordinatorBudgets: AuditBudgets = {
+      maxInputTokens:
+        parsePositiveTokens(coordinatorMaxInputK) ??
+        COORDINATOR_DEFAULT_MAX_INPUT_TOKENS,
+      maxOutputTokens:
+        parsePositiveTokens(coordinatorMaxOutputK) ??
+        COORDINATOR_DEFAULT_MAX_OUTPUT_TOKENS,
+    };
+    const validationBudgetsResolved = overrideToBudgets({
+      maxInputK: validationMaxInputK,
+      maxOutputK: validationMaxOutputK,
+    });
+    const shardBudgets = collectShardBudgets(shardOverrides);
     const request: CreateAuditRequest = {
       autoStart: true,
+      budgets: defaultBudgets,
+      coordinatorBudgets,
       investigatorTimeoutSeconds: 600,
       maxConcurrentInvestigators: 4,
       minConfidence,
@@ -303,6 +417,10 @@ const CreateAuditCard = ({
       ...(ref ? { ref } : {}),
       ...(title ? { title } : {}),
       ...(shards.length > 0 ? { shards } : {}),
+      ...(Object.keys(shardBudgets).length > 0 ? { shardBudgets } : {}),
+      ...(validationBudgetsResolved
+        ? { validationBudgets: validationBudgetsResolved }
+        : {}),
     };
     const response = await submit(request);
     onCreated(response.audit.id);
@@ -400,6 +518,181 @@ const CreateAuditCard = ({
             </label>
           ))}
         </div>
+      </fieldset>
+
+      <fieldset className="mt-4 space-y-3 text-xs">
+        <legend className="field-label">
+          token budgets (per agent DO, in thousands of tokens)
+        </legend>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="space-y-1">
+            <span className="field-label">
+              investigator/validator default max input (k)
+            </span>
+            <input
+              className="input"
+              inputMode="numeric"
+              min={1}
+              onChange={(e) => setDefaultMaxInputK(e.target.value)}
+              placeholder="250"
+              type="number"
+              value={defaultMaxInputK}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="field-label">
+              investigator/validator default max output (k)
+            </span>
+            <input
+              className="input"
+              inputMode="numeric"
+              min={1}
+              onChange={(e) => setDefaultMaxOutputK(e.target.value)}
+              placeholder="50"
+              type="number"
+              value={defaultMaxOutputK}
+            />
+          </label>
+        </div>
+        <p className="text-fg-muted">
+          applies to every investigator + validator subagent unless overridden
+          below. submit_audit_finding / submit_validation always bypass these
+          caps so subagents can always report back.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="space-y-1">
+            <span className="field-label">coordinator max input (k)</span>
+            <input
+              className="input"
+              inputMode="numeric"
+              min={1}
+              onChange={(e) => setCoordinatorMaxInputK(e.target.value)}
+              placeholder="150"
+              type="number"
+              value={coordinatorMaxInputK}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="field-label">coordinator max output (k)</span>
+            <input
+              className="input"
+              inputMode="numeric"
+              min={1}
+              onChange={(e) => setCoordinatorMaxOutputK(e.target.value)}
+              placeholder="30"
+              type="number"
+              value={coordinatorMaxOutputK}
+            />
+          </label>
+        </div>
+        <p className="text-fg-muted">
+          tighter cap for the coordinator since it should plan + delegate, not
+          read code itself. dispatch_investigator, dispatch_validator, and
+          finalize_audit always bypass this cap so the coordinator can finish
+          spawning planned subagents and finalize even after running out of
+          tokens.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="space-y-1">
+            <span className="field-label">
+              coordinator validation max input (k){" "}
+              <span className="text-fg-muted">— optional</span>
+            </span>
+            <input
+              className="input"
+              inputMode="numeric"
+              min={1}
+              onChange={(e) => setValidationMaxInputK(e.target.value)}
+              placeholder="defaults to coordinator max input"
+              type="number"
+              value={validationMaxInputK}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="field-label">
+              coordinator validation max output (k){" "}
+              <span className="text-fg-muted">— optional</span>
+            </span>
+            <input
+              className="input"
+              inputMode="numeric"
+              min={1}
+              onChange={(e) => setValidationMaxOutputK(e.target.value)}
+              placeholder="defaults to coordinator max output"
+              type="number"
+              value={validationMaxOutputK}
+            />
+          </label>
+        </div>
+        <p className="text-fg-muted">
+          coordinator usage counters reset to zero on its first
+          dispatch_validator call, and these caps take over. lets the
+          coordinator drive the entire validation phase even if investigation
+          consumed its initial budget.
+        </p>
+        <button
+          aria-expanded={budgetsOpen}
+          className="id-link inline-flex items-center gap-1"
+          onClick={() => setBudgetsOpen((v) => !v)}
+          type="button"
+        >
+          {budgetsOpen ? "hide" : "show"} per-shard overrides
+        </button>
+        {budgetsOpen ? (
+          <div className="overflow-x-auto rounded border border-border">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th className="text-left">shard</th>
+                  <th className="num">max input (k)</th>
+                  <th className="num">max output (k)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {AUDIT_SHARD_KINDS.map((shard) => {
+                  const ov = shardOverrides[shard];
+                  return (
+                    <tr key={shard}>
+                      <td className="font-mono">{shard}</td>
+                      <td className="num">
+                        <input
+                          aria-label={`${shard} max input tokens (k)`}
+                          className="input w-24"
+                          inputMode="numeric"
+                          min={1}
+                          onChange={(e) =>
+                            updateShardOverride(shard, {
+                              maxInputK: e.target.value,
+                            })
+                          }
+                          placeholder="default"
+                          type="number"
+                          value={ov.maxInputK}
+                        />
+                      </td>
+                      <td className="num">
+                        <input
+                          aria-label={`${shard} max output tokens (k)`}
+                          className="input w-24"
+                          inputMode="numeric"
+                          min={1}
+                          onChange={(e) =>
+                            updateShardOverride(shard, {
+                              maxOutputK: e.target.value,
+                            })
+                          }
+                          placeholder="default"
+                          type="number"
+                          value={ov.maxOutputK}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </fieldset>
     </Card>
   );

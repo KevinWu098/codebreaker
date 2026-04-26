@@ -11,6 +11,7 @@ import { withDORetry } from "@codebreaker/control-plane/do/retry";
 import { ModalExecutor } from "@codebreaker/control-plane/sandbox/modal";
 import type { Env } from "@codebreaker/control-plane/types";
 import type {
+  AuditBudgets,
   AuditConfig,
   AuditRow,
   CreateAuditRequest,
@@ -22,6 +23,17 @@ import { getAgentByName } from "agents";
 const COORDINATOR_GRACE_SECONDS = 60;
 const WATCHDOG_MAX_RUNNING_SECONDS = 7200;
 const DEFAULT_WORKSPACE_ROOT = "/workspace";
+
+// Coordinator's job is to orient + plan + delegate, not deep-read code. We
+// hold its own per-DO budget tighter than the per-investigator default so a
+// single audit can't be torpedoed by an over-eager coordinator. Dispatch +
+// finalize tools bypass this cap (see `AuditCoordinatorAgent`) so the
+// coordinator's last action is always to initiate the remaining subagents.
+const COORDINATOR_DEFAULT_MAX_INPUT_TOKENS = 150_000;
+const COORDINATOR_DEFAULT_MAX_OUTPUT_TOKENS = 30_000;
+// Per-DO default for investigator/validator subagents.
+const SUBAGENT_DEFAULT_MAX_INPUT_TOKENS = 250_000;
+const SUBAGENT_DEFAULT_MAX_OUTPUT_TOKENS = 50_000;
 
 interface CoordinatorAgentStub {
   init(sessionId: string, config: SessionConfig): Promise<unknown>;
@@ -352,8 +364,25 @@ export class AuditOrchestrator {
       message: "Audit repository checked out",
     });
 
+    // Investigator/validator default budget. Stored on the coordinator's
+    // audit config so the coordinator can hand it to children without
+    // leaking the coordinator's own (tighter) cap.
+    const investigatorBudgets: AuditBudgets = {
+      maxInputTokens:
+        request.budgets?.maxInputTokens ?? SUBAGENT_DEFAULT_MAX_INPUT_TOKENS,
+      maxOutputTokens:
+        request.budgets?.maxOutputTokens ?? SUBAGENT_DEFAULT_MAX_OUTPUT_TOKENS,
+      ...(request.budgets?.maxToolCalls === undefined
+        ? {}
+        : { maxToolCalls: request.budgets.maxToolCalls }),
+      ...(request.budgets?.maxTotalTokens === undefined
+        ? {}
+        : { maxTotalTokens: request.budgets.maxTotalTokens }),
+    };
+
     const audit: AuditConfig = {
       auditId,
+      investigatorBudgets,
       maxConcurrentInvestigators: request.maxConcurrentInvestigators,
       minConfidence: request.minConfidence,
       mirrorRepo: {
@@ -366,18 +395,34 @@ export class AuditOrchestrator {
       repoUrl: request.repoUrl,
       role: "coordinator",
       sandboxSessionId: sessionId,
+      ...(request.shardBudgets && Object.keys(request.shardBudgets).length > 0
+        ? { shardBudgets: request.shardBudgets }
+        : {}),
+      ...(request.validationBudgets
+        ? { validationBudgets: request.validationBudgets }
+        : {}),
       workspacePath,
     };
 
     const shards: ShardKind[] = request.shards ?? DEFAULT_AUDIT_SHARDS;
 
+    // Coordinator's own per-DO cap. Defaults intentionally smaller than the
+    // investigator default. Dispatch and finalize tools bypass this cap (see
+    // `AuditCoordinatorAgent.getRoleSubmissionToolNames`) so the coordinator
+    // can always finish initiating subagents and finalize, even after
+    // exhausting its budget mid-orientation.
+    const coordinatorBudgets = request.coordinatorBudgets;
     const baseConfig: SessionConfig = {
       audit,
       budgets: {
-        maxInputTokens: request.budgets?.maxInputTokens ?? null,
-        maxOutputTokens: request.budgets?.maxOutputTokens ?? null,
-        maxToolCalls: request.budgets?.maxToolCalls ?? null,
-        maxTotalTokens: request.budgets?.maxTotalTokens ?? null,
+        maxInputTokens:
+          coordinatorBudgets?.maxInputTokens ??
+          COORDINATOR_DEFAULT_MAX_INPUT_TOKENS,
+        maxOutputTokens:
+          coordinatorBudgets?.maxOutputTokens ??
+          COORDINATOR_DEFAULT_MAX_OUTPUT_TOKENS,
+        maxToolCalls: coordinatorBudgets?.maxToolCalls ?? null,
+        maxTotalTokens: coordinatorBudgets?.maxTotalTokens ?? null,
       },
       compaction: {
         enabled: true,

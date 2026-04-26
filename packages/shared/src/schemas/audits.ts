@@ -130,10 +130,33 @@ export const AuditBudgetsSchema = z
   .strict();
 export type AuditBudgets = z.infer<typeof AuditBudgetsSchema>;
 
+// Per-shard budget overrides. Only investigator subagents are spawned per shard,
+// so these caps only affect investigators. Coordinator + validators always use
+// the top-level `budgets` (or defaults).
+export const ShardBudgetsSchema = z.partialRecord(
+  ShardKindSchema,
+  AuditBudgetsSchema
+);
+export type ShardBudgets = z.infer<typeof ShardBudgetsSchema>;
+
 export const CreateAuditRequestSchema = z
   .object({
     autoStart: z.boolean().default(true),
+    /**
+     * Default per-DO budget for investigator and validator subagents. The
+     * coordinator's own budget is governed by `coordinatorBudgets` instead so
+     * the orchestrator can be capped tightly without starving its workers.
+     */
     budgets: AuditBudgetsSchema.optional(),
+    /**
+     * Coordinator-specific cap. Defaulted to a smaller value than
+     * `budgets` because the coordinator's job is to plan + delegate, not to
+     * read code. `dispatch_investigator`, `dispatch_validator`, and
+     * `finalize_audit` are submission tools that bypass this cap so the
+     * coordinator's last action can always be to initiate the remaining
+     * subagents and finalize, even after exhausting its budget.
+     */
+    coordinatorBudgets: AuditBudgetsSchema.optional(),
     investigatorTimeoutSeconds: z
       .number()
       .int()
@@ -146,9 +169,18 @@ export const CreateAuditRequestSchema = z
     ref: z.string().min(1).max(200).optional(),
     repoUrl: z.string().url(),
     sandboxProfile: SandboxProfileNameSchema.default("recon"),
+    shardBudgets: ShardBudgetsSchema.optional(),
     shards: z.array(ShardKindSchema).optional(),
     timeoutSeconds: z.number().int().positive().max(7200).default(2400),
     title: z.string().min(1).max(200).optional(),
+    /**
+     * Coordinator-only: budget to apply once the coordinator begins the
+     * validation phase. Coordinator usage counters are reset to zero on the
+     * first `dispatch_validator` call so investigation tokens never bleed
+     * into validation. If unset, defaults to `coordinatorBudgets` (or the
+     * coordinator's resolved budget at start of the run).
+     */
+    validationBudgets: AuditBudgetsSchema.optional(),
     validatorTimeoutSeconds: z.number().int().positive().max(900).default(300),
   })
   .strict();
@@ -308,8 +340,28 @@ export const AuditConfigSchema = z
     workspacePath: z.string().min(1),
     findingId: z.string().min(1).optional(),
     ref: z.string().min(1).optional(),
+    /**
+     * Per-shard token budget overrides set on the COORDINATOR's audit config.
+     * Investigator children inherit a single resolved `budgets` field via
+     * `buildChildSessionConfig`, so this map never appears on an investigator
+     * or validator's own audit config.
+     */
+    shardBudgets: ShardBudgetsSchema.optional(),
+    /**
+     * Default budget that the coordinator hands to investigator/validator
+     * subagents. Set on the COORDINATOR's audit config so the coordinator's
+     * own `SessionConfig.budgets` (its tight cap) does not cascade to the
+     * children. Per-shard `shardBudgets` overrides win for investigators.
+     * Children's audit configs do not carry this field.
+     */
+    investigatorBudgets: AuditBudgetsSchema.optional(),
     shardKind: ShardKindSchema.optional(),
     shardId: z.string().min(1).optional(),
+    /**
+     * Coordinator-only: budget that takes effect after the first
+     * `dispatch_validator` call. Only set on the coordinator's audit config.
+     */
+    validationBudgets: AuditBudgetsSchema.optional(),
   })
   .strict();
 export type AuditConfig = z.infer<typeof AuditConfigSchema>;

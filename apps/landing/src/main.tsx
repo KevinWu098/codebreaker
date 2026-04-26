@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import { App } from "@/app";
 import "@/styles.css";
 
+if (import.meta.env.DEV) {
+  import("react-grab");
+}
+
 const container = document.getElementById("root");
 
 if (!container) {

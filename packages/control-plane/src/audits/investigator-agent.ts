@@ -24,4 +24,8 @@ export class AuditInvestigatorAgent extends BaseAuditAgent {
   protected getRoleActiveToolNames(_audit: AuditConfig): string[] {
     return [SUBMIT_AUDIT_FINDING_TOOL_NAME];
   }
+
+  protected getRoleSubmissionToolNames(_audit: AuditConfig): string[] {
+    return [SUBMIT_AUDIT_FINDING_TOOL_NAME];
+  }
 }

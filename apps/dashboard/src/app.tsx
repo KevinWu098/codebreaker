@@ -5,6 +5,7 @@ import { Sidebar, type ViewId } from "@/components/sidebar";
 import { AdminPanel } from "@/features/admin/admin-panel";
 import { AuditsPanel } from "@/features/audits/audits-panel";
 import { BenchmarksPanel } from "@/features/benchmarks/benchmarks-panel";
+import { DemoPanel } from "@/features/demo/demo-panel";
 import { FollowupsPanel } from "@/features/followups/followups-panel";
 import { SessionDetail } from "@/features/sessions/session-detail";
 import { SessionsList } from "@/features/sessions/sessions-list";
@@ -15,6 +16,7 @@ const VIEW_IDS: readonly ViewId[] = [
   "benchmarks",
   "followups",
   "audits",
+  "demo",
   "admin",
 ];
 
@@ -134,6 +136,14 @@ export const App = (): React.JSX.Element => {
               tab: null,
               view: next,
             });
+          } else if (next === "demo") {
+            setParams({
+              benchmark: null,
+              finding: null,
+              session: null,
+              tab: null,
+              view: next,
+            });
           } else {
             setParams({
               audit: null,
@@ -238,6 +248,18 @@ export const App = (): React.JSX.Element => {
             }
             selectedAuditId={selectedAuditId}
             selectedFindingId={selectedFindingId}
+          />
+        )}
+        {view === "demo" && (
+          <DemoPanel
+            followupRunId={followupSelectedRunId}
+            onSelectAudit={(id) =>
+              setParams({ audit: id }, { history: "push" })
+            }
+            onSelectFollowupRun={(id) =>
+              setParams({ followupRun: id }, { history: "push" })
+            }
+            selectedAuditId={selectedAuditId}
           />
         )}
         {view === "admin" && <AdminPanel />}

@@ -1,5 +1,6 @@
 import {
   FlaskConical,
+  GitMerge,
   ListTree,
   ServerCog,
   Settings2,
@@ -16,6 +17,7 @@ export type ViewId =
   | "benchmarks"
   | "followups"
   | "audits"
+  | "demo"
   | "admin";
 
 interface SidebarProps {
@@ -54,6 +56,12 @@ const NAV: readonly NavItem[] = [
     Icon: ShieldAlert,
     id: "audits",
     label: "audits",
+  },
+  {
+    description: "demo: audit → devin repro/fix → github PRs",
+    Icon: GitMerge,
+    id: "demo",
+    label: "end to end",
   },
   {
     description: "modal shim health, sandboxes",

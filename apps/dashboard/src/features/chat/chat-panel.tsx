@@ -1,4 +1,5 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
+import { inferSessionAgentRoleFromSessionId } from "@codebreaker/shared/lib/utils";
 import type { SessionAgentRole } from "@codebreaker/shared/schemas/api";
 import { useAgent } from "agents/react";
 import type { ChatStatus, UIMessage } from "ai";
@@ -42,6 +43,7 @@ import {
 import type { MessagePart } from "@/components/tool-call-part";
 import { Spinner } from "@/components/ui/spinner";
 import { useSessionMessagesQuery, useSessionQuery } from "@/hooks/queries";
+import { api } from "@/lib/api";
 import { useConnection } from "@/lib/connection";
 import { formatRelativeTime } from "@/lib/format";
 
@@ -395,7 +397,9 @@ const ChatTitle = ({
 export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
   const connection = useConnection();
   const sessionRow = useSessionQuery(sessionId);
-  const agentRole = sessionRow.data?.session?.agentRole ?? "session";
+  const agentRole =
+    sessionRow.data?.session?.agentRole ??
+    inferSessionAgentRoleFromSessionId(sessionId);
   const wsAgentSlug = WS_AGENT_SLUG[agentRole] ?? WS_AGENT_SLUG.session;
   const { host, secure } = useMemo(
     () => parseHost(connection.baseUrl),
@@ -418,9 +422,31 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
   const agent = useAgent(agentOptions);
   const persistedMessages = useSessionMessagesQuery(sessionId);
 
+  /**
+   * Seed `useAgentChat` with the persisted transcript from D1 (via the
+   * control-plane router, which dispatches to the right DO namespace based
+   * on `agentRole`). Without this, the panel would render blank for any
+   * session that finished before the WS connected — most visible for audit
+   * subagents (coordinators/investigators/validators) which are driven to
+   * completion by `dispatch_*` and have no live stream by the time an
+   * operator opens the chat tab.
+   *
+   * The agents framework's default `/get-messages` HTTP handler isn't
+   * wired into our auth (it expects a different scheme than the
+   * dashboard's Bearer token), so we go through our own API endpoint.
+   */
+  const fetchInitialMessages = useCallback(async (): Promise<UIMessage[]> => {
+    try {
+      const response = await api.getMessages(sessionId);
+      return (response.messages ?? []) as UIMessage[];
+    } catch {
+      return [];
+    }
+  }, [sessionId]);
+
   const chat = useAgentChat({
     agent,
-    getInitialMessages: null,
+    getInitialMessages: fetchInitialMessages,
     messages: EMPTY_CHAT_MESSAGES,
   });
 
