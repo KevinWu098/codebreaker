@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3v79-q7ph-j75h",
+  "post_patch_commit": "c43823750bffa5b6abcc086683b15a068513b67b",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit c43823750bffa5b6abcc086683b15a068513b67b (PR #10893) modifies two source files. The primary fix adds html.escape() to all dataframe cell values in render_table before rendering them as HTML. A secondary fix in FailedStepCard.__init__ restructures the stacktrace template so the failure_traceback is properly escaped via the Jinja2 |e filter rather than being injected via f-string. Pre-assigned xss class confirmed from CWE-79, advisory description, and patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
