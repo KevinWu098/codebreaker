@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9v9h-cgj8-h64p",
+  "post_patch_commit": "d135eeab8a5dbf72b3da5240bab9ddb7678dbd2c",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff and advisory description. The advisory explicitly lists PKCS12_parse(), PKCS12_unpack_p7data(), PKCS12_unpack_p7encdata(), PKCS12_unpack_authsafes(), and PKCS12_newpass() as vulnerable APIs. The patch also fixes SMIME_write_PKCS7() in crypto/pkcs7/pk7_mime.c, but the advisory states this is not considered security significant since it is a write-path function. pkcs12_gen_mac is included because the patch adds the same NULL check pattern there. The noisy_patch flag is true because 4 non-test source files were changed (>3 threshold). No sibling files in crypto/pkcs12/ were found to have the same unpatched vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
