@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-2689-5p89-6j3j",
+  "post_patch_commit": "bf3dfaa8a05675bae6ea0cbfa082ddcebfcde23e",
+  "noisy_patch": false,
+  "curation_notes": "Single file patched: uefi_firmware/compression/Tiano/Decompress.c. The primary vulnerability is in MakeTable(), which lacks validation that bit-length values from the bitstream are within 0..16, causing OOB writes to the stack-allocated Count[17] array. ReadPTLen() and ReadCLen() also lacked loop bounds checks allowing writes beyond mPTLen[NPT] and mCLen[NC]. No sibling files share this vulnerability pattern — LZMA uses a different algorithm without Huffman table construction. Pre-assigned class buffer-overflow from CWE-787 is correct; the advisory explicitly describes a stack out-of-bounds write.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
