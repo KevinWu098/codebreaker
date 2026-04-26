@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rwcr-rpcc-3g9m",
+  "post_patch_commit": "afdb4ab3704a5c1f0e8c27d887367deba7d50b6e",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #105 into master. The diff modifies 2 non-test source files: lib/nodejs/worker.ex (Elixir GenServer worker) and priv/server.js (Node.js child process). The vulnerability is a classic race condition: the worker protocol had no request-response correlation, so a timed-out response could be picked up by the next caller's receive block. The fix adds a monotonic UID counter per worker, includes the UID in the request payload sent to Node.js, and matches the echoed UID in the response. Pre-assigned class race-condition is correct — CWE-362 maps directly to the lack of synchronization in the message-passing protocol. No sibling files share this vulnerability pattern; error.ex and supervisor.ex serve different roles.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

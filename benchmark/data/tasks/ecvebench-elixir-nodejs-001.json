@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-elixir-nodejs-001",
+  "ghsa_id": "GHSA-rwcr-rpcc-3g9m",
+  "codebase": {
+    "repo": "https://github.com/revelrylabs/elixir-nodejs",
+    "language": "elixir",
+    "ecosystem": "erlang",
+    "commit": "cf8bf5a6074bf4c25b208ac38c5f59e906d127bd"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Inter-process communication and worker lifecycle management"
+    },
+    "L2": {
+      "description": "A race condition vulnerability exists in the worker protocol where request-response correlation is absent. When a call times out, the late response remains in the process message buffer and can be delivered to a subsequent unrelated caller. Under concurrent load, this leads to cross-user data leakage where sensitive data processed for one user may be returned to a different user's session."
+    },
+    "L3": {
+      "area": "Worker process protocol and its request-response message passing between the Elixir GenServer and the Node.js child process",
+      "description": "A race condition in the worker protocol allows cross-user data leakage because there is no mechanism to correlate a response from the Node.js child process with its originating request. When a call times out, the stale response persists in the process mailbox and is consumed by the next unrelated caller, returning incorrect and potentially sensitive data. This specifically affects the message receive pattern and the response framing protocol."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 7.1,
+    "reason": "The worker protocol lacks request-response correlation, allowing a timed-out response to be consumed by a subsequent unrelated call under concurrent load, leading to cross-user data leakage.",
+    "locations": [
+      {
+        "file": "lib/nodejs/worker.ex",
+        "function": "get_response"
+      },
+      {
+        "file": "lib/nodejs/worker.ex",
+        "function": "handle_call"
+      },
+      {
+        "file": "priv/server.js",
+        "function": "getResponse"
+      },
+      {
+        "file": "priv/server.js",
+        "function": "onLine"
+      }
+    ]
+  }
+}
