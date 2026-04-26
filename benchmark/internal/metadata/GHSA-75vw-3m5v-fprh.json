@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-75vw-3m5v-fprh",
   "post_patch_commit": "1940ffb938dc4f3f5bc5f2a2fd8b35aabbbae3dd",
   "noisy_patch": false,
-  "curation_notes": "The patch adds a single line to enable FEATURE_SECURE_PROCESSING on the SchemaFactory in getValidatingXmlParser. Only one source file was changed. The location was derived directly from the patch diff. A second commit (f44e693) with the same change and same parent exists as a cherry-pick to the main branch.",
+  "curation_notes": "The patch adds a single line enabling FEATURE_SECURE_PROCESSING on the SchemaFactory in getValidatingXmlParser within XMLUtils.java. Only one source file was changed. The location was derived directly from the patch diff. A second commit (f44e693) with the same change and same parent exists as a cherry-pick. No sibling files in the util directory share the same vulnerability pattern. Re-curated to differentiate L3 hints from L1/L2 and updated snapshot date.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
