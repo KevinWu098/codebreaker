@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vcw4-8ph6-7vw8",
+  "post_patch_commit": "b53a906a8e170fe9b151381c66a76a872c419f9e",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit b53a906 modifies only one source file (core/http/src/uri/formatter.rs), changing the with_prefix function. The vulnerability is a use-after-free caused by an unsafe transmute of &str to &'static str that is pushed onto a StackVec prefix stack. If the user-provided callback (f) panics, the prefix is never popped, leaving a dangling static reference. The fix introduces a PrefixGuard struct with a Drop implementation that unconditionally pops the prefix, ensuring panic safety. Pre-assigned class use-after-free (CWE-416) is correct. No sibling files share this vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
