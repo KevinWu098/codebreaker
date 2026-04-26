@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jcrp-x7w3-ffmg",
+  "post_patch_commit": "7415cc5f72aae69ea9716a5e4f709af03a77a619",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff. The patch modifies TarUtils.untar and ZipUtils.unzip to replace the flawed removeLeadingFileSeparator + string-contains-'..' check with a new validateArchiveEntry method that both checks for traversal elements and verifies the resolved output path stays within the destination directory. removeLeadingFileSeparator is also listed as a location since it is the root cause helper that only handled the current platform's File.separatorChar, allowing cross-platform bypass. No sibling files with similar archive extraction patterns exist in the same directory. Pre-assigned vulnerability class path-traversal is correct based on CWE-22/CWE-36 and the patch fixing archive entry path validation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
