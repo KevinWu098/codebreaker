@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-medoo-001",
+  "ghsa_id": "GHSA-q9p4-qfc8-fvpp",
+  "codebase": {
+    "repo": "https://github.com/catfan/Medoo",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "b3f05edf256d63ec3cfd31d6a078c564daf9863d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Database query construction and column handling logic"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-supplied column name inputs are not validated or sanitized before being interpolated into SQL query strings, allowing remote attackers to manipulate the generated queries."
+    },
+    "L3": {
+      "area": "Column name quoting and escaping mechanism within the database abstraction layer",
+      "description": "A SQL injection vulnerability exists where column name arguments passed to the database abstraction layer's quoting mechanism are not validated against a safe character pattern before being embedded into SQL queries, allowing remote attackers to inject arbitrary SQL through crafted column name values."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "The columnQuote method in Medoo before 1.7.5 does not validate or sanitize the input string before wrapping it in quotes and embedding it into SQL queries, allowing SQL injection via crafted column names.",
+    "locations": [
+      {
+        "file": "src/Medoo.php",
+        "function": "columnQuote"
+      }
+    ]
+  }
+}
