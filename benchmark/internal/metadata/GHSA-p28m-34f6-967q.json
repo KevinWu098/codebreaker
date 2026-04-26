@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-p28m-34f6-967q",
+  "post_patch_commit": "e73818600065821d588af475b024f4eb518c3509",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #723 into master. Two source files changed: src/OpenSSL/SSL.py (wrapper function in _VerifyHelper) and src/OpenSSL/crypto.py (load_pkcs12 function). In SSL.py, the X509 object was created from X509_STORE_CTX_get_current_cert without incrementing the reference count, leading to UAF if the cert is retained after the callback. In crypto.py, CA certificates from PKCS#12 were extracted from the sk_X509 stack without proper ownership, leading to UAF when the stack is freed. The pre-assigned use-after-free class (CWE-416) is correct — the patch adds X509_up_ref and uses _from_raw_x509_ptr for proper memory management.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
