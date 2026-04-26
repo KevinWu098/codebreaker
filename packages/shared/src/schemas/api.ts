@@ -178,7 +178,7 @@ export const SessionAgentStateSchema = z.object({
       toolCalls: z.number().int().nonnegative().optional(),
     })
     .optional(),
-  pendingBenchmarkOutput: z.unknown().optional(),
+  pendingBenchmarkOutputs: z.array(z.unknown()).optional(),
   sessionId: z.string().min(1).optional(),
   status: SessionStatusSchema,
 });

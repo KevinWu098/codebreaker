@@ -169,8 +169,8 @@ const BASE_SUBMISSION_CONTRACT = [
   "- At L0 (no hint), classify based solely on code evidence.",
   "",
   "Final response discipline:",
-  "- Return only bare JSON objects, no prose and no markdown fences.",
-  "- The first object must be your highest-confidence finding.",
+  "- When using `submit_benchmark_result`, call it up to 3 times (once per hypothesis, strongest first). In direct mode, return only bare JSON objects, no prose and no markdown fences.",
+  "- The first submission (or first JSON object) must be your highest-confidence finding.",
   "- Return at most 3 locations per object, ranked; `locations[0]` is the single best site for that finding.",
   "- Lower confidence to 0.6 or below when evidence is partial.",
   "- Budget exhaustion is not a blocker to submission: if you cannot inspect more, submit your best schema-valid result with calibrated confidence.",
@@ -335,7 +335,7 @@ const buildSystemPrompt = (
     "</output_contract>",
     "",
     input.environment === "think"
-      ? "Use `submit_benchmark_result` as soon as exploration has produced the strongest schema-valid result. If you run out of exploration, tool, or time budget, you can and should still call `submit_benchmark_result` with the best schema-valid result you can justify. If exploration ends without a tool call, a dedicated submission recovery turn may still ask you to call it."
+      ? "Call `submit_benchmark_result` up to 3 times — once per distinct vulnerability hypothesis, strongest first. Call as soon as exploration has produced schema-valid results. If you run out of exploration, tool, or time budget, you can and should still call `submit_benchmark_result` with the best results you can justify. If exploration ends without a tool call, a dedicated submission recovery turn may still ask you to call it."
       : "Because this direct run may not have tools, be explicit about uncertainty and do not invent inspected evidence.",
   ].join("\n");
 };
@@ -364,6 +364,6 @@ const buildInitialPrompt = (
     "</output_contract>",
     "",
     input.environment === "think"
-      ? "Do not output final JSON directly. Call `submit_benchmark_result` when you have enough evidence for the strongest result. If you run out of exploration, tool, or time budget, still call `submit_benchmark_result` with your best schema-valid result and calibrated confidence."
+      ? "Do not output final JSON directly. Call `submit_benchmark_result` up to 3 times (once per hypothesis, strongest first) when you have enough evidence. If you run out of exploration, tool, or time budget, still call `submit_benchmark_result` with your best schema-valid results and calibrated confidence."
       : "Return the best valid JSON object(s) now. No prose, no markdown fences.",
   ].join("\n");

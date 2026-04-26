@@ -57,8 +57,8 @@ export interface SessionAgentState {
     toolCalls?: number;
     turns?: number;
   };
-  /** Populated when `submit_benchmark_result` runs. */
-  pendingBenchmarkOutput?: AgentOutput;
+  /** Populated when `submit_benchmark_result` runs (up to 3 candidates). */
+  pendingBenchmarkOutputs?: AgentOutput[];
   sessionId?: string;
   status: SessionStatus;
   toolRuns?: Array<{
@@ -608,17 +608,17 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   /**
-   * Returns and clears a benchmark result from `submit_benchmark_result` if one was stored.
+   * Returns and clears all benchmark results from `submit_benchmark_result` calls.
    */
   @callable()
-  popPendingBenchmarkOutput(): AgentOutput | null {
-    const pending = this.state.pendingBenchmarkOutput;
+  popPendingBenchmarkOutputs(): AgentOutput[] {
+    const pending = this.state.pendingBenchmarkOutputs;
 
-    if (!pending) {
-      return null;
+    if (!pending || pending.length === 0) {
+      return [];
     }
 
-    const { pendingBenchmarkOutput: _removed, ...rest } = this.state;
+    const { pendingBenchmarkOutputs: _removed, ...rest } = this.state;
     this.setState({ ...rest });
     return pending;
   }
@@ -884,17 +884,20 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
   }
 
   private recordBenchmarkOutput(output: AgentOutput): void {
-    this.setState({ ...this.state, pendingBenchmarkOutput: output });
+    const existing = this.state.pendingBenchmarkOutputs ?? [];
+    this.setState({
+      ...this.state,
+      pendingBenchmarkOutputs: [...existing, output].slice(0, 3),
+    });
   }
 
   private submitBenchmarkTurnConfig(ctx: TurnContext): TurnConfig {
     return {
       activeTools: [BENCHMARK_SUBMIT_TOOL_NAME],
-      maxSteps: 2,
-      toolChoice: { toolName: BENCHMARK_SUBMIT_TOOL_NAME, type: "tool" },
+      maxSteps: 4,
       system: `${ctx.system}
 
-You are on the submission turn. You must call the tool \`${BENCHMARK_SUBMIT_TOOL_NAME}\` exactly once with your strongest single final result object. The tool arguments enforce the JSON contract. Do not write the JSON in an assistant message. Do not use any other tools. Base your result only on the transcript and tool output from earlier turns.`,
+You are on the submission turn. Call \`${BENCHMARK_SUBMIT_TOOL_NAME}\` up to 3 times — once per distinct vulnerability hypothesis, strongest first. Each call submits one result object whose arguments are validated against the task contract. Do not write JSON in an assistant message. Do not use any other tools. Base your results only on the transcript and tool output from earlier turns.`,
     };
   }
 

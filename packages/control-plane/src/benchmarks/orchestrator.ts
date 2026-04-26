@@ -4,6 +4,7 @@ import type {
   AgentOutput,
   BenchmarkRunRow,
   CreateBenchmarkRunRequest,
+  TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
   DEFAULT_BENCHMARK_MAX_STEPS,
@@ -34,7 +35,7 @@ import { getAgentByName } from "agents";
 
 interface BenchmarkSubmissionAgent {
   getMessages(): Promise<unknown>;
-  popPendingBenchmarkOutput(): Promise<AgentOutput | null>;
+  popPendingBenchmarkOutputs(): Promise<AgentOutput[]>;
   requestFollowUp(content: string): Promise<SaveMessagesResult>;
 }
 
@@ -44,7 +45,7 @@ const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 // exceed the largest configured `timeoutSeconds + AGENT_TURN_COMPLETION_GRACE`.
 const WATCHDOG_MAX_RUNNING_SECONDS = 900;
 const BENCHMARK_SUBMIT_FOLLOWUP_PROMPT =
-  "The exploration turn is over. You must call `submit_benchmark_result` once with your strongest single final result object (schema-enforced). Do not write JSON in an assistant message. Do not use any other tools. Base your answer on the prior transcript and tool results.";
+  "The exploration turn is over. Call `submit_benchmark_result` up to 3 times — once per distinct vulnerability hypothesis, strongest first. Each call's arguments are schema-enforced. Do not write JSON in an assistant message. Do not use any other tools. Base your answers on the prior transcript and tool results.";
 const BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS = 300;
 const BENCHMARK_SUBMIT_MAX_ATTEMPTS = 3;
 
@@ -80,29 +81,21 @@ export class BenchmarkRunOrchestrator {
   async start(runId: string, request?: CreateBenchmarkRunRequest) {
     const run = await this.requireRun(runId);
     const record = this.dataset.getTaskRecord(run.taskId);
-    const model = request?.model ?? {
-      id: run.modelId,
-      provider: run.modelProvider,
-    };
-    const tokenLimits = getBenchmarkTokenLimits(run.difficulty);
-    const maxInputTokens =
-      request?.maxInputTokens ?? tokenLimits.maxInputTokens;
-    const maxOutputTokens =
-      request?.maxOutputTokens ?? tokenLimits.maxOutputTokens;
-    const maxSteps = request?.maxSteps ?? DEFAULT_BENCHMARK_MAX_STEPS;
-    const maxToolCalls =
-      request?.maxToolCalls ?? DEFAULT_BENCHMARK_MAX_TOOL_CALLS;
-    const maxTotalTokens =
-      request?.maxTotalTokens ?? tokenLimits.maxTotalTokens;
-    const maxTurns = request?.maxTurns ?? DEFAULT_BENCHMARK_MAX_TURNS;
-    const timeoutSeconds =
-      request?.timeoutSeconds ?? DEFAULT_BENCHMARK_TIMEOUT_SECONDS;
-    const autoFollowup = request?.autoFollowup ?? false;
-    const harnessMode = request?.harnessMode ?? "full";
+    const params = resolveStartParams(run, request);
+    const {
+      autoFollowup,
+      harnessMode,
+      maxSteps,
+      maxTurns,
+      model,
+      timeoutSeconds,
+    } = params;
 
     await this.runs.update({ id: runId, status: "running" });
 
     const artifactOwner = this.env.GITHUB_ORG ?? this.env.GITHUB_OWNER;
+
+    const sessionId = `bench-${runId}`;
 
     try {
       const sessionConfig = toBenchmarkSessionConfig({
@@ -113,14 +106,13 @@ export class BenchmarkRunOrchestrator {
         maxTurns,
         metadata: record.metadata,
         model,
-        maxInputTokens,
-        maxOutputTokens,
-        maxToolCalls,
-        maxTotalTokens,
+        maxInputTokens: params.maxInputTokens,
+        maxOutputTokens: params.maxOutputTokens,
+        maxToolCalls: params.maxToolCalls,
+        maxTotalTokens: params.maxTotalTokens,
         task: record.task,
         timeoutSeconds,
       });
-      const sessionId = `bench-${runId}`;
       const artifact = await this.provisionArtifact({
         benchmark: sessionConfig.benchmark,
         sessionId,
@@ -247,6 +239,16 @@ export class BenchmarkRunOrchestrator {
       const currentRun = await this.requireRun(runId);
       if (currentRun.status === "cancelled") {
         return currentRun;
+      }
+
+      const recovered = await this.recoverPendingOutputs(
+        runId,
+        sessionId,
+        record,
+        autoFollowup
+      );
+      if (recovered) {
+        return recovered;
       }
 
       const { message, rawOutput } = describeFailure(error);
@@ -555,6 +557,79 @@ export class BenchmarkRunOrchestrator {
     return this.requireRun(run.id);
   }
 
+  /**
+   * Attempt to recover benchmark outputs the agent stored via
+   * `submit_benchmark_result` before a timeout or other error interrupted
+   * the orchestrator's normal flow. Returns the finalized run if recovery
+   * succeeds, or `null` to fall through to the normal failure path.
+   */
+  private async recoverPendingOutputs(
+    runId: string,
+    sessionId: string,
+    record: { task: TaskInstance },
+    autoFollowup: boolean
+  ): Promise<BenchmarkRunRow | null> {
+    try {
+      const agent = await withDORetry(() =>
+        getAgentByName(this.env.SESSION_AGENT, sessionId)
+      );
+      const pending = await withDORetry(() =>
+        agent.popPendingBenchmarkOutputs()
+      );
+
+      if (pending.length === 0) {
+        return null;
+      }
+
+      await this.runs.addEvent({
+        details: { candidateCount: pending.length, recovered: true },
+        kind: "result_parsed",
+        message: "Recovered pending benchmark outputs after turn timeout/error",
+        runId,
+      });
+
+      const best = scoreBestCandidate(record.task, pending);
+      const result = await this.runs.putResult({
+        agentOutput: best.output,
+        rawOutput: JSON.stringify(pending, null, 2),
+        runId,
+        score: best.score,
+        task: record.task,
+      });
+
+      await this.addAgentCompletedEventIfMissing(runId);
+      await this.runs.update({
+        artifactCommitSha: null,
+        artifactPath: result.artifactPath,
+        completedAt: new Date().toISOString(),
+        id: runId,
+        score: best.score.score,
+        status: "completed",
+      });
+      await this.runs.addEvent({
+        kind: "result_parsed",
+        message: "Benchmark result parsed and scored (recovered)",
+        runId,
+      });
+
+      if (autoFollowup) {
+        await new CveFollowupOrchestrator(
+          this.env
+        ).scheduleAfterBenchmarkCompletedIfEligible(runId);
+      }
+
+      const finalRun = await this.requireRun(runId);
+
+      if (finalRun.cleanupPolicy !== "retain") {
+        await this.cleanup(runId);
+      }
+
+      return finalRun;
+    } catch {
+      return null;
+    }
+  }
+
   private async resolveAgentOutput(
     runId: string,
     sessionId: string
@@ -564,11 +639,11 @@ export class BenchmarkRunOrchestrator {
 
     let agent = await getAgent();
     const fromTool0 = await withDORetry(() =>
-      agent.popPendingBenchmarkOutput()
+      agent.popPendingBenchmarkOutputs()
     );
-    if (fromTool0) {
+    if (fromTool0.length > 0) {
       return {
-        candidates: [fromTool0],
+        candidates: fromTool0,
         finalRawOutput: JSON.stringify(fromTool0, null, 2),
       };
     }
@@ -670,11 +745,11 @@ export class BenchmarkRunOrchestrator {
 
       agent = await input.getAgent();
       const fromTool1 = await withDORetry(() =>
-        agent.popPendingBenchmarkOutput()
+        agent.popPendingBenchmarkOutputs()
       );
-      if (fromTool1) {
+      if (fromTool1.length > 0) {
         return {
-          candidates: [fromTool1],
+          candidates: fromTool1,
           finalRawOutput: JSON.stringify(fromTool1, null, 2),
         };
       }
@@ -791,6 +866,40 @@ export class BenchmarkRunOrchestrator {
     return run;
   }
 }
+
+interface StartParams {
+  autoFollowup: boolean;
+  harnessMode: "full" | "minimal";
+  maxInputTokens: number;
+  maxOutputTokens: number;
+  maxSteps: number;
+  maxToolCalls: number;
+  maxTotalTokens: number;
+  maxTurns: number;
+  model: CreateBenchmarkRunRequest["model"];
+  timeoutSeconds: number;
+}
+
+const resolveStartParams = (
+  run: BenchmarkRunRow,
+  request: CreateBenchmarkRunRequest | undefined
+): StartParams => {
+  const tokenLimits = getBenchmarkTokenLimits(run.difficulty);
+
+  return {
+    autoFollowup: request?.autoFollowup ?? false,
+    harnessMode: request?.harnessMode ?? "full",
+    maxInputTokens: request?.maxInputTokens ?? tokenLimits.maxInputTokens,
+    maxOutputTokens: request?.maxOutputTokens ?? tokenLimits.maxOutputTokens,
+    maxSteps: request?.maxSteps ?? DEFAULT_BENCHMARK_MAX_STEPS,
+    maxToolCalls: request?.maxToolCalls ?? DEFAULT_BENCHMARK_MAX_TOOL_CALLS,
+    maxTotalTokens: request?.maxTotalTokens ?? tokenLimits.maxTotalTokens,
+    maxTurns: request?.maxTurns ?? DEFAULT_BENCHMARK_MAX_TURNS,
+    model: request?.model ?? { id: run.modelId, provider: run.modelProvider },
+    timeoutSeconds:
+      request?.timeoutSeconds ?? DEFAULT_BENCHMARK_TIMEOUT_SECONDS,
+  };
+};
 
 class ParseFailureError extends Error {
   readonly rawOutput: string;
