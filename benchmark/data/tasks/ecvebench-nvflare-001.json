@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-nvflare-001",
+  "ghsa_id": "GHSA-hrf3-622q-8366",
+  "codebase": {
+    "repo": "https://github.com/NVIDIA/NVFlare",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "641684325f13163b1353d2a77a236350170bd202"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Provisioning, project configuration loading, and deployment setup utilities"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where YAML configuration files are loaded using an unsafe loader that permits arbitrary Python object instantiation. An unprivileged network attacker could supply a crafted YAML file to achieve remote code execution, denial of service, or compromise of confidentiality and integrity."
+    },
+    "L3": {
+      "area": "Project provisioning and configuration loading utilities within the lightweight deployment subsystem",
+      "description": "An insecure deserialization vulnerability exists where project configuration YAML files used during federated learning provisioning and study setup are loaded using an unsafe YAML loader that permits arbitrary Python object instantiation. An attacker could supply a crafted YAML configuration file to achieve remote code execution, denial of service, or impact to both confidentiality and integrity."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "YAML files are loaded via yaml.load() with yaml.Loader instead of yaml.safe_load(), allowing deserialization of arbitrary Python objects from untrusted YAML input, which can lead to remote code execution.",
+    "locations": [
+      {
+        "file": "nvflare/lighter/utils.py",
+        "function": "load_yaml"
+      },
+      {
+        "file": "nvflare/lighter/provision.py",
+        "function": "main"
+      },
+      {
+        "file": "nvflare/lighter/study.py",
+        "function": "main"
+      }
+    ]
+  }
+}
