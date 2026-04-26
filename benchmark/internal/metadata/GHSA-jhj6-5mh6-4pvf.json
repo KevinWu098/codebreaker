@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jhj6-5mh6-4pvf",
+  "post_patch_commit": "ec6082049dba9e44a21f35fb7b123d42ce1a1a7e",
+  "noisy_patch": false,
+  "curation_notes": "Single file patch in pkg/errors/abort.go. The Abort function used syscall.Getpgid(syscall.Getpid()) which returns a nil pointer in Docker containers, causing SIGSEGV. The fix adds a Docker environment check (os.Stat(\"/.dockerenv\")) and falls back to os.Exit. The Windows sibling (abort_windows.go) uses os.Exit directly and is not affected. Pre-assigned class null-deref is correct — the root cause is a nil pointer dereference from the failing syscall.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
