@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-663w-2xp3-5739",
+  "post_patch_commit": "f4d5acac451dccaf276e69f0b49b72221eef5d2f",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies a single source file: the XHTML wiki printer's cleanAttributes method. The patch adds a removeInvalidDataAttributeCharacters() helper that strips non-XML-compatible characters from attribute names before prefixing them with the data attribute prefix. Three overloaded cleanAttributes methods (Map, String[][], and Attributes variants) all had the same bug — prefixing disallowed attribute names without sanitizing invalid characters. No sibling files share this vulnerability pattern; the only other file in the same package is the parent class XMLWikiPrinter which does not perform attribute cleaning. Vulnerability class confirmed as xss — CWE-79, CWE-83, CWE-86 all relate to improper neutralization of characters enabling script injection in web pages.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
