@@ -10,22 +10,30 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Middleware for caching and securing authentication tokens"
+      "area": "Authentication middleware and token caching infrastructure"
     },
     "L2": {
-      "description": "The middleware uses weak cryptographic primitives for protecting cached authentication data. It employs an inadequate hashing algorithm for computing message authentication codes, uses a simplistic key derivation scheme instead of a proper key derivation function, and does not perform constant-time comparison when verifying signatures, making it vulnerable to timing attacks and data forgery."
+      "description": "A cryptographic weakness exists in the middleware that protects cached authentication data. The implementation uses a weak hashing algorithm for computing message authentication codes, derives encryption keys via simple hash concatenation rather than a standards-compliant key derivation function, uses an unauthenticated cipher mode, and does not use constant-time comparison when verifying signatures. These weaknesses allow attackers to bypass cache data integrity and confidentiality protections through timing attacks and cryptographic analysis."
     },
     "L3": {
-      "area": "Middleware for caching and securing authentication tokens",
-      "description": "The middleware uses weak cryptographic primitives for protecting cached authentication data. It employs an inadequate hashing algorithm for computing message authentication codes, uses a simplistic key derivation scheme instead of a proper key derivation function, and does not perform constant-time comparison when verifying signatures, making it vulnerable to timing attacks and data forgery."
+      "area": "Memcache cryptographic protection layer within the authentication middleware",
+      "description": "A cryptographic weakness exists in the middleware that protects cached authentication tokens stored in memcache. The implementation uses a weak hashing algorithm for computing message authentication codes, derives encryption keys via simple hash concatenation rather than a standards-compliant key derivation function, uses an unauthenticated cipher mode, and does not use constant-time comparison when verifying signatures. This allows attackers to bypass the integrity and confidentiality protections on cached token data through timing attacks and cryptographic analysis."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "crypto-weakness",
     "cvss": 9.8,
-    "reason": "The memcache encryption middleware uses weak cryptographic primitives including SHA1 for MAC computation, a simple SHA256 hash for key derivation instead of a proper KDF, and non-constant-time comparison for signature verification, allowing attackers to bypass cache data protection.",
+    "reason": "The memcache encryption middleware uses weak cryptographic primitives including SHA1 for MAC computation, simple hash concatenation for key derivation instead of a proper KDF, an unauthenticated cipher mode (AES-CFB), and non-constant-time comparison for signature verification, allowing attackers to bypass cache data protection.",
     "locations": [
+      {
+        "file": "keystoneclient/middleware/memcache_crypt.py",
+        "function": "hash_data"
+      },
+      {
+        "file": "keystoneclient/middleware/memcache_crypt.py",
+        "function": "compute_mac"
+      },
       {
         "file": "keystoneclient/middleware/memcache_crypt.py",
         "function": "sign_data"
@@ -36,15 +44,15 @@
       },
       {
         "file": "keystoneclient/middleware/memcache_crypt.py",
+        "function": "generate_aes_key"
+      },
+      {
+        "file": "keystoneclient/middleware/memcache_crypt.py",
         "function": "encrypt_data"
       },
       {
         "file": "keystoneclient/middleware/memcache_crypt.py",
         "function": "decrypt_data"
-      },
-      {
-        "file": "keystoneclient/middleware/memcache_crypt.py",
-        "function": "generate_aes_key"
       }
     ]
   }
