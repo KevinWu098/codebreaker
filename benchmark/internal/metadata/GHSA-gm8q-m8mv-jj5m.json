@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gm8q-m8mv-jj5m",
+  "post_patch_commit": "b01d35b2373fd087d2e15162b9c021663c97155d",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies the _attachment_file_name property in the _AttachmentPartitioner class in unstructured/partition/msg.py. The pre-patch code returns the raw attachment filename without sanitization, and this filename is used in os.path.join to construct a file path for writing attachment contents to disk. A sibling file (unstructured/partition/email.py) has a similar _attachment_file_name property but does not write attachments to disk via os.path.join — it uses in-memory BytesIO instead — so it is not vulnerable to the same path traversal attack. The vulnerability class path-traversal matches the CWE-22 and CWE-73 classifications and is confirmed by the patch which adds os.path.basename sanitization.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
