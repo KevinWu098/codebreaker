@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-p6hw-wm59-3g5g",
+  "post_patch_commit": "1cd748307c6b168b66154e6c4db715d4b9551261",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff, which modifies only sydent/util/emailutils.py in the sendEmail function. The fix adds an explicit ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH) and passes it as the context parameter to both smtplib.SMTP_SSL and smtp.starttls(). No sibling files in sydent/util/ share the same SMTP/TLS pattern. Pre-assigned class crypto-weakness (from CWE-295 Improper Certificate Validation) is correct — the vulnerability is a missing TLS certificate verification on outbound SMTP connections.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
