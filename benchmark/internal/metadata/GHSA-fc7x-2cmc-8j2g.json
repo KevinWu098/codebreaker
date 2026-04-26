@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fc7x-2cmc-8j2g",
+  "post_patch_commit": "93d895de72c2cb3ac7bc106f03e33715f8f304c2",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies only sha2/src/sha512/x86.rs. The fix corrects two issues in the load_data_avx2 function's unrolled_iterations macro: (1) the data pointer offset for the upper 128-bit lane was changed from data.add($i) to data.add(8 + $i) to correctly reference the second block, and (2) the lane insertion order was swapped so the first block goes into lane 0 and the second block into lane 1. The sha256/x86.rs sibling was checked but does not contain an AVX2 backend or the same dual-block loading pattern, so no sibling locations were added. Vulnerability class crypto-weakness confirmed: the bug causes the SHA-512 hash to produce incorrect digests for multi-block messages.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
