@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x9xc-63hg-vcfq",
+  "post_patch_commit": "ae054dc8044eac9c2c7ae2b1ab154b53ca7f8df7",
+  "noisy_patch": true,
+  "curation_notes": "Primary locations derived from patch diff. The core fix is in iterator.rs (introducing a LendingIterator trait to replace std::iter::Iterator) and result.rs (converting ResultIterator). The patch is noisy (32 non-test source files changed) because the lifetime parameter changes propagate through many type signatures across the crate. Vulnerability class 'use-after-free' confirmed from advisory description ('This is a use-after-free bug') and CWE-416.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
