@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rwv7-3v45-hg29",
+  "post_patch_commit": "3bf5eddb89afdf690eceaa52bc4d3546ba9a5f87",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 3bf5eddb89afdf690eceaa52bc4d3546ba9a5f87 fixes CVE-2021-25288 (OOB read in J2kDecode). Only one non-test source file changed (src/libImaging/Jpeg2KDecode.c). The fix adds a component count validation check and replaces the fixed component width calculation with a per-component precision sum. Pre-assigned class buffer-overflow (CWE-125 Out-of-bounds Read) is correct. No sibling files share the same vulnerability pattern — other *Decode.c files handle different image formats and lack JPEG 2000 tile component logic.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
