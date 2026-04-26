@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4jj9-cgqc-x9h5",
+  "post_patch_commit": "955904b5762f296d209bf395a5fcc7a40a53c424",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (controller/kv/create.go) in the createDefaultServiceMeshMonitor function to enable TLS verification by default for new deployments. The pre-patch code did not set EnableTLSVerification, leaving it disabled by default. No sibling files share this vulnerability pattern as this is the sole initialization point for deployment defaults. Vulnerability class crypto-weakness is correct: CWE-295 (Improper Certificate Validation) maps directly to misused cryptographic configuration where TLS verification is not enforced.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
