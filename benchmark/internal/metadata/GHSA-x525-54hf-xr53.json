@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x525-54hf-xr53",
+  "post_patch_commit": "1b44ee2e06d414f163f41732e92366e36654b08f",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge of the GHSA security advisory fix into main. Three source files changed: index.php (removed unsanitized $loginname from log messages in 3 places), lib/Froxlor/FroxlorLogger.php (added preg_replace sanitization in logAction before storing), and lib/Froxlor/Api/Commands/SysLog.php (added preg_replace sanitization in listing when reading log entries from database). No sibling files share the same vulnerability pattern. The pre-assigned xss class is correct — CWE-79/CWE-80 both map to XSS, and the patch clearly addresses stored XSS via unsanitized user input in log messages rendered in the admin panel.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
