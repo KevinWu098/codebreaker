@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-chakracore-005",
+  "ghsa_id": "GHSA-ghwq-7v3r-5433",
+  "codebase": {
+    "repo": "https://github.com/chakra-core/ChakraCore",
+    "language": "c++",
+    "ecosystem": "nuget",
+    "commit": "9587507cfbc02a6b9443f924a6eec783fd14dec4"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "JavaScript array concatenation and element copying logic"
+    },
+    "L2": {
+      "description": "A heap buffer overflow vulnerability exists in the array concatenation fast paths of a JavaScript engine. When an array is filled from prototypes, reentrancy during concatenation can mutate the array length, causing element-copying routines to write beyond the allocated buffer bounds, leading to potential remote code execution."
+    },
+    "L3": {
+      "area": "Native integer and floating-point array concatenation fast paths in the JavaScript array runtime library",
+      "description": "A heap buffer overflow vulnerability exists in the array concatenation fast paths that handle native integer and floating-point arrays. When an array is populated via copy-from-prototype, reentrancy triggered during the concatenation operation can mutate the array's length, causing element-copying routines to write beyond the allocated heap buffer bounds, potentially enabling remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.8,
+    "reason": "Array length mutation introduced by copy-from-prototype reentrancy can cause heap overflow in concat fast paths, as the element-copying routines use a stale length without checking whether the array was filled from prototypes.",
+    "locations": [
+      {
+        "file": "lib/Runtime/Library/JavascriptArray.cpp",
+        "function": "ConcatArgs"
+      },
+      {
+        "file": "lib/Runtime/Library/JavascriptArray.cpp",
+        "function": "ConcatIntArgs"
+      },
+      {
+        "file": "lib/Runtime/Library/JavascriptArray.cpp",
+        "function": "ConcatFloatArgs"
+      }
+    ]
+  }
+}
