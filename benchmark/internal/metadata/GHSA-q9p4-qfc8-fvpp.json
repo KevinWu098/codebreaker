@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q9p4-qfc8-fvpp",
+  "post_patch_commit": "659864b393961bf224bba1efc03b7dcbed7de533",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only src/Medoo.php (1 file). The fix adds a regex validation in the columnQuote method to reject column names containing non-alphanumeric characters, preventing SQL injection. The repository contains only a single source file, so no sibling locations exist. Pre-assigned class sql-injection confirmed: CWE-89 matches, advisory explicitly states SQL injection, and the patch adds input validation to prevent query manipulation via column names.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
