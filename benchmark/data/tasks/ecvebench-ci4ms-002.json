@@ -13,18 +13,18 @@
       "area": "Blog content management and frontend rendering"
     },
     "L2": {
-      "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled input in a content management field is persisted server-side without adequate sanitization. The stored payload is subsequently rendered across multiple public-facing and administrative pages without proper output encoding, allowing execution of arbitrary JavaScript in victims' browsers. This can lead to privilege escalation and full account takeover across all roles."
+      "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled input in a content management field is persisted server-side with insufficient input validation. The stored payload is subsequently rendered across multiple public-facing and administrative pages without proper output encoding, allowing execution of arbitrary JavaScript in victims' browsers. This can lead to privilege escalation and full account takeover across all roles."
     },
     "L3": {
-      "area": "Blog content management and frontend rendering",
-      "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled input in a content management field is persisted server-side without adequate sanitization. The stored payload is subsequently rendered across multiple public-facing and administrative pages without proper output encoding, allowing execution of arbitrary JavaScript in victims' browsers. This can lead to privilege escalation and full account takeover across all roles."
+      "area": "Blog category management controllers and blog category rendering in public-facing listing templates",
+      "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled input in the blog category title field is persisted server-side with an insufficient input validation regex that fails to block certain special characters needed for attribute-based injection. The stored payload is rendered without proper output encoding on public blog category listing pages, allowing execution of arbitrary JavaScript in victims' browsers. This can lead to privilege escalation and full account takeover across all roles."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "xss",
     "cvss": 10.0,
-    "reason": "The blog category title field lacks sufficient input validation and output encoding, allowing an attacker to inject and persist a malicious JavaScript payload that executes when the category title is rendered in public and administrative views.",
+    "reason": "The blog category title field is validated with an insufficient regex that allows certain special characters, and the category title is rendered in the public-facing blog list view without proper output encoding, enabling stored cross-site scripting.",
     "locations": [
       {
         "file": "modules/Blog/Controllers/Categories.php",
