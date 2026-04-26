@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9g2w-5f3v-mfmm",
+  "post_patch_commit": "24ca556059c7e434ac41aa353284bcf61a150545",
+  "noisy_patch": false,
+  "curation_notes": "The patch (PR #7205) changed 3 files in airflow/config_templates/. The security-critical change is in default_celery.py, where 'pickle' was removed from the Celery 'accept_content' list. The other two files (config.yml, default_airflow.cfg) only updated default broker URLs and worker concurrency for the breeze dev environment and are not security-relevant. The vulnerability class insecure-deserialization is confirmed: accepting pickle-serialized Celery messages allows RCE via crafted payloads injected through the broker.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
