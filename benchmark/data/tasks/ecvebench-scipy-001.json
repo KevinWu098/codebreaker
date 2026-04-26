@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "N-dimensional image processing and labeled array operations"
+      "area": "N-dimensional image processing and measurement operations"
     },
     "L2": {
-      "description": "A use-after-free vulnerability exists in a Python C extension where a reference count on a list object is prematurely decremented during error handling, potentially allowing freed memory to be accessed by subsequent operations."
+      "description": "A use-after-free vulnerability exists in a Python C extension where a reference count on a result object is prematurely decremented during an error-handling code path. If an error occurs during processing, the object may be freed while still referenced, allowing subsequent access to freed memory and potentially enabling arbitrary code execution."
     },
     "L3": {
-      "area": "N-dimensional image processing and labeled array operations",
-      "description": "A use-after-free vulnerability exists in a Python C extension where a reference count on a list object is prematurely decremented during error handling, potentially allowing freed memory to be accessed by subsequent operations."
+      "area": "N-dimensional image processing C extension modules for labeled-array and measurement operations",
+      "description": "A use-after-free vulnerability exists in the N-dimensional image processing C extension where a reference count on a result list object is prematurely decremented in an error-handling code path. When an error occurs while processing labeled regions in an N-dimensional array, the result object may be freed while still referenced, allowing access to freed memory and potentially enabling arbitrary code execution."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "use-after-free",
     "cvss": 9.8,
-    "reason": "A premature reference count decrement on a Python list object in the error handling path of a C extension function causes a use-after-free, allowing potential access to freed memory.",
+    "reason": "A premature Py_XDECREF call on a result list object in the error-handling path of a C extension function causes a use-after-free, allowing potential access to freed memory.",
     "locations": [
       {
         "file": "scipy/ndimage/src/nd_image.c",
