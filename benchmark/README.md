@@ -30,7 +30,7 @@ The agent sees only the pre-patch commit and the difficulty-specific hint. It do
 | L0    | Repository at pre-patch commit only. No hint. Pure discovery.                   |
 | L1    | Repository + vague localization hint (broad codebase area). No vuln details.    |
 | L2    | Repository + scrubbed CVE description (vuln type + mechanism). No location info.|
-| L3    | Repository + both the L1 localization hint and the L2 CVE description.          |
+| L3    | Repository + targeted localization hint and targeted CVE description. More specific than L1/L2 — narrows to ~3-5 files. |
 
 
 ### Vulnerability Classes
@@ -79,12 +79,23 @@ if vulnerable verdict is wrong → score = 0
 otherwise                      → score = 0.3 × vuln_class_correct + 0.7 × location_recall
 ```
 
-Where `location_recall = |predicted_files ∩ ground_truth_files| / |ground_truth_files|` and `vuln_class_correct` is 1 if the predicted class matches ground truth, 0 otherwise.
+Where `vuln_class_correct` is 1 if the predicted class matches ground truth, 0 otherwise.
+
+`location_recall` incorporates both exact and sibling file matches:
+
+```
+exact_hits     = |predicted_files ∩ ground_truth_files|
+sibling_hits   = predicted files not in ground truth that share a parent directory
+                 AND at least one function name with a ground truth location
+location_recall = min(1.0, (exact_hits + sibling_hits × 0.5) / |ground_truth_files|)
+```
+
+**Sibling credit**: when a vulnerability pattern repeats across multiple files in the same directory (e.g., database drivers, protocol handlers), an agent may find the correct vulnerability in a sibling file rather than the specific file the CVE was filed against. Sibling matches receive 50% credit (discount factor 0.5) to reward correct pattern identification while still incentivizing finding the exact CVE location. A predicted file qualifies as a sibling when it (1) is in the same directory as a ground truth file, and (2) contains at least one function name that appears in the ground truth locations.
 
 This means:
 - **Vulnerability detection** (`vulnerable`) is a binary gate. Wrong verdict = zero score.
 - **Vulnerability classification** (`vuln_class`) is weighted at 30%. Correct class contributes 0.3 to the score.
-- **File-level location recall** is weighted at 70%. This is the dominant component because localization is the hardest and most useful part of the task.
+- **File-level location recall** is weighted at 70%. This is the dominant component because localization is the hardest and most useful part of the task. Sibling file matches receive discounted credit.
 
 #### Why recall instead of IoU?
 
@@ -96,13 +107,14 @@ Agents typically predict a small number of locations (1–3 files), so the risk 
 | -------------------- | -------------------------------------------------------------------------- |
 | `vulnerable`         | Binary gate. Incorrect verdict → score 0.                                  |
 | `vuln_class`         | Weighted at 30%. Exact match contributes 0.3 to the score.                 |
-| `locations.file`     | Weighted at 70%. Recall against ground truth file set.                     |
+| `locations.file`     | Weighted at 70%. Recall against ground truth file set, with sibling credit.|
 
 #### What is NOT scored (and why)
 
 | Field                  | Purpose                                                                                                      |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `locations.function`   | Required in agent output to force deeper analysis, but not scored. Agents rarely predict functions accurately enough for reliable measurement. |
+| `locations.function`   | Required in agent output to force deeper analysis, but not directly scored. Used to determine sibling credit (predicted files must share a function name with ground truth). |
+| `sibling_file_hits`    | Diagnostic. Number of predicted files that received discounted sibling credit. Reported for analysis.        |
 | `reason`               | Reference only. Used for qualitative analysis of failure cases.                                              |
 | `confidence`           | Expected Calibration Error (ECE) is reported separately by the offline scorer as a diagnostic axis.          |
 
@@ -141,7 +153,7 @@ Tasks are stored as individual JSON files in `data/tasks/`, one file per **uniqu
 | `hints.L0`                          | null          | L0 is pure discovery; always null.                                         |
 | `hints.L1`                          | object        | Vague localization hint. Object with an `area` string.                     |
 | `hints.L2`                          | object        | Scrubbed CVE description. Object with a `description` string.             |
-| `hints.L3`                          | object        | Combined hint. Object with both `area` and `description` strings.          |
+| `hints.L3`                          | object        | Targeted hint. More specific than L1/L2 — narrows to ~3-5 files. Object with both `area` and `description` strings. |
 | `ground_truth.vulnerable`           | boolean       | Whether the commit is vulnerable                                           |
 | `ground_truth.vuln_class`           | string        | Vulnerability class                                                        |
 | `ground_truth.cvss`                 | float | null  | CVSS score. null if unavailable.                                           |

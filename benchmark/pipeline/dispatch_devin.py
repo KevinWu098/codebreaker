@@ -67,7 +67,32 @@ and list your task in the description.
 """
 
 
-def render_prompt(candidate: dict[str, Any], *, branch: str | None = None) -> str:
+RECURATE_OVERRIDE_TEMPLATE = """
+
+---
+
+## Re-curation mode
+
+This GHSA has been curated before. You are re-curating it with updated
+guidelines. **Skip the duplicate check in Step 10** — you are expected
+to find existing files for this GHSA.
+
+If a task file and metadata file already exist for this GHSA:
+1. Note the existing `task_id` from the task file.
+2. **Overwrite** both files in place with your new curation output,
+   keeping the same `task_id`.
+3. Do NOT create a new task ID or new files — update the existing ones.
+
+If for some reason the files do not exist, proceed normally with Step 10.
+"""
+
+
+def render_prompt(
+    candidate: dict[str, Any],
+    *,
+    branch: str | None = None,
+    recurate: bool = False,
+) -> str:
     """Fill the prompt template with pre-computed candidate fields."""
     cvss = candidate.get("cvss")
     cvss_str = "null" if cvss is None else str(cvss)
@@ -86,6 +111,9 @@ def render_prompt(candidate: dict[str, Any], *, branch: str | None = None) -> st
     if branch:
         prompt += BRANCH_OVERRIDE_TEMPLATE.format(branch=branch)
 
+    if recurate:
+        prompt += RECURATE_OVERRIDE_TEMPLATE
+
     return prompt
 
 
@@ -94,12 +122,13 @@ def dispatch_one(
     *,
     client: httpx.Client,
     branch: str | None = None,
+    recurate: bool = False,
     dry_run: bool = False,
 ) -> dict[str, Any] | None:
     """Create a single Devin session. Returns response data or None on failure."""
     ghsa_id = candidate["ghsa_id"]
     vuln_class = candidate["vuln_class"]
-    prompt = render_prompt(candidate, branch=branch)
+    prompt = render_prompt(candidate, branch=branch, recurate=recurate)
 
     if dry_run:
         print(f"  [dry-run] {ghsa_id} ({vuln_class})")
@@ -142,6 +171,7 @@ def run(
     count: int,
     offset: int,
     branch: str | None,
+    recurate: bool,
     dry_run: bool,
     delay: float,
 ) -> int:
@@ -151,8 +181,9 @@ def run(
         return 1
 
     mode = "[dry-run] " if dry_run else ""
+    recurate_msg = " [re-curation]" if recurate else ""
     branch_msg = f" -> branch {branch}" if branch else ""
-    print(f"{mode}Dispatching {len(batch)} candidates (offset={offset}){branch_msg}\n")
+    print(f"{mode}Dispatching {len(batch)} candidates (offset={offset}){branch_msg}{recurate_msg}\n")
 
     successes: list[dict[str, Any]] = []
 
@@ -165,7 +196,7 @@ def run(
     ) as client:
         for i, candidate in enumerate(batch):
             print(f"[{i + 1}/{len(batch)}] {candidate['ghsa_id']}")
-            result = dispatch_one(candidate, client=client, branch=branch, dry_run=dry_run)
+            result = dispatch_one(candidate, client=client, branch=branch, recurate=recurate, dry_run=dry_run)
             if result:
                 successes.append({"ghsa_id": candidate["ghsa_id"], **result})
             if not dry_run and i < len(batch) - 1:
@@ -189,6 +220,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--count", type=int, required=True, help="Number of candidates to dispatch.")
     parser.add_argument("--offset", type=int, default=0, help="Skip first N candidates (default: 0).")
     parser.add_argument("--dry-run", action="store_true", help="Render prompts but don't call the API.")
+    parser.add_argument("--recurate", action="store_true", help="Re-curation mode: skip duplicate check, overwrite existing task/metadata files.")
     parser.add_argument("--branch", type=str, default=None, help="Shared branch name (all agents commit here instead of per-task branches).")
     parser.add_argument("--delay", type=float, default=2.0, help="Seconds between API calls (default: 2).")
     args = parser.parse_args(argv)
@@ -202,6 +234,7 @@ def main(argv: list[str] | None = None) -> int:
         count=args.count,
         offset=args.offset,
         branch=args.branch,
+        recurate=args.recurate,
         dry_run=args.dry_run,
         delay=args.delay,
     )

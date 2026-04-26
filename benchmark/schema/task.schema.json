@@ -75,17 +75,17 @@
         },
         "L3": {
           "type": "object",
-          "description": "Combined hint: both the L1 localization area and the L2 CVE description.",
+          "description": "Targeted hint: a more specific localization area and a more specific CVE description than L1/L2. Narrows to ~3-5 files without naming exact paths or functions.",
           "required": ["area", "description"],
           "additionalProperties": false,
           "properties": {
             "area": {
               "type": "string",
-              "description": "Same localization hint as L1."
+              "description": "Targeted localization hint. More specific than L1 — may name the specific subsystem, module, or driver (e.g. 'SQLite database driver schema introspection') but not exact file paths or function names."
             },
             "description": {
               "type": "string",
-              "description": "Same scrubbed CVE description as L2."
+              "description": "Targeted CVE description. More specific than L2 — may include distinguishing context from the advisory (e.g. technology, protocol, configuration) but not file paths, function names, or code snippets."
             }
           }
         }

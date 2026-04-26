@@ -68,6 +68,7 @@ uv run python -m pipeline.select_candidates
 | `--input` | `output/filtered.jsonl` | Input from Step 1 |
 | `--output` | `output/candidates.jsonl` | Selected candidates for Devin |
 | `--rejected` | `output/select_rejected.jsonl` | Rejected candidates with reasons |
+| `--preserve` | (none) | Directory of existing task JSON files whose GHSAs are pinned in the output |
 | `--target` | 500 | Target number of final benchmark tasks |
 | `--overprovision` | 2.5 | Multiplier for expected Devin rejection rate |
 | `--cvss-floor` | 4.0 | Minimum CVSS score (0 to disable) |
@@ -78,7 +79,14 @@ Selection logic:
 1. Dedup overlapping filter runs
 2. Map CWE IDs → 13 vulnerability classes (via `lib/cwe_map.py`)
 3. Drop advisories with no CWE, unmappable CWEs, or CVSS below floor
-4. Stratified sample: up to `ceil(target × overprovision / 13)` per class
+4. If `--preserve` is set, pin those GHSAs in the output and subtract their per-class counts from the sampling target
+5. Stratified sample: up to `ceil(total_target / 13) - preserved_per_class` from each class
+
+When scaling the dataset while preserving already-curated tasks:
+
+```bash
+uv run python -m pipeline.select_candidates --preserve data/tasks --target 500 --overprovision 1.0
+```
 
 ## Step 3: Dispatch to Devin
 
@@ -92,12 +100,30 @@ uv run python -m pipeline.dispatch_devin --count 10
 | `--count` | (required) | Number of candidates to dispatch |
 | `--offset` | 0 | Skip first N candidates (for batched dispatch) |
 | `--dry-run` | off | Render prompts without calling the API |
+| `--recurate` | off | Re-curation mode: agents overwrite existing task/metadata files instead of checking for duplicates |
+| `--branch` | (none) | Shared branch name (all agents in a batch commit here instead of per-task branches) |
 | `--delay` | 2.0 | Seconds between API calls |
 
 Each candidate's pre-computed fields (vulnerability class, CVSS, CVE ID, CWE IDs, ecosystem) are injected into the prompt template at [`docs/prompts/curation_agent.md`](../docs/prompts/curation_agent.md). The agent opens a PR containing:
 
 - `benchmark/data/tasks/{task_id}.json`
 - `benchmark/internal/metadata/{GHSA_ID}.json`
+
+### Re-curating existing tasks
+
+To re-curate tasks that already exist (e.g., after updating the curation prompt), use `--recurate` with `--branch`:
+
+```bash
+# Build a JSONL of just the existing GHSAs to re-curate
+# Then dispatch in batches of 10 with shared branches
+uv run python -m pipeline.dispatch_devin \
+    --input output/recurate_existing.jsonl \
+    --count 10 --offset 0 \
+    --branch recurate/batch-01 \
+    --recurate
+```
+
+The `--recurate` flag tells agents to skip the duplicate check and overwrite existing files in place, keeping the same task ID.
 
 ## Directory structure
 

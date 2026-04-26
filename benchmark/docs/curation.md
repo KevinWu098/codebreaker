@@ -106,16 +106,24 @@ The selection script (`pipeline/select_candidates.py`) reads the filtered output
 1. **Deduplication** — removes duplicate GHSA IDs left from overlapping filter runs.
 2. **CWE → class mapping** — each advisory's CWE IDs are mapped to one of the 13 vulnerability classes via a curated lookup table (`pipeline/lib/cwe_map.py`). Advisories with no CWE, unmappable CWEs, or conflicting CWEs (mapping to multiple classes) are dropped.
 3. **CVSS floor** — advisories below a configurable minimum CVSS score (default: 4.0) are dropped to exclude trivial issues.
-4. **Stratified sampling** — the remaining candidates are split by class, and up to N are randomly sampled from each class. N is calculated as `ceil(target_tasks × overprovision_factor / 13)`. Classes with fewer candidates than N are taken in full.
+4. **Preserve (optional)** — if `--preserve` is set, GHSAs from existing task files are pinned in the output. Their per-class counts are subtracted from the sampling target so the final distribution stays balanced.
+5. **Stratified sampling** — the remaining candidates are split by class, and up to N are randomly sampled from each class. N is calculated as `ceil(total_target / 13) - preserved_per_class`. Classes with fewer candidates than N are taken in full.
 
 ```bash
 uv run python -m pipeline.select_candidates --target 500 --overprovision 2.5
+```
+
+To scale the dataset while keeping already-curated tasks:
+
+```bash
+uv run python -m pipeline.select_candidates --preserve data/tasks --target 500 --overprovision 1.0
 ```
 
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--target` | 500 | Target number of final benchmark tasks |
 | `--overprovision` | 2.5 | Multiplier to account for Devin rejection rate |
+| `--preserve` | (none) | Directory of existing task JSONs to pin in output |
 | `--cvss-floor` | 4.0 | Minimum CVSS score (0 to disable) |
 | `--seed` | 42 | Random seed for reproducible sampling |
 
@@ -168,6 +176,8 @@ Ecosystem distribution:
 
 Each selected GHSA is dispatched to a [Devin](https://devin.ai/) agent. The agent follows a structured prompt (see [`docs/prompts/curation_agent.md`](prompts/curation_agent.md)) that walks it through the full curation workflow. Each agent opens a pull request containing exactly two files, which is then reviewed before merging.
 
+The dispatch script supports batching agents onto shared branches (`--branch`) and re-curating existing tasks (`--recurate`). See `pipeline/README.md` for full CLI reference.
+
 ### Per-advisory workflow
 
 1. **Read the advisory.** The agent navigates to the GHSA URL and extracts the description, severity, CWE IDs, CVE ID, and all reference links.
@@ -178,24 +188,29 @@ Each selected GHSA is dispatched to a [Devin](https://devin.ai/) agent. The agen
 
 4. **Examine the patch diff.** The agent analyzes the diff to identify which source files and functions were modified (excluding tests, docs, configs, and changelogs). It also determines whether the patch is "noisy" (more than 3 non-test source files changed).
 
-5. **Classify the vulnerability.** Using the advisory description and CWE IDs, the agent assigns exactly one of the 13 vulnerability classes. If the vulnerability does not fit, the advisory is rejected.
+5. **Verify the vulnerability class.** The agent evaluates the pre-assigned CWE-based class against the patch diff and advisory description. If the diff clearly shows a different class is more accurate, the agent overrides the assignment and documents the rationale in `curation_notes`.
 
-6. **Derive locations.** The agent identifies the specific file(s) and function(s) where the vulnerability exists in the pre-patch code. The priority order is:
+6. **Derive locations.** The agent identifies the specific file(s) and function(s) where the vulnerability exists in the pre-patch code. In addition to the primary locations from the CVE patch, the agent checks sibling files in the same directory for the exact same vulnerability pattern and includes them if confirmed. The priority order is:
    - Advisory description (highest quality, if it explicitly names files/functions)
    - Patch diff (what was removed or modified is where the vulnerability was)
+   - Sibling files with the same vulnerable function and unsafe pattern
    - For noisy patches, advisory description is preferred over the diff
 
-7. **Write the L1 localization hint.** The agent writes a vague area hint that points at a broad region of the codebase (e.g., "authentication middleware", "package installation scripts") without naming files, functions, or the vulnerability type.
+7. **Write the L1 localization hint.** The agent writes a vague area hint that points at a broad region of the codebase (e.g., "authentication middleware", "package installation scripts") without naming files, functions, or the vulnerability type. Target scope: ~10-20 source files.
 
 8. **Write the L2 CVE hint.** The agent takes the advisory description and scrubs all file paths, function names, line numbers, variable names, and code snippets. The result describes *what* the vulnerability is without revealing *where* it is.
 
-9. **Generate the task ID.** Format: `ecvebench-{project}-{NNN}`, where `{project}` is the lowercased repo name and `{NNN}` is a zero-padded sequence number.
+9. **Write the L3 targeted hints.** The agent writes a more specific `area` (names the subsystem/module/driver) and a more specific `description` (includes distinguishing context from the advisory). Target scope: ~3-5 source files. No exact file paths or function names.
 
-10. **Create the task file.** Written to `benchmark/data/tasks/{task_id}.json` following `schema/task.schema.json`.
+10. **Check for duplicates and generate the task ID.** The agent checks whether a task for this GHSA already exists. If so, it stops (unless in re-curation mode). Format: `ecvebench-{project}-{NNN}`, where `{project}` is the lowercased repo name and `{NNN}` is a zero-padded sequence number.
 
-11. **Create the metadata file.** Written to `benchmark/internal/metadata/{GHSA_ID}.json` following `schema/metadata.schema.json`.
+11. **Create the task file.** Written to `benchmark/data/tasks/{task_id}.json` following `schema/task.schema.json`.
 
-12. **Open a PR.** Branch: `curate/{task_id}`. The PR contains exactly the two new files.
+12. **Create the metadata file.** Written to `benchmark/internal/metadata/{GHSA_ID}.json` following `schema/metadata.schema.json`.
+
+13. **Open a PR.** Branch: `curate/{task_id}` (or the shared branch if dispatched with `--branch`). The PR contains exactly the two new files.
+
+14. **Sleep.** The agent goes to sleep immediately after opening the PR.
 
 ### Why AI agents for curation?
 
@@ -241,7 +256,7 @@ Every curated task is validated against the following checklist before merging:
 | **SHA format** | Both SHAs are full 40-character lowercase hex strings. |
 | **L1 hint scrubbing** | The L1 `area` field contains no file paths, function names, vulnerability types, or mechanism details. |
 | **L2 hint scrubbing** | The L2 `description` field contains no file paths, function names, line numbers, variable names, or code snippets. |
-| **L3 hint consistency** | The L3 hint contains the same `area` as L1 and the same `description` as L2. |
+| **L3 hint targeting** | The L3 `area` is more specific than L1 (names the subsystem/module/driver, not exact files). The L3 `description` is more specific than L2 (includes distinguishing advisory context, not file/function names). L3 should narrow the search to ~3-5 source files. |
 | **Vulnerability class** | Exactly one of the 13 allowed values. |
 | **Locations non-empty** | At least one location entry exists. |
 | **File paths valid** | All `file` paths in locations are relative from the repo root and exist in the pre-patch commit. |

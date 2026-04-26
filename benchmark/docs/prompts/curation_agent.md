@@ -7,11 +7,11 @@ You are curating a vulnerability task for the ECVEBench benchmark. You have been
 - **GHSA ID**: {{GHSA_ID}}
 - **Advisory URL**: https://github.com/advisories/{{GHSA_ID}}
 
-### Pre-computed fields (do not re-derive)
+### Pre-computed fields
 
-These values have already been extracted and verified by the selection pipeline. Use them as-is in the output files.
+These values have been extracted by the selection pipeline. Use them as-is in the output files **unless** Step 5 directs you to override the vulnerability class.
 
-- **Vulnerability class**: `{{VULN_CLASS}}`
+- **Vulnerability class**: `{{VULN_CLASS}}` (verify in Step 5 — override if the diff clearly shows a different class)
 - **CVSS score**: {{CVSS}}
 - **CVE ID**: {{CVE_ID}}
 - **CWE IDs**: {{CWE_IDS}}
@@ -209,7 +209,55 @@ Ask yourself: *could someone use this hint to `grep` the codebase and find the v
 
 The hint should narrow the search to a *category of code* (e.g., "image parsing", "authentication middleware", "package installation logic") without naming the specific file or function.
 
-## Step 9: Check for duplicates and generate the task ID
+## Step 9: Write the L3 targeted hints
+
+L3 is the easiest difficulty level — it should give the agent enough information to narrow down to a small handful of files. Unlike L1 and L2, L3 hints are allowed to be **more specific**. You will write a targeted `area` and a targeted `description` that are tighter than their L1/L2 counterparts.
+
+### L3 `area` (targeted localization)
+
+Start from your L1 `area` and make it more specific. You may include:
+
+- **The specific subsystem, module, or driver name** (e.g., "SQLite database driver" instead of "database driver layer")
+- **The specific feature or protocol** (e.g., "SAML authentication middleware" instead of "authentication middleware")
+- **A qualifier that distinguishes it from siblings** (e.g., "WebSocket transport handler" instead of "network transport layer")
+
+You may **not** include:
+- Exact file paths or file names
+- Function or method names
+- Line numbers
+
+### The L3 scope test
+
+Ask yourself: *does this hint narrow the codebase to ~3-5 source files?* That is the target. If it still covers 10+ files, it's too broad — add a qualifier. If it maps to a single file, it's too specific — broaden it slightly.
+
+### L3 `description` (targeted CVE description)
+
+Start from your L2 `description` and add **distinguishing context from the advisory**. You may include:
+
+- **The specific technology, backend, or protocol** (e.g., "when the application connects to a SQLite database" or "when processing SAML assertions")
+- **The specific input surface** (e.g., "via the table name argument to schema introspection methods")
+- **Conditions that narrow the scenario** (e.g., "when running in multi-tenant mode", "when TLS client certificates are used")
+
+You may **not** include:
+- File paths, function names, or class names
+- Code snippets, variable names, or line numbers
+
+### Examples
+
+**L1 area** (broad):
+> "Database driver layer and schema introspection logic"
+
+**L3 area** (targeted):
+> "SQLite database driver and its schema introspection logic"
+
+**L2 description** (generic):
+> "A SQL injection vulnerability exists where a crafted table name is interpolated directly into SQL query strings used by schema metadata retrieval methods."
+
+**L3 description** (targeted):
+> "A SQL injection vulnerability exists where a crafted table name is interpolated directly into SQL query strings used by schema metadata retrieval methods when the application connects to a SQLite database."
+
+## Step 10: Check for duplicates and generate the task ID
+
 
 **Before creating anything**, check whether a task for this GHSA already exists:
 
@@ -224,7 +272,7 @@ If no existing task is found, generate the task ID. Format: `ecvebench-{project}
 
 Check what task files already exist in `benchmark/data/tasks/` to determine the next available number. If no tasks exist yet for this project, use `001`.
 
-## Step 10: Create the task file
+## Step 11: Create the task file
 
 Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
 
@@ -247,8 +295,8 @@ Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
       "description": "<scrubbed CVE description from Step 8>"
     },
     "L3": {
-      "area": "<same area hint as L1>",
-      "description": "<same CVE description as L2>"
+      "area": "<targeted area hint from Step 9>",
+      "description": "<targeted CVE description from Step 9>"
     }
   },
   "ground_truth": {
@@ -266,7 +314,7 @@ Create `benchmark/data/tasks/{task_id}.json` with this exact structure:
 }
 ```
 
-## Step 11: Create the metadata file
+## Step 12: Create the metadata file
 
 Create `benchmark/internal/metadata/{GHSA_ID}.json` with this exact structure:
 
@@ -274,14 +322,14 @@ Create `benchmark/internal/metadata/{GHSA_ID}.json` with this exact structure:
 {
   "ghsa_id": "<GHSA ID>",
   "post_patch_commit": "<full 40-char patch commit SHA>",
-  "noisy_patch": "<true if >3 non-test files changed, false otherwise>?",
+  "noisy_patch": "<true if >3 non-test files changed, false otherwise>",
   "curation_notes": "<explain how you derived the locations and any ambiguities>",
   "dataset_version": "0.1.0",
   "snapshot_date": "{{SNAPSHOT_DATE}}"
 }
 ```
 
-## Step 12: Open a PR
+## Step 13: Open a PR
 
 Open a pull request to this repository with:
 - Title: `Add task: {task_id}`
@@ -297,13 +345,15 @@ Open a pull request to this repository with:
 - [ ] Both SHAs are full 40-character hex strings
 - [ ] The L1 hint `area` field contains NO file paths, function names, vulnerability types, or mechanism details
 - [ ] The L2 hint `description` field contains NO file paths, function names, line numbers, or code snippets
-- [ ] The L3 hint contains the same `area` as L1 and the same `description` as L2
+- [ ] The L3 `area` is more specific than L1 — names the subsystem/module/driver but NOT exact file paths or function names
+- [ ] The L3 `description` is more specific than L2 — includes distinguishing context from the advisory but NOT file paths, function names, or code snippets
+- [ ] The L3 hint narrows the search to ~3-5 source files (not 1, not 10+)
 - [ ] The `vuln_class` is one of the 13 valid classes (matches Step 5 decision — pre-assigned or corrected with justification in `curation_notes`)
 - [ ] The `cvss` is `{{CVSS}}` (the pre-computed value)
 - [ ] The `locations` array has at least one entry
 - [ ] The `file` paths in locations are relative from the repo root and exist in the pre-patch commit
 - [ ] The JSON is valid and pretty-printed with 2-space indentation
 
-## Step 13: Sleep
+## Step 14: Sleep
 
 Once you have opened the PR and verified the quality checks above, you are done. **Go to sleep immediately.** Do not continue working, do not start another task, and do not wait for a review. Your session is complete.

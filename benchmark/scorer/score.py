@@ -180,6 +180,72 @@ def _function_pairs(
     return pairs
 
 
+def _dir_of(path: str) -> str:
+    """Return the directory component of a file path, or empty string for bare filenames."""
+    idx = path.rfind("/")
+    return path[:idx] if idx >= 0 else ""
+
+
+def _function_set(locations: Iterable[dict[str, Any]]) -> set[str]:
+    """Return the set of non-null function names across all locations."""
+    return {
+        loc["function"]
+        for loc in locations
+        if isinstance(loc, dict) and isinstance(loc.get("function"), str)
+    }
+
+
+SIBLING_DISCOUNT = 0.5
+
+
+def _sibling_file_recall(
+    gt_locations: list[dict[str, Any]],
+    pred_locations: list[dict[str, Any]],
+    exact_hits: set[str],
+) -> tuple[float, int]:
+    """Compute discounted recall credit for sibling file matches.
+
+    A predicted file qualifies as a sibling hit when it:
+      1. Is NOT an exact ground-truth match (already counted).
+      2. Shares a parent directory with at least one ground-truth file.
+      3. Shares at least one function name with ground-truth locations in
+         that directory.
+
+    Each sibling hit contributes ``SIBLING_DISCOUNT`` (0.5) toward recall,
+    capped so total effective recall never exceeds 1.0.
+
+    Returns ``(effective_recall, sibling_hit_count)``.
+    """
+    gt_files = _file_set(gt_locations)
+    if not gt_files:
+        return 1.0, 0
+
+    pred_files = _file_set(pred_locations)
+    missed_preds = pred_files - exact_hits
+
+    if not missed_preds:
+        return len(exact_hits) / len(gt_files), 0
+
+    gt_dirs = {_dir_of(f) for f in gt_files}
+    gt_functions = _function_set(gt_locations)
+
+    sibling_hits = 0
+    for pred_file in missed_preds:
+        pred_dir = _dir_of(pred_file)
+        if pred_dir not in gt_dirs:
+            continue
+        pred_funcs = _function_set(
+            loc for loc in pred_locations
+            if isinstance(loc, dict) and loc.get("file") == pred_file
+        )
+        if pred_funcs & gt_functions:
+            sibling_hits += 1
+
+    effective = len(exact_hits) + sibling_hits * SIBLING_DISCOUNT
+    recall = min(1.0, effective / len(gt_files))
+    return recall, sibling_hits
+
+
 # ---------------------------------------------------------------------------
 # Per-task scoring
 # ---------------------------------------------------------------------------
@@ -193,6 +259,10 @@ def _score_candidate(
     Uses gated scoring: vulnerability detection is a binary gate. When it
     passes, the composite is 0.3 × vuln_class_correct + 0.7 × file_recall.
     Function IoU is computed as a diagnostic but does not affect the composite.
+
+    File recall incorporates sibling credit: predicted files that miss the
+    ground truth but share a parent directory and at least one function name
+    with a ground-truth location receive discounted credit (0.5× per file).
     """
     ground_truth = task["ground_truth"]
     gt_vulnerable = bool(ground_truth["vulnerable"])
@@ -208,6 +278,7 @@ def _score_candidate(
         "confidence": confidence,
         "vuln_class_correct": None,
         "file_recall": None,
+        "sibling_file_hits": 0,
         "function_iou": None,
         "score": 0.0,
     }
@@ -229,10 +300,15 @@ def _score_candidate(
     pred_locations = candidate.get("locations") or []
     gt_files = _file_set(gt_locations)
     pred_files = _file_set(pred_locations)
-    file_recall = set_recall(pred_files, gt_files)
-    score["file_recall"] = file_recall
 
-    common_files = pred_files & gt_files
+    exact_hits = pred_files & gt_files
+    file_recall, sibling_hits = _sibling_file_recall(
+        gt_locations, pred_locations, exact_hits,
+    )
+    score["file_recall"] = file_recall
+    score["sibling_file_hits"] = sibling_hits
+
+    common_files = exact_hits
     if common_files:
         gt_pairs = _function_pairs(gt_locations, common_files)
         pred_pairs = _function_pairs(pred_locations, common_files)
