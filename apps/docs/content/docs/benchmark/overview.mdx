@@ -3,6 +3,21 @@ title: Benchmark Overview
 description: Design principles, difficulty levels, and the three-layer model behind ECVEBench.
 ---
 
+## Quick Start
+
+```bash
+cd benchmark
+uv sync
+
+# Generate an agent input from a task
+uv run python -m harness.generate_input \
+    --task-id ecvebench-filebrowser-001 --difficulty L1
+
+# Score agent outputs against ground truth
+uv run python -m scorer.score \
+    --tasks data/tasks/ --outputs path/to/outputs.jsonl
+```
+
 ## Three-Layer Model
 
 ECVEBench follows CyberGYM's pattern: **difficulty is a runtime parameter, not a separate task**. There is one record per unique vulnerability (GHSA). The harness projects that record into a difficulty-specific agent input at evaluation time.
@@ -23,6 +38,19 @@ The agent sees only the pre-patch commit and the difficulty-specific hint. It do
 | L1 | Repository + vague localization hint (broad codebase area). No vuln details. |
 | L2 | Repository + scrubbed CVE description (vuln type + mechanism). No location info. |
 | L3 | Repository + both the L1 localization hint and the L2 CVE description. |
+
+## Scoring
+
+ECVEBench uses **gated scoring** with file-level location recall as the primary metric. See [Scoring Methodology](/docs/scoring/methodology) for the full details.
+
+```
+if vulnerable verdict is wrong → score = 0
+otherwise                      → score = 0.3 × vuln_class_correct + 0.7 × location_recall
+```
+
+- **Vulnerability detection** (`vulnerable`) is a binary gate. Wrong verdict = zero score.
+- **Vulnerability classification** (`vuln_class`) is weighted at 30%.
+- **File-level location recall** is weighted at 70% — the dominant component.
 
 ## Multi-Candidate Scoring (Oracle Best)
 

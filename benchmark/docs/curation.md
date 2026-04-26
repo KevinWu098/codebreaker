@@ -131,46 +131,16 @@ The output is `pipeline/output/candidates.jsonl` — the list of GHSAs to dispat
 
 ### Selection summary
 
-The full pipeline (30k reviewed GHSAs → filter → select) produces the following funnel:
+The full pipeline progressively narrows the pool of reviewed GHSAs:
 
-| Stage | Count |
+| Stage | Description |
 | --- | --- |
-| Reviewed GHSAs in GitHub Advisory Database | ~30,000 |
-| After Stage 1 metadata filters | ~12,000 |
-| After CWE mapping + CVSS floor (≥ 4.0) | ~6,100 |
-| After stratified sampling (target 500) | **494** |
+| Reviewed GHSAs in GitHub Advisory Database | Full pool of reviewed advisories |
+| After Stage 1 metadata filters | Advisories passing description, language, package, reference, and CVSS checks |
+| After CWE mapping + CVSS floor | Advisories with mappable CWE IDs and sufficient severity |
+| After stratified sampling | Balanced candidate set with equal representation across all 13 vulnerability classes |
 
-Class distribution in the final candidate set — 38 per class, evenly balanced:
-
-| Class | Count |
-| --- | --- |
-| `auth-bypass` | 38 |
-| `buffer-overflow` | 38 |
-| `command-injection` | 38 |
-| `crypto-weakness` | 38 |
-| `insecure-deserialization` | 38 |
-| `integer-overflow` | 38 |
-| `null-deref` | 38 |
-| `path-traversal` | 38 |
-| `race-condition` | 38 |
-| `sql-injection` | 38 |
-| `use-after-free` | 38 |
-| `xss` | 38 |
-| `xxe` | 38 |
-
-Ecosystem distribution:
-
-| Ecosystem | Count |
-| --- | --- |
-| pip (Python) | 109 |
-| go | 87 |
-| maven (Java) | 77 |
-| npm (JavaScript) | 65 |
-| rust | 64 |
-| composer (PHP) | 59 |
-| rubygems (Ruby) | 13 |
-| nuget (C#) | 13 |
-| swift, actions, erlang | 7 |
+The stratified sampling step ensures even class distribution. Ecosystem distribution reflects the natural prevalence of vulnerability types across different language communities.
 
 ### Stage 3: Curation (Devin agents)
 

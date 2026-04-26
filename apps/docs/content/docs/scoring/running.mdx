@@ -5,50 +5,103 @@ description: How to score agent outputs against ECVEBench ground truth.
 
 The scorer compares agent outputs against ECVEBench ground truth tasks and reports per-task and aggregate metrics.
 
+## Prerequisites
+
+```bash
+cd benchmark
+uv sync
+```
+
 ## CLI Usage
 
 ```bash
-python benchmark/scorer/score.py \
-    --tasks benchmark/data/tasks/ \
+uv run python -m scorer.score \
+    --tasks data/tasks/ \
     --outputs path/to/outputs.jsonl \
     --results results.json
 ```
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--tasks` | `benchmark/data/tasks/` | Path to tasks directory or JSONL file |
+| `--tasks` | `data/tasks/` | Path to tasks directory or JSONL file |
 | `--outputs` | (required) | Path to agent outputs directory or JSONL file |
 | `--results` | `results.json` | Path to write machine-readable JSON results |
+
+### Input Formats
+
+Both `--tasks` and `--outputs` accept either:
+
+- A **directory** of `.json` files (one record per file)
+- A **JSONL file** (one record per line)
+
+### Multi-Candidate Handling
+
+When multiple outputs share the same `(task_id, difficulty)` key, the scorer treats them as alternative candidate hypotheses (up to 3 per task). Each candidate is scored independently, and the oracle-best — the one with the highest composite score — is kept as the task's result.
 
 ## Library Usage
 
 ```python
 from benchmark.scorer import load_records, score_one, aggregate
+from pathlib import Path
 
+# Load data
 tasks = {r["task_id"]: r for r in load_records(Path("benchmark/data/tasks"))}
 outputs = load_records(Path("outputs.jsonl"))
 
+# Group outputs by (task_id, difficulty) — up to 3 candidates per group
 # Score individual tasks
 scores = [score_one(tasks[task_id], candidates) for ...]
 
-# Aggregate
+# Aggregate into summary metrics
 summary = aggregate(scores)
 ```
 
-## Output Format
+### API Reference
 
-The scorer produces:
+| Function | Description |
+| --- | --- |
+| `load_records(path)` | Load records from a directory of JSON files or a JSONL file. |
+| `score_one(task, candidates)` | Score one or more candidates for a single task. Keeps the oracle-best. |
+| `aggregate(scores)` | Aggregate per-task scores into summary metrics. |
+| `aggregate_by_difficulty(scores)` | Per-difficulty aggregates plus overall. |
+| `compute_ece(scores)` | Expected Calibration Error (10 equal-width bins). |
+| `set_iou(predicted, actual)` | Intersection-over-union of two sets. |
 
-- **Console output**: A formatted summary table showing overall and per-difficulty metrics
-- **JSON results file**: Machine-readable results with per-task scores and aggregates
+## Output
 
-### Metrics Reported
+The scorer produces two outputs:
+
+### Console Summary
+
+A formatted table showing overall and per-difficulty metrics:
+
+```
+ECVEBench scorer summary
+==============================================================
+                            Overall          L0          L1  ...
+N tasks                          42          42          42
+Score (mean)               0.4523      0.3210      0.4890
+
+Verdict (gate)
+  Precision                0.9500      0.9200      0.9600
+  ...
+```
+
+### JSON Results File
+
+Machine-readable results written to `--results` path, containing:
+
+- `overall` — aggregate metrics across all tasks
+- `by_difficulty` — aggregate metrics broken down by L0–L3
+- `per_task` — individual task scores with all metric components
+
+## Metrics Reported
 
 | Metric | Description |
 | --- | --- |
 | Score (mean) | Mean composite score across all tasks |
 | Verdict precision/recall/F1 | Binary classification metrics for vulnerability detection |
-| Vuln class accuracy | Fraction of correctly classified vulnerability types (gated) |
-| File recall (mean) | Mean file-level recall across tasks (gated) |
-| Function IoU (diagnostic) | Mean function-level IoU for matched files (not scored) |
+| Vuln class accuracy | Fraction of correctly classified vulnerability types (gated on correct verdict) |
+| File recall (mean) | Mean file-level recall across tasks (gated on correct verdict) |
+| Function IoU (diagnostic) | Mean function-level IoU for matched files (not part of composite score) |
 | ECE | Expected Calibration Error of confidence vs. verdict accuracy |
