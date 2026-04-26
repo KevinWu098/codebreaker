@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jfhm-5ghh-2f97",
+  "post_patch_commit": "1e7b4d074e14c4e694d3ce69ad6754a6039fd6ff",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only one non-test source file (src/cryptography/hazmat/backends/openssl/backend.py). The fix adds a null check for p7.d.sign before accessing p7.d.sign.cert in the _load_pkcs7_certificates function. No sibling files contain the same vulnerability pattern. Pre-assigned class null-deref (CWE-476) is correct — the advisory explicitly describes a NULL-pointer dereference and segfault.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

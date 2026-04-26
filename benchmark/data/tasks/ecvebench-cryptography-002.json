@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-cryptography-002",
+  "ghsa_id": "GHSA-jfhm-5ghh-2f97",
+  "codebase": {
+    "repo": "https://github.com/pyca/cryptography",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "69ab6f96c5bb4782466e82c1db2383d227136102"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Cryptographic data serialization and deserialization layer"
+    },
+    "L2": {
+      "description": "A null pointer dereference vulnerability exists in the PKCS#7 certificate deserialization logic. When a PKCS#7 structure contains no certificates, the code attempts to access a member of a null pointer without first verifying it is non-null, leading to a segfault and denial of service."
+    },
+    "L3": {
+      "area": "PKCS#7 signed data certificate loading in the OpenSSL backend",
+      "description": "A null pointer dereference vulnerability exists when loading PKCS#7 bundles that contain no certificates. The deserialization code accesses the signed data structure's certificate field without first checking if the signed data pointer is null, causing a segfault and denial of service when processing a bundle with an empty certificate set."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 5.9,
+    "reason": "The PKCS#7 certificate loading code dereferences the signed data pointer without checking for null first. When a PKCS#7 bundle contains no certificates, this pointer is null, causing a segfault.",
+    "locations": [
+      {
+        "file": "src/cryptography/hazmat/backends/openssl/backend.py",
+        "function": "_load_pkcs7_certificates"
+      }
+    ]
+  }
+}
