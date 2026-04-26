@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7g7c-qhf3-x59p",
+  "post_patch_commit": "b72093201f8e225410f62a246653ac039e31c90a",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff: Criteria::setLimit() lacked integer casting on the limit value, and DBMySQL::applyLimit() directly concatenated uncast offset/limit into SQL strings. Sibling database adapters (DBPostgres, DBSQLite, DBOracle) contain the same applyLimit() pattern with unchecked string interpolation of offset and limit values into SQL. DBMSSQL was excluded because it already validates with is_numeric(). The pre-assigned sql-injection class is correct per CWE-89 and the patch which adds (int) casts.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
