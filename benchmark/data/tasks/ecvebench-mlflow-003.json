@@ -13,11 +13,11 @@
       "area": "Artifact management and tracking server infrastructure"
     },
     "L2": {
-      "description": "A path traversal vulnerability exists where URL-encoded directory traversal sequences are not properly decoded before safety checks are applied. An attacker can use percent-encoded characters to traverse outside the intended directory, potentially accessing or modifying arbitrary files on the server."
+      "description": "A path traversal vulnerability exists where URL-encoded directory traversal sequences are not properly decoded before safety checks are applied. An attacker can use percent-encoded characters to bypass path validation, traversing outside the intended directory to access or modify arbitrary files on the server."
     },
     "L3": {
-      "area": "Artifact management and tracking server infrastructure",
-      "description": "A path traversal vulnerability exists where URL-encoded directory traversal sequences are not properly decoded before safety checks are applied. An attacker can use percent-encoded characters to traverse outside the intended directory, potentially accessing or modifying arbitrary files on the server."
+      "area": "URI parsing and path validation utility module used by the tracking and artifact servers",
+      "description": "A path traversal vulnerability exists where URL-encoded directory traversal sequences (such as percent-encoded dot-dot-slash patterns) are not decoded before path safety validation is performed. This allows an attacker to bypass the path validation check by submitting percent-encoded traversal sequences through the tracking server or artifact management API endpoints, gaining access to arbitrary files on the server."
     }
   },
   "ground_truth": {
