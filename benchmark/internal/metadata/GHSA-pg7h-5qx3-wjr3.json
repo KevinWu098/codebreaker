@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pg7h-5qx3-wjr3",
+  "post_patch_commit": "9c7071b0e324f9fb68ab881283d6b8d388a4bcd2",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 9c7071b adds a bounds check on inst.X before indexing into code.operators_ in the mobile interpreter's run loop. Only one source file was changed. The vulnerability class use-after-free matches the CWE-416 assignment and the commit message which describes a heap UAF found by fuzzing. No sibling files share the same vulnerable pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
