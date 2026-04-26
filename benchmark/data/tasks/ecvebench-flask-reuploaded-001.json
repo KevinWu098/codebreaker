@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-flask-reuploaded-001",
+  "ghsa_id": "GHSA-65mp-fq8v-56jr",
+  "codebase": {
+    "repo": "https://github.com/jugmac00/flask-reuploaded",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "9e813e919c4f8d9ef17c7fe8ecc0c2efa8fee118"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "File upload storage and filename processing logic"
+    },
+    "L2": {
+      "description": "A path traversal and extension bypass vulnerability exists where user-controlled filename input is not properly sanitized before being used to construct file storage paths. An attacker can use specially crafted filenames containing directory separators to write files outside the intended upload directory and bypass extension restrictions, potentially leading to remote code execution through server-side template injection."
+    },
+    "L3": {
+      "area": "Upload set file storage and custom filename handling within the upload management module",
+      "description": "A path traversal and extension bypass vulnerability exists where a user-supplied custom filename parameter passed during file save operations is not sanitized before being used to construct the target storage path. An attacker can craft filenames containing path separators to escape the configured upload directory and bypass extension validation, enabling arbitrary file writes that can lead to remote code execution through server-side template injection in Flask applications."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 9.8,
+    "reason": "The save method does not sanitize the user-supplied name parameter, allowing path traversal via directory separators to write files outside the intended upload directory and bypass extension restrictions.",
+    "locations": [
+      {
+        "file": "src/flask_uploads/flask_uploads.py",
+        "function": "save"
+      }
+    ]
+  }
+}
