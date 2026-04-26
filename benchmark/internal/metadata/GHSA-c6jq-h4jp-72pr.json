@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-c6jq-h4jp-72pr",
+  "post_patch_commit": "c5ee1307bdc004e43302abeca1802c2692b33a8e",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit c5ee130 adds two null checks in new_aubio_notes (src/notes/notes.c): one after new_aubio_onset() and one after four buffer allocations (onset_output, pitch_output, note_buffer, note_buffer2). Only one source file changed. No sibling files in src/notes/ contain the same pattern (notes.h is a header). Pre-assigned class null-deref from CWE-476 is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
