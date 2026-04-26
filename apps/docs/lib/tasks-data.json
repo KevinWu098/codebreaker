@@ -62,24 +62,6 @@
     "hint_l2": "A SQL injection vulnerability exists where user-supplied recipient identifiers from a POST request are directly concatenated into a SQL query without sanitization or type casting. An authenticated member user can inject arbitrary SQL through the recipient selection parameter, enabling blind condition-based and time-based SQL injection attacks that can exfiltrate, modify, or delete database contents."
   },
   {
-    "task_id": "ecvebench-adodb-001",
-    "ghsa_id": "GHSA-8x27-jwjr-8545",
-    "language": "php",
-    "ecosystem": "composer",
-    "repo": "https://github.com/ADOdb/ADOdb",
-    "vuln_class": "sql-injection",
-    "cvss": 10.0,
-    "reason": "The pg_insert_id() method directly concatenates user-supplied table and field name parameters into a SQL query without proper escaping, enabling SQL injection.",
-    "locations": [
-      {
-        "file": "drivers/adodb-postgres64.inc.php",
-        "function": "pg_insert_id"
-      }
-    ],
-    "hint_l1": "Database driver layer for relational database connections",
-    "hint_l2": "A SQL injection vulnerability exists where user-supplied parameters used to construct a database sequence name are not properly escaped, allowing an attacker to execute arbitrary SQL statements when the application connects to a PostgreSQL database."
-  },
-  {
     "task_id": "ecvebench-adodb-002",
     "ghsa_id": "GHSA-vf2r-cxg9-p7rf",
     "language": "php",
@@ -286,24 +268,6 @@
     ],
     "hint_l1": "Certificate authority provisioner and request authorization infrastructure",
     "hint_l2": "An authorization bypass vulnerability exists where the token validation logic silently ignores errors from provisioner types that do not support token-based authentication flows, effectively disabling token reuse protection. This allows an attacker to bypass authorization checks entirely for certain provisioner configurations. Additionally, the certificate revocation path does not verify that the serial number in the request matches the serial number in the authentication credential, enabling unauthorized revocation of arbitrary certificates."
-  },
-  {
-    "task_id": "ecvebench-chakracore-001",
-    "ghsa_id": "GHSA-c79v-2rjq-965m",
-    "language": "c++",
-    "ecosystem": "nuget",
-    "repo": "https://github.com/chakra-core/ChakraCore",
-    "vuln_class": "buffer-overflow",
-    "cvss": 9.8,
-    "reason": "The bytecode emitter incorrectly instantiates a parameter scope when only the function expression symbol is captured in a split scope, leading to memory corruption that allows an attacker to gain elevated privileges.",
-    "locations": [
-      {
-        "file": "lib/Runtime/ByteCode/ByteCodeEmitter.cpp",
-        "function": "StartEmitFunction"
-      }
-    ],
-    "hint_l1": "Script compilation and runtime code generation",
-    "hint_l2": "A memory corruption vulnerability exists in the scripting engine due to improper handling of objects in memory during code generation. The engine makes incorrect assumptions about internal state, leading to out-of-bounds memory access. An attacker who successfully exploits this could gain the same user rights as the current user, potentially taking full control of the system."
   },
   {
     "task_id": "ecvebench-chakracore-002",

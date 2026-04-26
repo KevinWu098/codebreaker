@@ -8,9 +8,6 @@ import task_ecvebench_actix_net_001 from "../../../../benchmark/data/tasks/ecveb
 import task_ecvebench_admidio_001 from "../../../../benchmark/data/tasks/ecvebench-admidio-001.json" with {
   type: "json",
 };
-import task_ecvebench_adodb_001 from "../../../../benchmark/data/tasks/ecvebench-adodb-001.json" with {
-  type: "json",
-};
 import task_ecvebench_adodb_002 from "../../../../benchmark/data/tasks/ecvebench-adodb-002.json" with {
   type: "json",
 };
@@ -42,9 +39,6 @@ import task_ecvebench_capstone_001 from "../../../../benchmark/data/tasks/ecvebe
   type: "json",
 };
 import task_ecvebench_certificates_002 from "../../../../benchmark/data/tasks/ecvebench-certificates-002.json" with {
-  type: "json",
-};
-import task_ecvebench_chakracore_001 from "../../../../benchmark/data/tasks/ecvebench-chakracore-001.json" with {
   type: "json",
 };
 import task_ecvebench_chakracore_002 from "../../../../benchmark/data/tasks/ecvebench-chakracore-002.json" with {
@@ -521,9 +515,6 @@ import meta_GHSA_7x3h_rm86_3342 from "../../../../benchmark/internal/metadata/GH
 import meta_GHSA_8v2h_4jpm_3wfm from "../../../../benchmark/internal/metadata/GHSA-8v2h-4jpm-3wfm.json" with {
   type: "json",
 };
-import meta_GHSA_8x27_jwjr_8545 from "../../../../benchmark/internal/metadata/GHSA-8x27-jwjr-8545.json" with {
-  type: "json",
-};
 import meta_GHSA_9cp7_j3f8_p5jx from "../../../../benchmark/internal/metadata/GHSA-9cp7-j3f8-p5jx.json" with {
   type: "json",
 };
@@ -597,9 +588,6 @@ import meta_GHSA_9298_4cf8_g4wj from "../../../../benchmark/internal/metadata/GH
   type: "json",
 };
 import meta_GHSA_c3xq_cj8f_7829 from "../../../../benchmark/internal/metadata/GHSA-c3xq-cj8f-7829.json" with {
-  type: "json",
-};
-import meta_GHSA_c79v_2rjq_965m from "../../../../benchmark/internal/metadata/GHSA-c79v-2rjq-965m.json" with {
   type: "json",
 };
 import meta_GHSA_c623_f998_8hhv from "../../../../benchmark/internal/metadata/GHSA-c623-f998-8hhv.json" with {
@@ -881,7 +869,6 @@ export const benchmarkDatasetFixtures = {
     meta_GHSA_838h_jqp6_cf2f,
     meta_GHSA_85xx_xhjm_rhrw,
     meta_GHSA_8v2h_4jpm_3wfm,
-    meta_GHSA_8x27_jwjr_8545,
     meta_GHSA_9298_4cf8_g4wj,
     meta_GHSA_958j_443g_7mm7,
     meta_GHSA_9cp7_j3f8_p5jx,
@@ -890,7 +877,6 @@ export const benchmarkDatasetFixtures = {
     meta_GHSA_9r4c_jwx3_3j76,
     meta_GHSA_c3xq_cj8f_7829,
     meta_GHSA_c623_f998_8hhv,
-    meta_GHSA_c79v_2rjq_965m,
     meta_GHSA_cj2h_ww36_v932,
     meta_GHSA_cqhr_jqvc_qw9p,
     meta_GHSA_f776_w9v2_7vfj,
@@ -969,7 +955,6 @@ export const benchmarkDatasetFixtures = {
     task_ecvebench_activemq_apollo_001,
     task_ecvebench_actix_net_001,
     task_ecvebench_admidio_001,
-    task_ecvebench_adodb_001,
     task_ecvebench_adodb_002,
     task_ecvebench_adodb_003,
     task_ecvebench_amazon_redshift_jdbc_driver_001,
@@ -981,7 +966,6 @@ export const benchmarkDatasetFixtures = {
     task_ecvebench_buildkit_002,
     task_ecvebench_capstone_001,
     task_ecvebench_certificates_002,
-    task_ecvebench_chakracore_001,
     task_ecvebench_chakracore_002,
     task_ecvebench_chakracore_003,
     task_ecvebench_ci4ms_001,
