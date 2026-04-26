@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vpjc-4jcv-jc29",
+  "post_patch_commit": "b4128693ed61aa0c32179af07677bcf1d8301dcd",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit (b4128693e) modifies 6 non-test source files, but most changes are mechanical replacements of path.Join with filepath.Join for Windows compatibility. The actual security fix is exclusively in server/stream.go in the RestoreStream method, where a path traversal check (strings.HasPrefix) and tar entry type validation were added to prevent crafted tar archives from writing files outside the intended staging directory. No sibling files perform similar tar extraction. The pre-assigned vulnerability class path-traversal is correct based on CWE-22 and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
