@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-77gc-v2xv-rvvh",
+  "post_patch_commit": "3bf5eddb89afdf690eceaa52bc4d3546ba9a5f87",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only src/libImaging/Jpeg2KDecode.c (1 non-test source file). The fix replaces a uniform component-width assumption (using nb_comps or a hardcoded 3→4 mapping) with a per-component precision sum to correctly compute tile buffer size. CWE-125 (Out-of-bounds Read) maps directly to buffer-overflow class — no override needed. Location derived from the patch diff: the vulnerable buffer size calculation is in j2k_decode_entry. No sibling files share the same vulnerability pattern (Jpeg2KEncode.c handles the encode path with different buffer logic).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

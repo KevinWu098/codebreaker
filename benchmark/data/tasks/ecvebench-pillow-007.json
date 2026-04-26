@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-pillow-007",
+  "ghsa_id": "GHSA-77gc-v2xv-rvvh",
+  "codebase": {
+    "repo": "https://github.com/python-pillow/Pillow",
+    "language": "c",
+    "ecosystem": "pip",
+    "commit": "8ec027867f19633d9adfc5c8b7504d9b609fc5f1"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Image processing and codec handling layer"
+    },
+    "L2": {
+      "description": "An out-of-bounds read vulnerability exists in an image decoding routine that handles multi-band images. When individual bands have different precisions, the buffer size calculation incorrectly assumes uniform component widths across all bands. This results in an undersized buffer allocation, and subsequent tile processing operations read beyond the allocated memory bounds when processing a crafted image file."
+    },
+    "L3": {
+      "area": "JPEG 2000 image decoding and tile buffer management",
+      "description": "An out-of-bounds read vulnerability exists in the JPEG 2000 decoding logic that handles multi-band images with varying component precisions (e.g., 1 byte for luminance, 4 bytes for alpha). The tile buffer size calculation incorrectly assumes uniform component widths across all bands, leading to an undersized buffer allocation and out-of-bounds memory reads during tile data processing."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.1,
+    "reason": "The buffer size calculation in the JPEG 2000 tile decoding routine incorrectly assumes uniform component widths across all bands, leading to an undersized buffer allocation and out-of-bounds read when processing crafted multi-band images with varying component precisions.",
+    "locations": [
+      {
+        "file": "src/libImaging/Jpeg2KDecode.c",
+        "function": "j2k_decode_entry"
+      }
+    ]
+  }
+}
