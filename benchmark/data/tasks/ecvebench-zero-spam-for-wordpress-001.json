@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-zero-spam-for-wordpress-001",
+  "ghsa_id": "GHSA-pq2f-3fg3-rw99",
+  "codebase": {
+    "repo": "https://github.com/Highfivery/zero-spam-for-wordpress",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "c0fcb41f2f473924c2c51911f2336d6a0b8997ff"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Admin dashboard data listing and database query layer"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-controlled sorting parameters from HTTP request data are insufficiently sanitized before being interpolated into SQL query strings used by the admin dashboard, allowing an attacker to manipulate database queries."
+    },
+    "L3": {
+      "area": "Admin dashboard data listing tables and the underlying database query construction logic",
+      "description": "A SQL injection vulnerability exists where user-controlled sorting parameters (order direction and column name) from HTTP request data are insufficiently sanitized before being interpolated into SQL ORDER BY clauses used by the admin dashboard's data listing tables, allowing an attacker to manipulate database queries."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "The order and orderby parameters from HTTP request data are sanitized with sanitize_text_field() which is insufficient for SQL context, allowing SQL injection when these values are interpolated into SQL ORDER BY clauses in the database query layer.",
+    "locations": [
+      {
+        "file": "includes/class-db.php",
+        "function": "query"
+      },
+      {
+        "file": "core/admin/tables/class-logtable.php",
+        "function": "prepare_items"
+      },
+      {
+        "file": "core/admin/tables/class-blockedlocations.php",
+        "function": "prepare_items"
+      },
+      {
+        "file": "core/admin/tables/class-blockedtable.php",
+        "function": "prepare_items"
+      }
+    ]
+  }
+}
