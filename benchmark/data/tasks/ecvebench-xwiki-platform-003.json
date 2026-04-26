@@ -13,18 +13,18 @@
       "area": "Document rendering and content inclusion pipeline"
     },
     "L2": {
-      "description": "A privilege escalation vulnerability exists where a low-privileged user can execute arbitrary scripting macros with the rights of a more privileged document author. The content inclusion mechanism does not properly enforce author-based access control, allowing user-supplied content to execute under an elevated author context rather than the actual content author's context."
+      "description": "A privilege escalation vulnerability exists where a low-privileged user can execute arbitrary scripting macros with the rights of a more privileged document author. The content inclusion mechanism does not properly enforce author-based execution context, allowing user-supplied content to run under an elevated author's permissions rather than the actual content author's context."
     },
     "L3": {
-      "area": "Document rendering and content inclusion pipeline",
-      "description": "A privilege escalation vulnerability exists where a low-privileged user can execute arbitrary scripting macros with the rights of a more privileged document author. The content inclusion mechanism does not properly enforce author-based access control, allowing user-supplied content to execute under an elevated author context rather than the actual content author's context."
+      "area": "Class definition sheet rendering and document inclusion directives",
+      "description": "A privilege escalation vulnerability exists where a low-privileged user can execute arbitrary scripting macros with the rights of a more privileged document author. By binding a shared class definition sheet to their own document and injecting scripting macros, the user's content is included and executed under the sheet author's elevated permissions rather than the content author's own context."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "The XWiki ClassSheet include macro executes included content with the rights of the ClassSheet author rather than the content's actual author, allowing any user to escalate privileges by binding the ClassSheet to their document and injecting scripting macros.",
+    "reason": "The XWiki ClassSheet include directive executes included content with the rights of the ClassSheet author rather than the target document's author, allowing any user to escalate privileges by binding the ClassSheet to their document and injecting scripting macros.",
     "locations": [
       {
         "file": "xwiki-platform-core/xwiki-platform-xclass/xwiki-platform-xclass-ui/src/main/resources/XWiki/ClassSheet.xml",

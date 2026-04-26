@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-2g22-wg49-fgv5",
   "post_patch_commit": "5fdcf06a05015786492fda69b4d9dea5460cc994",
   "noisy_patch": false,
-  "curation_notes": "Single file changed in patch: macro-fullcalendar-ui/src/main/resources/Calendar/JSONService.xml. The vulnerability allowed user-controlled request.sql parameter to set arbitrary HQL queries and used string interpolation for request.classname in the query. The fix removed the arbitrary SQL parameter, used parameterized query binding for classname, and dropped programming rights before query execution. Location derived directly from the patch diff as it was the only file modified.",
+  "curation_notes": "Single file changed in patch: macro-fullcalendar-ui/src/main/resources/Calendar/JSONService.xml. The vulnerability had two injection vectors: (1) the request.sql parameter allowed passing an entirely arbitrary HQL query string, and (2) request.classname was string-interpolated directly into the query. The fix removed the arbitrary SQL parameter, switched classname to parameterized binding via .bindValue(), and dropped programming rights before query execution. Checked sibling files UpdateService.xml and ICalToJSON.xml — neither contains the same direct HQL interpolation pattern. Location derived directly from the patch diff as it was the only file modified. Vulnerability class sql-injection confirmed from CWE-89, advisory description, and patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

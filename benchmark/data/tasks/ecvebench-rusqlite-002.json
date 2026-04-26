@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Database extension and plugin module management"
+      "area": "Database extension and module registration infrastructure"
     },
     "L2": {
-      "description": "A race condition vulnerability allows memory safety violations because the API for registering database extensions does not enforce that certain data structures remain valid for the required duration. References with insufficient lifetime guarantees can be freed while the underlying C library still holds pointers to them, leading to use-after-free conditions."
+      "description": "A race condition vulnerability exists in the database extension registration API where module descriptor structures are not required to have sufficient lifetime guarantees. When these descriptors are registered with the underlying C library, the library retains raw pointers to them. If the owning code drops the descriptor while it is still referenced by the C library, concurrent access from another thread leads to use-after-free and memory corruption."
     },
     "L3": {
-      "area": "Database extension and plugin module management",
-      "description": "A race condition vulnerability allows memory safety violations because the API for registering database extensions does not enforce that certain data structures remain valid for the required duration. References with insufficient lifetime guarantees can be freed while the underlying C library still holds pointers to them, leading to use-after-free conditions."
+      "area": "Virtual table module descriptor construction and registration within the database extension layer",
+      "description": "A race condition vulnerability exists in the virtual table module registration API. Functions that construct module descriptors for virtual table implementations return owned values rather than references with sufficient lifetime guarantees. When these descriptors are registered with SQLite's C-level module registration interface, the C library retains raw pointers. If the Rust-side owner drops the descriptor, concurrent SQLite access leads to use-after-free and memory corruption."
     }
   },
   "ground_truth": {

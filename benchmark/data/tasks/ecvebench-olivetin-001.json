@@ -13,18 +13,18 @@
       "area": "Action execution pipeline and external trigger handling"
     },
     "L2": {
-      "description": "An OS command injection vulnerability exists where certain argument types bypass shell safety checks, allowing shell metacharacters to be injected into commands executed via sh -c. Additionally, external trigger payloads can inject arbitrary key-value pairs that skip type safety validation entirely before being interpolated into shell commands, enabling unauthenticated remote code execution."
+      "description": "An OS command injection vulnerability exists where a specific argument type bypasses validation intended to block dangerous values from shell-based command execution, allowing shell metacharacters to reach the operating system interpreter. A second independent vector allows unauthenticated remote code execution via external trigger payloads that inject arbitrary key-value pairs which skip type validation entirely because they have no corresponding defined type, and are interpolated directly into shell commands."
     },
     "L3": {
-      "area": "Action execution pipeline and external trigger handling",
-      "description": "An OS command injection vulnerability exists where certain argument types bypass shell safety checks, allowing shell metacharacters to be injected into commands executed via sh -c. Additionally, external trigger payloads can inject arbitrary key-value pairs that skip type safety validation entirely before being interpolated into shell commands, enabling unauthenticated remote code execution."
+      "area": "Shell-mode argument type validation in the action executor and webhook payload argument processing",
+      "description": "An OS command injection vulnerability exists where the password argument type is not included in the set of types blocked from shell-mode execution, allowing authenticated users to inject shell metacharacters via password-typed arguments. A second independent vector allows unauthenticated RCE via webhook-triggered actions where JSON-extracted key-value pairs bypass type validation because they have no corresponding config-defined argument entry, and are interpolated directly into the shell command passed to the OS interpreter."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "command-injection",
     "cvss": 10.0,
-    "reason": "The shell safety check does not block the password argument type, allowing shell metacharacter injection via sh -c. Webhook-extracted JSON values also skip type safety checks entirely, enabling unauthenticated command injection.",
+    "reason": "The shell safety check does not block the password argument type, allowing shell metacharacter injection via sh -c. Webhook-extracted JSON values also skip type safety checks entirely because they lack config-defined argument entries, enabling unauthenticated command injection.",
     "locations": [
       {
         "file": "service/internal/executor/arguments.go",
@@ -33,6 +33,10 @@
       {
         "file": "service/internal/executor/executor.go",
         "function": "handleShellBranch"
+      },
+      {
+        "file": "service/internal/executor/executor.go",
+        "function": "stepParseArgs"
       },
       {
         "file": "service/internal/webhooks/handler.go",

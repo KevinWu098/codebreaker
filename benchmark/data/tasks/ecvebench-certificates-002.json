@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Certificate authority provisioner and request authorization infrastructure"
+      "area": "Certificate authority request authorization and certificate lifecycle management"
     },
     "L2": {
-      "description": "An authorization bypass vulnerability exists where the token validation logic silently ignores errors from provisioner types that do not support token-based authentication flows, effectively disabling token reuse protection. This allows an attacker to bypass authorization checks entirely for certain provisioner configurations. Additionally, the certificate revocation path does not verify that the serial number in the request matches the serial number in the authentication credential, enabling unauthorized revocation of arbitrary certificates."
+      "description": "An authorization bypass vulnerability exists in a certificate authority where the token reuse protection mechanism silently ignores errors from provisioner types that do not support token-based authentication. This effectively disables all authorization checks for those provisioner configurations, allowing attackers to bypass authentication entirely. Additionally, the certificate revocation endpoint does not verify that the serial number in the revocation request matches the serial number in the authentication credential, enabling unauthorized revocation of arbitrary certificates."
     },
     "L3": {
-      "area": "Certificate authority provisioner and request authorization infrastructure",
-      "description": "An authorization bypass vulnerability exists where the token validation logic silently ignores errors from provisioner types that do not support token-based authentication flows, effectively disabling token reuse protection. This allows an attacker to bypass authorization checks entirely for certain provisioner configurations. Additionally, the certificate revocation path does not verify that the serial number in the request matches the serial number in the authentication credential, enabling unauthorized revocation of arbitrary certificates."
+      "area": "ACME and SCEP provisioner token validation and certificate revocation authorization",
+      "description": "An authorization bypass vulnerability exists where the token reuse protection mechanism silently ignores errors from ACME and SCEP provisioners that do not support token-based authentication flows, effectively disabling all authorization checks for those provisioner configurations. Additionally, the TLS certificate revocation path does not verify that the serial number in the revocation request matches the serial number in the authentication credential, enabling unauthorized revocation of arbitrary certificates."
     }
   },
   "ground_truth": {

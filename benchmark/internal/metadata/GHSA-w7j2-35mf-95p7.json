@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-w7j2-35mf-95p7",
   "post_patch_commit": "3a03c9eb5350e03a3f540dba2ee34e0984f2c2c2",
   "noisy_patch": false,
-  "curation_notes": "Locations derived from the patch diff which modified only rand_core/src/le.rs. The two functions read_u32_into and read_u64_into had their buffer length assertion multipliers on the wrong side (4*src.len() >= dst.len() instead of src.len() >= 4*dst.len()), making the checks too permissive and allowing destination buffers to not be fully populated when seeding RNGs.",
+  "curation_notes": "Re-curated with updated hint guidelines. Locations derived from the patch diff which modified only rand_core/src/le.rs. The two functions read_u32_into and read_u64_into had their buffer length assertion multipliers on the wrong side (e.g. 4*src.len() >= dst.len() instead of src.len() >= 4*dst.len()), making the checks too permissive and allowing destination buffers to not be fully populated when seeding RNGs. Vulnerability class crypto-weakness confirmed: CWE-330 maps directly to weak RNG seeding. L3 hints now differentiated from L1/L2 with targeted subsystem and mechanism details.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

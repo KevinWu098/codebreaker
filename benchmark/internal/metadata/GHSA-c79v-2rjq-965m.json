@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-c79v-2rjq-965m",
   "post_patch_commit": "b3e3959d14814f42ee2197c504c322bcbe12347d",
   "noisy_patch": false,
-  "curation_notes": "Patch commit b3e3959 modifies ByteCodeEmitter.cpp in the StartEmitFunction method to add conditional checks before instantiating the parameter scope in split scope scenarios. Only one non-test source file was changed. The location was derived directly from the patch diff. The test file test/es6/default-splitscope.js was excluded as a test file.",
+  "curation_notes": "Re-curation with updated hints. Patch commit b3e3959 modifies ByteCodeEmitter.cpp in the StartEmitFunction method to add conditional checks before instantiating the parameter scope in split scope scenarios. The old code unconditionally set paramScope->SetMustInstantiate based on IsBodyAndParamScopeMerged(); the fix adds proper checks for frameObjRegister and HasOwnLocalInClosure to avoid incorrect scope instantiation when only the function expression symbol is captured. Only one non-test source file was changed. Location derived directly from the patch diff. Pre-assigned vuln_class buffer-overflow (CWE-119) confirmed — the incorrect scope instantiation leads to memory corruption. L3 hints now differentiated from L1/L2.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

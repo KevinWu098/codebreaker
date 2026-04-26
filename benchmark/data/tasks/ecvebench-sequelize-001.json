@@ -16,8 +16,8 @@
       "description": "A SQL injection vulnerability exists in the ORM's parameter substitution mechanism. When replacement values are injected into SQL queries, the substitution process does not account for SQL string boundaries. An attacker can craft input values that contain replacement token markers, causing a second round of unintended substitution that injects arbitrary SQL. This allows complete database compromise including data exfiltration and modification."
     },
     "L3": {
-      "area": "Database query construction and execution pipeline",
-      "description": "A SQL injection vulnerability exists in the ORM's parameter substitution mechanism. When replacement values are injected into SQL queries, the substitution process does not account for SQL string boundaries. An attacker can craft input values that contain replacement token markers, causing a second round of unintended substitution that injects arbitrary SQL. This allows complete database compromise including data exfiltration and modification."
+      "area": "Query execution and parameter replacement logic in the core ORM engine",
+      "description": "A SQL injection vulnerability exists in the ORM's parameter substitution mechanism. When declarative query conditions and raw replacement parameters are used together in a single query, the ORM first constructs SQL from the conditions (properly escaping values), then performs a naive string-based second pass to substitute named and positional replacement tokens. This second pass does not parse SQL structure such as strings, comments, or identifiers. If a condition value resembles a replacement token, it is substituted again, enabling arbitrary SQL injection and full database compromise."
     }
   },
   "ground_truth": {

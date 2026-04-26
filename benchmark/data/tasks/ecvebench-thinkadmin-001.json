@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "API endpoint controllers for administrative operations and third-party service integration"
+      "area": "Server-side API controllers and data processing logic"
     },
     "L2": {
       "description": "An insecure deserialization vulnerability exists where user-controlled input from HTTP POST requests is passed directly to a PHP deserialization function without restricting the classes that can be instantiated. An unauthenticated remote attacker can craft a malicious serialized payload to achieve arbitrary code execution on the server."
     },
     "L3": {
-      "area": "API endpoint controllers for administrative operations and third-party service integration",
-      "description": "An insecure deserialization vulnerability exists where user-controlled input from HTTP POST requests is passed directly to a PHP deserialization function without restricting the classes that can be instantiated. An unauthenticated remote attacker can craft a malicious serialized payload to achieve arbitrary code execution on the server."
+      "area": "API controllers responsible for application update synchronization and third-party messaging platform webhook processing",
+      "description": "An insecure deserialization vulnerability exists where user-controlled input from HTTP POST requests is passed directly to a PHP deserialization function without restricting allowed classes. The vulnerability affects controllers that process application file update rules and third-party messaging platform event data, enabling an unauthenticated remote attacker to achieve arbitrary code execution via crafted serialized payloads."
     }
   },
   "ground_truth": {

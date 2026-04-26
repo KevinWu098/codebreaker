@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Security and authentication extensions"
+      "area": "Authentication and authorization extensions and middleware"
     },
     "L2": {
-      "description": "A cryptographic weakness exists where a non-cryptographically-secure pseudo-random number generator is used to generate a fallback secret for signing authentication tokens when the relevant security configuration is not explicitly set. An attacker could predict or brute-force the generated secret, potentially enabling token forgery or authentication bypass."
+      "description": "A cryptographic weakness exists where a non-cryptographically-secure pseudo-random number generator is used to generate a fallback secret for signing authentication cookies when the relevant security configuration property is not explicitly set. An attacker could predict or brute-force the generated secret, potentially enabling token forgery or authentication bypass. Additionally, each process generates its own independent fallback secret, leading to inconsistent authentication state across distributed deployments."
     },
     "L3": {
-      "area": "Security and authentication extensions",
-      "description": "A cryptographic weakness exists where a non-cryptographically-secure pseudo-random number generator is used to generate a fallback secret for signing authentication tokens when the relevant security configuration is not explicitly set. An attacker could predict or brute-force the generated secret, potentially enabling token forgery or authentication bypass."
+      "area": "Kerberos authentication extension and cookie signature handling",
+      "description": "A cryptographic weakness exists where a non-cryptographically-secure pseudo-random number generator is used to generate a fallback secret for signing Kerberos authentication cookies when the cookie signing configuration is not explicitly provided. An attacker could predict or brute-force the generated secret, enabling token forgery or authentication bypass. Each process generates its own independent fallback secret, causing inconsistent authentication state across distributed multi-broker deployments."
     }
   },
   "ground_truth": {

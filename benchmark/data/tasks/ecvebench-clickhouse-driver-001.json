@@ -13,11 +13,11 @@
       "area": "Data serialization and wire protocol handling layer"
     },
     "L2": {
-      "description": "A buffer overflow vulnerability exists in the binary data encoding and decoding routines used for client-server protocol communication. A malicious server can send crafted responses that cause integer overflow due to the use of insufficiently sized signed integer types in the parsing logic, potentially leading to a crash or arbitrary code execution on the client."
+      "description": "A buffer overflow vulnerability exists in the binary data encoding and decoding routines used for client-server protocol communication. A malicious server can send crafted responses that cause an integer overflow due to the use of insufficiently sized signed integer types in the variable-length integer parsing logic, potentially leading to a crash or arbitrary code execution on the client."
     },
     "L3": {
-      "area": "Data serialization and wire protocol handling layer",
-      "description": "A buffer overflow vulnerability exists in the binary data encoding and decoding routines used for client-server protocol communication. A malicious server can send crafted responses that cause integer overflow due to the use of insufficiently sized signed integer types in the parsing logic, potentially leading to a crash or arbitrary code execution on the client."
+      "area": "Variable-length integer encoding and decoding routines in the wire protocol serialization layer",
+      "description": "A buffer overflow vulnerability exists in the variable-length integer (LEB128) encoding and decoding routines used for ClickHouse client-server protocol communication. A malicious ClickHouse server can send crafted responses that cause signed integer overflow due to the use of platform-dependent signed integer types instead of unsigned 64-bit types, potentially leading to a crash or arbitrary code execution on the client."
     }
   },
   "ground_truth": {

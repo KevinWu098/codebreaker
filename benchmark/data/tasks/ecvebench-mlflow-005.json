@@ -13,18 +13,18 @@
       "area": "Artifact storage and retrieval subsystem"
     },
     "L2": {
-      "description": "A vulnerability exists where artifact file paths received from a remote server response are used without proper validation in file system operations. An attacker who controls the server response can supply specially crafted paths to write or overwrite arbitrary files on the host filesystem, enabling remote code execution through overwriting configuration files such as shell initialization scripts."
+      "description": "A path traversal vulnerability exists where file paths received from a remote server response are used without validation in file system operations. An attacker who controls the server response can supply specially crafted paths containing directory traversal sequences to write or overwrite arbitrary files on the host filesystem, leading to potential remote code execution."
     },
     "L3": {
-      "area": "Artifact storage and retrieval subsystem",
-      "description": "A vulnerability exists where artifact file paths received from a remote server response are used without proper validation in file system operations. An attacker who controls the server response can supply specially crafted paths to write or overwrite arbitrary files on the host filesystem, enabling remote code execution through overwriting configuration files such as shell initialization scripts."
+      "area": "HTTP-based artifact repository client and its artifact listing logic",
+      "description": "A path traversal vulnerability exists in the HTTP artifact repository client where file paths returned in a JSON response during artifact listing are not validated before being used in local filesystem operations. An attacker controlling the remote server can supply paths containing directory traversal sequences to escape the intended artifact directory and write or overwrite arbitrary files."
     }
   },
   "ground_truth": {
     "vulnerable": true,
-    "vuln_class": "command-injection",
+    "vuln_class": "path-traversal",
     "cvss": 10.0,
-    "reason": "The list_artifacts method in the HTTP artifact repository processes file paths from a remote server response without validation, allowing path traversal to write arbitrary files and achieve command execution.",
+    "reason": "The list_artifacts method in the HTTP artifact repository processes file paths from a remote server JSON response without validation, allowing path traversal to write or overwrite arbitrary files on the host filesystem.",
     "locations": [
       {
         "file": "mlflow/store/artifact/http_artifact_repo.py",

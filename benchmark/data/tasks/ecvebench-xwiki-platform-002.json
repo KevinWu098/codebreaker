@@ -16,8 +16,8 @@
       "description": "An authorization bypass vulnerability exists in the wiki platform's content inclusion mechanism. When one document's content is embedded into another, the included content is executed using the privileges of the including page's author rather than the included document's own content author. This allows any user who can modify a target document to execute arbitrary scripting operations with the elevated privileges of whoever includes that document, effectively enabling privilege escalation through author impersonation."
     },
     "L3": {
-      "area": "Macro rendering and content transformation subsystem",
-      "description": "An authorization bypass vulnerability exists in the wiki platform's content inclusion mechanism. When one document's content is embedded into another, the included content is executed using the privileges of the including page's author rather than the included document's own content author. This allows any user who can modify a target document to execute arbitrary scripting operations with the elevated privileges of whoever includes that document, effectively enabling privilege escalation through author impersonation."
+      "area": "Content inclusion and document embedding macro within the wiki rendering subsystem",
+      "description": "An authorization bypass vulnerability exists in the wiki platform's content inclusion mechanism, specifically within the macro responsible for embedding referenced documents into the current page. When the include directive is used, the included content is executed using the privileges of the including page's author rather than the content author of the included document. This allows any user who can modify an included document to execute scripting operations with the elevated privileges of whoever includes that document, enabling privilege escalation through author impersonation."
     }
   },
   "ground_truth": {

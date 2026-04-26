@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-49gm-hh7w-wfvf",
   "post_patch_commit": "4bbd2eab153287dc744ad061c58af7693f0c3ddc",
   "noisy_patch": false,
-  "curation_notes": "Locations derived from the patch diff. Vector 1: checkShellArgumentSafety in arguments.go was missing 'password' from the unsafe types map. Vector 2: handleShellBranch in executor.go did not block webhook-tagged requests from using shell execution, and executeAction in handler.go passed unfiltered webhook-extracted JSON arguments directly to the execution request. Three non-test source files were changed (arguments.go, executor.go, handler.go), so the patch is not noisy.",
+  "curation_notes": "Re-curated with updated guidelines. Locations derived from the patch diff. Vector 1: checkShellArgumentSafety in arguments.go was missing 'password' from the unsafe types map, allowing password-typed arguments to bypass the shell safety check. Vector 2: handleShellBranch in executor.go did not block webhook-tagged requests from shell execution, stepParseArgs did not filter out undefined arguments, and executeAction in webhooks/handler.go passed unfiltered webhook-extracted JSON arguments directly into the execution request. Three non-test source files changed (arguments.go, executor.go, webhooks/handler.go), so the patch is not noisy. Vulnerability class confirmed as command-injection (CWE-78).",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

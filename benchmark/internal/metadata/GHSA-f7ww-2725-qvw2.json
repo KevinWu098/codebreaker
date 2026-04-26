@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-f7ww-2725-qvw2",
   "post_patch_commit": "78a7ff2d50fb3bcef351571cb5a0f21430a340c1",
   "noisy_patch": true,
-  "curation_notes": "Primary patch commit 78a7ff2 touches 10 non-test source files across cli, gateway, infra, and node-host directories. Locations derived from the patch diff: hardenApprovedExecutionPaths in invoke-system-run.ts lacked parent-symlink detection (the fix added hasMutableSymlinkPathComponentSync), and sanitizeSystemRunParamsForForwarding in node-invoke-system-run-approval.ts trusted caller-supplied params instead of immutable approval-time plans (the fix added systemRunPlanV2 canonical field usage). Four follow-up commits are refactors that reorganize the same code but do not introduce new security logic.",
+  "curation_notes": "Re-curated with updated guidelines. Primary patch commit 78a7ff2 touches 10 non-test source files across cli, gateway, infra, and node-host directories. Locations derived from the patch diff: hardenApprovedExecutionPaths in invoke-system-run.ts lacked mutable parent-symlink detection in cwd (the fix added hasMutableSymlinkPathComponentSync to reject symlink rebind paths), and sanitizeSystemRunParamsForForwarding in node-invoke-system-run-approval.ts trusted caller-supplied params (argv, cwd, agentId, sessionKey) instead of immutable approval-time plans (the fix added systemRunPlanV2 canonical field usage). Four follow-up commits are refactors that reorganize the same code but do not introduce new security logic. Vulnerability class race-condition confirmed from CWE-367 (TOCTOU) and CWE-59 (symlink resolution) — the attack is fundamentally a timing-based symlink rebind between approval validation and command execution.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

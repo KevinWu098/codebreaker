@@ -16,8 +16,8 @@
       "description": "A race condition exists in the HTTP server's request pipeline handling. When request lookahead is enabled and a client sends a specifically sized initial request followed by a second pipelined request, the server may process and serve the second request even after determining the first request is invalid and the connection should be closed. The connection closure state is not checked atomically when new data is received, allowing a queued request to be serviced by a worker thread during connection teardown, potentially granting unauthorized access to the application."
     },
     "L3": {
-      "area": "HTTP request processing and connection lifecycle management",
-      "description": "A race condition exists in the HTTP server's request pipeline handling. When request lookahead is enabled and a client sends a specifically sized initial request followed by a second pipelined request, the server may process and serve the second request even after determining the first request is invalid and the connection should be closed. The connection closure state is not checked atomically when new data is received, allowing a queued request to be serviced by a worker thread during connection teardown, potentially granting unauthorized access to the application."
+      "area": "HTTP channel data reception and pipelining request queue management",
+      "description": "A race condition exists in the HTTP channel's data reception path when request lookahead is enabled. When a client sends a request that is exactly recv_bytes in length followed by a pipelined second request, the channel may queue and process the second request even after the first request fails validation and the connection is marked for closure. The connection's closure flags are not checked under the request lock when new data arrives, creating a TOCTOU window where a worker thread processes a queued request during connection teardown."
     }
   },
   "ground_truth": {
