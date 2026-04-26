@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "API service authentication and authorization layer"
+      "area": "API service request handling and access control middleware"
     },
     "L2": {
-      "description": "An improper authorization vulnerability exists where, in multi-tenant deployments, the API service does not verify that the issuer claim in a bearer token belongs to an allowed identity provider tenant. This allows an authenticated user from any tenant to make authorized API calls, resulting in unauthorized read/write access to private data such as vulnerability information, security testing tools, and proprietary code, as well as enabling tampering with existing data and unauthorized code execution on cloud compute resources."
+      "description": "An authorization bypass vulnerability exists in multi-tenant deployments where the API service does not verify that the issuer claim in an authentication token belongs to an allowed identity provider tenant. Additionally, certain API endpoints bypass authorization checks entirely, accepting any authenticated request without verifying the caller's role or tenant. This allows an authenticated user from any tenant to make authorized API calls, resulting in unauthorized read/write access to private data such as vulnerability reports, security testing tools, and proprietary code, as well as enabling data tampering and unauthorized code execution on cloud compute resources."
     },
     "L3": {
-      "area": "API service authentication and authorization layer",
-      "description": "An improper authorization vulnerability exists where, in multi-tenant deployments, the API service does not verify that the issuer claim in a bearer token belongs to an allowed identity provider tenant. This allows an authenticated user from any tenant to make authorized API calls, resulting in unauthorized read/write access to private data such as vulnerability information, security testing tools, and proprietary code, as well as enabling tampering with existing data and unauthorized code execution on cloud compute resources."
+      "area": "API service multi-tenant token validation and endpoint-level authorization wrappers",
+      "description": "An authorization bypass vulnerability exists in multi-tenant Azure Active Directory deployments where the API service decodes JWT bearer tokens without verifying that the token's issuer claim corresponds to an allowed AAD tenant. Additionally, certain informational and connection-negotiation endpoints do not enforce user-level authorization checks at all, accepting requests directly without delegation to the access control middleware. This enables any authenticated Azure AD user from any tenant to access the full API, resulting in unauthorized read/write access to private data and compute resources."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "An incomplete authorization check in multi-tenant deployments fails to verify the bearer token's issuer against an allowlist of permitted AAD tenants, allowing any authenticated Azure AD user to make authorized API calls.",
+    "reason": "An incomplete authorization check in multi-tenant deployments fails to verify the bearer token's issuer against an allowlist of permitted AAD tenants, and two API endpoints bypass the authorization middleware entirely, allowing any authenticated Azure AD user to make authorized API calls.",
     "locations": [
       {
         "file": "src/api-service/__app__/onefuzzlib/user_credentials.py",

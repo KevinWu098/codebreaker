@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-5gg9-5g7w-hm73",
   "post_patch_commit": "a63573b67eb302167b4c4f218361a2d0c138deab",
   "noisy_patch": false,
-  "curation_notes": "Patch commit a63573b modifies only http/auth.go (+4 lines), adding user.Perm.Admin = false after d.settings.Defaults.Apply(user) in the signupHandler function. Location derived directly from the advisory description which explicitly names the affected file and function, confirmed by the patch diff. Single file change, not noisy.",
+  "curation_notes": "Re-curated with updated hint guidelines. Patch commit a63573b modifies only http/auth.go (+4 lines), adding user.Perm.Admin = false after d.settings.Defaults.Apply(user) in the signupHandler function. Location derived directly from the advisory description which explicitly names the affected file and function, confirmed by the single-file patch diff. L3 hints differentiated from L1/L2: L3 area narrows to the self-registration endpoint and default permission logic (~3-5 files), L3 description adds specific configuration conditions (signup = true, admin in default template). Vulnerability class auth-bypass confirmed — CWE-269/CWE-284 map correctly to authorization bypass.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

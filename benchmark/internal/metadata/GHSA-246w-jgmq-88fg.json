@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-246w-jgmq-88fg",
   "post_patch_commit": "36f69a6c67c1054da7cbfa04ced3f0555127c8f2",
   "noisy_patch": false,
-  "curation_notes": "Location derived from the patch diff which modified only one non-test source file (handle.go). The advisory explicitly names the file and function in the Root Cause section, confirming the vulnerable code is in the ClientAuthDeny branch of handleAuthUserPassVerify. The fix changed the return value from OpenVPNPluginFuncSuccess to OpenVPNPluginFuncError.",
+  "curation_notes": "Re-curated with updated guidelines. Location derived from the patch diff which modified only one non-test source file (handle.go). The advisory Root Cause section explicitly names the file and function, confirming the vulnerable code is in the ClientAuthDeny branch of handleAuthUserPassVerify. The fix changed the return value from OpenVPNPluginFuncSuccess to OpenVPNPluginFuncError. No sibling files share the same vulnerability pattern — plugin.go and types.go serve different roles. Pre-assigned vuln_class auth-bypass (CWE-287) confirmed: the patch fixes an incorrect plugin return code that allowed unauthenticated VPN access. L3 hints now differentiated from L1/L2 with OIDC and WebAuth/SSO context.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
