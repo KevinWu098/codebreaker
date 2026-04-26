@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-54f6-9mx9-86f7",
+  "post_patch_commit": "954efeb73277f924f836da2a25322ea35ee1bfa3",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff. The vulnerability is in the getRequestPath() method across four request adapter implementations (servlet, jakarta-servlet, reactor-boot, reactor-boot3). In the pre-patch code, these methods used getServletPath() or getURI().getPath() which normalize path traversal sequences (e.g., resolving '..'), while Spring's request dispatcher uses the raw URI. This discrepancy allows attackers to bypass route-based auth checks with crafted URLs like '/admin/..'. The patch switches to using getRequestURI() / getPath().toString() with a prefix-cutting utility, and adds a new path validation strategy that rejects dangerous characters. The patch is noisy (33 files changed) because it also adds new filter classes, exception types, and configuration across all starter modules, but the core fix is in the four getRequestPath() methods. Vulnerability class auth-bypass confirmed — matches CWE-281/CWE-284 and the advisory description of privilege escalation via URL manipulation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
