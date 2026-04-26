@@ -728,6 +728,21 @@ export const summarizeTask = (task: TaskInstance): BenchmarkTaskSummary => {
   });
 };
 
+/**
+ * Score a single agent output against ground truth using gated scoring.
+ *
+ * Vulnerability detection is a prerequisite gate — if wrong, the score is 0.
+ * Empirically, agents almost always get the binary vulnerable/not-vulnerable
+ * verdict correct, so weighting it would inflate scores without adding signal.
+ *
+ * Vulnerability class acts as a second gate — if the agent cannot classify the
+ * vulnerability, its location predictions don't receive credit.
+ *
+ * The composite score equals file-level location recall when both gates pass,
+ * and 0 otherwise. Function names are required in the agent output to encourage
+ * deeper analysis but are intentionally not scored because agents rarely predict
+ * them accurately enough for reliable measurement.
+ */
 export const scoreAgentOutput = (
   task: TaskInstance,
   output: AgentOutput
@@ -747,10 +762,8 @@ export const scoreAgentOutput = (
     expectedLocations.size === 0
       ? 0
       : correctLocations / expectedLocations.size;
-  const score =
-    Number(vulnerableMatched) * 0.5 +
-    Number(vulnClassMatched) * 0.25 +
-    locationScore * 0.25;
+
+  const score = vulnerableMatched && vulnClassMatched ? locationScore : 0;
 
   return BenchmarkRunScoreSchema.parse({
     correctLocations,

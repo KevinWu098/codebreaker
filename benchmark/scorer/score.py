@@ -8,18 +8,23 @@ the dataset stores one row per GHSA and projects difficulty at runtime.
 
 When multiple outputs share the same ``(task_id, difficulty)`` key the
 scorer treats them as alternative candidate hypotheses (up to 3). Each
-candidate is scored independently and the oracle-best — the one that
-maximises a lexicographic ranking of (verdict_correct, vuln_class_score,
-file_iou, function_iou) — is kept as the task's result.
+candidate is scored independently and the oracle-best — the one with the
+highest composite score — is kept as the task's result.
 
-Scoring axes (see benchmark/README.md for the authoritative spec):
+Scoring uses a gated model (see benchmark/README.md for the authoritative
+spec):
 
-* ``vulnerable``       - exact match boolean; reported as precision/recall/F1.
-* ``vuln_class``       - exact match, conditional on correct verdict.
-* ``locations.file``   - set IoU, conditional on correct verdict.
-* ``locations.function`` - set IoU of ``(file, function)`` pairs restricted to
-  the intersection of files; conditional on at least one correct file.
-  Null functions on either side are excluded from comparison.
+* ``vulnerable``       - binary gate. Wrong verdict → composite score 0.
+* ``vuln_class``       - binary gate. Wrong class → composite score 0.
+* ``locations.file``   - file-level recall against ground truth file set.
+                         This is the composite score when both gates pass.
+
+The following are tracked as diagnostic axes but do not affect the
+composite score:
+
+* ``locations.function`` - required in agent output to encourage deeper
+  analysis but not scored (agents rarely predict functions accurately).
+  Function IoU is still computed and reported for diagnostics.
 * ``confidence``       - Expected Calibration Error against verdict accuracy,
   computed in 10 equal-width bins on ``[0, 1]``.
 
@@ -137,6 +142,17 @@ def set_iou(predicted: set[Any], actual: set[Any]) -> float:
     return len(predicted & actual) / len(union)
 
 
+def set_recall(predicted: set[Any], actual: set[Any]) -> float:
+    """Recall of *predicted* against *actual* (ground truth).
+
+    Returns ``1.0`` if *actual* is empty (nothing to miss) and ``0.0`` if
+    *actual* is non-empty but *predicted* is empty.
+    """
+    if not actual:
+        return 1.0
+    return len(predicted & actual) / len(actual)
+
+
 def _file_set(locations: Iterable[dict[str, Any]]) -> set[str]:
     return {
         loc["file"]
@@ -174,7 +190,10 @@ def _score_candidate(
 ) -> dict[str, Any]:
     """Score a single candidate against ground truth.
 
-    Returns a dict with the raw signals consumed by ``aggregate``.
+    Uses gated scoring: vulnerability detection and class identification are
+    binary gates. The composite score equals file-level recall when both gates
+    pass, and 0 otherwise. Function IoU is computed as a diagnostic but does
+    not affect the composite.
     """
     ground_truth = task["ground_truth"]
     gt_vulnerable = bool(ground_truth["vulnerable"])
@@ -188,30 +207,31 @@ def _score_candidate(
         "predicted_vulnerable": pred_vulnerable,
         "verdict_correct": verdict_correct,
         "confidence": confidence,
-        "vuln_class_score": None,
-        "file_iou": None,
+        "vuln_class_correct": None,
+        "file_recall": None,
         "function_iou": None,
+        "score": 0.0,
     }
 
     if not verdict_correct:
         return score
 
     if not pred_vulnerable:
-        score["vuln_class_score"] = 0.0
-        score["file_iou"] = 0.0
+        score["vuln_class_correct"] = False
+        score["file_recall"] = 0.0
         return score
 
-    score["vuln_class_score"] = (
-        1.0
-        if candidate.get("vuln_class") == ground_truth.get("vuln_class")
-        else 0.0
+    vuln_class_correct = (
+        candidate.get("vuln_class") == ground_truth.get("vuln_class")
     )
+    score["vuln_class_correct"] = vuln_class_correct
 
     gt_locations = ground_truth.get("locations") or []
     pred_locations = candidate.get("locations") or []
     gt_files = _file_set(gt_locations)
     pred_files = _file_set(pred_locations)
-    score["file_iou"] = set_iou(pred_files, gt_files)
+    file_recall = set_recall(pred_files, gt_files)
+    score["file_recall"] = file_recall
 
     common_files = pred_files & gt_files
     if common_files:
@@ -220,21 +240,17 @@ def _score_candidate(
         if gt_pairs or pred_pairs:
             score["function_iou"] = set_iou(pred_pairs, gt_pairs)
 
+    score["score"] = file_recall if vuln_class_correct else 0.0
+
     return score
 
 
-def _candidate_rank_key(score: dict[str, Any]) -> tuple[int, float, float, float]:
-    """Lexicographic key for picking the oracle-best candidate.
+def _candidate_rank_key(score: dict[str, Any]) -> float:
+    """Ranking key for picking the oracle-best candidate.
 
-    Priority: verdict correct > vuln_class > file IoU > function IoU.
-    ``None`` values are treated as 0 for ranking purposes.
+    Uses the gated composite score directly.
     """
-    return (
-        int(score["verdict_correct"]),
-        score["vuln_class_score"] or 0.0,
-        score["file_iou"] or 0.0,
-        score["function_iou"] or 0.0,
-    )
+    return score["score"]
 
 
 def score_one(
@@ -337,16 +353,22 @@ def aggregate(scores: list[dict[str, Any]]) -> dict[str, Any]:
     else:
         f1 = None
 
+    composite_values = [s["score"] for s in scores]
     vuln_class_values = [
-        s["vuln_class_score"] for s in scores if s["vuln_class_score"] is not None
+        1.0 if s["vuln_class_correct"] else 0.0
+        for s in scores
+        if s["vuln_class_correct"] is not None
     ]
-    file_iou_values = [s["file_iou"] for s in scores if s["file_iou"] is not None]
+    file_recall_values = [
+        s["file_recall"] for s in scores if s["file_recall"] is not None
+    ]
     function_iou_values = [
         s["function_iou"] for s in scores if s["function_iou"] is not None
     ]
 
     return {
         "n": n,
+        "score": _mean(composite_values),
         "verdict": {
             "precision": precision,
             "recall": recall,
@@ -355,8 +377,8 @@ def aggregate(scores: list[dict[str, Any]]) -> dict[str, Any]:
         },
         "vuln_class_accuracy": _mean(vuln_class_values),
         "vuln_class_n": len(vuln_class_values),
-        "file_iou_mean": _mean(file_iou_values),
-        "file_iou_n": len(file_iou_values),
+        "file_recall_mean": _mean(file_recall_values),
+        "file_recall_n": len(file_recall_values),
         "function_iou_mean": _mean(function_iou_values),
         "function_iou_n": len(function_iou_values),
         "ece": compute_ece(scores),
@@ -417,7 +439,14 @@ def _format_summary(summary: dict[str, dict[str, Any]]) -> str:
     lines.append(row("", (name for name, _ in columns)))
     lines.append(row("N tasks", (_fmt_int(agg["n"]) for _, agg in columns)))
     lines.append("")
-    lines.append("Verdict")
+    lines.append(
+        row(
+            "Score (mean)",
+            (_fmt(agg["score"]) for _, agg in columns),
+        )
+    )
+    lines.append("")
+    lines.append("Verdict (gate)")
     lines.append(
         row(
             "  Precision",
@@ -449,7 +478,7 @@ def _format_summary(summary: dict[str, dict[str, Any]]) -> str:
     lines.append("")
     lines.append(
         row(
-            "Vuln class accuracy",
+            "Vuln class acc (gate)",
             (_fmt(agg["vuln_class_accuracy"]) for _, agg in columns),
         )
     )
@@ -461,19 +490,19 @@ def _format_summary(summary: dict[str, dict[str, Any]]) -> str:
     )
     lines.append(
         row(
-            "File IoU (mean)",
-            (_fmt(agg["file_iou_mean"]) for _, agg in columns),
+            "File recall (mean)",
+            (_fmt(agg["file_recall_mean"]) for _, agg in columns),
         )
     )
     lines.append(
         row(
             "  (denominator)",
-            (_fmt_int(agg["file_iou_n"]) for _, agg in columns),
+            (_fmt_int(agg["file_recall_n"]) for _, agg in columns),
         )
     )
     lines.append(
         row(
-            "Function IoU (mean)",
+            "Function IoU (diag)",
             (_fmt(agg["function_iou_mean"]) for _, agg in columns),
         )
     )

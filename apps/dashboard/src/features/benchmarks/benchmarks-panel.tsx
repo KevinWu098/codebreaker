@@ -282,6 +282,16 @@ const formatMatch = (m: boolean | null): string => {
   return "—";
 };
 
+const gateLabel = (passed: boolean | null): string => {
+  if (passed === true) {
+    return "✓ pass";
+  }
+  if (passed === false) {
+    return "✗ fail → score 0";
+  }
+  return "—";
+};
+
 const triCheckIcon = (v: boolean | null): string => {
   if (v === true) {
     return "✓";
@@ -769,41 +779,39 @@ const BenchmarkRunScoringDetail = ({
   const composite = result.score?.score ?? run.score;
   const expectedLocCount = task?.ground_truth.locations.length;
 
+  const gateStyle = (passed: boolean | null): string =>
+    passed === false ? "font-medium text-red-400" : "";
+
+  const vulnGateLabel = gateLabel(result.vulnerableMatched);
+  const classGateLabel = gateLabel(result.vulnClassMatched);
+
   return (
     <div className="mb-4 space-y-3 text-xs">
       <div className="field-label">scoring</div>
       <dl className={BENCHMARK_DL_GRID}>
-        <dt className="text-fg-muted">composite</dt>
+        <dt className="text-fg-muted">score</dt>
         <dd className="num">
           {composite == null ? "—" : composite.toFixed(2)}
         </dd>
-        <dt className="text-fg-muted">vulnerability</dt>
+        <dt className="text-fg-muted">gate · vulnerability</dt>
         <dd>
           expected {formatBool(result.expectedVulnerable)} · predicted{" "}
           {formatBool(result.predictedVulnerable)} ·{" "}
-          <span
-            className={
-              result.vulnerableMatched === false ? "font-medium text-fg" : ""
-            }
-          >
-            {formatMatch(result.vulnerableMatched)}
+          <span className={gateStyle(result.vulnerableMatched)}>
+            {vulnGateLabel}
           </span>
         </dd>
-        <dt className="text-fg-muted">vuln class</dt>
+        <dt className="text-fg-muted">gate · vuln class</dt>
         <dd className="break-words">
           expected {result.expectedVulnClass ?? "—"} · predicted{" "}
           {result.predictedVulnClass ?? "—"} ·{" "}
-          <span
-            className={
-              result.vulnClassMatched === false ? "font-medium text-fg" : ""
-            }
-          >
-            {formatMatch(result.vulnClassMatched)}
+          <span className={gateStyle(result.vulnClassMatched)}>
+            {classGateLabel}
           </span>
         </dd>
-        <dt className="text-fg-muted">locations</dt>
+        <dt className="text-fg-muted">location recall</dt>
         <dd>
-          subscore {result.locationScore?.toFixed(2) ?? "—"}
+          {result.locationScore?.toFixed(2) ?? "—"}
           {locationCountSummary(result.correctLocations, expectedLocCount)}
         </dd>
       </dl>
@@ -823,11 +831,9 @@ const scoreColumnForRun = (run: BenchmarkRunRow): React.ReactNode => {
     return line;
   }
 
-  const vHint = `vulnerability (expected vs predicted): ${formatMatch(
-    b.vulnerableMatched
-  )}`;
-  const cHint = `vulnerability class: ${formatMatch(b.vulnClassMatched)}`;
-  const locHint = `location subscore${locHintDetailSuffix(b)}`;
+  const vHint = `vulnerability gate: ${formatMatch(b.vulnerableMatched)}`;
+  const cHint = `vulnerability class gate: ${formatMatch(b.vulnClassMatched)}`;
+  const locHint = `location recall${locHintDetailSuffix(b)}`;
   const locText = scoreBreakdownLocationCaption(b);
 
   return (
@@ -1621,7 +1627,7 @@ const BenchmarkRunsTable = ({
             </th>
             <th
               className="num"
-              title="composite; V= vuln, C= class, L= locations"
+              title="score; V= vuln gate, C= class gate, L= location recall"
             >
               score
             </th>
