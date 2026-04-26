@@ -386,8 +386,12 @@ export type ListBenchmarkTasksResponse = z.infer<
 >;
 
 export const ListBenchmarkRunsQuerySchema = z.object({
+  difficulty: DifficultySchema.optional(),
   limit: z.coerce.number().int().positive().max(100).default(30),
+  modelId: z.string().min(1).optional(),
   offset: z.coerce.number().int().nonnegative().default(0),
+  status: BenchmarkRunStatusSchema.optional(),
+  taskId: z.string().min(1).optional(),
 });
 export type ListBenchmarkRunsQuery = z.infer<
   typeof ListBenchmarkRunsQuerySchema

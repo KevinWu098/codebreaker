@@ -190,9 +190,18 @@ export const createRouter = (): Hono<{
         );
       }
 
+      const filters = {
+        difficulty: query.difficulty,
+        limit: query.limit,
+        modelId: query.modelId,
+        offset: query.offset,
+        status: query.status,
+        taskId: query.taskId,
+      };
+
       const [runs, total] = await Promise.all([
-        store.list({ limit: query.limit, offset: query.offset }),
-        store.count(),
+        store.list(filters),
+        store.count(filters),
       ]);
 
       return context.json({

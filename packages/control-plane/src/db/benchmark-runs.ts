@@ -9,6 +9,7 @@ import type {
   BenchmarkRunScore,
   BenchmarkRunStatus,
   Difficulty,
+  ListBenchmarkRunsQuery,
   TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
@@ -115,7 +116,7 @@ const benchmarkRunSelectFrom = `from benchmark_runs br
           limit 1
         )`;
 
-const benchmarkRunListSelect = `select
+const benchmarkRunListBase = `select
           br.artifact_commit_sha,
           br.artifact_path,
           br.cleanup_completed_at,
@@ -139,8 +140,7 @@ const benchmarkRunListSelect = `select
           brr.location_score as result_location_score,
           brr.vuln_class_matched as result_vuln_class_matched,
           brr.vulnerable_matched as result_vulnerable_matched
-        ${benchmarkRunSelectFrom}
-        order by br.created_at desc`;
+        ${benchmarkRunSelectFrom}`;
 
 export class BenchmarkRunStore {
   private readonly db: D1Database;
@@ -193,22 +193,26 @@ export class BenchmarkRunStore {
     return run;
   }
 
-  async list(pagination?: {
-    limit: number;
-    offset: number;
-  }): Promise<BenchmarkRunRow[]> {
-    if (pagination) {
+  async list(
+    filters?: Partial<ListBenchmarkRunsQuery>
+  ): Promise<BenchmarkRunRow[]> {
+    const { where, binds } = buildWhereClause(filters);
+    const sql = `${benchmarkRunListBase}${where} order by br.created_at desc`;
+
+    if (filters?.limit) {
       const result = await this.db
-        .prepare(`${benchmarkRunListSelect} limit ? offset ?`)
-        .bind(pagination.limit, pagination.offset)
+        .prepare(`${sql} limit ? offset ?`)
+        .bind(...binds, filters.limit, filters.offset ?? 0)
         .all<BenchmarkRunRecord>();
 
       return result.results.map((row) => this.toRun(row));
     }
 
-    const result = await this.db
-      .prepare(benchmarkRunListSelect)
-      .all<BenchmarkRunRecord>();
+    const stmt =
+      binds.length > 0
+        ? this.db.prepare(sql).bind(...binds)
+        : this.db.prepare(sql);
+    const result = await stmt.all<BenchmarkRunRecord>();
 
     return result.results.map((row) => this.toRun(row));
   }
@@ -223,10 +227,14 @@ export class BenchmarkRunStore {
     return result.results.map((row) => row.id);
   }
 
-  async count(): Promise<number> {
-    const row = await this.db
-      .prepare("select count(1) as c from benchmark_runs")
-      .first<{ c: number }>();
+  async count(filters?: Partial<ListBenchmarkRunsQuery>): Promise<number> {
+    const { where, binds } = buildWhereClause(filters);
+    const sql = `select count(1) as c from benchmark_runs br${where}`;
+    const stmt =
+      binds.length > 0
+        ? this.db.prepare(sql).bind(...binds)
+        : this.db.prepare(sql);
+    const row = await stmt.first<{ c: number }>();
 
     return row ? Number(row.c) : 0;
   }
@@ -639,6 +647,34 @@ export class BenchmarkRunStore {
     });
   }
 }
+
+const buildWhereClause = (
+  filters?: Partial<ListBenchmarkRunsQuery>
+): { where: string; binds: unknown[] } => {
+  const conditions: string[] = [];
+  const binds: unknown[] = [];
+
+  if (filters?.taskId) {
+    conditions.push("br.task_id = ?");
+    binds.push(filters.taskId);
+  }
+  if (filters?.difficulty) {
+    conditions.push("br.difficulty = ?");
+    binds.push(filters.difficulty);
+  }
+  if (filters?.modelId) {
+    conditions.push("br.model_id = ?");
+    binds.push(filters.modelId);
+  }
+  if (filters?.status) {
+    conditions.push("br.status = ?");
+    binds.push(filters.status);
+  }
+
+  const where =
+    conditions.length > 0 ? ` where ${conditions.join(" and ")}` : "";
+  return { where, binds };
+};
 
 const extractResultColumns = (input: {
   agentOutput?: AgentOutput | null;

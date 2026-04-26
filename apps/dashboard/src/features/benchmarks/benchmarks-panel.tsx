@@ -47,6 +47,7 @@ import { JsonView } from "@/components/json-view";
 import { ListPagination } from "@/components/list-pagination";
 import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/spinner";
+import { CompareTab } from "@/features/benchmarks/compare-tab";
 import { CveFollowupRunSection } from "@/features/followups/cve-followup-detail";
 import {
   useCancelBenchmarkRunMutation,
@@ -78,7 +79,7 @@ const BENCHMARK_TIMEOUT_SECONDS = 600;
 const BATCH_CREATE_DELAY_MS = 500;
 const DEFAULT_BATCH_REPEAT_COUNT = 1;
 const DIFFICULTY_OPTIONS: readonly Difficulty[] = ["L0", "L1", "L2", "L3"];
-const BENCHMARK_TAB_IDS = ["results", "create"] as const;
+const BENCHMARK_TAB_IDS = ["results", "compare", "create"] as const;
 
 /** dl: UA `dd` margin causes overlap; `min-w-0` lets long values wrap in `1fr`. */
 const BENCHMARK_DL_GRID =
@@ -1324,6 +1325,9 @@ export const BenchmarksPanel = ({
   const selectRun = (runId: string): void => {
     setLocalSelectedRunId(runId);
     onSelectRun?.(runId);
+    if (tab !== "results") {
+      setTab("results");
+    }
   };
   const selectedRun = activeRunId ? (
     <BenchmarkRunDetail
@@ -1468,6 +1472,9 @@ export const BenchmarksPanel = ({
           <TabsTrigger className="tab" value="results">
             results
           </TabsTrigger>
+          <TabsTrigger className="tab" value="compare">
+            compare
+          </TabsTrigger>
           <TabsTrigger className="tab" value="create">
             create
           </TabsTrigger>
@@ -1506,6 +1513,10 @@ export const BenchmarksPanel = ({
               </Card>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent className="mt-4 space-y-4 outline-none" value="compare">
+          <CompareTab onSelectRun={selectRun} />
         </TabsContent>
 
         <TabsContent className="mt-4 space-y-4 outline-none" value="create">

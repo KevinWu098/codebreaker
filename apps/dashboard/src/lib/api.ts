@@ -150,12 +150,28 @@ export const api = {
 
   listBenchmarkRuns: (
     query: Partial<ListBenchmarkRunsQuery> = {}
-  ): Promise<ListBenchmarkRunsResponse> =>
-    request<ListBenchmarkRunsResponse>(
-      "/benchmark-runs",
-      {},
-      query as Record<string, unknown>
-    ),
+  ): Promise<ListBenchmarkRunsResponse> => {
+    const params: Record<string, unknown> = {};
+    if (query.limit !== undefined) {
+      params.limit = query.limit;
+    }
+    if (query.offset !== undefined) {
+      params.offset = query.offset;
+    }
+    if (query.taskId) {
+      params.taskId = query.taskId;
+    }
+    if (query.difficulty) {
+      params.difficulty = query.difficulty;
+    }
+    if (query.modelId) {
+      params.modelId = query.modelId;
+    }
+    if (query.status) {
+      params.status = query.status;
+    }
+    return request<ListBenchmarkRunsResponse>("/benchmark-runs", {}, params);
+  },
 
   listCveFollowups: (limit?: number): Promise<ListCveFollowupsResponse> =>
     request<ListCveFollowupsResponse>(

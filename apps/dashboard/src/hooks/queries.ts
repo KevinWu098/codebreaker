@@ -1,6 +1,8 @@
 import type {
   BenchmarkRunDetailResponse,
+  BenchmarkRunRow,
   CveFollowupDetailResponse,
+  Difficulty,
   ListBenchmarkRunsQuery,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
@@ -227,5 +229,83 @@ export const useHealthProbe = (): UseQueryResult<{ ok: boolean }, Error> => {
 
       return failureCount < 1;
     },
+  });
+};
+
+const fetchAllCompletedRuns = async (
+  base: Partial<ListBenchmarkRunsQuery>
+): Promise<BenchmarkRunRow[]> => {
+  const pageSize = 100;
+  const all: BenchmarkRunRow[] = [];
+  let offset = 0;
+
+  for (;;) {
+    const response = await api.listBenchmarkRuns({
+      ...base,
+      limit: pageSize,
+      offset,
+      status: "completed",
+    });
+    for (const run of response.runs) {
+      all.push(run);
+    }
+    if (all.length >= response.total || response.runs.length < pageSize) {
+      break;
+    }
+    offset += pageSize;
+  }
+
+  return all;
+};
+
+export const useComparisonRunsQuery = (filters: {
+  difficulty?: Difficulty | undefined;
+  taskId?: string | undefined;
+}): UseQueryResult<BenchmarkRunRow[], Error> => {
+  const connection = useConnection();
+  const hasFilters = Boolean(filters.taskId && filters.difficulty);
+
+  return useQuery({
+    enabled: isAuthorized(connection) && hasFilters,
+    queryFn: () => {
+      const query: Partial<ListBenchmarkRunsQuery> = {};
+      if (filters.taskId) {
+        query.taskId = filters.taskId;
+      }
+      if (filters.difficulty) {
+        query.difficulty = filters.difficulty;
+      }
+      return fetchAllCompletedRuns(query);
+    },
+    queryKey: [
+      ...qk.benchmarkRuns(connection),
+      "compare",
+      filters.taskId,
+      filters.difficulty,
+    ],
+    refetchInterval: POLLING.benchmarks.runs,
+  });
+};
+
+export const useLeaderboardRunsQuery = (filters: {
+  difficulty?: Difficulty | undefined;
+}): UseQueryResult<BenchmarkRunRow[], Error> => {
+  const connection = useConnection();
+
+  return useQuery({
+    enabled: isAuthorized(connection),
+    queryFn: () => {
+      const query: Partial<ListBenchmarkRunsQuery> = {};
+      if (filters.difficulty) {
+        query.difficulty = filters.difficulty;
+      }
+      return fetchAllCompletedRuns(query);
+    },
+    queryKey: [
+      ...qk.benchmarkRuns(connection),
+      "leaderboard",
+      filters.difficulty,
+    ],
+    refetchInterval: POLLING.benchmarks.runs,
   });
 };
