@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8wfh-qxxv-3q8c",
+  "post_patch_commit": "43981874f5e1683b855eab871092fa9be58d6a44",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only one source file (paddle/phi/infermeta/unary.cc) in the DiagonalInferMeta function. The fix adds PADDLE_ENFORCE_GE bounds checks for axis1_ and axis2_ after normalization to ensure they are non-negative. Without these checks, extremely large negative axis values (e.g., -1000000) cause the normalization (x_dims.size() + axis) to still produce a negative index, leading to out-of-bounds memory access classified as use-after-free. No sibling files share this vulnerability pattern — the other infermeta files (binary.cc, multiary.cc, etc.) handle different operations. Pre-assigned class use-after-free (CWE-416) matches the advisory description and patch behavior.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
