@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-bonita-connector-webservice-001",
+  "ghsa_id": "GHSA-wg99-5vrx-j2gg",
+  "codebase": {
+    "repo": "https://github.com/bonitasoft/bonita-connector-webservice",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "17a214d5a3f8af55080855a67a476497e3235689"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Web service connector response processing and XML transformation logic"
+    },
+    "L2": {
+      "description": "An XML External Entity (XXE) vulnerability exists where XML parsers used in SOAP web service response processing are not configured to disable external entity resolution. An attacker could exploit this by sending a crafted SOAP response containing external entity references, potentially enabling file disclosure or server-side request forgery."
+    },
+    "L3": {
+      "area": "SOAP web service connector XML response document building and transformation",
+      "description": "An XML External Entity (XXE) vulnerability exists in the SOAP web service connector where XML document builder and transformer factory instances used for constructing and transforming response documents are not configured to disable access to external DTDs, schemas, or stylesheets. An attacker could exploit this through crafted SOAP responses to achieve file disclosure or server-side request forgery."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML DocumentBuilderFactory and TransformerFactory used in SOAP response processing do not disable external entity resolution, allowing XXE attacks that could lead to file disclosure or SSRF.",
+    "locations": [
+      {
+        "file": "src/main/java/org/bonitasoft/connectors/ws/SecureWSConnector.java",
+        "function": "buildResponseDocumentBody"
+      },
+      {
+        "file": "src/main/java/org/bonitasoft/connectors/ws/SecureWSConnector.java",
+        "function": "getTransformer"
+      }
+    ]
+  }
+}
