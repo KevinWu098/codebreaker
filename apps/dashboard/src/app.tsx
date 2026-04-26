@@ -253,6 +253,34 @@ export const App = (): React.JSX.Element => {
         {view === "demo" && (
           <DemoPanel
             followupRunId={followupSelectedRunId}
+            onOpenAudit={(id) =>
+              setParams(
+                {
+                  audit: id,
+                  benchmark: null,
+                  finding: null,
+                  followupRun: null,
+                  session: null,
+                  tab: null,
+                  view: "audits",
+                },
+                { history: "push" }
+              )
+            }
+            onOpenFollowup={(id) =>
+              setParams(
+                {
+                  audit: null,
+                  benchmark: null,
+                  finding: null,
+                  followupRun: id,
+                  session: null,
+                  tab: null,
+                  view: "followups",
+                },
+                { history: "push" }
+              )
+            }
             onSelectAudit={(id) =>
               setParams({ audit: id }, { history: "push" })
             }

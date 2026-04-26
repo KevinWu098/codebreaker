@@ -929,6 +929,158 @@ const MatrixCell = ({
   </td>
 );
 
+const CHART_ROW_HEIGHT = 26;
+const CHART_ROW_GAP = 8;
+const CHART_PADDING_X = 12;
+const CHART_PADDING_TOP = 12;
+const CHART_AXIS_HEIGHT = 22;
+const CHART_LABEL_WIDTH = 200;
+const CHART_VALUE_WIDTH = 72;
+const CHART_WIDTH = 640;
+const CHART_TICKS = [0, 0.25, 0.5, 0.75, 1] as const;
+const MAX_LABEL_CHARS = 28;
+
+const truncateLabel = (label: string): string =>
+  label.length > MAX_LABEL_CHARS
+    ? `${label.slice(0, MAX_LABEL_CHARS - 1)}…`
+    : label;
+
+const LeaderboardChart = ({
+  rows,
+}: {
+  rows: LeaderboardRow[];
+}): React.JSX.Element => {
+  const barAreaWidth =
+    CHART_WIDTH - CHART_LABEL_WIDTH - CHART_VALUE_WIDTH - CHART_PADDING_X * 2;
+  const rowsHeight =
+    rows.length * CHART_ROW_HEIGHT +
+    Math.max(0, rows.length - 1) * CHART_ROW_GAP;
+  const height = CHART_PADDING_TOP + rowsHeight + CHART_AXIS_HEIGHT;
+  const axisY = CHART_PADDING_TOP + rowsHeight + 4;
+  const barLeft = CHART_PADDING_X + CHART_LABEL_WIDTH;
+
+  return (
+    <div className="overflow-x-auto pb-1">
+      <svg
+        aria-label="model average score chart"
+        className="block"
+        height={height}
+        role="img"
+        viewBox={`0 0 ${CHART_WIDTH} ${height}`}
+        width={CHART_WIDTH}
+      >
+        <title>average score by model</title>
+        {CHART_TICKS.map((tick) => {
+          const x = barLeft + tick * barAreaWidth;
+          const isEdge = tick === 0 || tick === 1;
+          return (
+            <g key={tick}>
+              <line
+                stroke="rgb(var(--border))"
+                strokeDasharray={isEdge ? undefined : "2 3"}
+                x1={x}
+                x2={x}
+                y1={CHART_PADDING_TOP - 4}
+                y2={axisY - 2}
+              />
+              <text
+                fill="rgb(var(--fg-muted))"
+                fontSize={9}
+                textAnchor="middle"
+                x={x}
+                y={axisY + 12}
+              >
+                {`${Math.round(tick * 100)}%`}
+              </text>
+            </g>
+          );
+        })}
+        {rows.map((row, idx) => {
+          const score = row.avgScore ?? 0;
+          const classRate = row.classMatchRate;
+          const y =
+            CHART_PADDING_TOP + idx * (CHART_ROW_HEIGHT + CHART_ROW_GAP);
+          const barWidth = Math.max(0, score * barAreaWidth);
+          const isTop = idx === 0;
+          const fill = isTop
+            ? "rgb(74 222 128 / 0.85)"
+            : "rgb(var(--accent) / 0.7)";
+          const label = modelLabel(row.model);
+          return (
+            <g key={label}>
+              <text
+                fill="rgb(var(--fg))"
+                fontSize={11}
+                x={CHART_PADDING_X}
+                y={y + CHART_ROW_HEIGHT / 2 + 4}
+              >
+                {truncateLabel(label)}
+              </text>
+              <rect
+                fill="rgb(var(--bg-raised))"
+                height={CHART_ROW_HEIGHT}
+                rx={3}
+                stroke="rgb(var(--border))"
+                width={barAreaWidth}
+                x={barLeft}
+                y={y}
+              />
+              <rect
+                fill={fill}
+                height={CHART_ROW_HEIGHT}
+                rx={3}
+                width={barWidth}
+                x={barLeft}
+                y={y}
+              >
+                <title>
+                  {`${label} • avg score ${score.toFixed(2)} • runs ${row.runCount}`}
+                </title>
+              </rect>
+              {classRate != null && (
+                <line
+                  stroke="rgb(var(--fg))"
+                  strokeWidth={2}
+                  x1={barLeft + classRate * barAreaWidth}
+                  x2={barLeft + classRate * barAreaWidth}
+                  y1={y + 3}
+                  y2={y + CHART_ROW_HEIGHT - 3}
+                >
+                  <title>{`class match ${pct(classRate)}`}</title>
+                </line>
+              )}
+              <text
+                fill="rgb(var(--fg))"
+                fontSize={11}
+                fontWeight={600}
+                textAnchor="end"
+                x={CHART_WIDTH - CHART_PADDING_X}
+                y={y + CHART_ROW_HEIGHT / 2 + 4}
+              >
+                {scoreCell(row.avgScore)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="mt-1 flex flex-wrap items-center gap-3 px-3 text-[10px] text-fg-muted">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-3 rounded-sm bg-green-400/85" />
+          top model
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-3 rounded-sm bg-accent/70" />
+          avg score
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-[2px] bg-fg" />
+          class match rate
+        </span>
+      </div>
+    </div>
+  );
+};
+
 const LeaderboardView = (): React.JSX.Element => {
   const [difficulty, setDifficulty] = useState<Difficulty | "">("");
   const leaderboard = useLeaderboardRunsQuery(difficulty ? { difficulty } : {});
@@ -963,70 +1115,75 @@ const LeaderboardView = (): React.JSX.Element => {
       )}
 
       {rows.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-border border-b">
-                <th className={TH}>#</th>
-                <th className={TH}>model</th>
-                <th className={TH}>runs</th>
-                <th className={TH}>avg score</th>
-                <th className={TH}>class match</th>
-                <th className={TH}>avg location</th>
-                <th className={TH}>total tokens</th>
-                <th className={TH}>total cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, idx) => (
-                <tr
-                  className={cn(
-                    "border-border/50 border-b",
-                    idx === 0 && "bg-bg-raised/60"
-                  )}
-                  key={modelLabel(row.model)}
-                >
-                  <td className={cn(TD, "text-fg-muted")}>
-                    <div className="flex items-center gap-1">
-                      {idx === 0 && (
-                        <Trophy
-                          aria-label="top model"
-                          className="text-yellow-500"
-                          size={13}
-                        />
-                      )}
-                      {idx + 1}
-                    </div>
-                  </td>
-                  <td className={cn(TD, "font-medium")}>
-                    {modelLabel(row.model)}
-                  </td>
-                  <td className={cn(TD, "tabular-nums")}>{row.runCount}</td>
-                  <td
-                    className={cn(
-                      TD,
-                      "font-semibold tabular-nums",
-                      idx === 0 && "text-green-400"
-                    )}
-                  >
-                    {scoreCell(row.avgScore)}
-                  </td>
-                  <td className={cn(TD, "tabular-nums")}>
-                    {pct(row.classMatchRate)}
-                  </td>
-                  <td className={cn(TD, "tabular-nums")}>
-                    {pct(row.avgLocationScore)}
-                  </td>
-                  <td className={cn(TD, "text-fg-muted tabular-nums")}>
-                    {row.totalTokens > 0 ? formatNumber(row.totalTokens) : "—"}
-                  </td>
-                  <td className={cn(TD, "text-fg-muted tabular-nums")}>
-                    {row.totalCost > 0 ? formatUsd(row.totalCost) : "—"}
-                  </td>
+        <div className="space-y-4">
+          <LeaderboardChart rows={rows} />
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-border border-b">
+                  <th className={TH}>#</th>
+                  <th className={TH}>model</th>
+                  <th className={TH}>runs</th>
+                  <th className={TH}>avg score</th>
+                  <th className={TH}>class match</th>
+                  <th className={TH}>avg location</th>
+                  <th className={TH}>total tokens</th>
+                  <th className={TH}>total cost</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((row, idx) => (
+                  <tr
+                    className={cn(
+                      "border-border/50 border-b",
+                      idx === 0 && "bg-bg-raised/60"
+                    )}
+                    key={modelLabel(row.model)}
+                  >
+                    <td className={cn(TD, "text-fg-muted")}>
+                      <div className="flex items-center gap-1">
+                        {idx === 0 && (
+                          <Trophy
+                            aria-label="top model"
+                            className="text-yellow-500"
+                            size={13}
+                          />
+                        )}
+                        {idx + 1}
+                      </div>
+                    </td>
+                    <td className={cn(TD, "font-medium")}>
+                      {modelLabel(row.model)}
+                    </td>
+                    <td className={cn(TD, "tabular-nums")}>{row.runCount}</td>
+                    <td
+                      className={cn(
+                        TD,
+                        "font-semibold tabular-nums",
+                        idx === 0 && "text-green-400"
+                      )}
+                    >
+                      {scoreCell(row.avgScore)}
+                    </td>
+                    <td className={cn(TD, "tabular-nums")}>
+                      {pct(row.classMatchRate)}
+                    </td>
+                    <td className={cn(TD, "tabular-nums")}>
+                      {pct(row.avgLocationScore)}
+                    </td>
+                    <td className={cn(TD, "text-fg-muted tabular-nums")}>
+                      {row.totalTokens > 0
+                        ? formatNumber(row.totalTokens)
+                        : "—"}
+                    </td>
+                    <td className={cn(TD, "text-fg-muted tabular-nums")}>
+                      {row.totalCost > 0 ? formatUsd(row.totalCost) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </Card>

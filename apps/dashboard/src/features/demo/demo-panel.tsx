@@ -75,6 +75,8 @@ interface AuditPhase {
 
 interface DemoPanelProps {
   followupRunId: string | null;
+  onOpenAudit: (auditId: string) => void;
+  onOpenFollowup: (runId: string) => void;
   onSelectAudit: (id: string | null) => void;
   onSelectFollowupRun: (id: string | null) => void;
   selectedAuditId: string | null;
@@ -82,6 +84,8 @@ interface DemoPanelProps {
 
 export const DemoPanel = ({
   followupRunId,
+  onOpenAudit,
+  onOpenFollowup,
   onSelectAudit,
   onSelectFollowupRun,
   selectedAuditId,
@@ -119,8 +123,8 @@ export const DemoPanel = ({
 
       {enabled && (
         <div className="grid gap-4 lg:grid-cols-3">
-          <AuditColumn auditId={selectedAuditId} />
-          <DevinColumn runId={followupRunId} />
+          <AuditColumn auditId={selectedAuditId} onOpenAudit={onOpenAudit} />
+          <DevinColumn onOpenFollowup={onOpenFollowup} runId={followupRunId} />
           <GithubColumn runId={followupRunId} />
         </div>
       )}
@@ -861,8 +865,10 @@ const PhaseIdentityIcon = ({
 
 const AuditColumn = ({
   auditId,
+  onOpenAudit,
 }: {
   auditId: string | null;
+  onOpenAudit: (auditId: string) => void;
 }): React.JSX.Element => {
   const enabled = Boolean(auditId);
   const detail = useAuditQuery(auditId ?? "", { enabled });
@@ -893,7 +899,7 @@ const AuditColumn = ({
       <ErrorState error={detail.error} title="audit unavailable" />
       {audit ? (
         <div className="space-y-4">
-          <AuditHeadline audit={audit} />
+          <AuditHeadline audit={audit} onOpen={onOpenAudit} />
 
           <SegmentedProgress
             activeLabel={activePhase?.label}
@@ -917,18 +923,41 @@ const AuditColumn = ({
   );
 };
 
-const AuditHeadline = ({ audit }: { audit: AuditRow }): React.JSX.Element => (
-  <div className="space-y-0.5">
-    <div className="truncate font-medium text-fg text-sm" title={audit.repoUrl}>
-      {audit.title ?? audit.repoUrl}
+const AuditHeadline = ({
+  audit,
+  onOpen,
+}: {
+  audit: AuditRow;
+  onOpen: (auditId: string) => void;
+}): React.JSX.Element => (
+  <button
+    className="group block w-full rounded-md border border-border bg-bg p-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:bg-bg-hover hover:shadow-[0_8px_24px_-12px_rgb(var(--accent)/0.4)]"
+    onClick={() => onOpen(audit.id)}
+    title="open audit detail"
+    type="button"
+  >
+    <div className="flex items-center justify-between gap-2">
+      <div className="min-w-0 space-y-0.5">
+        <div
+          className="truncate font-medium text-fg text-sm group-hover:text-accent"
+          title={audit.repoUrl}
+        >
+          {audit.title ?? audit.repoUrl}
+        </div>
+        <div
+          className="truncate font-mono text-[11px] text-fg-muted"
+          title={audit.id}
+        >
+          {audit.id}
+        </div>
+      </div>
+      <ChevronRight
+        aria-hidden="true"
+        className="shrink-0 text-fg-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
+        size={14}
+      />
     </div>
-    <div
-      className="truncate font-mono text-[11px] text-fg-muted"
-      title={audit.id}
-    >
-      {audit.id}
-    </div>
-  </div>
+  </button>
 );
 
 const SegmentedProgress = ({
@@ -1167,8 +1196,10 @@ const stagePhaseStatus = (stage: CveFollowupStageRow): AuditPhaseStatus => {
 };
 
 const DevinColumn = ({
+  onOpenFollowup,
   runId,
 }: {
+  onOpenFollowup: (runId: string) => void;
   runId: string | null;
 }): React.JSX.Element => {
   const followup = useCveFollowupQuery(runId ?? "", {
@@ -1219,7 +1250,7 @@ const DevinColumn = ({
       <ErrorState error={followup.error} title="follow-up unavailable" />
       {data ? (
         <div className="space-y-4">
-          <DevinHeadline followup={data.followup} />
+          <DevinHeadline followup={data.followup} onOpen={onOpenFollowup} />
 
           <DevinTwoStepProgress
             activeStage={activeStage}
@@ -1240,20 +1271,39 @@ const DevinColumn = ({
 
 const DevinHeadline = ({
   followup,
+  onOpen,
 }: {
   followup: CveFollowupDetailResponse["followup"];
+  onOpen: (runId: string) => void;
 }): React.JSX.Element => (
-  <div className="space-y-0.5">
-    <div className="truncate font-medium text-fg text-sm" title={followup.id}>
-      {followup.repoName ?? followup.taskId}
+  <button
+    className="group block w-full rounded-md border border-border bg-bg p-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:bg-bg-hover hover:shadow-[0_8px_24px_-12px_rgb(var(--accent)/0.4)]"
+    onClick={() => onOpen(followup.runId)}
+    title="open follow-up detail"
+    type="button"
+  >
+    <div className="flex items-center justify-between gap-2">
+      <div className="min-w-0 space-y-0.5">
+        <div
+          className="truncate font-medium text-fg text-sm group-hover:text-accent"
+          title={followup.id}
+        >
+          {followup.repoName ?? followup.taskId}
+        </div>
+        <div
+          className="truncate font-mono text-[11px] text-fg-muted"
+          title={followup.ghsaId}
+        >
+          {followup.ghsaId}
+        </div>
+      </div>
+      <ChevronRight
+        aria-hidden="true"
+        className="shrink-0 text-fg-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
+        size={14}
+      />
     </div>
-    <div
-      className="truncate font-mono text-[11px] text-fg-muted"
-      title={followup.ghsaId}
-    >
-      {followup.ghsaId}
-    </div>
-  </div>
+  </button>
 );
 
 const DevinTwoStepProgress = ({

@@ -469,7 +469,7 @@ function TransformFrameView({ frame }: { frame: TransformFrame }) {
         {`GHSA-rqpp-rjj8-7wv8
 Auth Bypass in OpenClaw Gateway
 Severity: Critical (CVSS 10.0)
-CWE-863 · CWE-285
+CWE-269 · CWE-862
 
 WebSocket handler did not strip
 client-declared scopes…`}
@@ -503,10 +503,10 @@ client-declared scopes…`}
       <div className="flex h-full flex-col justify-center gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1 font-mono text-white/75 text-xs">
-            CWE-863
+            CWE-269
           </span>
           <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1 font-mono text-white/75 text-xs">
-            CWE-285
+            CWE-862
           </span>
           <span className="font-mono text-white/55">→</span>
           <span className="rounded-full bg-white px-2.5 py-1 font-mono text-[rgb(var(--bg-deep))] text-xs">
@@ -525,7 +525,9 @@ client-declared scopes…`}
       <div className="flex h-full flex-col justify-center gap-2">
         <div className="rounded border border-white/10 bg-black/30 px-2.5 py-2">
           <div className="break-all font-mono text-sm text-white/85">
-            <span className="text-white/55">src/gateway/server/ws/</span>
+            <span className="text-white/55">
+              src/gateway/server/ws-connection/
+            </span>
             message-handler.ts
           </div>
           <div className="font-mono text-emerald-300/85 text-xs">
@@ -534,7 +536,9 @@ client-declared scopes…`}
         </div>
         <div className="rounded border border-white/10 bg-black/30 px-2.5 py-2">
           <div className="break-all font-mono text-sm text-white/85">
-            <span className="text-white/55">src/gateway/server/ws/</span>
+            <span className="text-white/55">
+              src/gateway/server/ws-connection/
+            </span>
             message-handler.ts
           </div>
           <div className="font-mono text-emerald-300/85 text-xs">
@@ -609,7 +613,7 @@ const TREE_LINES: { indent: number; name: string; pin?: "ok" | "miss" }[] = [
   { indent: 0, name: "src/" },
   { indent: 1, name: "gateway/" },
   { indent: 2, name: "server/" },
-  { indent: 3, name: "ws/" },
+  { indent: 3, name: "ws-connection/" },
   { indent: 4, name: "message-handler.ts", pin: "ok" },
   { indent: 4, name: "auth-handler.ts" },
   { indent: 4, name: "frame-codec.ts" },

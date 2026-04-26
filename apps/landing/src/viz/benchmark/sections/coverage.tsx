@@ -3,6 +3,13 @@ import { AnimatedBar } from "@/viz/components/animated-bar";
 import { Reveal } from "@/viz/components/reveal";
 import { useInView } from "@/viz/components/use-in-view";
 
+const MEM_TOTAL = VULN_CLASSES.filter((c) => c.memorySafety).reduce(
+  (sum, c) => sum + c.count,
+  0
+);
+const ALL_TOTAL = VULN_CLASSES.reduce((sum, c) => sum + c.count, 0);
+const MEM_SHARE_PCT = Math.round((MEM_TOTAL / ALL_TOTAL) * 100);
+
 export function CoverageSection() {
   return (
     <section className="relative border-white/15 border-t bg-[rgb(var(--bg-deep))]">
@@ -19,12 +26,9 @@ export function CoverageSection() {
           <p className="mt-6 max-w-4xl text-base text-white/80 md:text-lg">
             Stratified sampling on CWE class plus a curation guideline that
             looks for the same vulnerability pattern across sibling files.
-            Memory-safety bugs are still here &mdash; they&rsquo;re just no
-            longer{" "}
-            <span className="text-white/90">
-              {Math.round((4 * 11) / VULN_CLASSES.length)}%
-            </span>{" "}
-            of the dataset.
+            Memory-safety bugs are still here &mdash; they&rsquo;re just{" "}
+            <span className="text-white/90">{MEM_SHARE_PCT}%</span> of the
+            dataset, not the 90% you get from a C/C++ corpus.
           </p>
         </Reveal>
 

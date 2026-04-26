@@ -449,34 +449,26 @@ export function SplashPage() {
       </div>
       <nav
         aria-label="Project pages"
-        className="absolute right-0 bottom-0 left-0 flex items-center justify-center gap-5 px-6 pb-8 font-mono text-[12px] uppercase tracking-[0.16em]"
-        style={{ color: "rgb(140, 185, 255)" }}
+        className="absolute right-0 bottom-0 left-0 flex flex-wrap items-center justify-center gap-2 px-6 pb-8 font-mono text-[12px] uppercase tracking-[0.14em]"
       >
         <a
-          className="underline-offset-4 transition-colors hover:text-white hover:underline"
+          className="rounded-full px-4 py-2 font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] transition-transform hover:-translate-y-0.5"
           href="/viz/benchmark"
+          style={{ backgroundColor: "rgb(36, 92, 220)" }}
         >
           viz · benchmark
         </a>
-        <span
-          aria-hidden="true"
-          className="h-px w-5"
-          style={{ backgroundColor: "rgba(140, 185, 255, 0.35)" }}
-        />
         <a
-          className="underline-offset-4 transition-colors hover:text-white hover:underline"
+          className="rounded-full px-4 py-2 font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] transition-transform hover:-translate-y-0.5"
           href="/viz/harness"
+          style={{ backgroundColor: "rgb(36, 92, 220)" }}
         >
           viz · harness
         </a>
-        <span
-          aria-hidden="true"
-          className="h-px w-5"
-          style={{ backgroundColor: "rgba(140, 185, 255, 0.35)" }}
-        />
         <a
-          className="underline-offset-4 transition-colors hover:text-white hover:underline"
+          className="rounded-full px-4 py-2 font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] transition-transform hover:-translate-y-0.5"
           href="/animations/benchmark"
+          style={{ backgroundColor: "rgb(36, 92, 220)" }}
         >
           animations · benchmark
         </a>

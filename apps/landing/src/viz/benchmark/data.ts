@@ -218,11 +218,11 @@ export const TRANSFORM_EXAMPLE: BenchmarkTask & {
   cveSummary:
     "Shared-secret WebSocket connections retain client-declared scopes including operator.admin.",
   cvss: 10.0,
-  cwes: ["CWE-863", "CWE-285"],
+  cwes: ["CWE-269", "CWE-862"],
   repo: "https://github.com/openclaw/openclaw",
   language: "typescript",
   ecosystem: "npm",
-  patchCommit: "9af00b3a4f12b7e98c7e9e2a7c2fbe5cf22e1d34",
+  patchCommit: "5e389d5e7c9233ec91026ab2fea299ebaf3249f6",
   prePatchCommit: "55f47e5ce658bf3bdcb3eac3a2a5b4ed4aa9f5ce",
   vulnClass: "auth-bypass",
   reason:
