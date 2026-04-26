@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6j63-35hj-vmcg",
+  "post_patch_commit": "9ae920951b46ff0163b16c55d744e89acb1036d4",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies only lib/mysql-binuuid/type.rb. The serialize method is the vulnerable function: it passes user input through strip_dashes (which only removes dash characters) then directly into Data.new without validating the input is a valid UUID hex string. No sibling files exist with the same pattern — the lib directory contains only three files (type.rb, version.rb, and the main require file). Pre-assigned class sql-injection confirmed correct from CWE-89, the advisory description, and the patch which adds UUID hex validation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
