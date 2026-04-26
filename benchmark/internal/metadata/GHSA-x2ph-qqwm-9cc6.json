@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x2ph-qqwm-9cc6",
+  "post_patch_commit": "b58c0c117a7ccb71552f33d69fb794c7e97acee3",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit is a merge of the develop branch into master for release 2.7.0, which includes many unrelated feature changes. The actual security fix is commit 25c2a2a2 (fix/deeplink/SDK-3095) which adds deeplink URL validation in the Android plugin. The primary vulnerable location is src/android/CleverTapPlugin.java in onNewIntent(), where URI data from an ACTION_VIEW intent is concatenated directly into a JavaScript string passed to webView.loadUrl('javascript:...'). The iOS sibling src/ios/CleverTapPlugin.m has the identical pattern in handleDeepLink(), where the URL is interpolated into a JavaScript string via evalJs without sanitization. Pre-assigned class xss is correct: the vulnerability is reflected XSS through deep link data injected into evaluated JavaScript.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
