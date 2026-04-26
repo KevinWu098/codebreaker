@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rr46-m366-gm44",
+  "post_patch_commit": "ed96baeed19b4e11b6cbc2dcc6776245ba5fab13",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (paddle/fluid/pybind/op_function_common.cc) in the PyObject_CheckLongOrToLong function, adding a numel() == 1 check before treating a tensor as a scalar long type. Pre-assigned class null-deref (CWE-476) is correct — the advisory explicitly states 'Null pointer dereference in paddle.flip' and the fix adds a missing validation check. No sibling files contain the same vulnerability pattern as this is a unique utility function.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
