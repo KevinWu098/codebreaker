@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gcm9-cc3r-c6vj",
+  "post_patch_commit": "e7e92e3e6c4a53bff1bb91b3b0b578b47d018222",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit e7e92e3 adds DOMPurify sanitization in the markdown preview handler. The renderContent function previously set innerHTML directly from markdown-it output without any sanitization. Only 2 non-test source files were changed (the handler and package.json for the new dependency). Vulnerability class xss confirmed from CWE-79 and the patch clearly adding HTML sanitization.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
