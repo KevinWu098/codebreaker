@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xjw9-4gw8-4rqx",
+  "post_patch_commit": "d6d4f3bc124b998da16e9e20460d9dd89a15fbbe",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the squash-merge of PR #13505 into main. Only one source file was changed: python/semantic_kernel/connectors/in_memory.py. The patch adds a blocklist of dangerous Python dunder attributes (blocked_filter_attributes) and validates AST Attribute nodes against it in _parse_and_validate_filter. No sibling files share this vulnerability pattern — the filter parsing and eval logic is unique to the InMemoryCollection class. Pre-assigned class command-injection retained: CWE-94 (Code Injection) maps to command-injection as the sandbox escape via eval leads to arbitrary code/command execution.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

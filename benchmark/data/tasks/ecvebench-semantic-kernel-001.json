@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-semantic-kernel-001",
+  "ghsa_id": "GHSA-xjw9-4gw8-4rqx",
+  "codebase": {
+    "repo": "https://github.com/microsoft/semantic-kernel",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "c4d0a623f22a9a138e98759127525ce9d47d3607"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "In-memory data storage and query filtering logic"
+    },
+    "L2": {
+      "description": "A remote code execution vulnerability exists where filter expressions passed to an in-memory vector store are parsed and evaluated without sufficiently restricting access to dangerous Python object introspection attributes. An attacker can craft a filter expression that traverses the Python object hierarchy to reach and invoke arbitrary code, bypassing the intended expression sandbox."
+    },
+    "L3": {
+      "area": "In-memory vector store collection and its filter expression parsing and validation",
+      "description": "A remote code execution vulnerability exists where filter expressions passed to an in-memory vector store are parsed and evaluated without sufficiently restricting access to dangerous Python dunder attributes. An attacker can craft a lambda-based filter expression that uses attribute chains such as class introspection and global access to escape the AST-validated expression sandbox and execute arbitrary code on the server."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 10.0,
+    "reason": "The InMemoryVectorStore filter functionality parses user-supplied lambda expressions and evaluates them via eval() with an AST allowlist, but fails to block access to dangerous Python dunder attributes (e.g., __class__, __globals__, __builtins__), allowing sandbox escape and arbitrary code execution.",
+    "locations": [
+      {
+        "file": "python/semantic_kernel/connectors/in_memory.py",
+        "function": "_parse_and_validate_filter"
+      }
+    ]
+  }
+}
