@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "External tool and server configuration processing logic"
+      "area": "Tool and integration node configuration processing layer"
     },
     "L2": {
-      "description": "A code injection vulnerability exists where user-provided server configuration input is processed using a dynamic code evaluation mechanism rather than a safe data parser. An attacker can craft a malicious configuration string that, when submitted via the API, causes arbitrary JavaScript to execute with full Node.js runtime privileges, enabling system command execution, file system access, and data exfiltration."
+      "description": "A code injection vulnerability exists where user-provided server configuration input is dynamically evaluated using a JavaScript code execution mechanism instead of a safe data parser. An attacker can craft a malicious configuration string that, when submitted via the API, causes arbitrary JavaScript to execute with full Node.js runtime privileges, enabling system command execution, file system access, and data exfiltration."
     },
     "L3": {
-      "area": "External tool and server configuration processing logic",
-      "description": "A code injection vulnerability exists where user-provided server configuration input is processed using a dynamic code evaluation mechanism rather than a safe data parser. An attacker can craft a malicious configuration string that, when submitted via the API, causes arbitrary JavaScript to execute with full Node.js runtime privileges, enabling system command execution, file system access, and data exfiltration."
+      "area": "MCP (Model Context Protocol) server configuration and connection handling nodes",
+      "description": "A code injection vulnerability exists where user-provided MCP server configuration input is dynamically evaluated using a JavaScript code execution mechanism instead of a safe data parser. An attacker can craft a malicious configuration string that, when submitted through the node configuration API endpoint, causes arbitrary JavaScript to execute with full Node.js runtime privileges, enabling system command execution, file system access, and data exfiltration."
     }
   },
   "ground_truth": {
