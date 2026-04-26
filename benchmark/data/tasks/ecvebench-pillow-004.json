@@ -13,11 +13,11 @@
       "area": "Image format decoding and decompression"
     },
     "L2": {
-      "description": "A buffer overflow vulnerability exists in an image format's run-length encoding decoder. The decompression routine does not properly validate run-length counts against the output buffer size, allowing an attacker to trigger a buffer overrun and potentially execute arbitrary code via a crafted image file."
+      "description": "A buffer overflow vulnerability exists in an image format's run-length encoding decoder. The decompression routine does not properly validate run-length counts against the output buffer size, allowing an attacker to trigger a heap buffer overrun and potentially execute arbitrary code via a crafted image file."
     },
     "L3": {
-      "area": "Image format decoding and decompression",
-      "description": "A buffer overflow vulnerability exists in an image format's run-length encoding decoder. The decompression routine does not properly validate run-length counts against the output buffer size, allowing an attacker to trigger a buffer overrun and potentially execute arbitrary code via a crafted image file."
+      "area": "SGI image format decoding and run-length encoding decompression",
+      "description": "A buffer overflow vulnerability exists in the SGI image format's run-length encoding decoder. The decompression routine does not properly validate run-length counts against the image dimensions, allowing an attacker to trigger a heap buffer overrun and potentially execute arbitrary code via a crafted SGI image file."
     }
   },
   "ground_truth": {
