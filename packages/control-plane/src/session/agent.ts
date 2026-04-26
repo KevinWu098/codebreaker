@@ -12,6 +12,8 @@ import {
   type TurnConfig,
   type TurnContext,
 } from "@cloudflare/think";
+import { BENCHMARK_SKILLS_CONTEXT } from "@codebreaker/benchmark-runner/agent-core/prompts";
+import { capabilitiesForThinkToolNames } from "@codebreaker/benchmark-runner/agent-core/tools";
 import type { AgentOutput } from "@codebreaker/benchmark-runner/schemas";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
@@ -66,11 +68,7 @@ const DEFAULT_SYSTEM_PROMPT =
 const FINALIZE_PROMPT = (reason: string) =>
   `Stop now. Do not call tools. Based only on the transcript and tool results so far, give your best final answer. If the original task required a specific output format, obey that format exactly. Stop reason: ${reason}`;
 
-// Detects shell commands that invoke `git clone`, including chained or piped
-// forms like `cd /workspace && git clone ...` or `git -C foo clone ...`.
-// The leading boundary covers start-of-line, whitespace, and the common
-// shell separators (`|`, `;`, `&`, `(`).
-const GIT_CLONE_RE = /(?:^|[\s|;&(])git(?:\s+-C\s+\S+)?\s+clone\b/;
+const GIT_COMMAND_RE = /\bgit\b/;
 
 export class SessionAgent extends Think<Env, SessionAgentState> {
   initialState: SessionAgentState = {
@@ -143,18 +141,36 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
             this.readConfig()?.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
         },
       })
+      .withContext("task", {
+        description: "Benchmark or repository task configuration",
+        provider: {
+          get: async () => this.taskContext(),
+        },
+      })
+      .withContext("tool_guide", {
+        description: "Active tool policy and reusable tool capability guide",
+        provider: {
+          get: async () => this.toolGuideContext(),
+        },
+      })
+      .withContext("artifact_state", {
+        description: "Current benchmark artifact Git repository state",
+        provider: {
+          get: async () => this.artifactStateContext(),
+        },
+      })
+      .withContext("skills", {
+        description: "Reusable cybersecurity workflow skills",
+        provider: {
+          get: async () =>
+            this.isBenchmarkSession()
+              ? BENCHMARK_SKILLS_CONTEXT
+              : "No benchmark skills are active for this session.",
+        },
+      })
       .withContext("memory", {
         description: "Durable operator-visible session memory",
         maxTokens: 2000,
-      })
-      .withContext("benchmark_artifact", {
-        description: "Current benchmark artifact Git repository state",
-        provider: {
-          get: async () =>
-            this.state.artifact
-              ? JSON.stringify(this.state.artifact, null, 2)
-              : "No benchmark artifact repository is configured.",
-        },
       });
 
     if (!config?.compaction.enabled) {
@@ -250,7 +266,7 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     }
 
     const turnConfig: TurnConfig = {
-      activeTools: activeBuiltinToolNames(config.extensionPolicy),
+      activeTools: this.activeToolNames(config),
       maxSteps: config.maxSteps,
     };
 
@@ -323,39 +339,32 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       };
     }
 
-    const cloneBlock = this.detectRedundantClone(ctx);
+    const gitBlock = this.detectProhibitedGitCommand(ctx);
 
-    if (cloneBlock) {
-      return cloneBlock;
+    if (gitBlock) {
+      return gitBlock;
     }
 
     this.recordToolCall(ctx.toolName);
   }
 
-  private detectRedundantClone(
+  private detectProhibitedGitCommand(
     ctx: ToolCallContext
   ): ToolCallDecision | undefined {
     if (ctx.toolName !== "exec_remote") {
       return;
     }
 
-    const artifact = this.state.artifact;
-
-    if (!artifact) {
-      return;
-    }
-
     const command = (ctx.input as { command?: unknown } | undefined)?.command;
 
-    if (typeof command !== "string" || !GIT_CLONE_RE.test(command)) {
+    if (typeof command !== "string" || !GIT_COMMAND_RE.test(command)) {
       return;
     }
-
-    const repoPath = `/workspace/${artifact.runRepoName}`;
 
     return {
       action: "block",
-      reason: `Refusing to run \`git clone\`: the benchmark target is already checked out at ${repoPath}. Use exec_remote against that path (e.g. \`git -C ${repoPath} log -1\`, \`grep -RIn ... ${repoPath}\`) or remote_read instead. Do not re-clone or download the repository.`,
+      reason:
+        "Git commands are blocked for benchmark integrity because repository metadata can reveal patch/answer information. Use ls, grep, sed, head, tail, or remote_read against the existing checkout instead.",
     };
   }
 
@@ -626,6 +635,74 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     return artifact ? BenchmarkArtifactStateSchema.parse(artifact) : null;
   }
 
+  private taskContext(): string {
+    const config = this.readConfig();
+
+    if (!config?.benchmark) {
+      return config?.repo
+        ? JSON.stringify(config.repo, null, 2)
+        : "No benchmark or repository task is configured.";
+    }
+
+    return JSON.stringify(
+      {
+        benchmark: config.benchmark,
+        promptSource:
+          "Benchmark instructions are rendered by @codebreaker/benchmark-runner agent-core prompt packs.",
+      },
+      null,
+      2
+    );
+  }
+
+  private toolGuideContext(): string {
+    const config = this.readConfig();
+
+    if (!config) {
+      return "No session config is available.";
+    }
+
+    const toolNames = this.activeToolNames(config);
+    const capabilities = capabilitiesForThinkToolNames(toolNames).map(
+      (capability) => ({
+        description: capability.description,
+        id: capability.id,
+        risk: capability.risk,
+        thinkToolNames: capability.thinkToolNames.filter((toolName) =>
+          toolNames.includes(toolName)
+        ),
+      })
+    );
+
+    return JSON.stringify(
+      {
+        activeToolNames: toolNames,
+        capabilities,
+        enforcement:
+          "Tool availability is constrained by activeTools, schemas, and tool implementations. Submission is only active on the dedicated submission turn.",
+        extensionPolicy: config.extensionPolicy,
+      },
+      null,
+      2
+    );
+  }
+
+  private artifactStateContext(): string {
+    return this.state.artifact
+      ? JSON.stringify(this.state.artifact, null, 2)
+      : "No benchmark artifact repository is configured.";
+  }
+
+  private activeToolNames(config: SessionConfig): string[] {
+    const toolNames = activeBuiltinToolNames(config.extensionPolicy);
+
+    if (!this.isBenchmarkSession()) {
+      return toolNames;
+    }
+
+    return toolNames.filter((toolName) => toolName !== "execute");
+  }
+
   private async ensureSessionReady(): Promise<void> {
     if (this.session) {
       return;
@@ -768,9 +845,10 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
     return {
       activeTools: [BENCHMARK_SUBMIT_TOOL_NAME],
       maxSteps: 2,
+      toolChoice: { toolName: BENCHMARK_SUBMIT_TOOL_NAME, type: "tool" },
       system: `${ctx.system}
 
-You are on the submission turn. You must call the tool \`${BENCHMARK_SUBMIT_TOOL_NAME}\` exactly once with your final result. The tool arguments enforce the JSON contract. Do not use any other tools. Base your result only on the transcript and tool output from earlier turns.`,
+You are on the submission turn. You must call the tool \`${BENCHMARK_SUBMIT_TOOL_NAME}\` exactly once with your strongest single final result object. The tool arguments enforce the JSON contract. Do not write the JSON in an assistant message. Do not use any other tools. Base your result only on the transcript and tool output from earlier turns.`,
     };
   }
 

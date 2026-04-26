@@ -9,7 +9,7 @@ export const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 300_000;
 export const DEFAULT_BENCHMARK_MAX_STEPS = 50;
 export const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
 export const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
-export const DEFAULT_BENCHMARK_MAX_TURNS = 2;
+export const DEFAULT_BENCHMARK_MAX_TURNS = 10;
 export const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
 
 export const GhsaIdSchema = z.string().regex(GHSA_ID_PATTERN);
@@ -498,6 +498,18 @@ export const CveFollowupStageRowSchema = z
      * or was skipped (e.g. Devin not configured, or stage already terminal).
      */
     liveDevinStatus: z.string().nullable().optional(),
+    modalSandbox: z
+      .object({
+        createdAt: z.number(),
+        dashboardCommand: z.string().min(1),
+        profile: z.string().min(1),
+        sandboxId: z.string().min(1),
+        sessionId: z.string().min(1),
+        snapshotId: z.string().nullable(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     prUrl: z.string().nullable(),
     status: CveFollowupStageStatusSchema,
     updatedAt: z.string().datetime(),

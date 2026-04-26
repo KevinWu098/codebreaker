@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-74j8-w7f9-pp62",
+  "post_patch_commit": "4cdf52e55666864e5f90ed502e9fc13e18985b7b",
+  "noisy_patch": false,
+  "curation_notes": "Advisory fix merge commit 4cdf52e adds namespace_controller.go and wires NamespaceReconciler in user/main.go; aligns with task ground-truth locations in controllers/user.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

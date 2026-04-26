@@ -3,6 +3,7 @@ import {
   CreateBenchmarkRunRequestSchema,
   CreateCveFollowupRequestSchema,
   CveFollowupStageKindSchema,
+  type CveFollowupStageRow,
   ListCveFollowupsQuerySchema,
 } from "@codebreaker/benchmark-runner/schemas";
 import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
@@ -10,6 +11,7 @@ import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/d
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
 import { enrichStagesWithDevinStatus } from "@codebreaker/control-plane/cve-followup/devin";
 import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
+import { cveValidationSessionId } from "@codebreaker/control-plane/cve-followup/validation";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { CveFollowupStore } from "@codebreaker/control-plane/db/cve-followups";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
@@ -45,6 +47,25 @@ import { z } from "zod";
 const SessionParamsSchema = z.object({
   id: z.string().min(1),
 });
+
+const MODAL_METADATA_TIMEOUT_MS = 1000;
+
+const withTimeout = <T>(promise: Promise<T>, durationMs: number): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`Timed out after ${durationMs}ms`));
+    }, durationMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timeout);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timeout);
+        reject(error);
+      }
+    );
+  });
 
 const BenchmarkRunParamsSchema = z.object({
   id: z.string().min(1),
@@ -111,12 +132,50 @@ export const createRouter = (): Hono<{
       return null;
     }
     const stages = await cve.listStages(f.id);
+    const withModalSandboxes = await enrichStagesWithModalSandbox(env, stages);
     return {
       events: await cve.listEvents(f.id),
       followup: f,
-      stages: await enrichStagesWithDevinStatus(env, stages),
+      stages: await enrichStagesWithDevinStatus(env, withModalSandboxes),
       validations: await cve.listValidationsForFollowup(f.id),
     };
+  };
+
+  const enrichStagesWithModalSandbox = (
+    env: Env,
+    stages: CveFollowupStageRow[]
+  ): Promise<CveFollowupStageRow[]> => {
+    const executor = ModalExecutor.fromEnv(env);
+    return Promise.all(
+      stages.map(async (stage) => {
+        if (!(stage.kind === "repro" || stage.kind === "fix")) {
+          return stage;
+        }
+        try {
+          const sessionId = cveValidationSessionId(stage.kind, stage.id);
+          const sandbox = await withTimeout(
+            executor.getSandbox(sessionId),
+            MODAL_METADATA_TIMEOUT_MS
+          );
+          if (!sandbox) {
+            return { ...stage, modalSandbox: null };
+          }
+          return {
+            ...stage,
+            modalSandbox: {
+              createdAt: sandbox.created_at,
+              dashboardCommand: `modal dashboard ${sandbox.sandbox_id}`,
+              profile: sandbox.profile,
+              sandboxId: sandbox.sandbox_id,
+              sessionId: sandbox.session_id,
+              snapshotId: sandbox.snapshot_id ?? null,
+            },
+          };
+        } catch {
+          return { ...stage, modalSandbox: null };
+        }
+      })
+    );
   };
 
   app.get(
@@ -303,23 +362,6 @@ export const createRouter = (): Hono<{
     zValidator("param", BenchmarkRunParamsSchema),
     async (context) => {
       const { id: runId } = context.req.valid("param");
-      const cve = new CveFollowupStore(context.env.DB);
-      const follow = await cve.getByRunId(runId);
-      if (
-        follow &&
-        (follow.status === "pending" || follow.status === "running")
-      ) {
-        try {
-          await new CveFollowupOrchestrator(context.env).reconcileOne(
-            follow.id
-          );
-        } catch (error) {
-          console.error(
-            "[cve-followup] GET /benchmark-runs/.../followup reconcile",
-            error
-          );
-        }
-      }
       const detail = await cveFollowupDetail(context.env, runId);
       if (!detail) {
         return jsonError(
@@ -411,20 +453,15 @@ export const createRouter = (): Hono<{
           404
         );
       }
-      try {
-        await cveOrch.reconcileOne(detailAfterRetry.followup.id);
-      } catch (error) {
-        console.error(
-          "[cve-followup] POST /followup/.../retry inline reconcile",
-          error
-        );
-      }
-      const detail =
-        (await cveFollowupDetail(context.env, id)) ?? detailAfterRetry;
       context.executionCtx.waitUntil(
-        cveOrch.reconcileActiveFollowups().then(() => undefined)
+        cveOrch.reconcileOne(detailAfterRetry.followup.id).catch((error) => {
+          console.error(
+            "[cve-followup] POST /followup/.../retry reconcile",
+            error
+          );
+        })
       );
-      return context.json(detail);
+      return context.json(detailAfterRetry);
     }
   );
 

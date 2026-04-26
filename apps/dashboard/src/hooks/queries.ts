@@ -20,7 +20,7 @@ import type {
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { ApiClientError, api } from "@/lib/api";
 import { isAuthorized, useConnection } from "@/lib/connection";
-import { POLLING } from "@/lib/polling";
+import { getCveFollowupPollIntervalMs, POLLING } from "@/lib/polling";
 import { qk } from "@/lib/query-keys";
 
 export const useSessionsQuery = (
@@ -84,11 +84,11 @@ export const useCveFollowupQuery = (
   const connection = useConnection();
   const canFetch = options?.enabled ?? true;
 
-  return useQuery({
+  return useQuery<CveFollowupDetailResponse | null, Error>({
     enabled: isAuthorized(connection) && canFetch,
     queryFn: () => api.getCveFollowup(runId),
     queryKey: qk.cveFollowup(connection, runId),
-    refetchInterval: POLLING.benchmarks.cveFollowup,
+    refetchInterval: (query) => getCveFollowupPollIntervalMs(query.state.data),
   });
 };
 

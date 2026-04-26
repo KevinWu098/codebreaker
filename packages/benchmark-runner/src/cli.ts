@@ -1,9 +1,14 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { runDirectBenchmark } from "@codebreaker/benchmark-runner/agent-core/direct-runner";
+import { BenchmarkToolModeSchema } from "@codebreaker/benchmark-runner/agent-core/tools";
 import { BenchmarkApiClient } from "@codebreaker/benchmark-runner/api-client";
+import { loadBenchmarkTasks } from "@codebreaker/benchmark-runner/loaders";
 import {
   BenchmarkCleanupPolicySchema,
+  type BenchmarkRunModel,
+  BenchmarkRunModelSchema,
   CreateBenchmarkRunRequestSchema,
   type CveFollowupStageKind,
   CveFollowupStageKindSchema,
@@ -75,6 +80,7 @@ const usage = `Usage:
   benchmark-runner list
   benchmark-runner runs
   benchmark-runner run --task <id> --difficulty <L0|L1|L2|L3> --model <provider/model> [--cleanup <policy>]
+  benchmark-runner direct --task <id> --difficulty <L0|L1|L2|L3> --model <provider/model> [--tools none]
   benchmark-runner start <runId>
   benchmark-runner inspect <runId>
   benchmark-runner cleanup <runId>
@@ -123,6 +129,32 @@ const main = async (): Promise<void> => {
         taskId,
       });
       const response = await client.createRun(request);
+      process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
+      return;
+    }
+    case "direct": {
+      const flags = parseFlags(args);
+      const taskId = requireFlag(flags, "task");
+      const difficulty = DifficultySchema.parse(
+        requireFlag(flags, "difficulty")
+      );
+      const model = parseModel(requireFlag(flags, "model"));
+      const toolMode = BenchmarkToolModeSchema.parse(flags.tools ?? "none");
+      const tasks = await loadBenchmarkTasks(
+        join(import.meta.dirname, "../../..")
+      );
+      const task = tasks.find((entry) => entry.task_id === taskId);
+
+      if (!task) {
+        throw new Error(`Unknown benchmark task: ${taskId}`);
+      }
+
+      const response = await runDirectBenchmark({
+        difficulty,
+        model,
+        task,
+        toolMode,
+      });
       process.stdout.write(`${JSON.stringify(response, null, 2)}\n`);
       return;
     }
@@ -264,7 +296,7 @@ const requireFlag = (flags: Record<string, string>, name: string): string => {
   return value;
 };
 
-const parseModel = (value: string): { id: string; provider: string } => {
+const parseModel = (value: string): BenchmarkRunModel => {
   const [provider, ...idParts] = value.split("/");
   const id = idParts.join("/");
 
@@ -272,7 +304,7 @@ const parseModel = (value: string): { id: string; provider: string } => {
     throw new Error("Model must be formatted as provider/model-id");
   }
 
-  return { id, provider };
+  return BenchmarkRunModelSchema.parse({ id, provider });
 };
 
 main().catch((error: unknown) => {

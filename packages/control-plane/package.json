@@ -131,6 +131,7 @@
   },
   "scripts": {
     "ensure-targets": "node --experimental-strip-types src/scripts/ensure-stable-targets.ts",
+    "generate:benchmark-fixtures": "node ./scripts/generate-benchmark-fixtures.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

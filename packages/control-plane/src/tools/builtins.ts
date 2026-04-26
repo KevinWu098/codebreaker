@@ -1,6 +1,10 @@
 import { createWorkspaceStateBackend, type Workspace } from "@cloudflare/shell";
 import { createExecuteTool } from "@cloudflare/think/tools/execute";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
+import {
+  THINK_TOOL_CAPABILITY_IDS,
+  type ToolCapabilityId,
+} from "@codebreaker/benchmark-runner/agent-core/tools";
 import { ModalExecutor } from "@codebreaker/control-plane/sandbox/modal";
 import { createDeepWikiTools } from "@codebreaker/control-plane/tools/deepwiki";
 import { createHttpTools } from "@codebreaker/control-plane/tools/http";
@@ -25,21 +29,28 @@ export interface BuiltinToolOptions {
   workspace: Workspace;
 }
 
-const WORKSPACE_TOOL_TIERS = {
-  delete: ToolTier.WriteLocal,
-  edit: ToolTier.WriteLocal,
-  find: ToolTier.Read,
-  grep: ToolTier.Read,
-  list: ToolTier.Read,
-  read: ToolTier.Read,
-  write: ToolTier.WriteLocal,
-} as const;
+const CAPABILITY_TIERS = {
+  benchmark_submission: ToolTier.Read,
+  deepwiki_orientation: ToolTier.Network,
+  local_execute: ToolTier.ExecLocal,
+  public_http_fetch: ToolTier.Network,
+  remote_execute: ToolTier.ExecRemote,
+  remote_file_read: ToolTier.ExecRemote,
+  remote_file_write: ToolTier.ExecRemote,
+  session_memory_read: ToolTier.Read,
+  session_memory_write: ToolTier.WriteLocal,
+  workspace_read: ToolTier.Read,
+  workspace_write: ToolTier.WriteLocal,
+} as const satisfies Record<ToolCapabilityId, ToolTier>;
 
-const SESSION_TOOL_TIERS = {
-  load_context: ToolTier.Read,
-  search_context: ToolTier.Read,
-  set_context: ToolTier.WriteLocal,
-} as const;
+const THINK_TOOL_TIERS = Object.fromEntries(
+  Object.entries(THINK_TOOL_CAPABILITY_IDS)
+    .filter(([, capabilityId]) => capabilityId !== "benchmark_submission")
+    .map(([toolName, capabilityId]) => [
+      toolName,
+      CAPABILITY_TIERS[capabilityId],
+    ])
+);
 
 export const createBuiltinTools = ({
   defaultRemoteTimeoutSeconds,
@@ -74,19 +85,7 @@ export const createBuiltinTools = ({
 };
 
 export const activeBuiltinToolNames = (policy: ExtensionPolicy): string[] =>
-  activeToolNamesForPolicy(
-    {
-      ...WORKSPACE_TOOL_TIERS,
-      ...SESSION_TOOL_TIERS,
-      ...createDeepWikiTools().tiers,
-      ...createHttpTools().tiers,
-      execute: ToolTier.ExecLocal,
-      exec_remote: ToolTier.ExecRemote,
-      remote_read: ToolTier.ExecRemote,
-      remote_write: ToolTier.ExecRemote,
-    },
-    policy
-  );
+  activeToolNamesForPolicy(THINK_TOOL_TIERS, policy);
 
 const createExecuteTools = (env: Env, workspace: Workspace): TieredToolSet => {
   const workspaceTools = createWorkspaceTools(workspace);

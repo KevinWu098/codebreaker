@@ -17,6 +17,7 @@ const ExecRemoteInputSchema = z.object({
   timeoutSeconds: z.number().int().positive().optional(),
 });
 
+const GIT_COMMAND_RE = /\bgit\b/;
 const REMOTE_READ_DEFAULT_MAX_BYTES = 24_000;
 const REMOTE_READ_HARD_MAX_BYTES = 96_000;
 
@@ -56,9 +57,10 @@ export const createModalTools = ({
   tools: {
     exec_remote: tool({
       description:
-        "Run a command in the session's configured remote Modal sandbox. Requires sandbox policy.",
+        "Run a command in the session's configured remote Modal sandbox. Requires sandbox policy. Git commands are blocked; inspect the existing checkout with shell listing/search/read commands instead.",
       inputSchema: ExecRemoteInputSchema,
       execute: ({ command, cwd, timeoutSeconds }) => {
+        assertNoGitCommand(command);
         const fallbackTimeoutSeconds = defaultTimeoutSeconds?.();
         const options: ExecRemoteOptions = {
           command,
@@ -157,3 +159,11 @@ export const createModalTools = ({
     }),
   },
 });
+
+const assertNoGitCommand = (command: string): void => {
+  if (GIT_COMMAND_RE.test(command)) {
+    throw new Error(
+      "Git commands are blocked in benchmark sandbox tool calls. Use ls, grep, sed, head, tail, or remote_read against the existing checkout instead."
+    );
+  }
+};
