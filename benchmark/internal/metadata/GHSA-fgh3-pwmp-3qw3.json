@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fgh3-pwmp-3qw3",
+  "post_patch_commit": "23e3e00cae1fd120b089fca54f7440945dfe11a4",
+  "noisy_patch": false,
+  "curation_notes": "Two-commit fix: cdf616670942fec7d09fae2452e2ea215205dd1d (PR #9694, strips URL fragment to prevent '#' bypass) and 23e3e00cae1fd120b089fca54f7440945dfe11a4 (PR #9707, adds case-insensitive stripping of sensitive params and multi-host support). Pre-patch commit is the parent of the first fix (b37b968) so the served code has the full vulnerability. Post-patch commit is the final fix. The vulnerability is in MySQLSensitiveUrlUtils.filterSensitive() which can be bypassed via URL fragment injection and case variation to pass autoDeserialize=true to the MySQL JDBC driver. No sibling files found in the util directory.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

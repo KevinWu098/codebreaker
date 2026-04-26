@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-inlong-002",
+  "ghsa_id": "GHSA-fgh3-pwmp-3qw3",
+  "codebase": {
+    "repo": "https://github.com/apache/inlong",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "b37b968327aab9b368bc368f040054707182c114"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "JDBC connection URL processing and parameter handling"
+    },
+    "L2": {
+      "description": "A deserialization of untrusted data vulnerability exists where attackers can bypass JDBC URL parameter sanitization checks using crafted input, enabling dangerous deserialization-related connection properties to reach the underlying database driver, potentially leading to remote code execution."
+    },
+    "L3": {
+      "area": "MySQL JDBC URL sanitization and sensitive parameter filtering utilities",
+      "description": "A deserialization of untrusted data vulnerability exists where attackers can bypass MySQL JDBC URL sensitive parameter sanitization using techniques such as URL fragment injection and case variation, allowing dangerous deserialization properties to be included in the connection string and reach the MySQL driver, potentially leading to remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The MySQL JDBC URL sanitization utility fails to properly filter dangerous parameters like autoDeserialize when attackers use URL fragment injection or case-insensitive parameter names, enabling untrusted deserialization via the JDBC connection.",
+    "locations": [
+      {
+        "file": "inlong-manager/manager-pojo/src/main/java/org/apache/inlong/manager/pojo/util/MySQLSensitiveUrlUtils.java",
+        "function": "filterSensitive"
+      }
+    ]
+  }
+}
