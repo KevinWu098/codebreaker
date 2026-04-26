@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r58m-v5pr-jhhq",
+  "post_patch_commit": "f224c050657d6b4b8119f22e0115903894e27f34",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit f224c05 from PR #962 fixes XSS in timesheet descriptions. The fix has two parts: (1) in src/Twig/MarkdownExtension.php, the markdownToHtml function's call to toHtml() changes the second parameter from true to false, disabling raw HTML pass-through in Markdown rendering; (2) in 6 Twig templates, an |escape filter is added before |desc2html when rendering entry.description. All 7 files are marked as locations since they each independently contribute to the vulnerability. Marked as noisy because 7 non-test source files were changed. Vulnerability class xss confirmed — matches CWE-79 and the patch clearly addresses unsanitized HTML output.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
