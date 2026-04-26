@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pjch-4g28-fxx7",
+  "post_patch_commit": "da4efe98bf09e1cce91b7633cb251958a200fc80",
+  "noisy_patch": false,
+  "curation_notes": "Single source file changed (XMPReader.java). The patch extracts DocumentBuilderFactory creation into a dedicated method and adds comprehensive XXE protections: disabling XInclude, entity expansion, external DTD/schema access, and external general/parameter entities. Pre-assigned class 'xxe' confirmed — CWE-611 maps directly and the patch clearly hardens the XML parser against external entity injection. Location derived from the patch diff: the 'read' method in XMPReader.java created the DocumentBuilderFactory without any security configuration. No sibling files contain the same XML parsing pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
