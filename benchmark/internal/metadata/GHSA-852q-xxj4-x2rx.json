@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-852q-xxj4-x2rx",
+  "post_patch_commit": "e56b937ea709406cdbb76b8128bf22f3b9614037",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #19 (melanger/fixSQLinjection) into master. The single source file changed is lib/Auth/Process/DatabaseCommand.php, where 9 methods directly interpolated user-controlled values (entity identifiers, service names, day interval parameters) into SQL query strings. The fix replaces all string interpolations with parameterized prepared statements using bind_param(). No sibling files share the same vulnerability pattern; DatabaseConnector.php only handles connection setup and statistics.php is the SimpleSAML auth processing filter. The pre-assigned class sql-injection is correct per CWE-89 and the patch content.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
