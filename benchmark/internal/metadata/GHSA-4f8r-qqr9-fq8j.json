@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4f8r-qqr9-fq8j",
+  "post_patch_commit": "f36420caba9edbfdfd64f95a9554c0836d9cf819",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff. The Delegations.GetRolesForTarget method in metadata/metadata.go returned a map[string]bool, whose non-deterministic iteration order in Go caused delegation roles to be visited in random order. The SuccinctRoles.GetRolesForTarget method in the same file had the same issue. The consumer in metadata/updater/updater.go (preOrderDepthFirstWalk) iterated over the map, propagating the non-deterministic order. The fix replaces the map return type with an ordered []RoleResult slice. Vulnerability class kept as race-condition per CWE-362 — the non-deterministic map iteration order is analogous to a race condition, producing inconsistent behavior across executions.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
