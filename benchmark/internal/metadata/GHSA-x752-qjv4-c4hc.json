@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x752-qjv4-c4hc",
+  "post_patch_commit": "4c70e1025bcd9b7694b95dd552499bd83cd6141d",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff, which modifies only src/FontMetrics.php. The patch removes a line that derived the local file extension from the remote URL via pathinfo/parse_url and replaces it with a switch statement that hardcodes .ttf. No sibling files share this vulnerability pattern. Vuln class kept as pre-assigned xss (CWE-79); the actual vulnerability is remote code injection via file extension manipulation, but no other class from the valid set is a clearly better fit.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
