@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hrf3-622q-8366",
+  "post_patch_commit": "4de9782697ecb12f39bcae83221bd8d3498959be",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff: utils.py contained the load_yaml() function using yaml.load() with yaml.Loader, and provision.py also directly called yaml.load() in its main() function. Both were patched to use yaml.safe_load(). Sibling file study.py in the same directory contains the identical vulnerable pattern (yaml.load with yaml.Loader in its main function) but was not patched in this commit. Pre-assigned class insecure-deserialization is correct per CWE-502 and the patch which switches from unsafe yaml.load() to yaml.safe_load().",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
