@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-v5h6-c2hv-hv3r",
+  "post_patch_commit": "c58c5f54f1eab99665ea6a161d29ff6a7490afc8",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit c58c5f5 fixes a single line in ext/stringio/stringio.c in the strio_unget_bytes function. The old expansion size calculation '(rest < 0 ? cl-pos : cl+rest)' was incorrect when rest >= 0 (position past string end), producing 'cl + pos - len' instead of the correct 'cl - len'. This caused the buffer to be incorrectly sized, allowing subsequent reads via StringIO.gets to return memory beyond the string boundary. The vulnerability class buffer-overflow (specifically buffer overread, CWE-126) matches the pre-assigned class. No sibling files exist — the entire C extension is a single file.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
