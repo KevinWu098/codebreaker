@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-core-001",
+  "ghsa_id": "GHSA-f2f3-9cx3-wcmf",
+  "codebase": {
+    "repo": "https://github.com/ellanetworks/core",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "52962660e3bd3e23c7e96b0da270ac1e0e705273"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Network protocol message handling and session management"
+    },
+    "L2": {
+      "description": "A nil pointer dereference vulnerability exists where certain optional information elements in incoming network protocol messages are not validated before access. When a crafted message omits expected nested fields, the application panics, causing service disruption for all connected subscribers."
+    },
+    "L3": {
+      "area": "NGAP protocol message handlers for UE location reporting and connection management",
+      "description": "A nil pointer dereference vulnerability exists in NGAP protocol message processing where certain optional information elements such as area-of-interest lists and reporting reference IDs are not checked for nil before being accessed. An attacker able to send crafted NGAP messages can trigger a panic, crashing the process and disrupting service for all connected subscribers."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 6.5,
+    "reason": "The NGAP message handlers do not check for nil on optional information elements before accessing their fields, causing a nil pointer dereference panic when processing crafted messages with missing IEs.",
+    "locations": [
+      {
+        "file": "internal/amf/ngap/handle_location_report.go",
+        "function": "HandleLocationReport"
+      },
+      {
+        "file": "internal/amf/ngap/handle_ng_reset.go",
+        "function": "HandleNGReset"
+      },
+      {
+        "file": "internal/amf/ngap/handle_ue_context_release_complete.go",
+        "function": "HandleUEContextReleaseComplete"
+      }
+    ]
+  }
+}
