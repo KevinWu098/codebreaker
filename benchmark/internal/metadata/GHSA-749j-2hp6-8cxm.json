@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-749j-2hp6-8cxm",
+  "post_patch_commit": "39034db0c806168afa82e58e4f376e1e3c3b73e4",
+  "noisy_patch": true,
+  "curation_notes": "Primary locations derived from the patch diff. EncryptUtils.java was entirely removed — it contained AES/ECB encryption with a hardcoded key (MD5 of 'ApacheStreamPark') and SHA1PRNG. JWTUtil.java's sign() used user.getPassword() as the HMAC256 secret and verify() accepted a user-specific password as the secret. The patch replaces EncryptUtils with AES-GCM encryption in JWTUtil, introduces JWTSecret for secure random key generation and persistent storage, and switches JWT signing to a securely generated HMAC key. The patch is noisy (7 non-test source files changed) due to refactoring of encryption calls across multiple authentication files, but the core vulnerability resides in EncryptUtils.java and JWTUtil.java.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
