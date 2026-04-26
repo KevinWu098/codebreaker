@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-commons-bcel-001",
+  "ghsa_id": "GHSA-97xg-phpr-rg8q",
+  "codebase": {
+    "repo": "https://github.com/apache/commons-bcel",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "51406ffe93d1e0ac183d92ee2811f72b46d290ff"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Java bytecode generation and class file serialization layer"
+    },
+    "L2": {
+      "description": "An out-of-bounds writing vulnerability exists in a Java bytecode manipulation library where APIs that normally only allow changing specific class characteristics can be used to produce arbitrary bytecode. The library fails to enforce size limits on internal data structures, allowing writes beyond defined bounds when processing attacker-controllable data, giving the attacker more control over the resulting bytecode than expected."
+    },
+    "L3": {
+      "area": "Constant pool management and bytecode serialization components",
+      "description": "An out-of-bounds writing vulnerability exists where the constant pool management components of a Java bytecode manipulation library do not enforce the maximum entry count defined by the JVM specification. When attacker-controllable data causes the constant pool to exceed its maximum allowed size, the serialization logic writes beyond defined bounds, enabling the production of arbitrary bytecode."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.8,
+    "reason": "The constant pool implementation does not enforce the JVM specification's maximum entry limit (65535), allowing out-of-bounds writes that can produce arbitrary bytecode when attacker-controllable data is passed to class manipulation APIs.",
+    "locations": [
+      {
+        "file": "src/main/java/org/apache/bcel/classfile/ConstantPool.java",
+        "function": "dump"
+      },
+      {
+        "file": "src/main/java/org/apache/bcel/generic/ConstantPoolGen.java",
+        "function": "adjustSize"
+      }
+    ]
+  }
+}
