@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g73c-fw68-pwx3",
+  "post_patch_commit": "75be0bc22d3d8d7620711835db817bd7c021007c",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived directly from the patch diff which modified two files: web/pgadmin/tools/sqleditor/__init__.py (start_query_download_tool function, replacing eval(value) with safe string comparison for query_commited parameter) and web/pgacloud/providers/google.py (_create_google_postgresql_instance function, replacing eval(args.high_availability) with safe string comparison). Checked sibling cloud provider files (aws.py, azure.py, biganimal.py) — none use eval(). Kept pre-assigned command-injection class: while CWE-94 is technically 'Code Injection', the closest valid class is command-injection since eval() can execute arbitrary code including OS commands, and no dedicated code-injection class exists in the taxonomy.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
