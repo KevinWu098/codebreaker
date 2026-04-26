@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qpjr-ch72-2qq4",
+  "post_patch_commit": "7466df019f6739732fd91401017942c22364ef61",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge (7466df0). The vulnerability-relevant changes are confined to src/stream.rs, where stream_callback and stream_finished_callback both used mem::transmute to reconstruct a Box<StreamUserData> from a raw pointer. If the user-provided closure panicked, mem::forget was never reached, causing the Box to be dropped and memory freed while the native C caller still held the pointer. The fix replaces the Box reconstruction with Box::leak(Box::from_raw(...)) to yield a mutable reference instead, preventing deallocation on panic. Other file changes (Cargo.toml version bump, src/lib.rs doc example modernization, examples/) are non-security cosmetic updates. Pre-assigned class use-after-free (CWE-416) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

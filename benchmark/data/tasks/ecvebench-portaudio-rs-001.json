@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-portaudio-rs-001",
+  "ghsa_id": "GHSA-qpjr-ch72-2qq4",
+  "codebase": {
+    "repo": "https://github.com/mvdnes/portaudio-rs",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "3dfc728b0edc0c51f5177e3b1189b3230e488b3f"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Audio stream callback and lifecycle management"
+    },
+    "L2": {
+      "description": "A use-after-free vulnerability exists where callback functions that invoke user-provided closures reconstruct owned memory from raw pointers. If the closure panics, the deallocation guard is skipped, causing the memory to be freed while still referenced by the caller. An attacker who can trigger a panic in the closure can control the freed memory and achieve arbitrary code execution."
+    },
+    "L3": {
+      "area": "Audio stream callback dispatch and stream-finished notification handlers",
+      "description": "A use-after-free vulnerability exists in the audio stream callback dispatch logic where user-provided closures are invoked through reconstructed owned pointers from raw C callback data. If the user-provided closure panics before the deallocation guard executes, the backing memory is freed while the native caller still holds a reference to it. This allows an attacker who can induce a panic in a stream callback closure to control the freed memory region and achieve arbitrary code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 9.8,
+    "reason": "The stream callback and stream-finished callback functions reconstruct a Box from a raw pointer to invoke a user-provided closure, but if the closure panics, the mem::forget call is skipped, causing the Box to be dropped and the memory freed while the native C caller still references it.",
+    "locations": [
+      {
+        "file": "src/stream.rs",
+        "function": "stream_callback"
+      },
+      {
+        "file": "src/stream.rs",
+        "function": "stream_finished_callback"
+      }
+    ]
+  }
+}
