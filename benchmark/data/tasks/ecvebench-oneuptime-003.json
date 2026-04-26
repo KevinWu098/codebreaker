@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Network monitoring and diagnostics probe utilities"
+      "area": "Monitoring probe infrastructure and network diagnostics"
     },
     "L2": {
-      "description": "An OS command injection vulnerability exists where a user-controlled destination string used for network path tracing is directly interpolated into a shell command template and executed via a shell-spawning process execution call without any sanitization or validation. Shell metacharacters in the destination value are interpreted by the spawned shell, allowing authenticated users to execute arbitrary operating system commands on the server."
+      "description": "An OS command injection vulnerability exists where a user-controlled destination string used for network monitoring operations is directly interpolated into a shell command template and executed via a shell-spawning process execution call without any sanitization or validation. Shell metacharacters in the destination value are interpreted by the spawned shell, allowing authenticated users to execute arbitrary operating system commands on the server."
     },
     "L3": {
-      "area": "Network monitoring and diagnostics probe utilities",
-      "description": "An OS command injection vulnerability exists where a user-controlled destination string used for network path tracing is directly interpolated into a shell command template and executed via a shell-spawning process execution call without any sanitization or validation. Shell metacharacters in the destination value are interpreted by the spawned shell, allowing authenticated users to execute arbitrary operating system commands on the server."
+      "area": "Network diagnostics and route analysis within the monitoring probe layer",
+      "description": "An OS command injection vulnerability exists where a user-controlled destination string used for traceroute-style network path analysis is directly interpolated into a shell command template and executed via a shell-spawning process execution call without any sanitization or validation. Shell metacharacters in the destination value are interpreted by the spawned shell, allowing authenticated users to execute arbitrary operating system commands on the probe server."
     }
   },
   "ground_truth": {
