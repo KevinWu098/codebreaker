@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3839-6r69-m497",
+  "post_patch_commit": "869801f20f9f1e7ecdbdb6422049d8241270d5e1",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 869801f removes forced digit insertion from both RandomAlphaNumeric (randomstringutils.go) and CryptoRandomAlphaNumeric (cryptorandomstringutils.go). Both functions had identical vulnerability patterns: after generating a random alphanumeric string, they checked for the presence of a digit and forcibly inserted one if absent, reducing entropy. Both locations are primary (both patched in the same commit). The pre-assigned class crypto-weakness (CWE-331 Insufficient Entropy) is correct. Note: this GHSA was withdrawn as a duplicate of GHSA-xg2h-wx96-xgxr, but the underlying vulnerability data is the same.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

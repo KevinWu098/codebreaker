@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-goutils-001",
+  "ghsa_id": "GHSA-3839-6r69-m497",
+  "codebase": {
+    "repo": "https://github.com/Masterminds/goutils",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "864fea799ab6516ec883dc052a9a0b15f1e529dd"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "String generation and manipulation utilities"
+    },
+    "L2": {
+      "description": "A cryptographic weakness exists in randomly-generated alphanumeric string utility functions where the output always contains at least one numeric digit. When no digit is naturally present in the generated string, one is forcibly inserted at a random position, replacing an existing character. This guarantees the presence of a digit in every output, significantly reducing the entropy of short strings and making them more predictable than expected."
+    },
+    "L3": {
+      "area": "Random alphanumeric string generation utilities, including both standard and cryptographically-secure variants",
+      "description": "A cryptographic weakness exists in alphanumeric random string generation where both the standard pseudo-random and cryptographically-secure variants enforce that the output always contains at least one numeric digit. When a generated string lacks a digit, one is forcibly inserted at a random position, replacing an existing character. This reduces the effective entropy of short strings, making them more predictable than expected for security-sensitive use cases."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.1,
+    "reason": "The RandomAlphaNumeric and CryptoRandomAlphaNumeric functions forcibly insert a numeric digit when one is not naturally present in the generated string, significantly reducing the entropy of short randomly-generated alphanumeric strings.",
+    "locations": [
+      {
+        "file": "randomstringutils.go",
+        "function": "RandomAlphaNumeric"
+      },
+      {
+        "file": "cryptorandomstringutils.go",
+        "function": "CryptoRandomAlphaNumeric"
+      }
+    ]
+  }
+}
