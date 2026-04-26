@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rh3m-pr36-xh2f",
+  "post_patch_commit": "4c9f2e028523ed705b555eca2c18c64e71f1a35d",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds the LIBXML_NONET flag to the XMLReader::xml() call in the load() function, disabling network access during XML parsing. This directly prevents XXE attacks. The only source file changed is simplexrd/simplexrd.class.php; no sibling files exist in the directory. The pre-assigned class 'xxe' matches CWE-611 and the patch behavior.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
