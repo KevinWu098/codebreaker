@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wfv2-pwc8-crg5",
+  "post_patch_commit": "87a40bbd07e6b30575196370670b41f264aa78d7",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only src/jspdf.js (1 non-test source file). The vulnerability is in the output function, which handles multiple output types including pdfobjectnewwindow, pdfjsnewwindow, and dataurlnewwindow. In the pre-patch code, user-controlled options (pdfObjectUrl, pdfJsUrl, filename, and the entire options object via JSON.stringify) are concatenated into HTML strings and written to new browser windows via document.write(). The patch replaces string concatenation with DOM API calls (createElement, appendChild) and adds encodeURIComponent for filename values. No sibling files contain the same vulnerability pattern. Pre-assigned class xss (CWE-79) is correct — the advisory explicitly describes HTML injection enabling script execution in new window contexts.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
