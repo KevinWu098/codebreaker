@@ -358,6 +358,51 @@
     @apply inline-block h-3 w-3 animate-spin rounded-full border border-fg-muted/40 border-t-fg-muted;
   }
 
+  /*
+   * Demo "end to end" page: shimmer sweep used to highlight active progress
+   * bars and the accent ring around an active stage column.
+   */
+  .demo-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(var(--accent) / 0) 20%,
+      rgb(var(--accent) / 0.5) 50%,
+      rgb(var(--accent) / 0) 80%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: demo-shimmer 1.6s linear infinite;
+  }
+
+  @keyframes demo-shimmer {
+    0% {
+      background-position: -100% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .demo-glow {
+    box-shadow:
+      0 0 0 1px rgb(var(--accent) / 0.5),
+      0 0 32px -8px rgb(var(--accent) / 0.45),
+      inset 0 1px 0 rgb(var(--accent) / 0.15);
+  }
+
+  .demo-active-row {
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--status-running) / 0.5),
+      0 0 24px -10px rgb(var(--status-running) / 0.6);
+  }
+  .demo-completed-row {
+    box-shadow: inset 0 0 0 1px rgb(var(--status-completed) / 0.35);
+  }
+  .demo-failed-row {
+    box-shadow: inset 0 0 0 1px rgb(var(--status-failed) / 0.45);
+  }
+
   /* Composer for chat — input + send. */
   .composer {
     @apply flex items-end gap-2;

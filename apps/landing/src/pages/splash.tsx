@@ -67,37 +67,79 @@ export function SplashPage() {
       ty: -10_000,
     };
 
-    const buildSilhouette = (w: number, h: number): HTMLCanvasElement => {
-      const off = document.createElement("canvas");
-      off.width = w;
-      off.height = h;
-      const octx = off.getContext("2d");
-      if (!octx) {
-        return off;
-      }
+    const drawSword = (
+      octx: CanvasRenderingContext2D,
+      cx: number,
+      cy: number,
+      unit: number,
+      angle: number
+    ) => {
+      // Sword is authored upright (pommel up, tip down) around the origin,
+      // then translated/rotated into place. Scale numbers are tuned so that
+      // when angle = 0 it reads as a heroic longsword.
+      const total = unit * 2.55;
+      const bladeW = unit * 0.075;
+      const guardW = unit * 0.65;
+      const guardH = unit * 0.07;
+      const gripH = unit * 0.24;
+      const pommelR = unit * 0.075;
 
-      // Layout: shield centred, sword in front, point-down. Reference unit is
-      // the smaller viewport dimension so the icon scales gracefully on
-      // landscape and portrait.
-      const cx = w / 2;
-      const cy = h / 2;
-      const unit = Math.min(w, h) * 0.42;
-      const shieldW = unit * 1.02;
-      const shieldH = unit * 1.22;
+      octx.save();
+      octx.translate(cx, cy);
+      octx.rotate(angle);
 
+      const top = -total / 2;
+      const bottom = total / 2;
+      const sword = new Path2D();
+      // Pommel.
+      sword.arc(0, top + pommelR, pommelR, 0, Math.PI * 2);
+      // Grip.
+      sword.rect(-bladeW * 0.55, top + pommelR * 1.6, bladeW * 1.1, gripH);
+      // Crossguard.
+      const guardY = top + pommelR * 1.6 + gripH;
+      sword.rect(-guardW / 2, guardY, guardW, guardH);
+      // Blade — tapered hex.
+      const bladeStartY = guardY + guardH;
+      sword.moveTo(-bladeW / 2, bladeStartY);
+      sword.lineTo(bladeW / 2, bladeStartY);
+      sword.lineTo(bladeW / 2, bottom - bladeW * 1.4);
+      sword.lineTo(0, bottom);
+      sword.lineTo(-bladeW / 2, bottom - bladeW * 1.4);
+      sword.closePath();
+      octx.fill(sword);
+
+      // Negative-space fuller down the blade for an extra dithered line.
+      octx.fillStyle = "#000";
+      octx.fillRect(
+        -1,
+        bladeStartY + 6,
+        2,
+        bottom - bladeStartY - bladeW * 1.6
+      );
       octx.fillStyle = "#fff";
 
-      // Heater shield. Top is straight with rounded shoulders; bottom curves
-      // to a point.
-      const shield = new Path2D();
+      octx.restore();
+    };
+
+    const drawShield = (
+      octx: CanvasRenderingContext2D,
+      cx: number,
+      cy: number,
+      unit: number
+    ) => {
+      const shieldW = unit * 1.18;
+      const shieldH = unit * 1.4;
       const left = cx - shieldW / 2;
       const right = cx + shieldW / 2;
       const top = cy - shieldH * 0.46;
       const bottom = cy + shieldH * 0.54;
       const shoulderY = top + shieldH * 0.12;
       const waistY = top + shieldH * 0.55;
-      shield.moveTo(left + 18, top);
-      shield.lineTo(right - 18, top);
+
+      // Outer body — heater shield silhouette.
+      const shield = new Path2D();
+      shield.moveTo(left + 22, top);
+      shield.lineTo(right - 22, top);
       shield.quadraticCurveTo(right, top, right, shoulderY);
       shield.bezierCurveTo(
         right,
@@ -115,64 +157,84 @@ export function SplashPage() {
         left,
         shoulderY
       );
-      shield.quadraticCurveTo(left, top, left + 18, top);
+      shield.quadraticCurveTo(left, top, left + 22, top);
       shield.closePath();
       octx.fill(shield);
 
-      // Cross detail on the shield (negative space, drawn in black so the
-      // dither field shows it as a hole). A vertical bar + horizontal arm
-      // forms the "breaker" mark.
+      // Negative-space chevron (inverted V) sitting in the upper third.
+      // Drawn in black so the dither lattice reads it as a hole.
       octx.fillStyle = "#000";
-      const barW = unit * 0.07;
-      const armY = cy - shieldH * 0.06;
-      const armW = shieldW * 0.46;
-      octx.fillRect(cx - barW / 2, top + shieldH * 0.12, barW, shieldH * 0.62);
-      octx.fillRect(cx - armW / 2, armY - barW / 2, armW, barW);
+      const chev = new Path2D();
+      const chevTop = top + shieldH * 0.18;
+      const chevMid = top + shieldH * 0.34;
+      const chevBot = top + shieldH * 0.4;
+      const chevHalf = shieldW * 0.34;
+      const chevThk = shieldH * 0.06;
+      chev.moveTo(cx - chevHalf, chevBot);
+      chev.lineTo(cx, chevTop);
+      chev.lineTo(cx + chevHalf, chevBot);
+      chev.lineTo(cx + chevHalf - chevThk * 0.6, chevBot);
+      chev.lineTo(cx, chevMid);
+      chev.lineTo(cx - chevHalf + chevThk * 0.6, chevBot);
+      chev.closePath();
+      octx.fill(chev);
+
+      // Rivets along the inner border for a dithered halo of dots inside the
+      // shield's body — they read as tiny holes in the lattice.
+      const rivetR = unit * 0.018;
+      const inset = unit * 0.085;
+      const rivetPts = [
+        [left + inset, shoulderY + shieldH * 0.04],
+        [right - inset, shoulderY + shieldH * 0.04],
+        [left + inset * 1.6, waistY + shieldH * 0.05],
+        [right - inset * 1.6, waistY + shieldH * 0.05],
+      ] as const;
+      for (const [rx, ry] of rivetPts) {
+        octx.beginPath();
+        octx.arc(rx, ry, rivetR, 0, Math.PI * 2);
+        octx.fill();
+      }
+
+      // Boss / sigil at the lower belly: a small filled diamond + dot mark.
+      const bossY = top + shieldH * 0.58;
+      const bossH = shieldH * 0.18;
+      const bossW = shieldW * 0.16;
+      const boss = new Path2D();
+      boss.moveTo(cx, bossY);
+      boss.lineTo(cx + bossW / 2, bossY + bossH / 2);
+      boss.lineTo(cx, bossY + bossH);
+      boss.lineTo(cx - bossW / 2, bossY + bossH / 2);
+      boss.closePath();
+      octx.fill(boss);
+
+      octx.fillStyle = "#fff";
+    };
+
+    const buildSilhouette = (w: number, h: number): HTMLCanvasElement => {
+      const off = document.createElement("canvas");
+      off.width = w;
+      off.height = h;
+      const octx = off.getContext("2d");
+      if (!octx) {
+        return off;
+      }
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const unit = Math.min(w, h) * 0.46;
+
       octx.fillStyle = "#fff";
 
-      // Sword in front. Pommel + grip + crossguard up top, blade descending
-      // through and past the shield's lower point.
-      const swordTop = cy - shieldH * 0.78;
-      const swordTip = cy + shieldH * 0.78;
-      const bladeW = unit * 0.085;
-      const guardW = shieldW * 0.62;
-      const guardH = unit * 0.075;
-      const gripH = unit * 0.22;
-      const pommelR = unit * 0.075;
+      // Crossed longswords behind the shield, ±32° from vertical. They reach
+      // past the shield in all four corners so the silhouette spreads instead
+      // of collapsing into a single vertical strip.
+      const crossAngle = (32 * Math.PI) / 180;
+      drawSword(octx, cx, cy, unit, crossAngle);
+      drawSword(octx, cx, cy, unit, -crossAngle);
 
-      const sword = new Path2D();
-      // Pommel circle.
-      sword.moveTo(cx + pommelR, swordTop + pommelR);
-      sword.arc(cx, swordTop + pommelR, pommelR, 0, Math.PI * 2);
-      // Grip rectangle, slightly inset.
-      sword.rect(
-        cx - bladeW * 0.55,
-        swordTop + pommelR * 1.6,
-        bladeW * 1.1,
-        gripH
-      );
-      // Crossguard.
-      const guardY = swordTop + pommelR * 1.6 + gripH;
-      sword.rect(cx - guardW / 2, guardY, guardW, guardH);
-      // Blade — diamond cross-section read as a tapered hex.
-      const bladeStartY = guardY + guardH;
-      sword.moveTo(cx - bladeW / 2, bladeStartY);
-      sword.lineTo(cx + bladeW / 2, bladeStartY);
-      sword.lineTo(cx + bladeW / 2, swordTip - bladeW * 1.4);
-      sword.lineTo(cx, swordTip);
-      sword.lineTo(cx - bladeW / 2, swordTip - bladeW * 1.4);
-      sword.closePath();
-      octx.fill(sword);
-
-      // Highlight stripe down the blade (small inset of black) for an extra
-      // dither line — purely cosmetic, picked up by the ordered dither.
-      octx.fillStyle = "#000";
-      octx.fillRect(
-        cx - 1,
-        bladeStartY + 6,
-        2,
-        swordTip - bladeStartY - bladeW * 1.6
-      );
+      // Shield in front, slightly larger than the swords are wide so it
+      // covers the crossing point cleanly.
+      drawShield(octx, cx, cy, unit);
 
       return off;
     };
@@ -374,16 +436,51 @@ export function SplashPage() {
       <canvas className="block h-full w-full" ref={canvasRef} />
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <h1
-          className="select-none font-semibold text-white tracking-[-0.04em] mix-blend-difference"
+          className="select-none font-semibold text-white tracking-[-0.05em]"
           style={{
-            fontSize: "clamp(3.5rem, 12vw, 11rem)",
+            fontSize: "clamp(3.5rem, 13vw, 12rem)",
             lineHeight: 1,
-            textShadow: "0 0 40px rgba(0,0,0,0.45)",
+            textShadow:
+              "0 2px 24px rgba(0, 0, 0, 0.85), 0 0 60px rgba(0, 0, 0, 0.65)",
           }}
         >
           codebreaker
         </h1>
       </div>
+      <nav
+        aria-label="Project pages"
+        className="absolute right-0 bottom-0 left-0 flex items-center justify-center gap-5 px-6 pb-8 font-mono text-[12px] uppercase tracking-[0.16em]"
+        style={{ color: "rgb(140, 185, 255)" }}
+      >
+        <a
+          className="underline-offset-4 transition-colors hover:text-white hover:underline"
+          href="/viz/benchmark"
+        >
+          viz · benchmark
+        </a>
+        <span
+          aria-hidden="true"
+          className="h-px w-5"
+          style={{ backgroundColor: "rgba(140, 185, 255, 0.35)" }}
+        />
+        <a
+          className="underline-offset-4 transition-colors hover:text-white hover:underline"
+          href="/viz/harness"
+        >
+          viz · harness
+        </a>
+        <span
+          aria-hidden="true"
+          className="h-px w-5"
+          style={{ backgroundColor: "rgba(140, 185, 255, 0.35)" }}
+        />
+        <a
+          className="underline-offset-4 transition-colors hover:text-white hover:underline"
+          href="/animations/benchmark"
+        >
+          animations · benchmark
+        </a>
+      </nav>
     </div>
   );
 }

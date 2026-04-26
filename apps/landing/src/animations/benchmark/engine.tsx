@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const LOOP_MS = 16_000;
 
@@ -74,13 +74,31 @@ function formatCount(n: number): string {
 
 export function CurationEngine() {
   const t = useMasterClock(LOOP_MS);
+  const [hoveredStation, setHoveredStation] = useState<number | null>(null);
+  const effectiveT = useMemo(
+    () =>
+      hoveredStation === null
+        ? t
+        : (hoveredStation + 0.5) / PIPELINE_LABELS.length,
+    [t, hoveredStation]
+  );
+  const onStationPointerEnter = useCallback((index: number) => {
+    setHoveredStation(index);
+  }, []);
+  const onPanelPointerLeave = useCallback(() => {
+    setHoveredStation(null);
+  }, []);
   return (
     <div className="relative isolate w-full overflow-hidden rounded-2xl border border-white/15 bg-[rgb(var(--bg-deep))]">
       <DotGridBackground />
-      <HeaderStrip t={t} />
-      <PipelinePanel t={t} />
+      <HeaderStrip lockedStageIndex={hoveredStation} t={t} />
+      <PipelinePanel
+        effectiveT={effectiveT}
+        onPanelPointerLeave={onPanelPointerLeave}
+        onStationPointerEnter={onStationPointerEnter}
+      />
       <LocalizePanel t={t} />
-      <CaptionStrip t={t} />
+      <CaptionStrip lockedStageIndex={hoveredStation} t={t} />
     </div>
   );
 }
@@ -118,18 +136,24 @@ function DotGridBackground() {
   );
 }
 
-function HeaderStrip({ t }: { t: number }) {
+function HeaderStrip({
+  t,
+  lockedStageIndex,
+}: {
+  t: number;
+  lockedStageIndex: number | null;
+}) {
   const phase = pipelinePhase(t);
-  const stageIdx = Math.min(4, Math.floor(phase));
+  const stageIdx = lockedStageIndex ?? Math.min(4, Math.floor(phase));
   return (
-    <div className="relative flex items-center justify-between gap-4 border-white/10 border-b bg-black/20 px-6 py-3 md:px-8">
-      <div className="flex items-center gap-3 text-white/75 text-xs uppercase tracking-[0.18em]">
+    <div className="relative flex items-center justify-between gap-4 border-white/10 border-b bg-black/20 px-6 py-3.5 md:px-8">
+      <div className="flex items-center gap-3 text-sm text-white/75 uppercase tracking-[0.16em]">
         <span className="inline-flex h-1.5 w-1.5 animate-[cb-blink_1.6s_ease-in-out_infinite] rounded-full bg-emerald-300" />
         <span className="font-mono text-white/65">curation_engine</span>
         <span className="hidden text-white/40 md:inline">·</span>
         <span className="hidden md:inline">live loop</span>
       </div>
-      <div className="hidden items-center gap-1 sm:flex">
+      <div className="hidden items-center gap-1.5 sm:flex">
         {PIPELINE_LABELS.map((label, i) => {
           const active = i === stageIdx;
           const done = i < stageIdx;
@@ -141,10 +165,10 @@ function HeaderStrip({ t }: { t: number }) {
           }
           return (
             <span
-              className={`flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.16em] transition-colors duration-300 ${cls}`}
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition-colors duration-300 ${cls}`}
               key={label}
             >
-              <span className="font-mono text-[9px] text-white/55">
+              <span className="font-mono text-[10px] text-white/55">
                 {String(i + 1).padStart(2, "0")}
               </span>
               {label}
@@ -160,14 +184,40 @@ function pipelinePhase(t: number): number {
   return t * PIPELINE_LABELS.length;
 }
 
-function PipelinePanel({ t }: { t: number }) {
+function PipelinePanel({
+  effectiveT,
+  onStationPointerEnter,
+  onPanelPointerLeave,
+}: {
+  effectiveT: number;
+  onStationPointerEnter: (index: number) => void;
+  onPanelPointerLeave: () => void;
+}) {
   return (
-    <div className="relative grid grid-cols-1 gap-4 px-4 py-6 md:grid-cols-[1.1fr_1.2fr_1.6fr_1.4fr_1.2fr] md:gap-3 md:px-8 md:py-8">
-      <SourceStation t={t} />
-      <FilterStation t={t} />
-      <TransformStation t={t} />
-      <LocateStation t={t} />
-      <DatasetStation t={t} />
+    <div
+      className="relative grid grid-cols-1 gap-4 px-4 py-5 md:grid-cols-[1.1fr_1.2fr_1.6fr_1.4fr_1.2fr] md:gap-3 md:px-8 md:py-6"
+      onPointerLeave={onPanelPointerLeave}
+    >
+      <SourceStation
+        onCardPointerEnter={() => onStationPointerEnter(0)}
+        t={effectiveT}
+      />
+      <FilterStation
+        onCardPointerEnter={() => onStationPointerEnter(1)}
+        t={effectiveT}
+      />
+      <TransformStation
+        onCardPointerEnter={() => onStationPointerEnter(2)}
+        t={effectiveT}
+      />
+      <LocateStation
+        onCardPointerEnter={() => onStationPointerEnter(3)}
+        t={effectiveT}
+      />
+      <DatasetStation
+        onCardPointerEnter={() => onStationPointerEnter(4)}
+        t={effectiveT}
+      />
     </div>
   );
 }
@@ -178,22 +228,25 @@ function StationShell({
   active,
   count,
   children,
+  onCardPointerEnter,
 }: {
   index: number;
   title: string;
   active: boolean;
   count: string;
   children: React.ReactNode;
+  onCardPointerEnter?: () => void;
 }) {
   return (
     <div
-      className={`relative flex h-[320px] min-w-0 flex-col overflow-hidden rounded-xl border bg-white/[0.03] p-4 transition-colors duration-500 ${
+      className={`relative flex h-80 min-w-0 flex-col overflow-hidden rounded-xl border bg-white/[0.03] p-4 transition-colors duration-500 ${
         active
           ? "border-white/35 bg-white/[0.06]"
-          : "border-white/10 bg-white/[0.02]"
+          : "border-white/10 bg-white/[0.02] hover:border-white/20"
       }`}
+      onPointerEnter={onCardPointerEnter}
     >
-      <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em]">
+      <div className="flex items-center justify-between gap-2 text-xs uppercase tracking-[0.14em]">
         <span className="flex items-center gap-2 text-white/55">
           <span className="font-mono">
             {String(index + 1).padStart(2, "0")}
@@ -202,7 +255,7 @@ function StationShell({
           <span className="text-white/85">{title}</span>
         </span>
         <span
-          className={`font-mono text-[11px] tabular-nums transition-colors duration-300 ${
+          className={`font-mono text-sm tabular-nums transition-colors duration-300 ${
             active ? "text-white" : "text-white/65"
           }`}
         >
@@ -223,13 +276,25 @@ const SOURCE_FEED = Array.from({ length: 28 }, (_, i) => {
   return SOURCE_GHSAS[idx] ?? "GHSA-xxxx-xxxx-xxxx";
 });
 
-function SourceStation({ t }: { t: number }) {
+function SourceStation({
+  t,
+  onCardPointerEnter,
+}: {
+  t: number;
+  onCardPointerEnter: () => void;
+}) {
   const phase = pipelinePhase(t);
   const active = phase < 1;
   const count = formatCount(FUNNEL_COUNTS[0]);
   const duped = [...SOURCE_FEED, ...SOURCE_FEED];
   return (
-    <StationShell active={active} count={count} index={0} title="GHSA stream">
+    <StationShell
+      active={active}
+      count={count}
+      index={0}
+      onCardPointerEnter={onCardPointerEnter}
+      title="GHSA stream"
+    >
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-md border border-white/10 bg-black/40">
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-6 bg-gradient-to-b from-black/80 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-black/80 to-transparent" />
@@ -250,11 +315,11 @@ function SourceStation({ t }: { t: number }) {
             }
             return (
               <div
-                className="flex items-center gap-2 px-2 font-mono text-[10px] text-white/65"
+                className="flex items-center gap-2 px-2 font-mono text-white/65 text-xs"
                 key={`${lap}-${i.toString()}-${id}`}
               >
                 <span
-                  className={`inline-block h-1 w-1 shrink-0 rounded-full ${dotCls}`}
+                  className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${dotCls}`}
                 />
                 <span className="truncate">{id}</span>
               </div>
@@ -262,7 +327,7 @@ function SourceStation({ t }: { t: number }) {
           })}
         </div>
       </div>
-      <div className="mt-2 flex items-center justify-between text-[10px] text-white/55">
+      <div className="mt-2 flex items-center justify-between text-white/55 text-xs">
         <span>github advisory db</span>
         <span className="font-mono">reviewed · linked patch</span>
       </div>
@@ -270,7 +335,13 @@ function SourceStation({ t }: { t: number }) {
   );
 }
 
-function FilterStation({ t }: { t: number }) {
+function FilterStation({
+  t,
+  onCardPointerEnter,
+}: {
+  t: number;
+  onCardPointerEnter: () => void;
+}) {
   const phase = pipelinePhase(t);
   const active = phase >= 1 && phase < 2;
   const local = Math.max(0, Math.min(1, phase - 0.6));
@@ -283,7 +354,13 @@ function FilterStation({ t }: { t: number }) {
     { label: "stratified sample", target: 0.06 },
   ];
   return (
-    <StationShell active={active} count={count} index={1} title="Funnel">
+    <StationShell
+      active={active}
+      count={count}
+      index={1}
+      onCardPointerEnter={onCardPointerEnter}
+      title="Funnel"
+    >
       <div className="flex h-full flex-col justify-between gap-3">
         {filters.map((f, i) => {
           const start = 0.65 + i * 0.1;
@@ -292,13 +369,13 @@ function FilterStation({ t }: { t: number }) {
           const w = lerp(100, f.target * 100, easeInOut(tt));
           return (
             <div className="min-w-0" key={f.label}>
-              <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-[0.14em]">
+              <div className="mb-1 flex items-center justify-between text-xs uppercase tracking-[0.12em]">
                 <span className="text-white/65">{f.label}</span>
                 <span className="font-mono text-white/55">
                   {Math.round(w)}%
                 </span>
               </div>
-              <div className="relative h-3 overflow-hidden rounded-sm bg-white/[0.06]">
+              <div className="relative h-3.5 overflow-hidden rounded-sm bg-white/[0.06]">
                 <div
                   className="absolute inset-y-0 left-0 bg-white/85"
                   style={{
@@ -332,7 +409,13 @@ function clamp01(x: number): number {
   return x;
 }
 
-function TransformStation({ t }: { t: number }) {
+function TransformStation({
+  t,
+  onCardPointerEnter,
+}: {
+  t: number;
+  onCardPointerEnter: () => void;
+}) {
   const phase = pipelinePhase(t);
   const active = phase >= 2 && phase < 3;
   const frameIdx =
@@ -344,6 +427,7 @@ function TransformStation({ t }: { t: number }) {
       active={active}
       count={count}
       index={2}
+      onCardPointerEnter={onCardPointerEnter}
       title="Devin · transform"
     >
       <div className="relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-md border border-white/10 bg-black/40">
@@ -351,7 +435,7 @@ function TransformStation({ t }: { t: number }) {
           <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
           <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
           <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
-          <span className="ml-2 font-mono text-[10px] text-white/55">
+          <span className="ml-2 font-mono text-white/55 text-xs">
             transform.frame · {frame}
           </span>
           <span className="ml-auto flex items-center gap-1">
@@ -381,21 +465,20 @@ function TransformStation({ t }: { t: number }) {
 function TransformFrameView({ frame }: { frame: TransformFrame }) {
   if (frame === "advisory") {
     return (
-      <pre className="overflow-hidden whitespace-pre-wrap font-mono text-[10.5px] text-white/75 leading-relaxed">
+      <pre className="overflow-hidden whitespace-pre-wrap font-mono text-sm text-white/75 leading-snug">
         {`GHSA-rqpp-rjj8-7wv8
 Auth Bypass in OpenClaw Gateway
 Severity: Critical (CVSS 10.0)
-CWE-863: Incorrect Authorization
-CWE-285: Improper Authorization
+CWE-863 · CWE-285
 
-The gateway WebSocket handler did
-not strip client-declared scopes…`}
+WebSocket handler did not strip
+client-declared scopes…`}
       </pre>
     );
   }
   if (frame === "diff") {
     return (
-      <pre className="overflow-hidden font-mono text-[10.5px] leading-snug">
+      <pre className="overflow-hidden font-mono text-sm leading-snug">
         <div className="text-sky-300">@@ message-handler.ts @@</div>
         <div className="text-rose-300">
           - if (auth === "shared-token") return;
@@ -419,21 +502,20 @@ not strip client-declared scopes…`}
     return (
       <div className="flex h-full flex-col justify-center gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="rounded-full border border-white/15 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-white/75">
+          <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1 font-mono text-white/75 text-xs">
             CWE-863
           </span>
-          <span className="rounded-full border border-white/15 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-white/75">
+          <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1 font-mono text-white/75 text-xs">
             CWE-285
           </span>
           <span className="font-mono text-white/55">→</span>
-          <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[10px] text-[rgb(var(--bg-deep))]">
+          <span className="rounded-full bg-white px-2.5 py-1 font-mono text-[rgb(var(--bg-deep))] text-xs">
             auth-bypass
           </span>
         </div>
-        <div className="text-[11px] text-white/65 leading-relaxed">
-          One of <span className="font-mono text-white">13</span> canonical
-          classes. Verified against the diff — structural authz, not crypto, not
-          injection.
+        <div className="text-sm text-white/65 leading-relaxed">
+          <span className="font-mono text-white">13</span> canonical classes;
+          verified on diff: structural authz, not crypto/injection.
         </div>
       </div>
     );
@@ -441,33 +523,32 @@ not strip client-declared scopes…`}
   if (frame === "localize") {
     return (
       <div className="flex h-full flex-col justify-center gap-2">
-        <div className="rounded border border-white/10 bg-black/30 px-2.5 py-1.5">
-          <div className="break-all font-mono text-[10.5px] text-white/85">
+        <div className="rounded border border-white/10 bg-black/30 px-2.5 py-2">
+          <div className="break-all font-mono text-sm text-white/85">
             <span className="text-white/55">src/gateway/server/ws/</span>
             message-handler.ts
           </div>
-          <div className="font-mono text-[10px] text-emerald-300/85">
+          <div className="font-mono text-emerald-300/85 text-xs">
             fn clearUnboundScopes
           </div>
         </div>
-        <div className="rounded border border-white/10 bg-black/30 px-2.5 py-1.5">
-          <div className="break-all font-mono text-[10.5px] text-white/85">
+        <div className="rounded border border-white/10 bg-black/30 px-2.5 py-2">
+          <div className="break-all font-mono text-sm text-white/85">
             <span className="text-white/55">src/gateway/server/ws/</span>
             message-handler.ts
           </div>
-          <div className="font-mono text-[10px] text-emerald-300/85">
+          <div className="font-mono text-emerald-300/85 text-xs">
             fn handleMissingDeviceIdentity
           </div>
         </div>
-        <div className="text-[10.5px] text-white/55 leading-snug">
-          paths · function names · line numbers — scrubbed from the hint, kept
-          as ground truth.
+        <div className="text-white/55 text-xs leading-snug">
+          Paths, symbols, and lines: scrubbed from hints, kept as ground truth.
         </div>
       </div>
     );
   }
   return (
-    <pre className="overflow-hidden whitespace-pre-wrap break-words font-mono text-[9.5px] text-white/80 leading-snug">
+    <pre className="overflow-hidden whitespace-pre-wrap break-words font-mono text-sm text-white/80 leading-snug">
       {`{
   "task_id": "ecvebench-openclaw-003",
   "ghsa_id": "GHSA-rqpp-rjj8-7wv8",
@@ -486,7 +567,13 @@ not strip client-declared scopes…`}
   );
 }
 
-function LocateStation({ t }: { t: number }) {
+function LocateStation({
+  t,
+  onCardPointerEnter,
+}: {
+  t: number;
+  onCardPointerEnter: () => void;
+}) {
   const phase = pipelinePhase(t);
   const active = phase >= 3 && phase < 4;
   const count = formatCount(FUNNEL_COUNTS[3]);
@@ -495,19 +582,20 @@ function LocateStation({ t }: { t: number }) {
       active={active}
       count={count}
       index={3}
+      onCardPointerEnter={onCardPointerEnter}
       title="Locate · scrub"
     >
       <div className="relative flex h-full min-h-[200px] flex-col gap-2 overflow-hidden rounded-md bg-black/30 p-3">
-        <div className="font-mono text-[10px] text-white/55">
+        <div className="font-mono text-white/55 text-xs">
           openclaw/openclaw @ 55f47e5c
         </div>
         <MiniRepoTree highlight={active} />
-        <div className="mt-1 grid grid-cols-2 gap-1.5">
-          <div className="rounded border border-white/10 bg-black/30 px-2 py-1 text-[10px]">
+        <div className="mt-1 grid grid-cols-2 gap-2">
+          <div className="rounded border border-white/10 bg-black/30 px-2.5 py-1.5 text-xs">
             <div className="text-white/55">paths kept</div>
             <div className="font-mono text-emerald-300">2 in ground truth</div>
           </div>
-          <div className="rounded border border-white/10 bg-black/30 px-2 py-1 text-[10px]">
+          <div className="rounded border border-white/10 bg-black/30 px-2.5 py-1.5 text-xs">
             <div className="text-white/55">hint redaction</div>
             <div className="font-mono text-rose-300">strict</div>
           </div>
@@ -530,7 +618,7 @@ const TREE_LINES: { indent: number; name: string; pin?: "ok" | "miss" }[] = [
 
 function MiniRepoTree({ highlight }: { highlight: boolean }) {
   return (
-    <div className="rounded border border-white/10 bg-black/40 p-2 font-mono text-[10px]">
+    <div className="rounded border border-white/10 bg-black/40 p-2.5 font-mono text-xs">
       {TREE_LINES.map((line) => {
         let cls = "text-white/65";
         if (line.pin === "ok") {
@@ -548,7 +636,7 @@ function MiniRepoTree({ highlight }: { highlight: boolean }) {
               {line.name}
             </span>
             {line.pin === "ok" && (
-              <span className="shrink-0 rounded bg-emerald-300/15 px-1 py-px text-[8.5px] text-emerald-300">
+              <span className="shrink-0 rounded bg-emerald-300/15 px-1.5 py-0.5 text-[10px] text-emerald-300">
                 2 fns
               </span>
             )}
@@ -559,7 +647,13 @@ function MiniRepoTree({ highlight }: { highlight: boolean }) {
   );
 }
 
-function DatasetStation({ t }: { t: number }) {
+function DatasetStation({
+  t,
+  onCardPointerEnter,
+}: {
+  t: number;
+  onCardPointerEnter: () => void;
+}) {
   const phase = pipelinePhase(t);
   const active = phase >= 4;
   const local = clamp01(phase - 4);
@@ -567,17 +661,23 @@ function DatasetStation({ t }: { t: number }) {
     Math.round(lerp(FUNNEL_COUNTS[3], FUNNEL_COUNTS[4], easeInOut(local)))
   );
   return (
-    <StationShell active={active} count={count} index={4} title="ECVEBench">
+    <StationShell
+      active={active}
+      count={count}
+      index={4}
+      onCardPointerEnter={onCardPointerEnter}
+      title="ECVEBench"
+    >
       <div className="flex h-full min-h-[200px] flex-col gap-2 overflow-hidden rounded-md bg-black/30 p-3">
-        <div className="text-[10px] text-white/55 uppercase tracking-[0.14em]">
+        <div className="text-white/55 text-xs uppercase tracking-[0.12em]">
           138 tasks · 13 classes
         </div>
         <ClassBars t={t} />
-        <div className="mt-auto flex items-center justify-between rounded border border-white/10 bg-black/40 px-2 py-1.5">
-          <span className="font-mono text-[10px] text-white/65">
+        <div className="mt-auto flex items-center justify-between rounded border border-white/10 bg-black/40 px-2.5 py-2">
+          <span className="font-mono text-white/65 text-xs">
             schema-validated
           </span>
-          <span className="flex items-center gap-1.5 font-mono text-[10px] text-emerald-300">
+          <span className="flex items-center gap-1.5 font-mono text-emerald-300 text-xs">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300" />
             PR open
           </span>
@@ -656,40 +756,39 @@ function LocalizePanel({ t }: { t: number }) {
   const cells = useMemo(buildRepoCells, []);
   const sweepX = (t * 100) % 100;
   return (
-    <div className="relative grid grid-cols-1 gap-4 border-white/10 border-t bg-black/15 px-4 py-6 md:grid-cols-[1fr_2.4fr] md:gap-6 md:px-8 md:py-8">
-      <div className="min-w-0 space-y-3">
-        <div className="flex items-center gap-3 text-[10px] text-white/65 uppercase tracking-[0.18em]">
+    <div className="relative grid grid-cols-1 gap-4 border-white/10 border-t bg-black/15 px-4 py-5 md:grid-cols-[1fr_2.4fr] md:gap-5 md:px-8 md:py-6">
+      <div className="min-w-0 space-y-2.5">
+        <div className="flex items-center gap-3 text-white/65 text-xs uppercase tracking-[0.14em]">
           <span className="font-mono">06</span>
           <span className="inline-block h-px w-5 bg-white/25" />
           <span>The hard problem</span>
         </div>
-        <h3 className="text-balance font-semibold text-2xl text-white leading-[1.15] tracking-tight md:text-3xl">
-          The agent must find{" "}
-          <span className="text-rose-300">2 vulnerable functions</span> in{" "}
+        <h3 className="text-balance font-semibold text-2xl text-white leading-tight tracking-tight md:text-[1.75rem]">
+          Find <span className="text-rose-300">2 vulnerable functions</span> in{" "}
           <span className="font-mono text-white">{REPO_TOTAL}</span> files.
         </h3>
-        <p className="max-w-md text-sm text-white/70 leading-relaxed">
-          Localization is the bottleneck. Frontier models score{" "}
-          <span className="font-mono text-white">~0.4</span> at L2, even with a
-          scrubbed CVE description. Without one, they wander.
+        <p className="max-w-md text-base text-white/70 leading-snug">
+          L2 is the bottleneck:{" "}
+          <span className="font-mono text-white">~0.4</span> with a scrubbed
+          CVE—worse with no hint.
         </p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 pt-0.5">
           <Stat label="files" value={REPO_TOTAL.toString()} />
-          <Stat label="vulnerable" tone="rose" value="2" />
+          <Stat label="vuln" tone="rose" value="2" />
           <Stat label="signal" tone="muted" value="0.6%" />
         </div>
-        <div className="space-y-1.5 text-[11px]">
-          <Legend color="rose" label="ground-truth vulnerable function" />
-          <Legend color="amber" label="agent guess · false positive" />
-          <Legend color="muted" label="benign code" />
+        <div className="space-y-1.5 text-sm">
+          <Legend color="rose" label="ground truth (vuln)" />
+          <Legend color="amber" label="false positive" />
+          <Legend color="muted" label="benign" />
         </div>
       </div>
 
       <div
-        className="relative min-h-[260px] overflow-hidden rounded-xl border border-white/15 bg-black/40 p-4"
-        style={{ aspectRatio: `${REPO_COLS} / ${REPO_ROWS + 4}` }}
+        className="relative min-h-[220px] overflow-hidden rounded-xl border border-white/15 bg-black/40 p-4"
+        style={{ aspectRatio: `${REPO_COLS} / ${REPO_ROWS + 3}` }}
       >
-        <div className="mb-2 flex items-center justify-between font-mono text-[10px] text-white/55">
+        <div className="mb-2 flex items-center justify-between font-mono text-white/55 text-xs">
           <span>repo · openclaw/openclaw @ 55f47e5c</span>
           <span className="flex items-center gap-2">
             <span className="inline-block h-1.5 w-1.5 animate-[cb-blink_1.4s_ease-in-out_infinite] rounded-full bg-amber-300" />
@@ -709,7 +808,7 @@ function LocalizePanel({ t }: { t: number }) {
             ))}
           </div>
           <SweepBeam x={sweepX} />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-1 pb-0.5 font-mono text-[9px] text-white/45">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-1 pb-0.5 font-mono text-[10px] text-white/45 sm:text-xs">
             <span>main.ts</span>
             <span>tests/</span>
             <span>vendor/</span>
@@ -785,11 +884,11 @@ function Stat({
     valueCls = "text-white/65";
   }
   return (
-    <div className="rounded border border-white/10 bg-white/[0.03] px-2 py-1.5">
-      <div className="text-[9px] text-white/55 uppercase tracking-[0.16em]">
+    <div className="rounded border border-white/10 bg-white/[0.03] px-2.5 py-2">
+      <div className="text-[10px] text-white/55 uppercase tracking-[0.14em] sm:text-xs">
         {label}
       </div>
-      <div className={`font-mono text-base tabular-nums ${valueCls}`}>
+      <div className={`font-mono text-lg tabular-nums ${valueCls}`}>
         {value}
       </div>
     </div>
@@ -810,8 +909,10 @@ function Legend({
     dot = "bg-amber-300";
   }
   return (
-    <div className="flex items-center gap-2 text-white/70">
-      <span className={`inline-block h-2 w-2 rounded-[2px] ${dot}`} />
+    <div className="flex items-center gap-2.5 text-white/75">
+      <span
+        className={`inline-block h-2.5 w-2.5 shrink-0 rounded-[2px] ${dot}`}
+      />
       <span>{label}</span>
     </div>
   );
@@ -853,26 +954,38 @@ const FALLBACK_CAPTION = CAPTIONS[0] ?? {
   line: "",
 };
 
-function CaptionStrip({ t }: { t: number }) {
-  const active =
-    CAPTIONS.find((c) => t >= c.from && t < c.to) ?? FALLBACK_CAPTION;
+function CaptionStrip({
+  t,
+  lockedStageIndex,
+}: {
+  t: number;
+  lockedStageIndex: number | null;
+}) {
+  const activeCaption =
+    lockedStageIndex === null
+      ? (CAPTIONS.find((c) => t >= c.from && t < c.to) ?? FALLBACK_CAPTION)
+      : (CAPTIONS[lockedStageIndex] ?? FALLBACK_CAPTION);
+  const progressT =
+    lockedStageIndex === null
+      ? t
+      : (lockedStageIndex + 0.5) / PIPELINE_LABELS.length;
   return (
-    <div className="relative flex items-center gap-3 border-white/10 border-t bg-black/25 px-6 py-3 md:px-8">
-      <span className="font-mono text-[10px] text-white/55 uppercase tracking-[0.18em]">
+    <div className="relative flex items-center gap-3 border-white/10 border-t bg-black/25 px-6 py-3.5 md:px-8">
+      <span className="shrink-0 font-mono text-white/55 text-xs uppercase tracking-[0.14em]">
         narrative
       </span>
       <span className="inline-block h-px w-6 bg-white/25" />
-      <div className="relative h-5 min-w-0 flex-1 overflow-hidden">
+      <div className="relative h-7 min-w-0 flex-1 overflow-hidden md:h-6">
         <div
-          className="absolute inset-0 truncate text-sm text-white/85"
-          key={active.line}
+          className="absolute inset-0 truncate text-base text-white/85"
+          key={activeCaption.line + String(lockedStageIndex)}
           style={{ animation: "step-fade-in 360ms ease-out both" }}
         >
-          {active.line}
+          {activeCaption.line}
         </div>
       </div>
-      <span className="hidden font-mono text-[10px] text-white/45 md:inline">
-        {Math.round(t * 100)
+      <span className="hidden shrink-0 font-mono text-white/45 text-xs md:inline">
+        {Math.round(progressT * 100)
           .toString()
           .padStart(2, "0")}{" "}
         / 100

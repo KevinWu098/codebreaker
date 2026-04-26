@@ -577,9 +577,22 @@ export abstract class BaseAuditAgent extends Think<Env, AuditAgentState> {
     inputTokens: number;
     outputTokens: number;
   }): void {
+    // Input tokens are tracked as a high-water-mark of the largest
+    // single-step prompt, NOT summed. Each model step within a turn
+    // re-sends the entire conversation (system + history + tool
+    // results), so summing per-step `inputTokens` across N steps
+    // multi-counts the same tokens up to N times — a coordinator doing
+    // ~10 dispatch steps in one turn can blow through a 150k cap on
+    // its very first user message that way. The high-water-mark
+    // matches the actual context-window cost, which is what the
+    // budget cap is meant to bound. Output tokens are unique per step
+    // and continue to accumulate.
     const control = {
       ...this.state.control,
-      inputTokens: (this.state.control?.inputTokens ?? 0) + input.inputTokens,
+      inputTokens: Math.max(
+        this.state.control?.inputTokens ?? 0,
+        input.inputTokens
+      ),
       outputTokens:
         (this.state.control?.outputTokens ?? 0) + input.outputTokens,
     };
