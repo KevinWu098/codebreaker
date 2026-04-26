@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "User authentication and account management"
+      "area": "User authentication and account registration"
     },
     "L2": {
-      "description": "An authorization bypass vulnerability exists where newly created user accounts through the public registration feature inherit all configured default permissions — including administrative privileges — without any server-side restriction. When public registration is enabled and the default user configuration includes elevated access, any unauthenticated visitor can create an account that is automatically granted full administrative control over the application, including file management, user management, and server configuration."
+      "description": "An authorization bypass vulnerability exists where the public self-registration feature applies all default user settings to newly created accounts without any server-side restriction on elevated privilege flags. When self-registration is enabled and the default user configuration includes administrative privileges, any unauthenticated visitor can create an account that automatically receives full administrative control, including file management, user administration, and server configuration access."
     },
     "L3": {
-      "area": "User authentication and account management",
-      "description": "An authorization bypass vulnerability exists where newly created user accounts through the public registration feature inherit all configured default permissions — including administrative privileges — without any server-side restriction. When public registration is enabled and the default user configuration includes elevated access, any unauthenticated visitor can create an account that is automatically granted full administrative control over the application, including file management, user management, and server configuration."
+      "area": "Public user self-registration endpoint and default permission configuration logic",
+      "description": "An authorization bypass vulnerability exists where the public self-registration endpoint applies all default user settings — including the administrative privilege flag — to newly created accounts without any server-side guard. When the server is configured with self-registration enabled (signup = true) and the default user permissions template includes administrator access, any unauthenticated visitor who registers through the public signup API receives a fully privileged administrator account."
     }
   },
   "ground_truth": {
