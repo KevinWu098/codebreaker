@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-964p-j4gg-mhwc",
+  "post_patch_commit": "9a06a85a8ddcbaeca1342827a5fea9087a587d97",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff. The fix replaces dangerouslySetInnerHTML with a new SafeHTML component (backed by DOMPurify) in ViewMessagesDialog.jsx, ChatMessage.jsx, and NodeExecutionDetails.jsx, and refactors JsonViewer.jsx to use React elements instead of innerHTML for JSON syntax highlighting. All four pre-existing source files contained the same unsafe HTML rendering pattern. Noisy because 4 existing source files were modified plus a new SafeHTML component was added.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
