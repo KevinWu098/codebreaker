@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "VPN client authentication and session handling"
+      "area": "VPN client authentication and connection authorization logic"
     },
     "L2": {
-      "description": "An authentication bypass vulnerability exists in the experimental plugin mode where VPN clients that do not support web-based single sign-on are incorrectly granted full network access. When a client is denied authentication, the plugin returns a synchronous success status code to the VPN server instead of an error or deferred status. Because the VPN server only consults the authentication control file when the plugin defers, the synchronous success return is interpreted as immediate approval, admitting the unauthenticated client to the internal network."
+      "description": "An authentication bypass vulnerability exists in an experimental plugin deployment mode where VPN clients that do not support web-based single sign-on are incorrectly granted full network access. When a client is denied authentication, the plugin returns a synchronous success status code to the VPN server instead of an error or deferred status. Because the VPN server only consults the authentication control file when the plugin defers, the synchronous success return is interpreted as immediate approval, admitting the unauthenticated client to the internal network."
     },
     "L3": {
-      "area": "VPN client authentication and session handling",
-      "description": "An authentication bypass vulnerability exists in the experimental plugin mode where VPN clients that do not support web-based single sign-on are incorrectly granted full network access. When a client is denied authentication, the plugin returns a synchronous success status code to the VPN server instead of an error or deferred status. Because the VPN server only consults the authentication control file when the plugin defers, the synchronous success return is interpreted as immediate approval, admitting the unauthenticated client to the internal network."
+      "area": "OpenVPN plugin mode authentication processing and client verification",
+      "description": "An authentication bypass vulnerability exists in the experimental shared-library plugin mode for OpenVPN OIDC authentication. When a VPN client that does not advertise WebAuth/SSO support is denied authentication, the plugin returns a synchronous success status code instead of an error code. Because OpenVPN only consults the authentication control file when the plugin returns a deferred status, the synchronous success return is treated as immediate approval, granting the unauthenticated client full network access to the internal network behind the VPN."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "auth-bypass",
     "cvss": 10.0,
-    "reason": "The plugin's client-deny handler returns a success status code instead of an error, causing the VPN server to treat denied clients as authenticated and granting them full network access without completing OIDC authentication.",
+    "reason": "The plugin's client-deny handler returns OPENVPN_PLUGIN_FUNC_SUCCESS instead of OPENVPN_PLUGIN_FUNC_ERROR, causing OpenVPN to treat denied clients as authenticated and granting them full network access without completing OIDC authentication.",
     "locations": [
       {
         "file": "lib/openvpn-auth-oauth2/openvpn/handle.go",
