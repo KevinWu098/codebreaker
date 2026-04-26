@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8qv5-68g4-248j",
+  "post_patch_commit": "3a124138843ef06594aa955800ba83d7c8ac2b84",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff: the readObject method in LazyList.SerializationProxy used `init ++: tail` which could evaluate the tail's lazyState Function0 during deserialization. The fix replaces this with `newLL(stateFromIteratorConcatSuffix(it)(tail.state))` to defer evaluation. Stream.scala in the same directory contains an identical readObject pattern with `coll = (init ++: tail)` in its own SerializationProxy, using the same vulnerable deserialization flow through its tlGen function reference. Vulnerability class insecure-deserialization confirmed from CWE-502 and the advisory description of a Java deserialization gadget chain.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

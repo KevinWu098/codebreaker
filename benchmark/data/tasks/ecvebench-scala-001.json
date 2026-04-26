@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-scala-001",
+  "ghsa_id": "GHSA-8qv5-68g4-248j",
+  "codebase": {
+    "repo": "https://github.com/scala/scala",
+    "language": "scala",
+    "ecosystem": "maven",
+    "commit": "88d56abf218dd24e8a9c6d339153593dc34156bc"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Collection serialization and deserialization logic in the immutable collections module"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where a forged Java serialization stream can trigger the execution of arbitrary function objects during the reconstruction of a collection, enabling file deletion, network connections, or arbitrary code execution via a gadget chain."
+    },
+    "L3": {
+      "area": "Lazy collection types and their serialization proxy deserialization logic in the immutable collections module",
+      "description": "An insecure deserialization vulnerability exists where a forged Java serialization stream can trigger the execution of arbitrary function objects during the reconstruction of a lazily-evaluated collection type. The deserialization process may invoke a stored function reference before the deserialized object is returned to the caller, enabling file deletion, network connections, or arbitrary code execution via a gadget chain."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The deserialization method in the collection's serialization proxy can trigger evaluation of a lazily-stored function reference during object reconstruction, allowing a forged serialization stream to execute arbitrary code.",
+    "locations": [
+      {
+        "file": "src/library/scala/collection/immutable/LazyList.scala",
+        "function": "readObject"
+      },
+      {
+        "file": "src/library/scala/collection/immutable/Stream.scala",
+        "function": "readObject"
+      }
+    ]
+  }
+}
