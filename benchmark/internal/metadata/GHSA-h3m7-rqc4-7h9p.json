@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h3m7-rqc4-7h9p",
+  "post_patch_commit": "ef443c442b96909694390324a99849b0407007fe",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies a single non-test source file (pkg/genutil/slicez/chunking.go). The fix changes uint16 casts to uint64 in the ForEachChunkUntil function to prevent integer overflow when input slices exceed 65535 elements. The vulnerability class integer-overflow matches the CWE-190 assignment and is confirmed by the diff. No sibling files with the same vulnerability pattern exist in the directory at the pre-patch commit.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
