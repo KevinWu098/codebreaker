@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jj7c-x25r-r8r3",
+  "post_patch_commit": "59188e07a34d5512979b5641cf6e2a2590ee5d32",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit (59188e0) is the squash merge of PR #11126 ('fix: correct size for HeapValueType::Array size') into master, with parent e576ac2. The patch touched 31 files (+613/-206) but the core vulnerability is in allocate_foreign_call_result_array() in brillig_call/mod.rs, where Type::Array(_, nested_size) discards inner types and passes only the semantic length to allocate_brillig_array(), under-allocating for composite element types like tuples. The broader refactoring introduced typed length wrappers (SemanticLength, SemiFlattenedLength) across many files, making the patch noisy. Pre-assigned class buffer-overflow is correct: CWE-131 (Incorrect Calculation of Buffer Size) leads to heap writes beyond allocated bounds.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
