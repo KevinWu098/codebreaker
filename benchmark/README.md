@@ -76,16 +76,15 @@ The scoring formula is:
 
 ```
 if vulnerable verdict is wrong → score = 0
-if vuln_class is wrong         → score = 0
-otherwise                      → score = location_recall
+otherwise                      → score = 0.3 × vuln_class_correct + 0.7 × location_recall
 ```
 
-Where `location_recall = |predicted_files ∩ ground_truth_files| / |ground_truth_files|`.
+Where `location_recall = |predicted_files ∩ ground_truth_files| / |ground_truth_files|` and `vuln_class_correct` is 1 if the predicted class matches ground truth, 0 otherwise.
 
 This means:
 - **Vulnerability detection** (`vulnerable`) is a binary gate. Wrong verdict = zero score.
-- **Vulnerability classification** (`vuln_class`) is a binary gate. Wrong class = zero score.
-- **File-level location recall** is the composite score when both gates pass.
+- **Vulnerability classification** (`vuln_class`) is weighted at 30%. Correct class contributes 0.3 to the score.
+- **File-level location recall** is weighted at 70%. This is the dominant component because localization is the hardest and most useful part of the task.
 
 #### Why recall instead of IoU?
 
@@ -96,8 +95,8 @@ Agents typically predict a small number of locations (1–3 files), so the risk 
 | Field                | Method                                                                     |
 | -------------------- | -------------------------------------------------------------------------- |
 | `vulnerable`         | Binary gate. Incorrect verdict → score 0.                                  |
-| `vuln_class`         | Binary gate. Incorrect class → score 0.                                    |
-| `locations.file`     | Recall against ground truth file set. This is the composite score.         |
+| `vuln_class`         | Weighted at 30%. Exact match contributes 0.3 to the score.                 |
+| `locations.file`     | Weighted at 70%. Recall against ground truth file set.                     |
 
 #### What is NOT scored (and why)
 
@@ -115,7 +114,7 @@ The overall benchmark score for a model is the **mean per-task score** across al
 benchmark_score = mean(per_task_scores)
 ```
 
-This is equivalent to a partial-credit pass rate — tasks where both gates pass contribute their location recall, and tasks where a gate fails contribute 0.
+This is equivalent to a partial-credit pass rate — tasks where the gate passes contribute their weighted class + location score, and tasks where the gate fails contribute 0.
 
 
 ### Negative Validation (planned)

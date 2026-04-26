@@ -783,7 +783,6 @@ const BenchmarkRunScoringDetail = ({
     passed === false ? "font-medium text-red-400" : "";
 
   const vulnGateLabel = gateLabel(result.vulnerableMatched);
-  const classGateLabel = gateLabel(result.vulnClassMatched);
 
   return (
     <div className="mb-4 space-y-3 text-xs">
@@ -801,15 +800,19 @@ const BenchmarkRunScoringDetail = ({
             {vulnGateLabel}
           </span>
         </dd>
-        <dt className="text-fg-muted">gate · vuln class</dt>
+        <dt className="text-fg-muted">vuln class (×0.3)</dt>
         <dd className="break-words">
           expected {result.expectedVulnClass ?? "—"} · predicted{" "}
           {result.predictedVulnClass ?? "—"} ·{" "}
-          <span className={gateStyle(result.vulnClassMatched)}>
-            {classGateLabel}
+          <span
+            className={
+              result.vulnClassMatched === false ? "font-medium text-fg" : ""
+            }
+          >
+            {formatMatch(result.vulnClassMatched)}
           </span>
         </dd>
-        <dt className="text-fg-muted">location recall</dt>
+        <dt className="text-fg-muted">location recall (×0.7)</dt>
         <dd>
           {result.locationScore?.toFixed(2) ?? "—"}
           {locationCountSummary(result.correctLocations, expectedLocCount)}
@@ -832,8 +835,8 @@ const scoreColumnForRun = (run: BenchmarkRunRow): React.ReactNode => {
   }
 
   const vHint = `vulnerability gate: ${formatMatch(b.vulnerableMatched)}`;
-  const cHint = `vulnerability class gate: ${formatMatch(b.vulnClassMatched)}`;
-  const locHint = `location recall${locHintDetailSuffix(b)}`;
+  const cHint = `vulnerability class (×0.3): ${formatMatch(b.vulnClassMatched)}`;
+  const locHint = `location recall (×0.7)${locHintDetailSuffix(b)}`;
   const locText = scoreBreakdownLocationCaption(b);
 
   return (

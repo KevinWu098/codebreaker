@@ -15,9 +15,9 @@ Scoring uses a gated model (see benchmark/README.md for the authoritative
 spec):
 
 * ``vulnerable``       - binary gate. Wrong verdict → composite score 0.
-* ``vuln_class``       - binary gate. Wrong class → composite score 0.
-* ``locations.file``   - file-level recall against ground truth file set.
-                         This is the composite score when both gates pass.
+* ``vuln_class``       - weighted at 30%. Correct class contributes 0.3.
+* ``locations.file``   - weighted at 70%. File-level recall against ground
+                         truth file set.
 
 The following are tracked as diagnostic axes but do not affect the
 composite score:
@@ -190,10 +190,9 @@ def _score_candidate(
 ) -> dict[str, Any]:
     """Score a single candidate against ground truth.
 
-    Uses gated scoring: vulnerability detection and class identification are
-    binary gates. The composite score equals file-level recall when both gates
-    pass, and 0 otherwise. Function IoU is computed as a diagnostic but does
-    not affect the composite.
+    Uses gated scoring: vulnerability detection is a binary gate. When it
+    passes, the composite is 0.3 × vuln_class_correct + 0.7 × file_recall.
+    Function IoU is computed as a diagnostic but does not affect the composite.
     """
     ground_truth = task["ground_truth"]
     gt_vulnerable = bool(ground_truth["vulnerable"])
@@ -240,7 +239,9 @@ def _score_candidate(
         if gt_pairs or pred_pairs:
             score["function_iou"] = set_iou(pred_pairs, gt_pairs)
 
-    score["score"] = file_recall if vuln_class_correct else 0.0
+    score["score"] = (
+        (1.0 if vuln_class_correct else 0.0) * 0.3 + file_recall * 0.7
+    )
 
     return score
 

@@ -729,19 +729,22 @@ export const summarizeTask = (task: TaskInstance): BenchmarkTaskSummary => {
 };
 
 /**
- * Score a single agent output against ground truth using gated scoring.
+ * Score a single agent output against ground truth.
  *
  * Vulnerability detection is a prerequisite gate — if wrong, the score is 0.
  * Empirically, agents almost always get the binary vulnerable/not-vulnerable
  * verdict correct, so weighting it would inflate scores without adding signal.
  *
- * Vulnerability class acts as a second gate — if the agent cannot classify the
- * vulnerability, its location predictions don't receive credit.
+ * When the gate passes, the composite score is a weighted sum:
+ *   score = 0.3 × vuln_class_correct + 0.7 × location_recall
  *
- * The composite score equals file-level location recall when both gates pass,
- * and 0 otherwise. Function names are required in the agent output to encourage
- * deeper analysis but are intentionally not scored because agents rarely predict
- * them accurately enough for reliable measurement.
+ * Location recall dominates (70%) because localization is the hardest and most
+ * useful part of the task in a real security triage workflow. Classification
+ * is secondary (30%) — a wrong label is a nuisance, not a failure.
+ *
+ * Function names are required in the agent output to encourage deeper analysis
+ * but are intentionally not scored because agents rarely predict them accurately
+ * enough for reliable measurement.
  */
 export const scoreAgentOutput = (
   task: TaskInstance,
@@ -763,7 +766,9 @@ export const scoreAgentOutput = (
       ? 0
       : correctLocations / expectedLocations.size;
 
-  const score = vulnerableMatched && vulnClassMatched ? locationScore : 0;
+  const score = vulnerableMatched
+    ? Number(vulnClassMatched) * 0.3 + locationScore * 0.7
+    : 0;
 
   return BenchmarkRunScoreSchema.parse({
     correctLocations,
