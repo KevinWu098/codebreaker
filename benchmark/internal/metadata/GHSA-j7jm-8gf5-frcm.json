@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j7jm-8gf5-frcm",
+  "post_patch_commit": "85efa4a075354e077a700262ef78e2e9119881bf",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds an ObjectInputFilter to the static read() method in Connector.java, which previously deserialized Java objects from network socket InputStreams via ObjectInputStream without any class restrictions. The filter now whitelists only Address, ConnectionType, Enum, and classes from net.grinder.engine and net.grinder.common packages. Other files changed in the commit (build.gradle, CI workflow, LocalManagedDnsImpl.java) are unrelated to the vulnerability — they update JDK version and expand wildcard imports. The only sibling file in the communication package (Acceptor.java) does not use ObjectInputStream, so no sibling locations were added. The pre-assigned vulnerability class insecure-deserialization is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
