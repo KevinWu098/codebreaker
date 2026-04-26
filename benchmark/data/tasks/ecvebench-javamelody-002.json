@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-javamelody-002",
+  "ghsa_id": "GHSA-6fvx-r7hx-3vh6",
+  "codebase": {
+    "repo": "https://github.com/javamelody/javamelody",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "00dd8d51a6483cb3a5b4c8ae9c24197028401c58"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTTP request interception and payload parsing layer"
+    },
+    "L2": {
+      "description": "An XXE (XML External Entity) vulnerability exists where an XML parser processes input without disabling DTDs or external entity resolution, allowing an attacker to inject crafted XML payloads that can read arbitrary files from the server or perform server-side request forgery."
+    },
+    "L3": {
+      "area": "SOAP request body parsing within the HTTP request wrapping and monitoring subsystem",
+      "description": "An XXE (XML External Entity) vulnerability exists in the SOAP method name extraction logic where an XML stream reader is created from an XMLInputFactory without disabling DTD support or external entity resolution. An attacker can send a crafted SOAP request containing malicious entity declarations to read arbitrary files or perform SSRF."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XMLInputFactory used to parse SOAP request bodies does not disable DTD processing or external entity resolution, allowing an attacker to exploit XXE via crafted SOAP requests.",
+    "locations": [
+      {
+        "file": "javamelody-core/src/main/java/net/bull/javamelody/PayloadNameRequestWrapper.java",
+        "function": "parseSoapMethodName"
+      }
+    ]
+  }
+}
