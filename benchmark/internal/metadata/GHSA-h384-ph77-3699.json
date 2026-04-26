@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h384-ph77-3699",
+  "post_patch_commit": "e54abadc777715b6dcb545c13214d1dea63df6c9",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies two source files (weixin/msg.py and weixin/pay.py) adding XMLParser(resolve_entities=False) to etree.fromstring() calls. Locations derived directly from the patch diff: the parse() function in msg.py and the to_dict() function in pay.py both parse XML without disabling entity resolution. No sibling files in the weixin/ package use etree.fromstring(). Pre-assigned class xxe confirmed correct — CWE-611 maps directly and the patch explicitly disables XML external entity resolution.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
