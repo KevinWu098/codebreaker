@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-85xx-xhjm-rhrw",
   "post_patch_commit": "e8ffe9d1383736f6a21090ab959a2f4fa5a41284",
   "noisy_patch": false,
-  "curation_notes": "Patch commit e8ffe9d modifies 2 non-test source files: IOParser.java (adds isPayloadValid() validation after decoding) and Manager.java (inlines ondata() methods with try-catch for DecodingException). The primary vulnerability is in IOParser.Decoder.decodeString() which parses packets without validating that the payload type matches expectations for the packet type, leading to NPE. The Manager.ondata() methods also lacked proper error containment. Locations derived from the patch diff.",
+  "curation_notes": "Patch commit e8ffe9d modifies 2 non-test source files: IOParser.java (adds isPayloadValid() validation after decoding to check payload type matches packet type, and replaces error() returns with DecodingException throws) and Manager.java (inlines ondata() into the listener callback with try-catch for DecodingException). Primary vulnerability is in IOParser.Decoder.decodeString() which parses packets without validating that the decoded payload format matches expected types for each packet type (e.g., JSONObject for CONNECT, JSONArray for EVENT), leading to NPE when downstream code assumes correct types. Manager.ondata() is a secondary location as it passes raw data to the decoder without error containment. Locations derived from the patch diff. No sibling files exhibit the same vulnerability pattern.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
