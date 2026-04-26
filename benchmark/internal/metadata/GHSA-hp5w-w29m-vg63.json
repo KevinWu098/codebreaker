@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hp5w-w29m-vg63",
+  "post_patch_commit": "0f2389735fd32e0bbc93ecde5d8c814b275b21b5",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 0f23897 (PR #3440) modifies Shell.java to add an authenticateUser() call after creating the AccumuloClient in the config() method. In the pre-patch code, the shell creates a client with the provided credentials but never verifies them against the server, so invalid credentials are silently accepted. ShellOptionsJC.java changes are cosmetic (variable rename, visibility change). The pre-assigned class auth-bypass from CWE-287 is correct — the vulnerability is a missing authentication check during shell session initialization.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
