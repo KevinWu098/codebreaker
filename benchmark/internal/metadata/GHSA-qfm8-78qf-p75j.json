@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-qfm8-78qf-p75j",
   "post_patch_commit": "be44f61a475371c36b2035cbb523b56f5e34267d",
   "noisy_patch": true,
-  "curation_notes": "Locations derived from the patch diff. The core vulnerability is the use of PHP's unserialize() on user-controlled form data in Data.php (modifyRow) and FileUploadHooks.php (processFiles). Marker.php (addHiddenFieldsMarkers) exposes serialized data in plain text hidden form fields, enabling the attack. The patch adds an EncryptionUtility class to encrypt serialized data before placing it in form fields. 12 files were changed total, but most were copyright updates, new utility classes, and config/i18n additions supporting the encryption fix.",
+  "curation_notes": "Re-curated with updated L3 hints. Locations derived from the patch diff. The core vulnerability is the use of PHP's unserialize() on user-controlled form data in Data.php (modifyRow) and FileUploadHooks.php (processFiles). Marker.php (addHiddenFieldsMarkers) exposes serialized data in plain text hidden form fields, enabling the attack vector. The patch adds an EncryptionUtility class to encrypt serialized data before placing it in form fields and decrypt before deserializing. 12 files were changed total, but most were copyright updates, new utility classes, and config/i18n additions supporting the encryption fix. L3 area narrowed to file-type field serialization layer; L3 description adds context about plain-text hidden field exposure.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
