@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cjqf-877p-7m3f",
+  "post_patch_commit": "21ebc51f00b8a1417888faa2e83a372fd29d0f5e",
+  "noisy_patch": false,
+  "curation_notes": "The advisory explicitly names must_mkdir_and_open_with_perms() in snap-confine as the vulnerable function. The patch commit (21ebc51) removes this function entirely and replaces setup_private_mount() with setup_private_tmp(), which uses a pre-created root-owned /tmp/snap-private-tmp directory (set up via systemd-tmpfiles) instead of creating directories in the user-writable /tmp at runtime. Three non-test source files were changed: mount-support.c (core fix), system.go (path updates), and x11.go (path updates). The snap-confine.apparmor.in change is a config template update. No sibling files share the same vulnerability pattern. The pre-assigned race-condition class is correct per CWE-362 and the TOCTOU nature of the flaw.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
