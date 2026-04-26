@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8h4j-vm3r-vcq3",
+  "post_patch_commit": "2ef3628dac35aeba0a97d5fb3a57746b4e1d62b3",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff, which modifies only src/functions.rs. The vulnerability is in the get_aux and set_aux methods of the Context struct. get_aux returned Option<&T>, a borrow of data stored via sqlite3_set_auxdata, but SQLite can free auxdata at any time, making the returned reference dangling. set_aux stored data without proper reference counting. The fix wraps values in Arc<T> so callers hold shared ownership and the data cannot be freed while references exist. No sibling files contain the same pattern as the Auxdata API is entirely in this one file. Pre-assigned class use-after-free is correct per CWE-416.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
