@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-59gp-qqm7-cw4j",
+  "post_patch_commit": "472913378794b8cae21751b0777205e7c0606a95",
+  "noisy_patch": true,
+  "curation_notes": "The vulnerability (CVE-2021-30560) is a use-after-free in libxslt's transform.c, specifically in xsltApplyTemplates and xsltDefaultProcessOneNode. Nokogiri vendors libxslt by downloading and compiling it at build time; the vulnerable C code is not checked into the Nokogiri repo itself. The fix in Nokogiri was updating the vendored libxslt from 1.1.34 to 1.1.35 via PR #2457 (merge commit 4729133). The location is dependencies.yml which pins the vulnerable libxslt version. The patch is noisy because 16 files were changed including CI configs, build scripts, patch files, and dependency configs, though the core fix is simply the version bump in dependencies.yml. The upstream fix (gitlab.gnome.org/GNOME/libxslt commit 50f9c9cd) removed unsafe node deletion logic from xsltApplyTemplates and xsltDefaultProcessOneNode in transform.c. Vulnerability class use-after-free confirmed from CWE-416, advisory description, and upstream commit message.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

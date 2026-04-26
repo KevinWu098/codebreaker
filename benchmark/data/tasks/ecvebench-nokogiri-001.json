@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-nokogiri-001",
+  "ghsa_id": "GHSA-59gp-qqm7-cw4j",
+  "codebase": {
+    "repo": "https://github.com/sparklemotion/nokogiri",
+    "language": "c",
+    "ecosystem": "rubygems",
+    "commit": "e18da0066dcad5bbc71564a6df603e4cb3fa9902"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Native library dependency management and extension compilation configuration"
+    },
+    "L2": {
+      "description": "A use-after-free vulnerability exists in the XSLT processing engine where template application logic incorrectly deletes nodes from the source document that may still be referenced. When processing untrusted XSLT stylesheets, the engine attempts to strip whitespace text nodes and unlink DTD nodes, but under certain circumstances this causes freed memory to be accessed again, leading to heap corruption, denial of service, or potentially arbitrary code execution."
+    },
+    "L3": {
+      "area": "Vendored XSLT processing library version pinning and download configuration",
+      "description": "A use-after-free vulnerability exists in the vendored XSLT processing library where the template application logic incorrectly deletes text nodes with strippable whitespace, DTD nodes, and unknown nodes from the source document during stylesheet processing without a select expression. Since whitespace from input documents is already stripped before reaching this code, the redundant stripping can be tricked into freeing nodes still referenced elsewhere, leading to heap corruption. The fix requires updating the vendored library to a version that eliminates this unsafe node deletion behavior."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 8.8,
+    "reason": "The vendored libxslt library (version 1.1.34) contains a use-after-free in its XSLT template application logic, where nodes are incorrectly deleted from the source document while still potentially referenced, leading to heap corruption when processing crafted XSLT stylesheets.",
+    "locations": [
+      {
+        "file": "dependencies.yml",
+        "function": null
+      }
+    ]
+  }
+}
