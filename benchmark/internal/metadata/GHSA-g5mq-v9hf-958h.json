@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g5mq-v9hf-958h",
+  "post_patch_commit": "36402c22eef49d60edd73a2f312f8e28fe0bd1cb",
+  "noisy_patch": true,
+  "curation_notes": "Primary location htdocs/product/card.php derived from the advisory description which explicitly names product/card.php and the statut_buy parameter. The patch adds type-safe filtering ('int', 'alpha', 'aZ09') to multiple GETPOST calls that previously had no sanitization. Secondary location htdocs/core/class/html.form.class.php (select_thirdparty_list) derived from the patch diff, which adds SQL injection detection on the $filter parameter before it is interpolated into a SQL query. The main.inc.php and societe/ajax/company.php changes are supporting infrastructure fixes, not direct vulnerability locations. Noisy patch: 4 non-test source files were modified. Vulnerability class sql-injection confirmed by CWE-89, advisory description, and patch content.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
