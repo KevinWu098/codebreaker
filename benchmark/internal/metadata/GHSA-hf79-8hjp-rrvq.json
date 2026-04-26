@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hf79-8hjp-rrvq",
+  "post_patch_commit": "7c7757c772fb709c61b1442bcc1e1fbee97bf4a8",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies a single file: lucet-runtime/lucet-runtime-internals/src/instance.rs. The fix wraps the alloc field of Instance in ManuallyDrop and changes the Drop implementation for InstanceHandle to manually extract and drop the allocator only after drop_in_place has finished destructing all other instance fields. The pre-assigned class use-after-free (CWE-416) is correct: the bug is that the Alloc field's destructor returns memory to the pool while other field destructors are still running on that same memory. No sibling files share this pattern since the vulnerability is specific to the Instance/InstanceHandle drop interaction.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

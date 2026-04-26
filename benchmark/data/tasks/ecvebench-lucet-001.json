@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-lucet-001",
+  "ghsa_id": "GHSA-hf79-8hjp-rrvq",
+  "codebase": {
+    "repo": "https://github.com/bytecodealliance/lucet",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "8fb1fece339927e178f6cfef4eb67328b500237d"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "WebAssembly instance lifecycle and memory management"
+    },
+    "L2": {
+      "description": "A use-after-free vulnerability exists in the WebAssembly runtime's instance management. When an instance is dropped, the memory allocator backing the instance itself is destructed as part of the normal field drop sequence, which releases the instance's memory back to a pool before the remaining field destructors have finished running. If another thread allocates the same memory from the pool while destructors are still executing, a race condition occurs that leads to use-after-free, potentially resulting in memory corruption or data races."
+    },
+    "L3": {
+      "area": "WebAssembly instance handle drop logic and pool-based memory allocator integration",
+      "description": "A use-after-free vulnerability exists in the WebAssembly runtime's pool-allocated instance management. When an instance handle is dropped, the embedded allocator field that manages the backing memory for the instance is destructed during the standard top-to-bottom field drop sequence. This releases the instance's memory back to the pool before the destructors of the remaining instance fields have completed. If another thread obtains the same memory slot from the pool while these destructors are still running, it leads to a use-after-free condition that can cause memory corruption or data races."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 8.6,
+    "reason": "The Instance's alloc field, which manages the memory backing the Instance itself, is dropped as part of normal struct drop ordering, freeing the Instance's memory back to the pool before remaining field destructors complete. This creates a use-after-free when another thread allocates the same memory.",
+    "locations": [
+      {
+        "file": "lucet-runtime/lucet-runtime-internals/src/instance.rs",
+        "function": "drop"
+      }
+    ]
+  }
+}
