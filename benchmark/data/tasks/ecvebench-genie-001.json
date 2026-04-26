@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-genie-001",
+  "ghsa_id": "GHSA-wpcv-5jgp-69f3",
+  "codebase": {
+    "repo": "https://github.com/Netflix/genie",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "f53744cc4bda0ec37970d7676e38101f4017c981"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Job submission and file attachment handling layer"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability exists in the file attachment handling where user-supplied filenames from multipart/form-data uploads are insufficiently validated. While the application checks for path separators in filenames, the validation for directory traversal sequences uses an exact-match comparison instead of a substring check, allowing specially crafted filenames containing traversal patterns to bypass the restriction and write files to arbitrary locations on the filesystem."
+    },
+    "L3": {
+      "area": "Local filesystem-based file attachment storage service and its filename validation logic",
+      "description": "A path traversal vulnerability exists in the local filesystem-based file attachment storage where user-supplied filenames from multipart/form-data uploads are validated using an exact-match comparison for directory traversal sequences instead of a substring check. This allows filenames containing embedded traversal patterns to bypass the validation and write files to arbitrary locations on the filesystem accessible by the application process, potentially leading to remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 9.9,
+    "reason": "The saveAttachments method validates uploaded filenames using an exact-match check for '..' instead of a substring check, allowing filenames containing embedded directory traversal sequences to bypass the restriction and write files outside the intended attachment storage directory.",
+    "locations": [
+      {
+        "file": "genie-web/src/main/java/com/netflix/genie/web/services/impl/LocalFileSystemAttachmentServiceImpl.java",
+        "function": "saveAttachments"
+      }
+    ]
+  }
+}
