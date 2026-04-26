@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-68wm-pfjf-wqp6",
+  "post_patch_commit": "c62dbd43d6e69ae81530e7c4f8763857f8ff1dda",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies a single file (internal/handlers/handler_verify.go) in the VerifyGet function. The vulnerability is in the error handling path when parsing the target URL from the incoming request. The original code called ctx.Error() which returned a 200 OK status, while the fix replaces it with ctx.Logger.Error() and ctx.ReplyUnauthorized() to correctly return a 401. The pre-assigned class auth-bypass (from CWE-287) is correct — the bug allows bypassing authentication by sending a malformed request URI. No sibling files share this vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
