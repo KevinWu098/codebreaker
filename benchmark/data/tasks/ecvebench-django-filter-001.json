@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-django-filter-001",
+  "ghsa_id": "GHSA-x7gm-rfgv-w973",
+  "codebase": {
+    "repo": "https://github.com/carltongibson/django-filter",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "2ebce743d5facbe4fe628b79fa916a3f5ef09c21"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Query parameter filtering and form field handling layer"
+    },
+    "L2": {
+      "description": "An integer conversion vulnerability exists where user-supplied numeric filter values in exponential format with extremely large exponents can cause a denial of service when the value is converted to an integer, due to the absence of an upper bound validation on the input magnitude."
+    },
+    "L3": {
+      "area": "Numeric query parameter filter and its form field validation logic",
+      "description": "An integer conversion vulnerability exists where user-supplied numeric filter values in exponential format with extremely large exponents (e.g., scientific notation) can cause a denial of service when the value is converted to an integer. The numeric filter's form field lacks an upper bound validator to limit the magnitude of input values before conversion."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 7.5,
+    "reason": "The NumberFilter class uses a DecimalField without a maximum value validator, allowing malicious input in exponential format with very large exponents to cause a denial of service during integer conversion.",
+    "locations": [
+      {
+        "file": "django_filters/filters.py",
+        "function": null
+      }
+    ]
+  }
+}
