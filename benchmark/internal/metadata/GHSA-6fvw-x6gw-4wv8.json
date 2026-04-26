@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6fvw-x6gw-4wv8",
+  "post_patch_commit": "eb592340b022298f62a0a3e8450dbfbe29585782",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modified only one file (lib/Froxlor/Database/Manager/DbManagerMySQL.php) in the createDatabase function. The fix replaced direct string concatenation of the $dbname variable into a SQL query with a prepared statement. No sibling files exist in the same directory. The pre-assigned sql-injection class is correct per CWE-89 and the patch content.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
