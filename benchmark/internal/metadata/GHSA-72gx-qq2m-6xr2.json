@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-72gx-qq2m-6xr2",
+  "post_patch_commit": "60c3653e7824f78a6f771729974785f03765dc03",
+  "noisy_patch": false,
+  "curation_notes": "The GHSA advisory references jenkinsci/script-security-plugin commit 415b6e2, but that commit only bumps the groovy-sandbox dependency from 1.23 to 1.24 and adds a test. The actual source code fix is in jenkinsci/groovy-sandbox at commit 60c3653, which adds transformation of initial expressions for constructor parameters in the processConstructors method of SandboxTransformer.java. The pre-patch commit 62f4976 is the parent of the fix commit in groovy-sandbox. Kept pre-assigned vuln_class command-injection (CWE-94 code injection); the sandbox bypass allows arbitrary code execution including system commands. Only 1 non-test source file was changed so noisy_patch is false.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
