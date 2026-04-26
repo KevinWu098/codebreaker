@@ -8,6 +8,7 @@ import type {
   BenchmarkRunScoreBreakdown,
   BenchmarkTaskSummary,
   CreateBenchmarkRunRequest,
+  CveFollowupSummary,
   Difficulty,
   TaskInstance,
 } from "@codebreaker/benchmark-runner/schemas";
@@ -32,14 +33,16 @@ import {
   Trash2,
 } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { DefinitionField } from "@/components/definition-field";
+import { DevinWord } from "@/components/devin-word";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { JsonView } from "@/components/json-view";
+import { ListPagination } from "@/components/list-pagination";
 import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/spinner";
 import { CveFollowupRunSection } from "@/features/followups/cve-followup-detail";
@@ -53,6 +56,7 @@ import {
   useBenchmarkRunQuery,
   useBenchmarkRunsQuery,
   useBenchmarkTasksQuery,
+  useCveFollowupsListQuery,
 } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import {
@@ -61,6 +65,7 @@ import {
   formatRelativeTime,
   formatUsd,
 } from "@/lib/format";
+import { DASHBOARD_LIST_PAGE_SIZE } from "@/lib/list-page-size";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.kimi[0];
@@ -68,8 +73,9 @@ const BENCHMARK_MAX_INPUT_TOKENS = 300_000;
 const BENCHMARK_MAX_STEPS = 50;
 const BENCHMARK_MAX_TOOL_CALLS = 40;
 const BENCHMARK_MAX_TOTAL_TOKENS = 400_000;
-const BENCHMARK_MAX_TURNS = 1;
+const BENCHMARK_MAX_TURNS = 20;
 const BENCHMARK_TIMEOUT_SECONDS = 600;
+const BATCH_CREATE_DELAY_MS = 500;
 const DEFAULT_BATCH_REPEAT_COUNT = 1;
 const DIFFICULTY_OPTIONS: readonly Difficulty[] = ["L0", "L1", "L2", "L3"];
 const BENCHMARK_TAB_IDS = ["results", "create"] as const;
@@ -80,9 +86,15 @@ const BENCHMARK_DL_GRID =
 
 type BenchmarkTab = (typeof BENCHMARK_TAB_IDS)[number];
 
+const delay = (durationMs: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
+
 const createBenchmarkRequestFromRun = (
   run: BenchmarkRunRow
 ): CreateBenchmarkRunRequest => ({
+  autoFollowup: false,
   autoStart: true,
   cleanupPolicy: run.cleanupPolicy,
   difficulty: run.difficulty,
@@ -100,12 +112,14 @@ const createBenchmarkRequestFromRun = (
 });
 
 const createBenchmarkRequestsFromBatch = ({
+  autoFollowup,
   cleanupPolicy,
   difficulties,
   models,
   repeatCount,
   tasks,
 }: {
+  autoFollowup: boolean;
   cleanupPolicy: BenchmarkCleanupPolicy;
   difficulties: Difficulty[];
   models: BenchmarkRunModel[];
@@ -121,6 +135,7 @@ const createBenchmarkRequestsFromBatch = ({
       for (const model of models) {
         for (let i = 0; i < repeatCount; i += 1) {
           requests.push({
+            autoFollowup,
             autoStart: true,
             cleanupPolicy,
             difficulty,
@@ -142,11 +157,13 @@ const createBenchmarkRequestsFromBatch = ({
 };
 
 const buildBatchRequests = ({
+  autoFollowup,
   difficulties,
   models,
   repeatCount,
   tasks,
 }: {
+  autoFollowup: boolean;
   difficulties: Difficulty[];
   models: BenchmarkRunModel[];
   repeatCount: number;
@@ -172,8 +189,8 @@ const buildBatchRequests = ({
       requests: null,
     };
   }
-
   const requests = createBenchmarkRequestsFromBatch({
+    autoFollowup,
     cleanupPolicy: "retain",
     difficulties,
     models,
@@ -191,9 +208,52 @@ const buildBatchRequests = ({
   return { error: null, requests };
 };
 
+const benchmarkBatchPreviewCount = ({
+  difficulties,
+  models,
+  repeatCount,
+  tasks,
+}: {
+  difficulties: Difficulty[];
+  models: BenchmarkRunModel[];
+  repeatCount: number;
+  tasks: BenchmarkTaskSummary[];
+}): number => {
+  if (!(Number.isInteger(repeatCount) && repeatCount > 0)) {
+    return 0;
+  }
+
+  const taskLevelCount = tasks.reduce(
+    (count, task) =>
+      count +
+      difficulties.filter((difficultyOption) =>
+        task.difficulties.includes(difficultyOption)
+      ).length,
+    0
+  );
+
+  return models.length * repeatCount * taskLevelCount;
+};
+
 const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
   `${model.provider}/${model.id}`;
 const DEFAULT_MODEL_VALUE = modelValue(DEFAULT_MODEL);
+
+const benchmarkModelsFromValues = (values: string[]): BenchmarkRunModel[] =>
+  values.flatMap((value) => {
+    const selectedModel = MODEL_OPTIONS.find(
+      (option) => modelValue(option) === value
+    );
+
+    return selectedModel
+      ? [
+          {
+            id: selectedModel.id,
+            provider: selectedModel.provider,
+          },
+        ]
+      : [];
+  });
 
 const taskWithDifficulty = (
   run: Pick<BenchmarkRunRow, "difficulty" | "taskId">
@@ -862,6 +922,46 @@ const runCost = (run: BenchmarkRunRow): number | null => {
 
 const badgeStatusForRun = (status: BenchmarkRunRow["status"]): string => status;
 
+const followupSummaryForRun = (
+  summaries: CveFollowupSummary[],
+  runId: string
+): CveFollowupSummary | undefined =>
+  summaries.find((summary) => summary.followup.runId === runId);
+
+const followupColumnForRun = (
+  run: BenchmarkRunRow,
+  summary: CveFollowupSummary | undefined
+): React.ReactNode => {
+  if (!summary) {
+    return run.status === "completed" ? (
+      <span className="text-fg-muted">eligible</span>
+    ) : (
+      <span className="text-fg-muted">—</span>
+    );
+  }
+
+  const devinStages = summary.stages.filter((stage) => stage.devinSessionId);
+
+  return (
+    <div className="space-y-1">
+      <Badge status={summary.followup.status} />
+      {devinStages.length > 0 ? (
+        <div
+          className="text-[10px] text-fg-muted"
+          title={devinStages
+            .map((stage) => `${stage.kind}: ${stage.devinSessionId}`)
+            .join("\n")}
+        >
+          {devinStages.length} Devin session
+          {devinStages.length === 1 ? "" : "s"}
+        </div>
+      ) : (
+        <div className="text-[10px] text-fg-muted">no Devin session yet</div>
+      )}
+    </div>
+  );
+};
+
 const benchmarkRunTokensLine = (run: BenchmarkRunRow): React.ReactNode => {
   if (run.inputTokens == null || run.outputTokens == null || !run.sessionId) {
     return "—";
@@ -994,15 +1094,36 @@ export const BenchmarksPanel = ({
     "tab",
     parseAsStringLiteral(BENCHMARK_TAB_IDS).withDefault("results")
   );
+  const [runPage, setRunPage] = useState(0);
   const tasks = useBenchmarkTasksQuery();
-  const runs = useBenchmarkRunsQuery();
+  const runs = useBenchmarkRunsQuery({
+    limit: DASHBOARD_LIST_PAGE_SIZE,
+    offset: runPage * DASHBOARD_LIST_PAGE_SIZE,
+  });
+  const followups = useCveFollowupsListQuery();
+  const runRows = runs.data?.runs ?? [];
+  const runTotal = runs.data?.total ?? 0;
   const createRun = useCreateBenchmarkRunMutation();
+
+  useEffect(() => {
+    if (!enabled || runs.isPending) {
+      return;
+    }
+    if (
+      runPage > 0 &&
+      runTotal > 0 &&
+      runPage * DASHBOARD_LIST_PAGE_SIZE >= runTotal
+    ) {
+      setRunPage(0);
+    }
+  }, [enabled, runPage, runTotal, runs.isPending]);
   const [localSelectedRunId, setLocalSelectedRunId] = useState<string | null>(
     null
   );
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty>("L0");
   const [model, setModel] = useState(DEFAULT_MODEL_VALUE);
+  const [autoFollowup, setAutoFollowup] = useState(false);
   const [batchTaskIds, setBatchTaskIds] = useState<string[]>([]);
   const [batchDifficulties, setBatchDifficulties] = useState<Difficulty[]>([
     "L0",
@@ -1013,6 +1134,7 @@ export const BenchmarksPanel = ({
   const [batchRepeatCount, setBatchRepeatCount] = useState(
     String(DEFAULT_BATCH_REPEAT_COUNT)
   );
+  const [batchAutoFollowup, setBatchAutoFollowup] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
   const [batchRunCount, setBatchRunCount] = useState<number | null>(null);
   const taskOptions = tasks.data?.tasks ?? [];
@@ -1024,34 +1146,14 @@ export const BenchmarksPanel = ({
   const selectedBatchTasks = taskOptions.filter((task) =>
     batchTaskIds.includes(task.taskId)
   );
-  const selectedBatchModels = batchModelValues.flatMap((value) => {
-    const selectedModel = MODEL_OPTIONS.find(
-      (option) => modelValue(option) === value
-    );
-
-    return selectedModel
-      ? [
-          {
-            id: selectedModel.id,
-            provider: selectedModel.provider,
-          },
-        ]
-      : [];
-  });
+  const selectedBatchModels = benchmarkModelsFromValues(batchModelValues);
   const repeatCountNumber = Number(batchRepeatCount);
-  const batchPreviewCount =
-    Number.isInteger(repeatCountNumber) && repeatCountNumber > 0
-      ? selectedBatchModels.length *
-        repeatCountNumber *
-        selectedBatchTasks.reduce(
-          (count, task) =>
-            count +
-            batchDifficulties.filter((difficultyOption) =>
-              task.difficulties.includes(difficultyOption)
-            ).length,
-          0
-        )
-      : 0;
+  const batchPreviewCount = benchmarkBatchPreviewCount({
+    difficulties: batchDifficulties,
+    models: selectedBatchModels,
+    repeatCount: repeatCountNumber,
+    tasks: selectedBatchTasks,
+  });
   const activeRunId = selectedRunId ?? localSelectedRunId;
   const selectRun = (runId: string): void => {
     setLocalSelectedRunId(runId);
@@ -1079,6 +1181,7 @@ export const BenchmarksPanel = ({
 
     createRun.mutate(
       {
+        autoFollowup,
         autoStart: true,
         cleanupPolicy: "retain",
         difficulty,
@@ -1120,6 +1223,7 @@ export const BenchmarksPanel = ({
     setBatchError(null);
 
     const result = buildBatchRequests({
+      autoFollowup: batchAutoFollowup,
       difficulties: batchDifficulties,
       models: selectedBatchModels,
       repeatCount: repeatCountNumber,
@@ -1135,9 +1239,12 @@ export const BenchmarksPanel = ({
     setBatchRunCount(requests.length);
     try {
       let lastRunId: string | null = null;
-      for (const request of requests) {
+      for (const [index, request] of requests.entries()) {
         const response = await createRun.mutateAsync(request);
         lastRunId = response.run.id;
+        if (index < requests.length - 1) {
+          await delay(BATCH_CREATE_DELAY_MS);
+        }
       }
       if (lastRunId) {
         selectRun(lastRunId);
@@ -1198,12 +1305,27 @@ export const BenchmarksPanel = ({
         <TabsContent className="mt-4 space-y-4 outline-none" value="results">
           {/* <BenchmarkResultsSummary runs={runs.data?.runs ?? []} /> */}
           <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(500px,1fr)]">
-            <BenchmarkRunsTable
-              loading={runs.isLoading}
-              onSelect={selectRun}
-              runs={runs.data?.runs ?? []}
-              selectedRunId={activeRunId}
-            />
+            <div className="min-w-0 space-y-2">
+              <BenchmarkRunsTable
+                followups={followups.data?.followups ?? []}
+                loading={runs.isPending}
+                onSelect={selectRun}
+                runs={runRows}
+                selectedRunId={activeRunId}
+                total={runTotal}
+              />
+              {runTotal > 0 && !runs.isPending && (
+                <ListPagination
+                  isFetching={runs.isFetching}
+                  itemCount={runRows.length}
+                  onNext={() => setRunPage((p) => p + 1)}
+                  onPrevious={() => setRunPage((p) => Math.max(0, p - 1))}
+                  page={runPage}
+                  pageSize={DASHBOARD_LIST_PAGE_SIZE}
+                  total={runTotal}
+                />
+              )}
+            </div>
             {selectedRun ?? (
               <Card title="run detail">
                 <EmptyState
@@ -1302,6 +1424,18 @@ export const BenchmarksPanel = ({
                 </select>
               </label>
             </div>
+            <label className="mt-3 flex items-start gap-2 text-xs">
+              <input
+                checked={autoFollowup}
+                onChange={(event) =>
+                  setAutoFollowup(event.currentTarget.checked)
+                }
+                type="checkbox"
+              />
+              <span>
+                start CVE follow-up automatically after a completed benchmark
+              </span>
+            </label>
           </Card>
 
           <Card
@@ -1384,6 +1518,16 @@ export const BenchmarksPanel = ({
                     value={batchRepeatCount}
                   />
                 </label>
+                <label className="flex items-start gap-2 text-xs">
+                  <input
+                    checked={batchAutoFollowup}
+                    onChange={(event) =>
+                      setBatchAutoFollowup(event.currentTarget.checked)
+                    }
+                    type="checkbox"
+                  />
+                  <span>start CVE follow-ups after completed benchmarks</span>
+                </label>
               </div>
             </div>
             <fieldset className="mt-4 space-y-2 text-xs">
@@ -1414,8 +1558,9 @@ export const BenchmarksPanel = ({
             </fieldset>
             <p className="mt-3 text-fg-muted text-xs">
               This will create {batchPreviewCount} run(s): supported selected
-              task/level pairs x models x repeat count. The default selection
-              uses only {DEFAULT_MODEL.label}.
+              task/level pairs x models x repeat count, waiting 0.5s between
+              each run creation. The default selection uses only{" "}
+              {DEFAULT_MODEL.label}.
             </p>
             {batchError && (
               <div className="error-card mt-3 text-xs" role="alert">
@@ -1430,15 +1575,19 @@ export const BenchmarksPanel = ({
 };
 
 const BenchmarkRunsTable = ({
+  followups,
   loading,
   onSelect,
   runs,
   selectedRunId,
+  total,
 }: {
+  followups: CveFollowupSummary[];
   loading: boolean;
   onSelect: (id: string) => void;
   runs: BenchmarkRunRow[];
   selectedRunId: string | null;
+  total: number;
 }): React.JSX.Element => (
   <Card
     actions={
@@ -1453,7 +1602,7 @@ const BenchmarkRunsTable = ({
     title="runs"
   >
     {loading && <Spinner />}
-    {!loading && runs.length === 0 && (
+    {!loading && runs.length === 0 && total === 0 && (
       <EmptyState hint="start a benchmark run above." title="no runs yet" />
     )}
     {runs.length > 0 && (
@@ -1463,6 +1612,9 @@ const BenchmarkRunsTable = ({
             <th>run</th>
             <th>task</th>
             <th>status</th>
+            <th>
+              <DevinWord />
+            </th>
             <th
               className="num"
               title="composite; V= vuln, C= class, L= locations"
@@ -1494,6 +1646,12 @@ const BenchmarkRunsTable = ({
               </td>
               <td>
                 <Badge status={badgeStatusForRun(run.status)} />
+              </td>
+              <td className="text-xs">
+                {followupColumnForRun(
+                  run,
+                  followupSummaryForRun(followups, run.id)
+                )}
               </td>
               <td className="num">{scoreColumnForRun(run)}</td>
               <td className="max-w-[14rem] whitespace-normal text-fg-muted text-xs">

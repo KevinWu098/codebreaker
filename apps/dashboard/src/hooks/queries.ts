@@ -1,6 +1,7 @@
 import type {
   BenchmarkRunDetailResponse,
   CveFollowupDetailResponse,
+  ListBenchmarkRunsQuery,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
   ListCveFollowupsResponse,
@@ -50,16 +51,15 @@ export const useBenchmarkTasksQuery = (): UseQueryResult<
   });
 };
 
-export const useBenchmarkRunsQuery = (): UseQueryResult<
-  ListBenchmarkRunsResponse,
-  Error
-> => {
+export const useBenchmarkRunsQuery = (
+  query: Partial<ListBenchmarkRunsQuery> = {}
+): UseQueryResult<ListBenchmarkRunsResponse, Error> => {
   const connection = useConnection();
 
   return useQuery({
     enabled: isAuthorized(connection),
-    queryFn: () => api.listBenchmarkRuns(),
-    queryKey: qk.benchmarkRuns(connection),
+    queryFn: () => api.listBenchmarkRuns(query),
+    queryKey: [...qk.benchmarkRuns(connection), query],
     refetchInterval: POLLING.benchmarks.runs,
   });
 };

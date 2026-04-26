@@ -4,11 +4,12 @@ import {
   truncateId,
 } from "@codebreaker/shared/lib/utils";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
+import { ListPagination } from "@/components/list-pagination";
 import { PageHeader } from "@/components/page-header";
 import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
@@ -16,6 +17,7 @@ import { CreateSessionDialog } from "@/features/sessions/create-session-dialog";
 import { useSessionsQuery } from "@/hooks/queries";
 import { isAuthorized, useConnection } from "@/lib/connection";
 import { formatNumber, formatRelativeTime, formatRepo } from "@/lib/format";
+import { DASHBOARD_LIST_PAGE_SIZE } from "@/lib/list-page-size";
 
 const formatSessionRepo = (session: {
   repoName: string | null;
@@ -43,10 +45,24 @@ export const SessionsList = ({
 }: SessionsListProps): React.JSX.Element => {
   const connection = useConnection();
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(0);
   const enabled = isAuthorized(connection);
 
-  const sessions = useSessionsQuery({ limit: 100, offset: 0 });
+  const sessions = useSessionsQuery({
+    limit: DASHBOARD_LIST_PAGE_SIZE,
+    offset: page * DASHBOARD_LIST_PAGE_SIZE,
+  });
   const rows = sessions.data?.sessions ?? [];
+  const total = sessions.data?.total ?? 0;
+
+  useEffect(() => {
+    if (!enabled || sessions.isPending) {
+      return;
+    }
+    if (page > 0 && total > 0 && page * DASHBOARD_LIST_PAGE_SIZE >= total) {
+      setPage(0);
+    }
+  }, [enabled, page, sessions.isPending, total]);
 
   return (
     <div className="space-y-4">
@@ -81,13 +97,13 @@ export const SessionsList = ({
 
       <ErrorState error={sessions.error} title="list failed" />
 
-      {enabled && sessions.isLoading && (
+      {enabled && sessions.isPending && (
         <div className="flex justify-center py-6">
           <Spinner />
         </div>
       )}
 
-      {enabled && sessions.data && rows.length === 0 && (
+      {enabled && sessions.data && total === 0 && !sessions.isPending && (
         <EmptyState
           action={
             <Button onClick={() => setShowCreate(true)} variant="primary">
@@ -187,6 +203,18 @@ export const SessionsList = ({
             </tbody>
           </table>
         </div>
+      )}
+
+      {enabled && total > 0 && !sessions.isPending && (
+        <ListPagination
+          isFetching={sessions.isFetching}
+          itemCount={rows.length}
+          onNext={() => setPage((p) => p + 1)}
+          onPrevious={() => setPage((p) => Math.max(0, p - 1))}
+          page={page}
+          pageSize={DASHBOARD_LIST_PAGE_SIZE}
+          total={total}
+        />
       )}
 
       {showCreate && (

@@ -196,6 +196,7 @@ export type BenchmarkRunModel = z.infer<typeof BenchmarkRunModelSchema>;
 
 export const CreateBenchmarkRunRequestSchema = z
   .object({
+    autoFollowup: z.boolean().default(false),
     autoStart: z.boolean().default(true),
     cleanupPolicy: BenchmarkCleanupPolicySchema.default("retain"),
     difficulty: DifficultySchema,
@@ -349,9 +350,20 @@ export type ListBenchmarkTasksResponse = z.infer<
   typeof ListBenchmarkTasksResponseSchema
 >;
 
+export const ListBenchmarkRunsQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).default(30),
+  offset: z.coerce.number().int().nonnegative().default(0),
+});
+export type ListBenchmarkRunsQuery = z.infer<
+  typeof ListBenchmarkRunsQuerySchema
+>;
+
 export const ListBenchmarkRunsResponseSchema = z
   .object({
+    limit: z.number().int().positive(),
+    offset: z.number().int().nonnegative(),
     runs: z.array(BenchmarkRunRowSchema),
+    total: z.number().int().nonnegative(),
   })
   .strict();
 export type ListBenchmarkRunsResponse = z.infer<
@@ -397,12 +409,46 @@ export const ReproManifestTierSchema = z.enum([
 ]);
 export type ReproManifestTier = z.infer<typeof ReproManifestTierSchema>;
 
+/**
+ * Devin occasionally emits the legacy keys `exitCode`/`marker` instead of
+ * `expectedExitCode`/`expectedMarker`. Accept both shapes and normalize at the
+ * schema layer so the orchestrator never sees the legacy form.
+ */
 export const ReproManifestOutcomeSchema = z
   .object({
-    expectedExitCode: z.number().int(),
-    expectedMarker: z.string().min(1),
+    exitCode: z.number().int().optional(),
+    expectedExitCode: z.number().int().optional(),
+    expectedMarker: z.string().min(1).optional(),
+    marker: z.string().min(1).optional(),
   })
-  .strict();
+  .passthrough()
+  .transform((value, ctx) => {
+    const expectedExitCode = value.expectedExitCode ?? value.exitCode;
+    const expectedMarker = value.expectedMarker ?? value.marker;
+    if (expectedExitCode === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "expectedExitCode (or legacy exitCode) is required",
+      });
+      return z.NEVER;
+    }
+    if (expectedMarker === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "expectedMarker (or legacy marker) is required",
+      });
+      return z.NEVER;
+    }
+    return { expectedExitCode, expectedMarker };
+  })
+  .pipe(
+    z
+      .object({
+        expectedExitCode: z.number().int(),
+        expectedMarker: z.string().min(1),
+      })
+      .strict()
+  );
 export type ReproManifestOutcome = z.infer<typeof ReproManifestOutcomeSchema>;
 
 export const ReproManifestObservationalSchema = z
@@ -472,8 +518,13 @@ export const CveFollowupEventKindSchema = z.enum([
   "repro_github_ready",
   "fix_dispatched",
   "fix_validated",
+  "review_repro_dispatched",
+  "review_fix_dispatched",
   "review_repro_done",
   "review_fix_done",
+  "validation_started",
+  "validation_finished",
+  "stage_skipped",
   "failed",
   "cancelled",
   "triage",
@@ -558,6 +609,7 @@ export const CveFollowupRowSchema = z
     deepwikiContext: z.string().nullable(),
     ghsaId: GhsaIdSchema,
     id: z.string().min(1),
+    repoName: z.string().nullable(),
     runId: z.string().min(1),
     status: CveFollowupStatusSchema,
     taskId: z.string().min(1),
@@ -565,6 +617,14 @@ export const CveFollowupRowSchema = z
   })
   .strict();
 export type CveFollowupRow = z.infer<typeof CveFollowupRowSchema>;
+
+export const CveFollowupSummarySchema = z
+  .object({
+    followup: CveFollowupRowSchema,
+    stages: z.array(CveFollowupStageRowSchema),
+  })
+  .strict();
+export type CveFollowupSummary = z.infer<typeof CveFollowupSummarySchema>;
 
 export const CveFollowupDetailResponseSchema = z
   .object({
@@ -587,7 +647,7 @@ export type ListCveFollowupsQuery = z.infer<typeof ListCveFollowupsQuerySchema>;
 
 export const ListCveFollowupsResponseSchema = z
   .object({
-    followups: z.array(CveFollowupRowSchema),
+    followups: z.array(CveFollowupSummarySchema),
   })
   .strict();
 export type ListCveFollowupsResponse = z.infer<

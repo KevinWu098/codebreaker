@@ -165,6 +165,7 @@ const buildToolGuide = (
     "",
     "Preferred bounded command idioms when shell tools are available:",
     `- Work under ${repoPath}.`,
+    "- Shell calls time out after 15 seconds; use narrow, scoped searches and continue from timed-out results instead of retrying the same broad command.",
     "- Git commands are prohibited because repository metadata can reveal patch/answer information.",
     "- Listing: `ls -la <dir>` or language/package-manager manifest inspection.",
     "- Searching: `grep -RIn --include='*.<ext>' -E 'pat1|pat2|pat3' <scoped-dir> | head -N`.",

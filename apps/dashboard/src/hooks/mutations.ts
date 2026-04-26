@@ -58,6 +58,7 @@ const replaceBenchmarkRun = (
   }
 
   return {
+    ...data,
     runs: data.runs.map((run) =>
       run.id === response.run.id ? response.run : run
     ),
@@ -150,8 +151,8 @@ export const useCancelBenchmarkRunMutation = (runId: string) => {
     },
     onSuccess: (response) => {
       toast.success(`benchmark ${runId.slice(0, 8)}… stopped`);
-      queryClient.setQueryData<ListBenchmarkRunsResponse>(
-        qk.benchmarkRuns(connection),
+      queryClient.setQueriesData<ListBenchmarkRunsResponse>(
+        { queryKey: qk.benchmarkRuns(connection) },
         (data) => replaceBenchmarkRun(data, response)
       );
       queryClient.setQueryData<BenchmarkRunDetailResponse>(

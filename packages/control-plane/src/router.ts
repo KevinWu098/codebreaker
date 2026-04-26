@@ -3,15 +3,18 @@ import {
   CreateBenchmarkRunRequestSchema,
   CreateCveFollowupRequestSchema,
   CveFollowupStageKindSchema,
-  type CveFollowupStageRow,
+  ListBenchmarkRunsQuerySchema,
   ListCveFollowupsQuerySchema,
 } from "@codebreaker/benchmark-runner/schemas";
 import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
 import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/dataset";
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
-import { enrichStagesWithDevinStatus } from "@codebreaker/control-plane/cve-followup/devin";
+import {
+  devinStatusDecorator,
+  enrichStages,
+  modalSandboxDecorator,
+} from "@codebreaker/control-plane/cve-followup/enrich";
 import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
-import { cveValidationSessionId } from "@codebreaker/control-plane/cve-followup/validation";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { CveFollowupStore } from "@codebreaker/control-plane/db/cve-followups";
 import { SessionIndexStore } from "@codebreaker/control-plane/db/session-index";
@@ -47,25 +50,6 @@ import { z } from "zod";
 const SessionParamsSchema = z.object({
   id: z.string().min(1),
 });
-
-const MODAL_METADATA_TIMEOUT_MS = 1000;
-
-const withTimeout = <T>(promise: Promise<T>, durationMs: number): Promise<T> =>
-  new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error(`Timed out after ${durationMs}ms`));
-    }, durationMs);
-    promise.then(
-      (value) => {
-        clearTimeout(timeout);
-        resolve(value);
-      },
-      (error: unknown) => {
-        clearTimeout(timeout);
-        reject(error);
-      }
-    );
-  });
 
 const BenchmarkRunParamsSchema = z.object({
   id: z.string().min(1),
@@ -132,50 +116,16 @@ export const createRouter = (): Hono<{
       return null;
     }
     const stages = await cve.listStages(f.id);
-    const withModalSandboxes = await enrichStagesWithModalSandbox(env, stages);
+    const decorated = await enrichStages(stages, [
+      modalSandboxDecorator(env),
+      devinStatusDecorator(env),
+    ]);
     return {
       events: await cve.listEvents(f.id),
       followup: f,
-      stages: await enrichStagesWithDevinStatus(env, withModalSandboxes),
+      stages: decorated,
       validations: await cve.listValidationsForFollowup(f.id),
     };
-  };
-
-  const enrichStagesWithModalSandbox = (
-    env: Env,
-    stages: CveFollowupStageRow[]
-  ): Promise<CveFollowupStageRow[]> => {
-    const executor = ModalExecutor.fromEnv(env);
-    return Promise.all(
-      stages.map(async (stage) => {
-        if (!(stage.kind === "repro" || stage.kind === "fix")) {
-          return stage;
-        }
-        try {
-          const sessionId = cveValidationSessionId(stage.kind, stage.id);
-          const sandbox = await withTimeout(
-            executor.getSandbox(sessionId),
-            MODAL_METADATA_TIMEOUT_MS
-          );
-          if (!sandbox) {
-            return { ...stage, modalSandbox: null };
-          }
-          return {
-            ...stage,
-            modalSandbox: {
-              createdAt: sandbox.created_at,
-              dashboardCommand: `modal dashboard ${sandbox.sandbox_id}`,
-              profile: sandbox.profile,
-              sandboxId: sandbox.sandbox_id,
-              sessionId: sandbox.session_id,
-              snapshotId: sandbox.snapshot_id ?? null,
-            },
-          };
-        } catch {
-          return { ...stage, modalSandbox: null };
-        }
-      })
-    );
   };
 
   app.get(
@@ -183,12 +133,17 @@ export const createRouter = (): Hono<{
     zValidator("query", ListSessionsQuerySchema),
     async (context) => {
       const query = context.req.valid("query");
-      const sessions = await context.get("sessionStore").list(query);
+      const store = context.get("sessionStore");
+      const [sessions, total] = await Promise.all([
+        store.list(query),
+        store.count(query.status ? { status: query.status } : {}),
+      ]);
 
       return context.json({
         limit: query.limit,
         offset: query.offset,
         sessions,
+        total,
       });
     }
   );
@@ -207,32 +162,46 @@ export const createRouter = (): Hono<{
     async (context) => {
       const { limit } = context.req.valid("query");
       const cve = new CveFollowupStore(context.env.DB);
-      const followups = await cve.listRecent(limit);
+      const followupRows = await cve.listRecent(limit);
+      const followups = await Promise.all(
+        followupRows.map(async (followup) => ({
+          followup,
+          stages: await cve.listStages(followup.id),
+        }))
+      );
 
       return context.json({ followups });
     }
   );
 
-  app.get("/benchmark-runs", async (context) => {
-    const store = new BenchmarkRunStore(context.env.DB);
-    let runs = await store.list();
-    const runningRunIds = runs
-      .filter((run) => run.status === "running")
-      .map((run) => run.id);
+  app.get(
+    "/benchmark-runs",
+    zValidator("query", ListBenchmarkRunsQuerySchema),
+    async (context) => {
+      const query = context.req.valid("query");
+      const store = new BenchmarkRunStore(context.env.DB);
+      const runningRunIds = await store.listRunningIds();
 
-    if (runningRunIds.length > 0) {
-      const orchestrator = new BenchmarkRunOrchestrator(context.env);
+      if (runningRunIds.length > 0) {
+        const orchestrator = new BenchmarkRunOrchestrator(context.env);
+        await Promise.allSettled(
+          runningRunIds.map((id) => orchestrator.reconcile(id))
+        );
+      }
 
-      await Promise.allSettled(
-        runningRunIds.map((id) => orchestrator.reconcile(id))
-      );
-      runs = await store.list();
+      const [runs, total] = await Promise.all([
+        store.list({ limit: query.limit, offset: query.offset }),
+        store.count(),
+      ]);
+
+      return context.json({
+        limit: query.limit,
+        offset: query.offset,
+        runs,
+        total,
+      });
     }
-
-    return context.json({
-      runs,
-    });
-  });
+  );
 
   app.post(
     "/benchmark-runs",
@@ -308,6 +277,7 @@ export const createRouter = (): Hono<{
       }
 
       const request: CreateBenchmarkRunRequest = {
+        autoFollowup: false,
         autoStart: false,
         cleanupPolicy: run.cleanupPolicy,
         difficulty: run.difficulty,
@@ -315,7 +285,7 @@ export const createRouter = (): Hono<{
         maxSteps: 50,
         maxToolCalls: 40,
         maxTotalTokens: 400_000,
-        maxTurns: 1,
+        maxTurns: 20,
         model: {
           id: run.modelId,
           provider: run.modelProvider,
@@ -414,16 +384,12 @@ export const createRouter = (): Hono<{
         );
       }
       const cveOrch = new CveFollowupOrchestrator(context.env);
-      try {
-        await cveOrch.reconcileOne(detail.followup.id);
-      } catch (error) {
-        console.error("[cve-followup] POST /followup inline reconcile", error);
-      }
-      const detailFinal = (await cveFollowupDetail(context.env, id)) ?? detail;
       context.executionCtx.waitUntil(
-        cveOrch.reconcileActiveFollowups().then(() => undefined)
+        cveOrch.reconcileOne(detail.followup.id).catch((error) => {
+          console.error("[cve-followup] POST /followup reconcile", error);
+        })
       );
-      return context.json(detailFinal, outcome === "created" ? 201 : 200);
+      return context.json(detail, outcome === "created" ? 201 : 200);
     }
   );
 

@@ -1,9 +1,10 @@
-import type { CveFollowupRow } from "@codebreaker/benchmark-runner/schemas";
+import type { CveFollowupSummary } from "@codebreaker/benchmark-runner/schemas";
 import { truncateId } from "@codebreaker/shared/lib/utils";
 import { FlaskConical } from "lucide-react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
+import { DevinWord } from "@/components/devin-word";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { PageHeader } from "@/components/page-header";
@@ -75,6 +76,9 @@ export const FollowupsPanel = ({
                 <th>task</th>
                 <th>ghsa</th>
                 <th>status</th>
+                <th>
+                  <DevinWord />
+                </th>
                 <th>auto</th>
                 <th>run</th>
                 <th className="w-28 whitespace-nowrap">updated</th>
@@ -83,10 +87,10 @@ export const FollowupsPanel = ({
             <tbody>
               {rows.map((row) => (
                 <FollowupTableRow
-                  key={row.id}
+                  key={row.followup.id}
                   onSelect={onSelectRun}
                   row={row}
-                  selected={row.runId === selectedRunId}
+                  selected={row.followup.runId === selectedRunId}
                 />
               ))}
             </tbody>
@@ -125,51 +129,68 @@ const FollowupTableRow = ({
   selected,
 }: {
   onSelect: (runId: string) => void;
-  row: CveFollowupRow;
+  row: CveFollowupSummary;
   selected: boolean;
-}): React.JSX.Element => (
-  <tr aria-selected={selected} className={selected ? "bg-bg-hover" : undefined}>
-    <td>
-      <button
-        className="id-link block max-w-32 truncate text-left font-mono text-xs"
-        onClick={() => onSelect(row.runId)}
-        title={row.id}
-        type="button"
+}): React.JSX.Element => {
+  const { followup, stages } = row;
+  const devinStages = stages.filter((stage) => stage.devinSessionId);
+
+  return (
+    <tr
+      aria-selected={selected}
+      className={selected ? "bg-bg-hover" : undefined}
+    >
+      <td>
+        <button
+          className="id-link block max-w-32 truncate text-left font-mono text-xs"
+          onClick={() => onSelect(followup.runId)}
+          title={followup.id}
+          type="button"
+        >
+          {followup.id}
+        </button>
+      </td>
+      <td
+        className="max-w-40 truncate font-mono text-fg-muted text-xs"
+        title={followup.taskId}
       >
-        {row.id}
-      </button>
-    </td>
-    <td
-      className="max-w-40 truncate font-mono text-fg-muted text-xs"
-      title={row.taskId}
-    >
-      {row.taskId}
-    </td>
-    <td
-      className="max-w-36 truncate font-mono text-fg-muted text-xs"
-      title={row.ghsaId}
-    >
-      {row.ghsaId}
-    </td>
-    <td>
-      <Badge status={row.status} />
-    </td>
-    <td className="text-fg-muted">{row.autoFired ? "yes" : "no"}</td>
-    <td>
-      <button
-        className="id-link block max-w-28 truncate text-left"
-        onClick={() => onSelect(row.runId)}
-        title={row.runId}
-        type="button"
+        {followup.taskId}
+      </td>
+      <td
+        className="max-w-36 truncate font-mono text-fg-muted text-xs"
+        title={followup.ghsaId}
       >
-        {truncateId(row.runId)}
-      </button>
-    </td>
-    <td
-      className="whitespace-nowrap text-fg-muted"
-      title={new Date(row.updatedAt).toISOString()}
-    >
-      {formatRelativeTime(row.updatedAt)}
-    </td>
-  </tr>
-);
+        {followup.ghsaId}
+      </td>
+      <td>
+        <Badge status={followup.status} />
+      </td>
+      <td className="text-fg-muted">
+        {devinStages.length > 0 ? (
+          <span title={devinStages.map((stage) => stage.kind).join(", ")}>
+            {devinStages.length} session{devinStages.length === 1 ? "" : "s"}
+          </span>
+        ) : (
+          "—"
+        )}
+      </td>
+      <td className="text-fg-muted">{followup.autoFired ? "yes" : "no"}</td>
+      <td>
+        <button
+          className="id-link block max-w-28 truncate text-left"
+          onClick={() => onSelect(followup.runId)}
+          title={followup.runId}
+          type="button"
+        >
+          {truncateId(followup.runId)}
+        </button>
+      </td>
+      <td
+        className="whitespace-nowrap text-fg-muted"
+        title={new Date(followup.updatedAt).toISOString()}
+      >
+        {formatRelativeTime(followup.updatedAt)}
+      </td>
+    </tr>
+  );
+};

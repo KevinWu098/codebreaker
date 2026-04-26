@@ -115,6 +115,33 @@ const benchmarkRunSelectFrom = `from benchmark_runs br
           limit 1
         )`;
 
+const benchmarkRunListSelect = `select
+          br.artifact_commit_sha,
+          br.artifact_path,
+          br.cleanup_completed_at,
+          br.cleanup_policy,
+          br.completed_at,
+          br.created_at,
+          br.difficulty,
+          br.error,
+          br.id,
+          s.input_tokens as input_tokens,
+          br.model_id,
+          br.model_provider,
+          s.output_tokens as output_tokens,
+          br.score,
+          br.session_id,
+          br.status,
+          br.task_id,
+          br.updated_at,
+          brr.id as result_id,
+          brr.correct_locations as result_correct_locations,
+          brr.location_score as result_location_score,
+          brr.vuln_class_matched as result_vuln_class_matched,
+          brr.vulnerable_matched as result_vulnerable_matched
+        ${benchmarkRunSelectFrom}
+        order by br.created_at desc`;
+
 export class BenchmarkRunStore {
   private readonly db: D1Database;
 
@@ -166,39 +193,42 @@ export class BenchmarkRunStore {
     return run;
   }
 
-  async list(): Promise<BenchmarkRunRow[]> {
+  async list(pagination?: {
+    limit: number;
+    offset: number;
+  }): Promise<BenchmarkRunRow[]> {
+    if (pagination) {
+      const result = await this.db
+        .prepare(`${benchmarkRunListSelect} limit ? offset ?`)
+        .bind(pagination.limit, pagination.offset)
+        .all<BenchmarkRunRecord>();
+
+      return result.results.map((row) => this.toRun(row));
+    }
+
     const result = await this.db
-      .prepare(
-        `select
-          br.artifact_commit_sha,
-          br.artifact_path,
-          br.cleanup_completed_at,
-          br.cleanup_policy,
-          br.completed_at,
-          br.created_at,
-          br.difficulty,
-          br.error,
-          br.id,
-          s.input_tokens as input_tokens,
-          br.model_id,
-          br.model_provider,
-          s.output_tokens as output_tokens,
-          br.score,
-          br.session_id,
-          br.status,
-          br.task_id,
-          br.updated_at,
-          brr.id as result_id,
-          brr.correct_locations as result_correct_locations,
-          brr.location_score as result_location_score,
-          brr.vuln_class_matched as result_vuln_class_matched,
-          brr.vulnerable_matched as result_vulnerable_matched
-        ${benchmarkRunSelectFrom}
-        order by br.created_at desc`
-      )
+      .prepare(benchmarkRunListSelect)
       .all<BenchmarkRunRecord>();
 
     return result.results.map((row) => this.toRun(row));
+  }
+
+  async listRunningIds(): Promise<string[]> {
+    const result = await this.db
+      .prepare(
+        "select br.id as id from benchmark_runs br where br.status = 'running'"
+      )
+      .all<{ id: string }>();
+
+    return result.results.map((row) => row.id);
+  }
+
+  async count(): Promise<number> {
+    const row = await this.db
+      .prepare("select count(1) as c from benchmark_runs")
+      .first<{ c: number }>();
+
+    return row ? Number(row.c) : 0;
   }
 
   async get(id: string): Promise<BenchmarkRunRow | null> {

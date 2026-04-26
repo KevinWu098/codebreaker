@@ -7,7 +7,10 @@ import {
   ToolTier,
 } from "@codebreaker/control-plane/tools/tiers";
 import { base64ToBytes, bytesToBase64 } from "@codebreaker/shared/lib/base64";
-import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
+import type {
+  ExecResult,
+  SandboxProfileName,
+} from "@codebreaker/shared/schemas/sandbox";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -18,6 +21,7 @@ const ExecRemoteInputSchema = z.object({
 });
 
 const GIT_COMMAND_RE = /\bgit\b/;
+const EXEC_REMOTE_MAX_TIMEOUT_SECONDS = 15;
 const REMOTE_READ_DEFAULT_MAX_BYTES = 24_000;
 const REMOTE_READ_HARD_MAX_BYTES = 96_000;
 
@@ -57,7 +61,7 @@ export const createModalTools = ({
   tools: {
     exec_remote: tool({
       description:
-        "Run a command in the session's configured remote Modal sandbox. Requires sandbox policy. Git commands are blocked; inspect the existing checkout with shell listing/search/read commands instead.",
+        "Run a command in the session's configured remote Modal sandbox. Requires sandbox policy. Calls are capped at 15 seconds and return a timed-out result if they exceed that budget. Git commands are blocked; inspect the existing checkout with shell listing/search/read commands instead.",
       inputSchema: ExecRemoteInputSchema,
       execute: ({ command, cwd, timeoutSeconds }) => {
         assertNoGitCommand(command);
@@ -75,16 +79,20 @@ export const createModalTools = ({
           options.cwd = cwd;
         }
 
-        const effectiveTimeoutSeconds =
-          timeoutSeconds && fallbackTimeoutSeconds
-            ? Math.min(timeoutSeconds, fallbackTimeoutSeconds)
-            : (timeoutSeconds ?? fallbackTimeoutSeconds);
+        const effectiveTimeoutSeconds = Math.min(
+          timeoutSeconds ??
+            fallbackTimeoutSeconds ??
+            EXEC_REMOTE_MAX_TIMEOUT_SECONDS,
+          EXEC_REMOTE_MAX_TIMEOUT_SECONDS
+        );
 
-        if (effectiveTimeoutSeconds) {
-          options.timeoutSeconds = effectiveTimeoutSeconds;
-        }
+        options.timeoutSeconds = effectiveTimeoutSeconds;
 
-        return executor.exec(options);
+        return withExecTimeout(
+          executor.exec(options),
+          command,
+          effectiveTimeoutSeconds
+        );
       },
     }),
     remote_read: tool({
@@ -165,5 +173,35 @@ const assertNoGitCommand = (command: string): void => {
     throw new Error(
       "Git commands are blocked in benchmark sandbox tool calls. Use ls, grep, sed, head, tail, or remote_read against the existing checkout instead."
     );
+  }
+};
+
+const withExecTimeout = async (
+  promise: Promise<ExecResult>,
+  command: string,
+  timeoutSeconds: number
+): Promise<ExecResult> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<ExecResult>((resolve) => {
+    timeoutId = setTimeout(() => {
+      resolve({
+        command,
+        durationMs: timeoutSeconds * 1000,
+        exitCode: 124,
+        stderr: `Command exceeded the ${timeoutSeconds}s exec_remote timeout. Narrow the search, scope the directory, add --include filters, or use a smaller head/sed range and continue.`,
+        stderrTruncated: false,
+        stdout: "",
+        stdoutTruncated: false,
+        timedOut: true,
+      });
+    }, timeoutSeconds * 1000);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
   }
 };

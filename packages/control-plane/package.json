@@ -24,6 +24,10 @@
       "types": "./src/cve-followup/devin.ts",
       "default": "./src/cve-followup/devin.ts"
     },
+    "./cve-followup/enrich": {
+      "types": "./src/cve-followup/enrich.ts",
+      "default": "./src/cve-followup/enrich.ts"
+    },
     "./cve-followup/prompts": {
       "types": "./src/cve-followup/prompts.ts",
       "default": "./src/cve-followup/prompts.ts"

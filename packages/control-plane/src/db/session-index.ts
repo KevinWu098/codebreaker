@@ -133,6 +133,17 @@ export class SessionIndexStore {
     return result.results.map((row) => this.toSessionRow(row));
   }
 
+  async count(options: { status?: SessionStatus } = {}): Promise<number> {
+    const query = options.status
+      ? this.db
+          .prepare("select count(1) as c from sessions where status = ?")
+          .bind(options.status)
+      : this.db.prepare("select count(1) as c from sessions");
+    const row = await query.first<{ c: number }>();
+
+    return row ? Number(row.c) : 0;
+  }
+
   async get(id: string): Promise<SessionRow | null> {
     const row = await this.db
       .prepare("select * from sessions where id = ?")

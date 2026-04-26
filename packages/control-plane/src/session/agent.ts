@@ -228,15 +228,15 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       return;
     }
 
+    if (this.state.control?.benchmarkSubmitMode) {
+      return this.submitBenchmarkTurnConfig(ctx);
+    }
+
     if (this.state.control?.finalizing) {
       return this.finalTurnConfig(
         ctx,
         this.state.control.stopReason ?? "Run is finalizing"
       );
-    }
-
-    if (this.state.control?.benchmarkSubmitMode) {
-      return this.submitBenchmarkTurnConfig(ctx);
     }
 
     if (this.state.control?.stopReason) {
@@ -575,11 +575,14 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
 
   @callable()
   enableBenchmarkSubmitMode(): SessionAgentState {
+    const { stopReason: _stopReason, ...control } = this.state.control ?? {};
+
     this.setState({
       ...this.state,
       control: {
-        ...this.state.control,
+        ...control,
         benchmarkSubmitMode: true,
+        finalizing: false,
       },
     });
 

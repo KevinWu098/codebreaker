@@ -33,6 +33,12 @@ import type {
 import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 import { getAgentByName } from "agents";
 
+interface BenchmarkSubmissionAgent {
+  getMessages(): Promise<unknown>;
+  popPendingBenchmarkOutput(): Promise<AgentOutput | null>;
+  requestFollowUp(content: string): Promise<SaveMessagesResult>;
+}
+
 const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 // Hard ceiling, in seconds, on how long any benchmark run is allowed to stay
 // in the `running` state before the watchdog finalizes it. Sized to comfortably
@@ -40,7 +46,8 @@ const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 const WATCHDOG_MAX_RUNNING_SECONDS = 900;
 const BENCHMARK_SUBMIT_FOLLOWUP_PROMPT =
   "The exploration turn is over. You must call `submit_benchmark_result` once with your strongest single final result object (schema-enforced). Do not write JSON in an assistant message. Do not use any other tools. Base your answer on the prior transcript and tool results.";
-const BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS = 120;
+const BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS = 300;
+const BENCHMARK_SUBMIT_MAX_ATTEMPTS = 3;
 
 export class BenchmarkRunOrchestrator {
   private readonly dataset: BenchmarkDatasetService;
@@ -88,6 +95,7 @@ export class BenchmarkRunOrchestrator {
     const maxTurns = request?.maxTurns ?? DEFAULT_BENCHMARK_MAX_TURNS;
     const timeoutSeconds =
       request?.timeoutSeconds ?? DEFAULT_BENCHMARK_TIMEOUT_SECONDS;
+    const autoFollowup = request?.autoFollowup ?? false;
 
     await this.runs.update({ id: runId, status: "running" });
 
@@ -214,9 +222,11 @@ export class BenchmarkRunOrchestrator {
         runId,
       });
 
-      await new CveFollowupOrchestrator(
-        this.env
-      ).scheduleAfterBenchmarkCompletedIfEligible(runId);
+      if (autoFollowup) {
+        await new CveFollowupOrchestrator(
+          this.env
+        ).scheduleAfterBenchmarkCompletedIfEligible(runId);
+      }
 
       const finalRun = await this.requireRun(runId);
 
@@ -582,57 +592,111 @@ export class BenchmarkRunOrchestrator {
 
     await withDORetry(() => agent.enableBenchmarkSubmitMode());
     agent = await getAgent();
-    let submitResult: SaveMessagesResult;
-    try {
-      submitResult = await withTimeout(
-        withDORetry(() =>
-          agent.requestFollowUp(BENCHMARK_SUBMIT_FOLLOWUP_PROMPT)
-        ),
-        BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS * 1000,
-        `Benchmark submission turn did not complete within ${BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS}s`
+    return this.resolveBenchmarkSubmission({
+      agent,
+      firstError,
+      getAgent,
+      raw0,
+      runId,
+    });
+  }
+
+  private async resolveBenchmarkSubmission(input: {
+    agent: BenchmarkSubmissionAgent;
+    firstError: Error | undefined;
+    getAgent: () => Promise<BenchmarkSubmissionAgent>;
+    raw0: string;
+    runId: string;
+  }): Promise<{ candidates: AgentOutput[]; finalRawOutput: string }> {
+    let agent = input.agent;
+    let raw1 = "";
+    let lastSubmissionError: Error | undefined;
+
+    for (
+      let attempt = 1;
+      attempt <= BENCHMARK_SUBMIT_MAX_ATTEMPTS;
+      attempt += 1
+    ) {
+      const prompt =
+        attempt === 1
+          ? BENCHMARK_SUBMIT_FOLLOWUP_PROMPT
+          : `${BENCHMARK_SUBMIT_FOLLOWUP_PROMPT}\n\nPrevious submission attempt ${attempt - 1} did not record a valid result. You must call \`submit_benchmark_result\` now.`;
+      let submitResult: SaveMessagesResult;
+      try {
+        submitResult = await withTimeout(
+          withDORetry(() => agent.requestFollowUp(prompt)),
+          BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS * 1000,
+          `Benchmark submission turn did not complete within ${BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS}s`
+        );
+      } catch (retryError) {
+        lastSubmissionError =
+          retryError instanceof Error
+            ? retryError
+            : new Error(String(retryError));
+        await this.runs.addEvent({
+          details: { attempt, error: lastSubmissionError.message },
+          kind: "result_parse_failed",
+          message: "Benchmark submission turn failed; retrying if possible",
+          runId: input.runId,
+        });
+        agent = await input.getAgent();
+        continue;
+      }
+
+      if (submitResult.status !== "completed") {
+        lastSubmissionError = new Error(
+          `Submission turn ${submitResult.status}`
+        );
+        await this.runs.addEvent({
+          details: { attempt, status: submitResult.status },
+          kind: "result_parse_failed",
+          message:
+            "Benchmark submission turn did not complete; retrying if possible",
+          runId: input.runId,
+        });
+        agent = await input.getAgent();
+        continue;
+      }
+
+      agent = await input.getAgent();
+      const fromTool1 = await withDORetry(() =>
+        agent.popPendingBenchmarkOutput()
       );
-    } catch (retryError) {
-      throw new ParseFailureError(
-        firstError?.message ?? "parse failed",
-        raw0,
-        retryError instanceof Error ? retryError : undefined
-      );
+      if (fromTool1) {
+        return {
+          candidates: [fromTool1],
+          finalRawOutput: JSON.stringify(fromTool1, null, 2),
+        };
+      }
+
+      raw1 = await this.readAssistantOutput(agent);
+      try {
+        return {
+          candidates: parseAgentOutputs(raw1),
+          finalRawOutput: raw1,
+        };
+      } catch (secondError) {
+        lastSubmissionError =
+          secondError instanceof Error
+            ? secondError
+            : new Error(String(secondError));
+        await this.runs.addEvent({
+          details: { attempt, error: lastSubmissionError.message },
+          kind: "result_parse_failed",
+          message:
+            "Benchmark submission turn produced no valid result; retrying if possible",
+          runId: input.runId,
+        });
+      }
     }
 
-    if (submitResult.status !== "completed") {
-      throw new ParseFailureError(
-        firstError?.message ?? "parse failed",
-        raw0,
-        new Error(`Submission turn ${submitResult.status}`)
-      );
-    }
-
-    agent = await getAgent();
-    const fromTool1 = await withDORetry(() =>
-      agent.popPendingBenchmarkOutput()
+    throw new ParseFailureError(
+      lastSubmissionError?.message ??
+        input.firstError?.message ??
+        "parse failed",
+      raw1 || input.raw0,
+      lastSubmissionError
     );
-    if (fromTool1) {
-      return {
-        candidates: [fromTool1],
-        finalRawOutput: JSON.stringify(fromTool1, null, 2),
-      };
-    }
-
-    const raw1 = await this.readAssistantOutput(agent);
-    try {
-      return {
-        candidates: parseAgentOutputs(raw1),
-        finalRawOutput: raw1,
-      };
-    } catch (secondError) {
-      throw new ParseFailureError(
-        secondError instanceof Error
-          ? secondError.message
-          : String(secondError),
-        raw1 || raw0,
-        secondError instanceof Error ? secondError : undefined
-      );
-    }
   }
 
   /**
