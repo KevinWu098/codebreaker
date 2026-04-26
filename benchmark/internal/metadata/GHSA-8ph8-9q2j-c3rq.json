@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8ph8-9q2j-c3rq",
+  "post_patch_commit": "6629ff5b7e3d62ad8319007a54589ec1f62c7c35",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies src/lib/sqlBuilder.js. The patch adds escapeId() calls from the sqlstring library to sanitize table names, column names, and ID key names in all three SQL builder functions (getInsertSql, getUpdateSql, getDelSql). Only 1 non-test source file was changed. Sibling files in src/lib/ (pool.js, models.js, rule.js, sqlContainer.js) were checked but none construct SQL from user-supplied identifiers. Pre-assigned class sql-injection (CWE-89) confirmed correct from the diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
