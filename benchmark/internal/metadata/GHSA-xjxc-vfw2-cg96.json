@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xjxc-vfw2-cg96",
+  "post_patch_commit": "15cb335e66d518a25950ff40906676f982b64a2b",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only openssl/src/cms.rs (1 source file). The vulnerability is in the sign() function where MemBioSlice::new(data)?.as_ptr() creates a temporary MemBioSlice that is immediately dropped, leaving a dangling pointer passed to ffi::CMS_sign. The fix binds the MemBioSlice to a local variable to extend its lifetime. Pre-assigned class use-after-free (CWE-416) is correct — the patch directly addresses a dropped temporary whose pointer is used after deallocation. No sibling files exhibit the same pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
