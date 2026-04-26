@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-54wc-49qj-5ghj",
+  "post_patch_commit": "35ccbf1e3d38ab6aa178524a47c38dff6b448b59",
+  "noisy_patch": false,
+  "curation_notes": "The advisory describes a SQL injection in the content_title parameter of /cms/content/list. The web ContentAction.list() assembles all request parameters into a Map via BasicUtil.assemblyRequestMap(), then passes it to ContentBizImpl.list(). ContentBizImpl.list() retrieves an 'arclist' SQL FreeMarker template from the database and calls ParserUtil.rendering(map, sqlFtl) to interpolate user-controlled values directly into raw SQL, which is executed via tagBiz.queryForList(sql) without parameterized binding. The actual fix is in the ms-base/ms-basic dependency upgrade from 3.0.1 to 3.0.2, which sanitizes input in ParserUtil.rendering(). No sibling files in the same biz/impl directory use the same FreeMarker-to-raw-SQL pattern. Pre-assigned class sql-injection is correct per CWE-89, the advisory description, and the code pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
