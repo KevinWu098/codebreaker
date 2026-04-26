@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-mstest-plugin-001",
+  "ghsa_id": "GHSA-3ppr-72x5-x67q",
+  "codebase": {
+    "repo": "https://github.com/jenkinsci/mstest-plugin",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "3870f53d9d1ab5759ab82a44c8d6b4ca9d933923"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "CI/CD plugin test report processing and XML handling pipeline"
+    },
+    "L2": {
+      "description": "An XML external entity (XXE) vulnerability exists where the XML parsers used for parsing and transforming test report files do not disable the processing of external entity declarations or DTDs, allowing attackers who can supply crafted XML input to CI/CD agents to read arbitrary files or perform server-side request forgery."
+    },
+    "L3": {
+      "area": "MSTest report conversion and XSL transformation components in the Jenkins CI plugin",
+      "description": "An XML external entity (XXE) vulnerability exists where the XML document builder and XSL transformer used for converting MSTest report files do not disable the processing of external entity declarations or DTDs, allowing attackers who can supply crafted test report XML to CI/CD agents to read arbitrary files or perform server-side request forgery."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML parsers (DocumentBuilderFactory and TransformerFactory) used for parsing and converting MSTest report files are not configured to disable external entity declarations or DTD processing, allowing XXE attacks via crafted XML input.",
+    "locations": [
+      {
+        "file": "src/main/java/hudson/plugins/mstest/MSTestReportConverter.java",
+        "function": "containsData"
+      },
+      {
+        "file": "src/main/java/hudson/plugins/mstest/MSTestReportConverter.java",
+        "function": "getDocumentBuilder"
+      },
+      {
+        "file": "src/main/java/hudson/plugins/mstest/XslTransformer.java",
+        "function": "XslTransformer"
+      }
+    ]
+  }
+}
