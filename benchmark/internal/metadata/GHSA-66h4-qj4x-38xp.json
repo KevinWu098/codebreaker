@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-66h4-qj4x-38xp",
+  "post_patch_commit": "67cb186c41c78c51464f70405504e8ef0a6e43c3",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit fixes four GHSAs simultaneously across 4 non-test source files (SandboxExec.ts, executor.ts, parser.ts, utils.ts), making it noisy. Primary locations derived from the patch diff: assignCheck in executor.ts contained a bypassable prototype override check (used obj.context.hasOwnProperty which could be manipulated, and failed to block overwriting own properties on safe prototypes), and Scope.get in utils.ts had a variable scoping bug where let declarations resolved prototype access incorrectly. No sibling files — each src/ file has a distinct role. Vulnerability class kept as command-injection per CWE-94 (Code Injection); the PoC demonstrates full RCE via sandbox escape to child_process.execSync.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
