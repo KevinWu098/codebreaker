@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-mcrp-whpw-jp68",
+  "post_patch_commit": "756008dc5899081c5aa51e5bd8f24c1b3975a59e",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived directly from the patch diff. All three files contain the same vulnerability pattern: the scan result check only inspects infected_files count but ignores scan_err, allowing files that cause scan errors (e.g., InvalidMagicError in picklescan) to bypass the security check and be loaded via torch.load. Additionally, read_checkpoint_meta had scanning disabled by default (scan=False). The pre-assigned class insecure-deserialization (CWE-502) is correct since the core issue is unsafe pickle deserialization of untrusted model files with a bypassable safety scanner.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
