@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j977-g5vj-j27g",
+  "post_patch_commit": "9ebf57588aa596c4fa3bb64209e10ade395aee90",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff: the fix adds DOMPurify sanitization in _transformMeasurements before inserting SVG into the DOM. loadString is the entry point that parses untrusted SVG strings without sanitization. Only 1 non-test source file (src/svg-renderer.js) was changed. No sibling files in src/ perform DOM insertion of SVG content. Vulnerability class xss confirmed — matches CWE-79 and the advisory description of arbitrary element injection via unsanitized SVG.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
