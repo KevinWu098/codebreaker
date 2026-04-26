@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vrcf-g539-x6h3",
+  "post_patch_commit": "748f60bafd857c24f65683426f665350e2c3f91b",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #1 (748f60b). The only non-test source file changed is rediswrapper/models.py, which modifies from_value and to_value. The vulnerability is insecure deserialization via pickle.loads on untrusted Redis data in to_value. from_value is also included as it was changed by the patch to remove a special-case bypass for basestring types. storage.py imports and calls these functions but does not contain its own vulnerable pattern. Pre-assigned class insecure-deserialization is correct per CWE-502 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
