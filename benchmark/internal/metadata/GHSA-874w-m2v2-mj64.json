@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-874w-m2v2-mj64",
+  "post_patch_commit": "e8814f46ec2285a32eed47cbaea691030da67637",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only src/u6m.cpp (1 file). The fix removes the explicit delete[] song_data in the error path of Cu6mPlayer::load() when lzw_decompress fails, leaving deallocation to the destructor ~Cu6mPlayer(). It also adds a delete[] song_data before reallocating to prevent leaks if load() is called twice. CWE-415 (Double Free) maps to use-after-free as the closest valid class since there is no dedicated double-free class. No sibling files share this exact vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
