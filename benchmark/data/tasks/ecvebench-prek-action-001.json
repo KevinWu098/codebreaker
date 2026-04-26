@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-prek-action-001",
+  "ghsa_id": "GHSA-pwf7-47c3-mfhx",
+  "codebase": {
+    "repo": "https://github.com/j178/prek-action",
+    "language": "yaml",
+    "ecosystem": "actions",
+    "commit": "4bdfccb1c86077e552b45277006423b2f09b67f1"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "CI/CD action configuration and shell step execution logic"
+    },
+    "L2": {
+      "description": "A code injection vulnerability exists in a GitHub Actions composite action where user-controlled input values are directly interpolated into shell commands via expression syntax, allowing an attacker to execute arbitrary shell commands in the context of the workflow run, potentially exposing secrets and compromising the repository."
+    },
+    "L3": {
+      "area": "Composite action step definitions that process user-provided version and argument inputs for shell execution",
+      "description": "A code injection vulnerability exists where user-controlled action input parameters, including version strings and extra command-line arguments, are directly interpolated into shell run steps via GitHub Actions expression syntax without sanitization. An attacker can craft input values that break out of the intended command context to execute arbitrary commands, potentially exposing repository secrets and compromising the CI/CD pipeline."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 10.0,
+    "reason": "User-controlled GitHub Actions inputs (prek-version, extra_args, extra-args) are directly interpolated into shell run commands via ${{ }} expression syntax without sanitization, enabling arbitrary command injection.",
+    "locations": [
+      {
+        "file": "action.yaml",
+        "function": null
+      }
+    ]
+  }
+}

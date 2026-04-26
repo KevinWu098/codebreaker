@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pwf7-47c3-mfhx",
+  "post_patch_commit": "6b7c6ef5c3875c766893b881b40773cd5605bde3",
+  "noisy_patch": false,
+  "curation_notes": "Single-file patch modifying action.yaml. The fix replaces direct ${{ inputs.prek-version }} interpolation in shell run steps with environment variables (PREK_VERSION) and adds input validation regex for extra_args/extra-args. Pre-assigned class command-injection (from CWE-94) is correct — unsanitized user inputs are passed directly into shell commands via GitHub Actions expression syntax. No sibling files exist in this single-file action repository.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
