@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-88q6-jcjg-hvmw",
+  "post_patch_commit": "13e5ae6f23ef1487b0dad72540eff414272bd7ca",
+  "noisy_patch": true,
+  "curation_notes": "Primary vulnerability location derived from advisory description which explicitly names the verify function in JWS+Verify.swift (lines 34-37) where alg:none causes immediate return true. Secondary location in JWT+Verification.swift where the default validators array lacks an algorithm blacklist, allowing the none algorithm to pass through the JWT-level verification API. Patch adds a SigningAlgorithmBlackListValidator and throws an error for alg:none with non-empty signatures. 7 non-test source files changed (including error types, helper methods, and a doc fix), making this a noisy patch. Vulnerability class kept as crypto-weakness per CWE-327 (Use of a Broken or Risky Cryptographic Algorithm) since the root cause is accepting the 'none' cryptographic algorithm.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
