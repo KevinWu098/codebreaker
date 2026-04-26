@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gh5c-3h97-2f3q",
+  "post_patch_commit": "5689dabfb357b673abdb4391eef426f297d7d1bb",
+  "noisy_patch": false,
+  "curation_notes": "Patch adds a sync.Mutex to the progressOutput struct and wraps the io.Writer.Write call in WriteProgress with Lock/Unlock. Only one source file changed. The pre-assigned race-condition class matches CWE-362 and the fix (adding mutex synchronization for concurrent writes). Sibling file streamwriter.go has a similar io.Writer wrapper but was not patched in this commit and uses a different access pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
