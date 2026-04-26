@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Frontend templating and client-side form handling"
+      "area": "Frontend templating and dynamic content rendering layer"
     },
     "L2": {
-      "description": "A DOM-based Cross-site Scripting (XSS) vulnerability exists where form validation error messages are rendered without proper HTML escaping. An attacker can inject malicious scripts through crafted input that, when rejected by form validation, gets reflected back to the user's browser unescaped, allowing arbitrary JavaScript execution."
+      "description": "A DOM-based Cross-site Scripting (XSS) vulnerability exists where user-supplied input is rendered in HTML output without proper sanitization. When the application displays dynamic content back to users, it fails to escape HTML special characters, allowing an attacker to inject and execute arbitrary JavaScript in the victim's browser session."
     },
     "L3": {
-      "area": "Frontend templating and client-side form handling",
-      "description": "A DOM-based Cross-site Scripting (XSS) vulnerability exists where form validation error messages are rendered without proper HTML escaping. An attacker can inject malicious scripts through crafted input that, when rejected by form validation, gets reflected back to the user's browser unescaped, allowing arbitrary JavaScript execution."
+      "area": "Django form field rendering templates and client-side form submission handlers",
+      "description": "A DOM-based Cross-site Scripting (XSS) vulnerability exists where Django template rendering of form field validation messages bypasses HTML escaping for user-controlled content. An attacker can craft input that, when displayed as a validation feedback message, executes arbitrary JavaScript in the victim's browser. Additionally, a related issue in client-side form submission logic allows form confusion through incorrect DOM element selection."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "xss",
     "cvss": 9.8,
-    "reason": "Form validation error messages are rendered using an unsafe template filter that bypasses HTML escaping, allowing attacker-controlled input to be reflected as executable script in the browser.",
+    "reason": "Form field validation error messages are rendered using a Django template filter that bypasses HTML escaping, allowing attacker-controlled input to be reflected as executable script in the browser.",
     "locations": [
       {
         "file": "modoboa/templates/common/generic_field.html",
