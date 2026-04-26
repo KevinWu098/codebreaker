@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Container execution and filesystem mount lifecycle management"
+      "area": "Container build execution and filesystem management"
     },
     "L2": {
-      "description": "A path traversal vulnerability exists in the container build process where the cleanup logic that removes temporary files created for mountpoints can be tricked into deleting files outside the container's root directory on the host system. A malicious build frontend or build definition can exploit this to achieve arbitrary host file deletion."
+      "description": "A path traversal vulnerability exists in a container build system where the cleanup logic that removes temporary placeholder files created for mount points can be tricked into resolving paths outside the container's root directory. A malicious build frontend or build definition can exploit this to achieve arbitrary file deletion on the host filesystem."
     },
     "L3": {
-      "area": "Container execution and filesystem mount lifecycle management",
-      "description": "A path traversal vulnerability exists in the container build process where the cleanup logic that removes temporary files created for mountpoints can be tricked into deleting files outside the container's root directory on the host system. A malicious build frontend or build definition can exploit this to achieve arbitrary host file deletion."
+      "area": "Container executor mount point stub creation and cleanup",
+      "description": "A path traversal vulnerability exists in the cleanup routine that removes temporary placeholder files created for RUN --mount directives during container builds. After the container finishes executing, the routine does not re-verify that the resolved paths of these placeholder files still reside within the container root, allowing a malicious build definition to use symlinks to redirect the cleanup to delete arbitrary files on the host system."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "path-traversal",
     "cvss": 10.0,
-    "reason": "The mount stub cleanup routine does not validate that resolved paths remain within the container root, allowing a malicious build frontend to craft symlinks that cause the cleaner to delete arbitrary files on the host filesystem.",
+    "reason": "The mount stub cleanup routine does not validate that resolved paths remain within the container root after execution, allowing a malicious build frontend to craft symlinks that cause the cleaner to delete arbitrary files on the host filesystem.",
     "locations": [
       {
         "file": "executor/stubs.go",

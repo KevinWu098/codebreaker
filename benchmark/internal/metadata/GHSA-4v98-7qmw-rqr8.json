@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-4v98-7qmw-rqr8",
   "post_patch_commit": "79fa2a153da2dd1ae51f58ce3ede8d52bb3b41d5",
   "noisy_patch": false,
-  "curation_notes": "Patch commit is the merge of PR #4603 into master. Only one source file changed (executor/stubs.go), modifying the MountStubsCleaner function to add fs.RootPath validation and a boundary check on the parent directory traversal loop. Location derived directly from the patch diff.",
+  "curation_notes": "Patch commit is the merge of PR #4603 into master. Only one source file changed (executor/stubs.go), modifying the MountStubsCleaner function to add fs.RootPath validation ensuring paths remain within the container root after execution, and a boundary check on the parent directory traversal loop. Location derived directly from the patch diff. No sibling files share the same vulnerability pattern. Pre-assigned class path-traversal confirmed by CWE-22 and patch adding path containment checks.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
