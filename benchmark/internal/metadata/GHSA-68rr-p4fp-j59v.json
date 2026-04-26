@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-68rr-p4fp-j59v",
+  "post_patch_commit": "eb874b6f6c5896b968d9b0ab2b56ac7052cb0ee1",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only utils/common.go (1 file, not noisy). Two functions fixed: UUID() silently returned emptyUUID when crypto/rand.Read failed to seed, and UUIDv4() fell back to calling UUID() when googleuuid.NewRandom() failed. Both now panic instead of silently producing predictable values. Pre-assigned class crypto-weakness (CWE-338) is correct — the vulnerability is a silent fallback to weak/zero randomness on crypto/rand failure. No sibling files contain the same UUID generation pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
