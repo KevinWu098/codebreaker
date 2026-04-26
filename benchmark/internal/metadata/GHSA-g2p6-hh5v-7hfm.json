@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g2p6-hh5v-7hfm",
+  "post_patch_commit": "ceb20d3593fc4a8a951a7e99d8fa2344f8250a8c",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff. The fix changes the assertion in PoseidonSponge::absorb() from inputs.len() <= RATE to inputs.len() == RATE, and removes the weaker is_empty check in compute_hash(). Poseidon2Sponge (src/poseidon2/sponge.rs) was checked as a sibling but is not vulnerable — it encodes input length in the capacity element (IV = input_len << 64), providing domain separation. Pre-assigned class crypto-weakness (CWE-328) is correct: the vulnerability is a broken cryptographic hash construction allowing trivial collisions.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
