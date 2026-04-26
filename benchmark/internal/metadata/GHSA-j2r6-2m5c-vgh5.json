@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j2r6-2m5c-vgh5",
+  "post_patch_commit": "20d0a203476a01be91aeff6c4519dec25e52e6d5",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds an assertion in the block() function in chacha20/src/cipher.rs to check that the counter does not exceed MAX_BLOCKS (2^32) before generating a keystream block. There are two implementations of block() gated by cfg attributes (x86/x86_64 vs other architectures), and both received the same fix. Sibling files legacy.rs and xchacha20.rs delegate to the same Cipher type and are not independently vulnerable. The pre-assigned class integer-overflow (CWE-190) is correct — the root cause is a 32-bit counter wrap-around.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
