@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-58p5-r2f6-g2cj",
+  "post_patch_commit": "0d74f31fe64310791e274e587c9926335e9db9db",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only one non-test source file (pxr/usd/usd/crateFile.cpp). The fix adds duplicate detection for path indexes in the _ReadCompressedPaths function. Previously, only range checking was performed on path indexes. Corrupt .usdc files with duplicate indexes caused multiple threads to concurrently mutate the same SdfPath object in _BuildDecompressedPathsImpl, triggering a use-after-free. The pre-assigned class use-after-free (CWE-416) is correct as confirmed by the advisory description and patch diff. No sibling files share the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
