@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cx4j-fxr7-jxg8",
+  "post_patch_commit": "4298b9de04c7b721d242f2169dbb6f155788c859",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit is the merge of PR #10 into rustgd/glsl-layout master. Only src/array.rs was modified. The vulnerability is in the map_array function defined inside the impl_array macro: it uses ptr::read to move elements out of the source array and mem::forget to suppress the array's destructor, but if the user-provided callback f panics, forget is never reached and the array's destructor double-drops already-moved elements. The fix wraps the source array in ManuallyDrop to prevent automatic cleanup on panic. CWE-415 (Double Free) was pre-assigned as use-after-free, which is the closest available class — retained as-is.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

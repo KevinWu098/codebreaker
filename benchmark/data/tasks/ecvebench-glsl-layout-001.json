@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-glsl-layout-001",
+  "ghsa_id": "GHSA-cx4j-fxr7-jxg8",
+  "codebase": {
+    "repo": "https://github.com/rustgd/glsl-layout",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "119f5ec524dca42403db2aa07569baa349793e9b"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Array and collection data transformation utilities"
+    },
+    "L2": {
+      "description": "A use-after-free (double free) vulnerability exists where a user-provided mapping callback that panics during array element transformation causes a single object to be dropped twice, because the original array is not guarded against automatic cleanup after elements have been moved out via unsafe pointer reads."
+    },
+    "L3": {
+      "area": "Array element mapping and conversion logic using unsafe memory operations",
+      "description": "A use-after-free (double free) vulnerability exists in the array mapping routine that transforms elements using a user-provided callback. When the callback panics, elements that were already moved out via unsafe pointer reads are dropped a second time because the source array is not wrapped in a guard that prevents its automatic destructor from running."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 7.5,
+    "reason": "The map_array function uses unsafe ptr::read to move elements out of the source array and ptr::forget to prevent the array's destructor from running, but if the user-provided callback panics, forget is never called and the array's destructor double-drops already-moved elements.",
+    "locations": [
+      {
+        "file": "src/array.rs",
+        "function": "map_array"
+      }
+    ]
+  }
+}
