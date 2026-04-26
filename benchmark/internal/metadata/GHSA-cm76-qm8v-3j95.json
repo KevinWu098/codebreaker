@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cm76-qm8v-3j95",
+  "post_patch_commit": "cada13298fba85493badb6fecb6ccf80e49673cc",
+  "noisy_patch": false,
+  "curation_notes": "The patch reverts a performance optimization that introduced a cachedRootPath struct caching fs.RootPath results in pkg/archive/tar.go. The caching created a TOCTOU window: symlinks resolved once at check time could be swapped before the cached path was used for file writes, allowing container images to escape the extraction root directory. The fix removes the cache and calls fs.RootPath directly for each file operation. Only one source file was changed. The pre-assigned vulnerability class race-condition (CWE-367 TOCTOU) is correct. Primary location is the applyNaive function which created and used the cachedRootPath. No sibling files share this pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
