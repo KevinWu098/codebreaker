@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-4vp2-mj4m-69m4",
   "post_patch_commit": "6ccd4055fc40d2d7d154920a1859a7c19774bd1a",
   "noisy_patch": false,
-  "curation_notes": "Locations derived from both the advisory description (which explicitly names the two files) and the patch diff (commit 6ccd405). The patch adds ['allowed_classes' => false] to unserialize() calls in both app/admin/controller/api/Update.php (function tree, lines 46-47) and app/wechat/controller/api/Push.php (function index, line 102). Two non-test source files changed.",
+  "curation_notes": "Locations derived from the advisory description (which explicitly names app/admin/controller/api/Update.php and app/wechat/controller/api/Push.php) and confirmed by the patch diff (commit 6ccd405). The patch adds ['allowed_classes' => false] to unserialize() calls in Update.php (function tree, lines 46-47) and Push.php (function index, line 102). Only 2 non-test source files changed. No sibling files in either API directory use unserialize(). Vulnerability class insecure-deserialization confirmed from CWE-502 and the patch which directly restricts PHP object instantiation during deserialization.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
