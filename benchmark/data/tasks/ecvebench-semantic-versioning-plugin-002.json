@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-semantic-versioning-plugin-002",
+  "ghsa_id": "GHSA-pcc2-w6m8-x5w4",
+  "codebase": {
+    "repo": "https://github.com/jenkinsci/semantic-versioning-plugin",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "b462d975d81463f1a5f4d25c015b500fcb4a6836"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Build definition file parsing and workspace file processing logic"
+    },
+    "L2": {
+      "description": "An XML external entity (XXE) vulnerability exists where an XML parser processes files without disabling external entity resolution. An attacker who can control the content of the parsed file can use external entity declarations to read arbitrary files from the server or perform server-side request forgery. The issue is compounded by insufficient restrictions on the execution context, allowing the parsing to be triggered from an untrusted source."
+    },
+    "L3": {
+      "area": "Maven POM file parsing within the build definition parser subsystem",
+      "description": "An XML external entity (XXE) vulnerability exists in the POM file parsing logic where a crafted Maven POM file with external entity declarations can be processed without restrictions. An attacker able to control agent processes can trigger the XML parsing on the controller, enabling extraction of secrets from the controller or server-side request forgery via external entity resolution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The plugin uses an unrestricted FileCallable that allows agent-to-controller execution, combined with an XML parser that does not disable external entity processing, enabling XXE attacks from malicious agent processes.",
+    "locations": [
+      {
+        "file": "src/main/java/org/jenkinsci/plugins/SemanticVersioning/parsing/PomParser.java",
+        "function": "getPom"
+      }
+    ]
+  }
+}
