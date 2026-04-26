@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-byte-buffer-001",
+  "ghsa_id": "GHSA-r88h-6987-g79f",
+  "codebase": {
+    "repo": "https://github.com/Chopinsky/byte_buffer",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "79b1a5c23a4962cbcd1539af9aadbfc277981442"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Concurrent data structure and memory pool implementation layer"
+    },
+    "L2": {
+      "description": "A data race vulnerability exists due to an unconditional implementation of a thread-safety marker trait for a generic container type. Non-thread-safe types can be placed in this container and sent across thread boundaries, potentially leading to memory corruption."
+    },
+    "L3": {
+      "area": "Thread safety trait implementations for the bucket-based pool storage types",
+      "description": "A data race vulnerability exists because a bucket-based pool storage container unconditionally implements the Send marker trait without requiring the contained type to also be Send. This allows non-thread-safe types like Cell or Rc to be sent across thread boundaries, potentially leading to memory corruption."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 8.1,
+    "reason": "The Bucket2<T> type unconditionally implements Send without requiring T: Send, allowing non-thread-safe types to be sent across thread boundaries, leading to potential data races and memory corruption.",
+    "locations": [
+      {
+        "file": "syncpool/src/bucket.rs",
+        "function": null
+      }
+    ]
+  }
+}
