@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-rs-soroban-poseidon-001",
+  "ghsa_id": "GHSA-g2p6-hh5v-7hfm",
+  "codebase": {
+    "repo": "https://github.com/stellar/rs-soroban-poseidon",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "295936916b7379c9e3f5727be4dcf055a0c7481c"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Cryptographic hash construction and sponge-based hashing logic"
+    },
+    "L2": {
+      "description": "A cryptographic weakness exists in the sponge-based hash construction where variable-length inputs are accepted without injective padding. When fewer inputs than the sponge rate are provided, unused positions are implicitly zero-filled, allowing trivial hash collisions between messages of different lengths that share a common prefix."
+    },
+    "L3": {
+      "area": "Poseidon V1 sponge hash construction and its input absorption logic",
+      "description": "A cryptographic weakness exists in the Poseidon V1 sponge hash construction where variable-length inputs are accepted without injective padding. When a caller provides fewer inputs than the sponge rate, unused rate positions are implicitly zero-filled, enabling trivial collisions between input vectors of different lengths (e.g., a single-element input collides with that element followed by zero)."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 8.7,
+    "reason": "PoseidonSponge accepts variable-length inputs without enforcing full-rate usage, causing unused rate positions to be implicitly zero-filled. This allows trivial hash collisions between inputs of different lengths that share a common prefix.",
+    "locations": [
+      {
+        "file": "src/poseidon/sponge.rs",
+        "function": "absorb"
+      },
+      {
+        "file": "src/poseidon/sponge.rs",
+        "function": "compute_hash"
+      }
+    ]
+  }
+}
