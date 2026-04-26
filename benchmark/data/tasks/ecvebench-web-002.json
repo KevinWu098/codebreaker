@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-web-002",
+  "ghsa_id": "GHSA-5gjg-jgh4-gppm",
+  "codebase": {
+    "repo": "https://github.com/ecnepsnai/web",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "6e7285dfca2c34ac921a38c3f0d82380fd56beee"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Real-time connection handling and HTTP upgrade infrastructure"
+    },
+    "L2": {
+      "description": "A nil pointer dereference vulnerability exists where authentication callbacks configured for upgraded persistent connections are not invoked during connection establishment. When an authentication method is configured, downstream handlers expect user context data to be populated. Since the authentication callback is never executed for these connection types, user data remains nil, causing a panic when handlers attempt to dereference it. An attacker can exploit this to cause denial of service or bypass authentication controls."
+    },
+    "L3": {
+      "area": "Real-time connection handling and HTTP upgrade infrastructure",
+      "description": "A nil pointer dereference vulnerability exists where authentication callbacks configured for upgraded persistent connections are not invoked during connection establishment. When an authentication method is configured, downstream handlers expect user context data to be populated. Since the authentication callback is never executed for these connection types, user data remains nil, causing a panic when handlers attempt to dereference it. An attacker can exploit this to cause denial of service or bypass authentication controls."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 9.8,
+    "reason": "The socketHandler function does not call the configured AuthenticateMethod before upgrading connections, leaving UserData nil. Handlers that dereference UserData will panic with a nil pointer dereference.",
+    "locations": [
+      {
+        "file": "websocket.go",
+        "function": "socketHandler"
+      }
+    ]
+  }
+}
