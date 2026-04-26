@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-97xg-phpr-rg8q",
+  "post_patch_commit": "f3267cbcc900f80851d561bdd16b239d936947f5",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #147 into apache/commons-bcel master. Two non-test source files were modified: ConstantPool.java (dump method now caps iteration at MAX_CP_ENTRIES) and ConstantPoolGen.java (constructor limits initial array size, adjustSize throws IllegalStateException when exceeding MAX_CP_ENTRIES and caps resized array). Pre-assigned class buffer-overflow (CWE-787) is correct — the advisory explicitly describes an out-of-bounds writing issue where the constant pool can exceed the JVM spec limit of 65535 entries. Locations derived directly from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
