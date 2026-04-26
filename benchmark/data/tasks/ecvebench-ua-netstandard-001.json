@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-ua-netstandard-001",
+  "ghsa_id": "GHSA-9q94-v7ch-mxqw",
+  "codebase": {
+    "repo": "https://github.com/OPCFoundation/UA-.NETStandard",
+    "language": "csharp",
+    "ecosystem": "nuget",
+    "commit": "a1faa0f7a1e1441c11dd902bd709325c4145626b"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Client session lifecycle and secure channel communication layer"
+    },
+    "L2": {
+      "description": "A TOCTOU race condition exists in the session handling logic where operations on session objects lack proper synchronization. The absence of validation for duplicate cryptographic values returned by the server during session operations allows remote unauthenticated attackers to create a denial-of-service condition."
+    },
+    "L3": {
+      "area": "OPC UA client session nonce validation and secure channel token management",
+      "description": "A TOCTOU race condition exists in the OPC UA client session where server nonce validation does not check for duplicate nonces across session operations. The lack of tracking previously returned server nonces and the absence of proper locking when performing nonce-related operations on the session object allows remote unauthenticated attackers to replay server nonces, creating a denial-of-service condition."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 7.5,
+    "reason": "The Session class does not validate that newly received server nonces differ from previously returned ones, and lacks proper locking when performing operations on session objects, enabling a TOCTOU race condition that allows remote attackers to cause a denial-of-service.",
+    "locations": [
+      {
+        "file": "SampleApplications/SDK/Opc.Ua.Client/Session.cs",
+        "function": "ValidateServerNonce"
+      }
+    ]
+  }
+}
