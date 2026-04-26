@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-p5g2-jm85-8g35",
   "post_patch_commit": "02e2a247c3320ceb5e96dbbad5eb4d15d0d73d13",
   "noisy_patch": false,
-  "curation_notes": "Patch commit 02e2a247 adds allowlist validation for aggregationType against AggregationType enum values and validates aggregateColumnName and aggregationTimestampColumnName against the model's known columns in the aggregateBy method of AnalyticsDatabaseService.ts. Only one source file was changed (not noisy). The vulnerability location was derived from the patch diff and confirmed by the advisory description which explicitly names the file and method.",
+  "curation_notes": "Patch commit 02e2a247 adds allowlist validation for aggregationType against AggregationType enum values and validates aggregateColumnName and aggregationTimestampColumnName against the model's known columns via getTableColumn() in the aggregateBy method of AnalyticsDatabaseService.ts. Only one source file was changed (not noisy). Primary location derived from the patch diff (AnalyticsDatabaseService.ts:aggregateBy). Secondary location derived from the advisory description which identifies StatementGenerator.ts:toAggregateSelectStatement as the site where unsanitized user input is concatenated into SQL via the .append() method. L3 hints refined to name ClickHouse as the specific database backend and narrow the search area to the aggregation service and statement generation layer.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

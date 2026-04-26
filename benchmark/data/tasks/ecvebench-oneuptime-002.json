@@ -13,11 +13,11 @@
       "area": "Telemetry data aggregation and analytics query processing"
     },
     "L2": {
-      "description": "User-controlled query parameters for data aggregation operations are interpolated directly into analytics database queries using raw string concatenation marked as trusted SQL. There is no allowlist validation or parameterized binding for aggregation type, column name, or timestamp column parameters. An authenticated user can inject arbitrary SQL, enabling cross-tenant data theft, data manipulation, and potential remote code execution via database-specific table functions."
+      "description": "User-controlled query parameters for data aggregation operations are interpolated directly into analytics database queries using raw string concatenation marked as trusted SQL. There is no allowlist validation or parameterized binding for the aggregation operation type, target column, or timestamp grouping column parameters. An authenticated user can inject arbitrary SQL, enabling cross-tenant data theft, data manipulation, and potential remote code execution via database-specific table functions."
     },
     "L3": {
-      "area": "Telemetry data aggregation and analytics query processing",
-      "description": "User-controlled query parameters for data aggregation operations are interpolated directly into analytics database queries using raw string concatenation marked as trusted SQL. There is no allowlist validation or parameterized binding for aggregation type, column name, or timestamp column parameters. An authenticated user can inject arbitrary SQL, enabling cross-tenant data theft, data manipulation, and potential remote code execution via database-specific table functions."
+      "area": "ClickHouse analytics aggregation service and its SQL statement generation layer",
+      "description": "A SQL injection vulnerability exists in the telemetry data aggregation flow where user-controlled parameters — including the aggregation operation type, target column name, and timestamp grouping column name — are interpolated directly into ClickHouse SQL queries via raw string concatenation. No allowlist or column-name validation is applied before these values are appended as trusted SQL. An authenticated user can inject arbitrary SQL into ClickHouse, enabling cross-tenant telemetry data theft, data manipulation, and potential remote code execution via ClickHouse table functions."
     }
   },
   "ground_truth": {
@@ -29,6 +29,10 @@
       {
         "file": "Common/Server/Services/AnalyticsDatabaseService.ts",
         "function": "aggregateBy"
+      },
+      {
+        "file": "Common/Server/Utils/AnalyticsDatabase/StatementGenerator.ts",
+        "function": "toAggregateSelectStatement"
       }
     ]
   }
