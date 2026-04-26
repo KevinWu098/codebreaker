@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-go-uuid-001",
+  "ghsa_id": "GHSA-33m6-q9v5-62r7",
+  "codebase": {
+    "repo": "https://github.com/satori/go.uuid",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Unique identifier generation and initialization logic"
+    },
+    "L2": {
+      "description": "A cryptographic weakness exists where the random byte reader may return fewer bytes than requested without raising an error, leading to predictable identifiers. The incomplete read from the cryptographic random source results in partially zero-filled buffers being used for security-sensitive operations."
+    },
+    "L3": {
+      "area": "Random UUID generation and internal random state initialization routines",
+      "description": "A cryptographic weakness exists in UUID generation where calls to read random bytes from the cryptographic random source may return fewer bytes than requested. Since the partial read is not detected, the resulting identifiers and internal random state may be predictable due to zero-filled buffer segments."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.8,
+    "reason": "The UUID generator uses a bare Read call on the random source which may return fewer bytes than requested, resulting in predictable UUIDs due to partially zero-filled buffers.",
+    "locations": [
+      {
+        "file": "generator.go",
+        "function": "NewV4"
+      },
+      {
+        "file": "generator.go",
+        "function": "getClockSequence"
+      },
+      {
+        "file": "generator.go",
+        "function": "getHardwareAddr"
+      }
+    ]
+  }
+}

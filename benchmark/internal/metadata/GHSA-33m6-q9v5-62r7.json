@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-33m6-q9v5-62r7",
+  "post_patch_commit": "75cca531ea763666bc46e531da3b4c3b95f64557",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 75cca53 replaces g.rand.Read() with io.ReadFull(g.rand, ...) in three functions within generator.go: NewV4, getClockSequence, and getHardwareAddr. The bare Read call could return fewer bytes than requested without error, leaving parts of the UUID buffer zero-filled and making UUIDs predictable. No sibling files contain the same pattern — only generator.go performs random reads. Pre-assigned class crypto-weakness (CWE-338) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
