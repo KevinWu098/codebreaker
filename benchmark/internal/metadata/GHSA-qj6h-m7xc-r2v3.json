@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-qj6h-m7xc-r2v3",
+  "post_patch_commit": "da4ec3e1b591de96675817a009e26e05e848a6ba",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies index.php to replace two calls to rand(0, $timestamp) with randomStr(16) in the password reset activation code generation logic (lines 348-349). A new helper file lib/functions/system/function.randomStr.php is added to provide a CSPRNG-based random string generator. The vulnerability is in the main procedural flow of index.php, not inside a named function. Only 1 existing source file was modified (plus 1 new file added), so the patch is not noisy. No sibling files contain the same vulnerable pattern. The pre-assigned class crypto-weakness (CWE-330: Use of Insufficiently Random Values) is correct — the fix replaces a weak PRNG with a cryptographically secure alternative.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
