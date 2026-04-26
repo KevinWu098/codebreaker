@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-m298-fh5c-jc66",
+  "post_patch_commit": "e2e07a355ee8ff36aba21d0242c5950c56e4c6f9",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff which modified four functions in src/PHPMailer.php: addAttachment, addEmbeddedImage, encodeFile, and setLanguage. Each function previously used direct calls to file_exists/is_file/is_readable on user-supplied paths without consolidated protection against phar deserialization. The patch introduces a fileIsAccessible() method that centralizes path safety checks. No sibling files in src/ (SMTP.php, POP3.php, OAuth.php, Exception.php) handle file attachment paths, so no sibling locations apply. Vulnerability class insecure-deserialization confirmed from CWE-502 and advisory description describing PHP phar object injection.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
