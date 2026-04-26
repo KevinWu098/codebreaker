@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g622-r636-qfqh",
+  "post_patch_commit": "97adb5b496aa96aa70398018ea96da913ffd8d8c",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only db/query.go (1 non-test source file). The fix parameterizes N1QL queries in buildAccessQuery, buildRoleAccessQuery, and QueryAllDocs that previously interpolated user-controlled username, startkey, and endkey values directly into query strings via strings.Replace and fmt.Sprintf. The pre-assigned class sql-injection is correct — N1QL is Couchbase's SQL-like query language and the vulnerability is direct string interpolation of user input into queries. No sibling files share the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
