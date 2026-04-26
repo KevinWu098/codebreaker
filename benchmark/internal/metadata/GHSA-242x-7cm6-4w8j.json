@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-242x-7cm6-4w8j",
+  "post_patch_commit": "43a175339b47b8c604508813fc75b83f13cd173e",
+  "noisy_patch": false,
+  "curation_notes": "The vulnerability is CVE-2019-18197 in libxslt 1.1.33, which Nokogiri vendors as a native dependency. The fix in the Nokogiri repo (commit 43a17533) updates the vendored libxslt from 1.1.33 to 1.1.34 in dependencies.yml. The upstream libxslt fix (commit 22324737 on GNOME/libxslt) adds a single line resetting ctxt->lasttext to NULL in the xsltCopyText function in transform.c. The actual C source code of libxslt is not committed to the Nokogiri repo — it is downloaded at build time based on the version specified in dependencies.yml. Location is therefore dependencies.yml where the vulnerable version is pinned. Pre-assigned class use-after-free is correct per CWE-416 and the advisory description of a dangling pointer leading to memory reuse.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

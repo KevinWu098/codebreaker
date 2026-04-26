@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-nokogiri-002",
+  "ghsa_id": "GHSA-242x-7cm6-4w8j",
+  "codebase": {
+    "repo": "https://github.com/sparklemotion/nokogiri",
+    "language": "c",
+    "ecosystem": "rubygems",
+    "commit": "99d8a6b6ec83077652a06a333571e4705120f022"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Native C extension layer and vendored library dependency management"
+    },
+    "L2": {
+      "description": "A use-after-free vulnerability exists in a vendored XSLT processing library where a pointer variable is not properly reset after certain text copy operations involving CDATA sections in input documents. If the relevant memory area is freed and reused, a bounds check can fail, leading to out-of-bounds memory writes or disclosure of uninitialized data."
+    },
+    "L3": {
+      "area": "Vendored libxslt dependency versioning and build patch configuration",
+      "description": "A use-after-free vulnerability exists in the vendored libxslt library's text copying routine where a cached text pointer is not properly reset when processing CDATA sections in input documents. This can lead to out-of-bounds memory writes or disclosure of uninitialized data when the referenced memory is freed and reused."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 7.5,
+    "reason": "In libxslt 1.1.33 (vendored by Nokogiri), the xsltCopyText function does not reset the ctxt->lasttext pointer under certain circumstances involving CDATA sections, leading to a use-after-free that can cause out-of-bounds writes or uninitialized data disclosure.",
+    "locations": [
+      {
+        "file": "dependencies.yml",
+        "function": null
+      }
+    ]
+  }
+}
