@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6whf-q6p5-84wg",
+  "post_patch_commit": "572e239c5702667ca52487faf861abc768a46308",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit includes several unrelated changes (AnonCA support, README typo fix, phpstan config, otherUI property, user ID length validation) alongside the security fix. The vulnerability-relevant changes are in AuthenticatorAssertionResponseValidator and AuthenticatorAttestationResponseValidator, where comments stating 'Nothing to do. The verification of the bit is done during the authenticator data loading' were replaced with actual Assertion::true() calls checking isUserPresent(). Pre-assigned class auth-bypass (CWE-863) is correct — the missing user presence check allows authentication without physical user interaction.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
