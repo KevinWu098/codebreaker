@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3vcg-8p79-jpcv",
+  "post_patch_commit": "35686a130ed260c71a382a8f83d41fd31a46704d",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only svglib/svglib.py (1 source file). The fix adds resolve_entities=False to etree.XMLParser in load_svg_file and threads the parameter through svg2rlg. Pre-assigned class xxe is correct — CWE-611 maps directly to XXE and the patch disables external entity resolution in the XML parser. Locations derived from the patch diff: load_svg_file creates the vulnerable parser, svg2rlg is the public entry point that exposes it. No sibling files contain the same pattern — svglib.py is the sole module with XML parsing logic.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
