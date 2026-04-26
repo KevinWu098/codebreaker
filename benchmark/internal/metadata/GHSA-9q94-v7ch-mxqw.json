@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9q94-v7ch-mxqw",
+  "post_patch_commit": "636f5c03f95130ae71880975793e5da7d69591d4",
+  "noisy_patch": true,
+  "curation_notes": "The advisory references release tag 1.4.359.31, but the actual security fix is in commit 636f5c03 ('Implement validation for duplicate nonces #893'). The patch modifies 7 non-test source files (Session.cs, ApplicationConfiguration.cs, WcfChannelBase.cs, HttpsTransportChannel.cs, UaSCBinaryChannel.Symmetric.cs, UaSCBinaryTransportChannel.cs, ITransportChannel.cs), making it a noisy patch. The core vulnerability is in Session.cs's ValidateServerNonce method, which did not check that new server nonces differ from previously returned ones. The other file changes add ITransportChannel.CurrentToken interface and a configuration flag to support the fix. Pre-assigned class race-condition is correct per CWE-367 (TOCTOU) and the advisory's explicit mention of 'TOCTOU Race Condition'.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
