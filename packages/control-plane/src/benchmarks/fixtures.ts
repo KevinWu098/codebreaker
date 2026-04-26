@@ -161,6 +161,9 @@ import task_ecvebench_isahc_001 from "../../../../benchmark/data/tasks/ecvebench
 import task_ecvebench_javamelody_001 from "../../../../benchmark/data/tasks/ecvebench-javamelody-001.json" with {
   type: "json",
 };
+import task_ecvebench_json_sanitizer_001 from "../../../../benchmark/data/tasks/ecvebench-json-sanitizer-001.json" with {
+  type: "json",
+};
 import task_ecvebench_juju_002 from "../../../../benchmark/data/tasks/ecvebench-juju-002.json" with {
   type: "json",
 };
@@ -242,6 +245,9 @@ import task_ecvebench_onefuzz_002 from "../../../../benchmark/data/tasks/ecveben
 import task_ecvebench_oneuptime_002 from "../../../../benchmark/data/tasks/ecvebench-oneuptime-002.json" with {
   type: "json",
 };
+import task_ecvebench_oneuptime_003 from "../../../../benchmark/data/tasks/ecvebench-oneuptime-003.json" with {
+  type: "json",
+};
 import task_ecvebench_openclaw_003 from "../../../../benchmark/data/tasks/ecvebench-openclaw-003.json" with {
   type: "json",
 };
@@ -270,6 +276,9 @@ import task_ecvebench_pillow_002 from "../../../../benchmark/data/tasks/ecvebenc
   type: "json",
 };
 import task_ecvebench_pillow_003 from "../../../../benchmark/data/tasks/ecvebench-pillow-003.json" with {
+  type: "json",
+};
+import task_ecvebench_pillow_004 from "../../../../benchmark/data/tasks/ecvebench-pillow-004.json" with {
   type: "json",
 };
 import task_ecvebench_platform_001 from "../../../../benchmark/data/tasks/ecvebench-platform-001.json" with {
@@ -378,6 +387,9 @@ import task_ecvebench_waitress_001 from "../../../../benchmark/data/tasks/ecvebe
   type: "json",
 };
 import task_ecvebench_web_001 from "../../../../benchmark/data/tasks/ecvebench-web-001.json" with {
+  type: "json",
+};
+import task_ecvebench_web_002 from "../../../../benchmark/data/tasks/ecvebench-web-002.json" with {
   type: "json",
 };
 import task_ecvebench_whodb_001 from "../../../../benchmark/data/tasks/ecvebench-whodb-001.json" with {
@@ -680,6 +692,9 @@ import meta_GHSA_mc52_jpm2_cqh6 from "../../../../benchmark/internal/metadata/GH
 import meta_GHSA_mm7v_vpv8_xfc3 from "../../../../benchmark/internal/metadata/GHSA-mm7v-vpv8-xfc3.json" with {
   type: "json",
 };
+import meta_GHSA_mm8j_9x84_m9cv from "../../../../benchmark/internal/metadata/GHSA-mm8j-9x84-m9cv.json" with {
+  type: "json",
+};
 import meta_GHSA_mph8_6787_r8hw from "../../../../benchmark/internal/metadata/GHSA-mph8-6787-r8hw.json" with {
   type: "json",
 };
@@ -905,6 +920,7 @@ export const benchmarkDatasetFixtures = {
     meta_GHSA_m3r6_h7wv_7xxv,
     meta_GHSA_mc52_jpm2_cqh6,
     meta_GHSA_mm7v_vpv8_xfc3,
+    meta_GHSA_mm8j_9x84_m9cv,
     meta_GHSA_mph8_6787_r8hw,
     meta_GHSA_mq29_j5xf_cjwr,
     meta_GHSA_p224_6x5r_fjpm,
@@ -1004,6 +1020,7 @@ export const benchmarkDatasetFixtures = {
     task_ecvebench_incus_001,
     task_ecvebench_isahc_001,
     task_ecvebench_javamelody_001,
+    task_ecvebench_json_sanitizer_001,
     task_ecvebench_juju_002,
     task_ecvebench_keycloak_001,
     task_ecvebench_kubernetes_001,
@@ -1031,6 +1048,7 @@ export const benchmarkDatasetFixtures = {
     task_ecvebench_olivetin_001,
     task_ecvebench_onefuzz_002,
     task_ecvebench_oneuptime_002,
+    task_ecvebench_oneuptime_003,
     task_ecvebench_openclaw_003,
     task_ecvebench_openclaw_004,
     task_ecvebench_openclaw_005,
@@ -1041,6 +1059,7 @@ export const benchmarkDatasetFixtures = {
     task_ecvebench_pillow_001,
     task_ecvebench_pillow_002,
     task_ecvebench_pillow_003,
+    task_ecvebench_pillow_004,
     task_ecvebench_platform_001,
     task_ecvebench_publify_001,
     task_ecvebench_pyminiracer_001,
@@ -1077,6 +1096,7 @@ export const benchmarkDatasetFixtures = {
     task_ecvebench_vyper_001,
     task_ecvebench_waitress_001,
     task_ecvebench_web_001,
+    task_ecvebench_web_002,
     task_ecvebench_whodb_001,
     task_ecvebench_xdocreport_001,
     task_ecvebench_xwiki_platform_002,
