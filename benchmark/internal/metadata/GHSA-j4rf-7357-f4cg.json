@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j4rf-7357-f4cg",
+  "post_patch_commit": "5a4964f5ba9c8d89a0e353b97f51fd607670a9f7",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge (5a4964f) adding 'allow setuid-mount' configuration options. The primary vulnerability location is in prepare_linux.go's loadImage function, which lacked checks to disallow mounting of extfs, squashfs, encrypted, and SIF filesystem types in setuid mode when the user is not in a user namespace. The config.go file was missing the AllowSetuidMountExtfs, AllowSetuidMountSquashfs, and AllowSetuidMountEncrypted configuration fields in the File struct. Only 2 non-test source files were changed. The pre-assigned use-after-free class (CWE-416) is correct — the underlying vulnerability is a kernel ext4 use-after-free (CVE-2022-1184) that Apptainer's setuid-root mode exposed to unprivileged users by allowing unrestricted filesystem mounting.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
