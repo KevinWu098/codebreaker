@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-vf2r-cxg9-p7rf",
   "post_patch_commit": "5b8bd52cdcffefb4ecded1b399c98cfa516afe03",
   "noisy_patch": false,
-  "curation_notes": "Locations derived from the patch diff which modified a single file (drivers/adodb-sqlite3.inc.php). The patch replaced direct string interpolation of the $table parameter with bound query parameters in three methods: MetaColumns(), metaForeignKeys(), and metaIndexes(). The advisory description explicitly names these three methods as affected. Only 1 source file was changed, so the patch is not noisy.",
+  "curation_notes": "Primary locations derived from the patch diff which fixes SQL injection in three methods of the sqlite3 driver (MetaColumns, metaForeignKeys, metaIndexes) by replacing string interpolation and sprintf with parameterized queries. Sibling locations identified in drivers/adodb-sqlite.inc.php (MetaColumns, MetaIndexes) and drivers/adodb-pdo_sqlite.inc.php (MetaColumns) which contain the same unparameterized table name interpolation pattern. Pre-assigned class sql-injection confirmed — the patch clearly replaces direct string interpolation in SQL with bound parameters.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
