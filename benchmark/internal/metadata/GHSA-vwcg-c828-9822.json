@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-vwcg-c828-9822",
   "post_patch_commit": "fe82348d160904d0013b9a3e267d50158f5c7afb",
   "noisy_patch": false,
-  "curation_notes": "Patch commit fe82348 modifies 2 source files (server/api/index.js and server/api/jwt-helper.js) plus 1 test file. The vulnerability is in the heartbeat token refresh flow: the old getNewToken() function in jwt-helper.js accepted user identity from the attacker-controlled x-auth-user HTTP header to mint JWTs without authentication. The verifyToken() middleware did not track authentication status. The heartbeat handler in index.js (inside init()) called getNewToken() without checking if the request was authenticated. Locations derived from the patch diff, which clearly shows the fix adding isAuthenticated checks and replacing header-based identity with verified JWT data.",
+  "curation_notes": "Patch commit fe82348 modifies 2 source files (server/api/index.js and server/api/jwt-helper.js) plus 1 test file. The vulnerability is in the heartbeat token refresh flow: the old getNewToken() function in jwt-helper.js accepted user identity from the attacker-controlled x-auth-user HTTP header to mint JWTs without authentication. The verifyToken() middleware did not track authentication status via an isAuthenticated flag. The heartbeat handler in index.js (inside init()) called getNewToken(req.headers) without checking if the request was authenticated. Locations derived from the patch diff, which clearly shows the fix adding isAuthenticated checks, replacing header-based identity with verified JWT data, and renaming getNewToken to getNewTokenFromRequest. Pre-assigned class auth-bypass from CWE-285/CWE-287 is correct — the vulnerability is a clear authentication bypass via forged identity claims in HTTP headers.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-36fm-j33w-c25f",
   "post_patch_commit": "de72760d4a3e1e9be64a10660a0c19e9534e2ec4",
   "noisy_patch": false,
-  "curation_notes": "Patch commit de72760 modified a single file (ClassSheet.xml), adding author=\"target\" to the include macro to ensure included content runs with the target document author's rights instead of the ClassSheet author's rights. Location derived directly from the patch diff. The advisory explicitly describes the privilege escalation via the XWiki.ClassSheet document.",
+  "curation_notes": "Re-curation. Patch commit de72760 modified a single file (ClassSheet.xml), adding author=\"target\" to the include macro so included content runs with the target document author's rights instead of the ClassSheet author's rights. Location derived from the patch diff. No sibling files share the same vulnerable include pattern — ObjectSheet.xml uses inline property display, not document inclusion. Vulnerability class auth-bypass confirmed: CWE-863 (Incorrect Authorization) matches the privilege escalation via missing author-context enforcement. Duplicate task file ecvebench-xwiki-platform-004 removed. L3 hints improved to be more specific than L1/L2.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
