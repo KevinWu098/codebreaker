@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-23qq-p4gq-gc2g",
+  "post_patch_commit": "31353f0fef14ad8bc1f61c028971bd30b9e1909b",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from patch diff: only wo/cli/plugins/stack_pref.py was modified, in the pre_pref function. The fix replaces a standard open() + separate chmod() with an atomic os.open() call that sets 0o600 permissions at creation time, eliminating the TOCTOU window. Checked sibling plugin files (stack_upgrade.py, debug.py, site_functions.py) — they use WOFileUtils.chmod but not the same create-then-chmod-on-sensitive-config pattern. Pre-assigned class race-condition is correct (CWE-362/CWE-367 TOCTOU).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
