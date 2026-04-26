@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j6cv-98jx-mrwr",
+  "post_patch_commit": "f9368df28518b6c4a92fd207c260f1978ec34d6e",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as sql-injection from CWE-89, but the patch adds escapeshellarg() around user-supplied POST parameters that are concatenated into shell command strings executed via PHP exec(). The fix is clearly for command injection, not SQL injection — reclassified to command-injection. Primary locations derived from the patch diff: web/generate.php (two injection points at lines 109 and 139 where POST data is interpolated into shell arguments) and web/rewrite.php (line 45 where POST args are concatenated into a command line). Both files are top-level procedural PHP with no named functions. Sibling files web/get_from_lib.php and web/purge.php were checked but do not contain the same shell injection pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
