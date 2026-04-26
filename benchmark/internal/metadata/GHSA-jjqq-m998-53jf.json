@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jjqq-m998-53jf",
+  "post_patch_commit": "36402c22eef49d60edd73a2f312f8e28fe0bd1cb",
+  "noisy_patch": true,
+  "curation_notes": "Advisory explicitly names product/card.php and the statut parameter. The patch fixes multiple unsanitized GETPOST() calls in card.php by adding type filters (int, alpha, aZ09). It also adds SQL injection filtering to the $filter parameter of select_thirdparty_list() in html.form.class.php via the test_sql_and_script_inject() function. The main.inc.php and societe/ajax/company.php changes are supporting improvements to the sanitization infrastructure. Noisy patch: 4 non-test source files changed. Pre-assigned vuln_class sql-injection is correct per CWE-89 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
