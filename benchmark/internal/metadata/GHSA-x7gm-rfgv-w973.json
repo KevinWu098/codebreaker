@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x7gm-rfgv-w973",
+  "post_patch_commit": "340cf7a23a2b3dcd7183f6a0d6c383e85b130d2b",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds a MaxValueValidator(1e50) to the NumberFilter class in django_filters/filters.py. Pre-patch, NumberFilter inherited the field property from Filter without any max value validation, allowing exponential notation inputs with huge exponents to cause DoS during integer conversion. Only one non-test source file was changed for the security fix. No sibling files share the same vulnerability pattern — NumericRangeFilter uses RangeField rather than DecimalField and is not affected. Kept pre-assigned class integer-overflow as CWE-681 (Incorrect Conversion between Numeric Types) aligns with the integer conversion DoS pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
