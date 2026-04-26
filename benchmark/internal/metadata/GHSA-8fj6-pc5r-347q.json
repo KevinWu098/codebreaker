@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8fj6-pc5r-347q",
+  "post_patch_commit": "a102b9ae47cefe171edc5f5e908a03f7f84e0f45",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #1320 into v3.2. Only one source file changed (assets/php/profile.php). The vulnerability is in the PrintExplainStatement function which receives unsanitized query strings from deserialized POST data and passes them directly to the database ExplainStatement method. The patch adds an EnableProfiling check to prevent unauthenticated access. No sibling files share this vulnerability pattern. Pre-assigned class sql-injection confirmed from CWE-89 and advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
