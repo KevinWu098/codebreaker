@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-webargs-001",
+  "ghsa_id": "GHSA-8554-jxcw-454q",
+  "codebase": {
+    "repo": "https://github.com/marshmallow-code/webargs",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "944d5fdd89f8059b13c793198b4063c78970eec6"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Request parsing and argument extraction middleware"
+    },
+    "L2": {
+      "description": "A race condition vulnerability exists where a shared in-memory cache used during request body parsing is not thread-safe. When concurrent requests are processed, one request's parsed data may be incorrectly served to another request due to unsynchronized access to the shared cache state."
+    },
+    "L3": {
+      "area": "Core request argument parsing engine and its asynchronous variant",
+      "description": "A race condition vulnerability exists where a shared in-memory cache used during request body parsing is not thread-safe. When concurrent requests are processed by the same parser instance, one request's parsed JSON data may be incorrectly served to another request because the cache is stored on the parser object itself rather than being isolated per-request."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 8.1,
+    "reason": "The parser's internal cache dictionary is shared across concurrent requests without synchronization, allowing one request's parsed JSON body to be incorrectly returned for another concurrent request.",
+    "locations": [
+      {
+        "file": "src/webargs/core.py",
+        "function": "parse"
+      },
+      {
+        "file": "src/webargs/asyncparser.py",
+        "function": "parse"
+      }
+    ]
+  }
+}
