@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-68hv-8926-j34c",
+  "post_patch_commit": "b5767f2ec9d0f3cbfda7f13c84740e2179c90574",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (controllers/D2filesController.php) with 3 lines changed, casting $model_id and $id to (int) in actionUpload and actionDownloadFile. Locations derived directly from the patch diff and confirmed by the advisory description which names both functions. Sibling controllers (D2filesTypeController.php, DefaultController.php) were checked but do not share the same vulnerable pattern. Vulnerability class sql-injection confirmed from CWE-89, advisory description, and patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
