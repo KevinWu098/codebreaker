@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-swift-nio-http2-001",
+  "ghsa_id": "GHSA-w3f6-pc54-gfw7",
+  "codebase": {
+    "repo": "https://github.com/apple/swift-nio-http2",
+    "language": "swift",
+    "ecosystem": "swift",
+    "commit": "93215774aa7d223a5ad5aa0b80453375d669fa8f"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTTP/2 header compression encoding and decoding infrastructure"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists in the HTTP/2 header compression implementation where variable-length integer decoding performs unchecked arithmetic operations. A remote peer can send a specially crafted HPACK-encoded header block that triggers integer overflow during decoding, causing the process to crash and resulting in a denial of service."
+    },
+    "L3": {
+      "area": "HPACK primitive data type encoding and decoding routines within the header compression module",
+      "description": "An integer overflow vulnerability exists in the HPACK variable-length integer decoding logic where arithmetic operations on accumulated values and bit shifts are performed without overflow checks. A remote HTTP/2 peer can send a specially crafted HPACK-encoded header block containing a malicious variable-length integer encoding that triggers integer overflow during the accumulation step of decoding, causing the process to crash."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 7.5,
+    "reason": "The HPACK variable-length integer decoding function uses unchecked multiplication and addition arithmetic that can overflow on crafted inputs, causing a crash instead of a graceful error, enabling denial of service by any HTTP/2 peer.",
+    "locations": [
+      {
+        "file": "Sources/NIOHPACK/IntegerCoding.swift",
+        "function": "decodeInteger"
+      }
+    ]
+  }
+}
