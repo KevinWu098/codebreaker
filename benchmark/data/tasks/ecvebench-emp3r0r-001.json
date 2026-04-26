@@ -1,0 +1,55 @@
+{
+  "task_id": "ecvebench-emp3r0r-001",
+  "ghsa_id": "GHSA-f5p9-j34q-pwcc",
+  "codebase": {
+    "repo": "https://github.com/jm33-m0/emp3r0r",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "27d46a4c273a084c9efb7865afeb459cf49b7f59"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "C2 server session management and network communication infrastructure"
+    },
+    "L2": {
+      "description": "A race condition vulnerability exists where multiple shared data structures tracking active sessions are accessed concurrently from different goroutines without consistent synchronization. Under concurrent activity such as rapid session churn and simultaneous data transfer operations, the Go runtime detects unsynchronized concurrent reads and writes to shared state, causing a fatal panic that crashes the server process and results in denial of service."
+    },
+    "L3": {
+      "area": "Operator session relay, port-forwarding session tracking, and file transfer stream management within the C2 server",
+      "description": "A race condition vulnerability exists where multiple shared map data structures tracking operator sessions, port-forwarding sessions, and file transfer streams are accessed concurrently from different goroutines without consistent synchronization. Under concurrent activity such as rapid operator session connect/disconnect churn combined with active message tunneling and file transfer operations, the Go runtime detects unsynchronized concurrent map reads and writes, causing a fatal panic that crashes the C2 server process and results in denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 7.0,
+    "reason": "Multiple shared Go maps (operator sessions, port-forwarding sessions, FTP streams, agent control) are accessed concurrently from different goroutines without consistent synchronization, causing fatal concurrent map read/write panics that crash the C2 server.",
+    "locations": [
+      {
+        "file": "core/internal/cc/server/operator.go",
+        "function": "handleOperatorConn"
+      },
+      {
+        "file": "core/internal/cc/base/network/handler_portfwd.go",
+        "function": "HandlePortMapping"
+      },
+      {
+        "file": "core/internal/cc/base/network/portfwd_session.go",
+        "function": "RunPortFwd"
+      },
+      {
+        "file": "core/internal/cc/base/ftp/handler_ftp.go",
+        "function": "HandleFTPTransfer"
+      },
+      {
+        "file": "core/internal/live/agent.go",
+        "function": null
+      },
+      {
+        "file": "core/internal/cc/base/agents/mgr.go",
+        "function": "GetConnectedAgents"
+      }
+    ]
+  }
+}
