@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Command execution approval and sandboxing infrastructure"
+      "area": "Command execution approval and process invocation infrastructure"
     },
     "L2": {
-      "description": "A race condition vulnerability exists in the command execution approval flow for node-hosted processes. Between the time a command execution request is approved and when it is actually executed, an attacker can rebind a mutable parent symlink in the working directory path, causing the approved command to execute from a different filesystem location than what was inspected at approval time. The visible working directory string remains unchanged, bypassing the approval context check."
+      "description": "A race condition vulnerability exists in the command execution approval flow for node-hosted processes. Between the time a command execution request is approved and when it is actually executed, an attacker can rebind a mutable parent symlink in the working directory path, causing the approved command to execute from a different filesystem location than what was validated at approval time. The approval forwarding logic also trusts caller-supplied parameter values instead of using immutable approval-time canonical values, allowing the execution context to drift from what was originally approved."
     },
     "L3": {
-      "area": "Command execution approval and sandboxing infrastructure",
-      "description": "A race condition vulnerability exists in the command execution approval flow for node-hosted processes. Between the time a command execution request is approved and when it is actually executed, an attacker can rebind a mutable parent symlink in the working directory path, causing the approved command to execute from a different filesystem location than what was inspected at approval time. The visible working directory string remains unchanged, bypassing the approval context check."
+      "area": "Node-hosted command execution approval hardening and approval-time working directory validation",
+      "description": "A race condition vulnerability exists in the node-hosted command execution approval flow. After a command's working directory is validated and the execution request is approved, an attacker can rebind a mutable parent symlink component in the cwd path before execution occurs, redirecting the approved command to a different filesystem location while the visible cwd string remains unchanged. The approval forwarding and sanitization logic trusts caller-supplied parameter values for argv, cwd, agentId, and sessionKey rather than enforcing immutable approval-time canonical plan values, allowing the execution context to be altered after approval. This enables a TOCTOU attack where the filesystem state inspected at approval time diverges from the state at execution time."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "race-condition",
     "cvss": 8.7,
-    "reason": "The command execution approval flow does not freeze immutable plan fields or reject mutable parent-symlink path components in the working directory, allowing an attacker to rebind a parent symlink between approval and execution to redirect command execution to an arbitrary filesystem location.",
+    "reason": "The command execution approval flow does not reject mutable parent-symlink path components in the working directory and trusts caller-supplied parameters during approval forwarding instead of enforcing immutable approval-time canonical plan values, allowing an attacker to rebind a parent symlink between approval and execution to redirect command execution to an arbitrary filesystem location.",
     "locations": [
       {
         "file": "src/node-host/invoke-system-run.ts",

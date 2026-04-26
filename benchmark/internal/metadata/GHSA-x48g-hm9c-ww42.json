@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-x48g-hm9c-ww42",
   "post_patch_commit": "37832fff3a7128048f5a285017694880271b3061",
   "noisy_patch": true,
-  "curation_notes": "The patch commit (37832fff3) removes all stale packages from the main branch, including llama-index-packs-finchat. The vulnerability is a SQL injection in the run_sql_query method of the SQLDatabaseToolSpec class, which passes user-controlled query strings directly to connection.execute(text(query)) without sanitization. The advisory links to commit 5d03c17 on the stale_packages branch; the actual removal from main is 37832fff3. The patch is noisy (262 files changed across many stale packages), but the vulnerable location was identified from both the advisory description and the finchat-specific diff.",
+  "curation_notes": "Re-curation. The advisory references commit 5d03c17 on the stale_packages branch, but the actual removal from main is commit 37832fff3 ('Remove stale packages from main #17235'). The vulnerability is a SQL injection in the run_sql_query method of the SQLDatabaseToolSpec class in the finchat pack, which passes user-controlled query strings directly to connection.execute(text(query)) without sanitization. The patch is noisy (262 files removed across many stale packages). No sibling locations found — the finchat pack directory contains only BUILD, __init__.py, and base.py. Pre-assigned class sql-injection confirmed via CWE-89, advisory description, and code inspection.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

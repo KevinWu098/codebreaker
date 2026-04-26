@@ -13,11 +13,11 @@
       "area": "Build execution and container filesystem mount management"
     },
     "L2": {
-      "description": "A race condition exists in how cache mount subpaths are resolved during parallel build step execution. When two build steps share the same cache mount with subpaths, the path resolution is not atomic, creating a TOCTOU (time-of-check-time-of-use) window. An attacker could exploit this by manipulating symlinks between path validation and the actual mount operation, causing files from the host system to become accessible to the build container."
+      "description": "A race condition vulnerability exists where cache mount subpaths are resolved non-atomically during parallel build step execution. When two build steps share the same cache mount with subpaths, the path is re-resolved on each access without any TOCTOU protection. An attacker can exploit this by substituting symlinks between the path validation step and the subsequent mount operation, allowing files from the host filesystem to become accessible inside the build container."
     },
     "L3": {
-      "area": "Build execution and container filesystem mount management",
-      "description": "A race condition exists in how cache mount subpaths are resolved during parallel build step execution. When two build steps share the same cache mount with subpaths, the path resolution is not atomic, creating a TOCTOU (time-of-check-time-of-use) window. An attacker could exploit this by manipulating symlinks between path validation and the actual mount operation, causing files from the host system to become accessible to the build container."
+      "area": "OCI specification generation for container mounts and cache mount subpath resolution within the build executor",
+      "description": "A race condition vulnerability exists where cache mount subpaths specified via Dockerfile cache mount directives are resolved non-atomically during parallel build step execution. The path resolution uses a simple filesystem root-path helper that does not guard against concurrent modifications, and resolved submount paths are not cached between accesses. An attacker can exploit this by substituting symlinks between the path validation step and the subsequent bind mount operation, allowing files from the host filesystem to become accessible inside the build container."
     }
   },
   "ground_truth": {
