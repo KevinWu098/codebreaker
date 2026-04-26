@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-3p62-6fjh-3p5h",
   "post_patch_commit": "a1cfe6e24e5b34792699a00b8b4a8016a5929e3a",
   "noisy_patch": false,
-  "curation_notes": "Only one non-test source file was modified in the patch: RedirectUtils.java. The vulnerability is in the verifyRedirectUri method, which did not validate that redirect URI schemes were restricted to HTTP(S). The patch adds a scheme check after URI validation, rejecting URIs with non-http(s) schemes unless the scheme was explicitly matched by the configured valid redirect pattern. Location derived directly from the patch diff.",
+  "curation_notes": "Re-curated with updated guidelines. Only one non-test source file modified: RedirectUtils.java. The vulnerability is in the verifyRedirectUri method which did not validate redirect URI schemes. A wildcard pattern like '*' would match any URI including javascript: schemes, enabling XSS via form POST responses. The patch adds a scheme check after matching, rejecting non-http(s) schemes unless the matched pattern explicitly starts with that scheme. L3 area narrowed to OIDC redirect utilities; L3 description adds SAML/OIDC and wildcard context. Location derived from the patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
