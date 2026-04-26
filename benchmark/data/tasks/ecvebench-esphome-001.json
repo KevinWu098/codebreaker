@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-esphome-001",
+  "ghsa_id": "GHSA-4h3h-63v6-88qx",
+  "codebase": {
+    "repo": "https://github.com/esphome/esphome",
+    "language": "c++",
+    "ecosystem": "pip",
+    "commit": "510c874061cd73ec95afcd26ab4f814463776d9e"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "API communication protocol parsing and message decoding layer"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists in the protocol message decoder where addition-based bounds checking arithmetic can wrap around when processing large field length values from a remote client. This allows an attacker with network access to bypass out-of-bounds validation, causing the device to read invalid memory and crash, resulting in denial of service."
+    },
+    "L3": {
+      "area": "API component's protobuf wire format decoding and repeated field counting logic",
+      "description": "An integer overflow vulnerability exists in the protobuf wire format decoder where addition-based bounds checking can wrap around when a malicious client sends a crafted message with a large field length value over the native API port. This bypasses out-of-bounds validation for length-delimited and fixed-width wire types, causing the device to access invalid memory and crash."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 6.8,
+    "reason": "The bounds check `ptr + field_length > end` in the protobuf decoder can overflow when field_length is large, bypassing the out-of-bounds check and causing the device to read invalid memory and crash.",
+    "locations": [
+      {
+        "file": "esphome/components/api/proto.cpp",
+        "function": "count_repeated_field"
+      },
+      {
+        "file": "esphome/components/api/proto.cpp",
+        "function": "decode"
+      }
+    ]
+  }
+}

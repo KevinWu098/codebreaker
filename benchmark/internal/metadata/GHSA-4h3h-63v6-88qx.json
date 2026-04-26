@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4h3h-63v6-88qx",
+  "post_patch_commit": "69d7b6e9210390051318bd8e6410727689de08d6",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (esphome/components/api/proto.cpp) with 4 line changes across two functions: count_repeated_field and decode. Both functions had identical integer overflow patterns in their protobuf bounds checks (ptr + field_length > end) for LENGTH_DELIMITED and FIXED32 wire types. The fix switches to subtraction-based checks (field_length > end - ptr) to prevent wraparound. Pre-assigned class integer-overflow from CWE-190 is correct — the advisory explicitly describes an integer overflow and the patch directly addresses addition overflow in bounds checks. No sibling files found with the same vulnerability pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
