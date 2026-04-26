@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-pjpc-87mp-4332",
+  "post_patch_commit": "462eb596027fd949efbf9ac5cb2b376805e9d246",
+  "noisy_patch": false,
+  "curation_notes": "Single-file patch. The fix adds $view->escape() around $detail['useragent'] in the email timeline open-detail template. Location derived directly from the patch diff. No sibling Timeline views reference useragent. Vulnerability class xss confirmed from CWE-79 and the escaping fix.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
