@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-owlmixin-001",
+  "ghsa_id": "GHSA-ccmq-qvcp-5mrm",
+  "codebase": {
+    "repo": "https://github.com/tadashi-aikawa/owlmixin",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "409c30c0d2d357f3fbc3abd7a80d5c111a738aa2"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data loading and serialization utilities"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where YAML input is loaded using an unsafe deserialization method, allowing attacker-controlled YAML payloads containing embedded Python object constructors to achieve arbitrary code execution."
+    },
+    "L3": {
+      "area": "YAML loading and parsing utility functions",
+      "description": "An insecure deserialization vulnerability exists where YAML content from strings and files is loaded using an unsafe deserialization method that processes arbitrary Python object constructors, allowing an attacker to achieve arbitrary code execution via crafted YAML input."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The load_yaml and load_yamlf functions use yaml.load() instead of yaml.safe_load(), allowing arbitrary Python code execution through crafted YAML payloads containing Python object constructors.",
+    "locations": [
+      {
+        "file": "owlmixin/util.py",
+        "function": "load_yaml"
+      },
+      {
+        "file": "owlmixin/util.py",
+        "function": "load_yamlf"
+      }
+    ]
+  }
+}
