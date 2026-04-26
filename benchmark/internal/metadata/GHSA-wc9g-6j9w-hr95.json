@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wc9g-6j9w-hr95",
+  "post_patch_commit": "0d4efc880a727599fa4f6d7a64cc967afe475530",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The fix removes \"public\" from @Route ACL annotations across two API controller files: includes/controllers/ApiController.php (25 line changes across ~20 endpoints covering archives, users, groups, comments, pages, reactions, and triples) and tools/templates/controllers/ApiController.php (2 line changes for custom CSS preset endpoints). Primary locations focus on the archive endpoints (archivesAction, getArchive, getArchives) which are the subject of the advisory PoC, plus the sibling tools/templates controller which has the identical vulnerability pattern. The pre-assigned class auth-bypass is correct — CWE-287 and CWE-862 both apply since the \"public\" ACL entry allows unauthenticated access to endpoints that should require admin or authenticated-user privileges.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
