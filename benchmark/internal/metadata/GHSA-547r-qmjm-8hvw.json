@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-547r-qmjm-8hvw",
+  "post_patch_commit": "46bdcf2051c8d1758b391c1353185a179a47a4d9",
+  "noisy_patch": false,
+  "curation_notes": "The patch changes a single key in the gray_matter_options.engines configuration in src/lib/config.ts from 'js' to 'javascript'. The pre-patch code only overrode the 'js' engine in gray-matter, but gray-matter also supports a '---javascript' front-matter delimiter that maps to the 'javascript' engine. This allowed attackers to bypass the security restriction by using '---javascript' instead of '---js'. Pre-assigned class 'command-injection' retained as the closest valid class — the underlying CWE-94 (Code Injection) results in arbitrary command execution via JavaScript evaluation. No sibling files share this vulnerability pattern as the configuration is defined in a single location.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
