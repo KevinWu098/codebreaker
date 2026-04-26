@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4w8r-3xrw-v25g",
+  "post_patch_commit": "7359d18d46389ffac86c2af1e0cd59e37c298857",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references three commits: c0a37e15cc (defense-in-depth beforeAction reordering), 7359d18d46 (core RCE fix adding cleanseConfig helper), and a270b928f3 (follow-up applying cleanseConfig to a second parameter). The patch commit 7359d18d46 is the primary fix that introduces Component::cleanseConfig() to strip 'on X' and 'as X' keys from user-supplied config arrays, preventing Yii2 event handler/behavior injection. The pre-patch commit c0a37e15cc (parent of the patch) still contains the vulnerability as user input is passed unsanitized to createCondition() and Craft::configure(). Only 2 non-test source files were changed in the primary patch (ConditionsController.php and Component.php).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

@@ -2,9 +2,14 @@ import type { ReactNode } from "react";
 import { JsonView } from "@/components/json-view";
 
 export interface MessagePart {
+  createdAt?: unknown;
+  durationMs?: unknown;
+  elapsedMs?: unknown;
   errorText?: unknown;
+  finishedAt?: unknown;
   input?: unknown;
   output?: unknown;
+  startedAt?: unknown;
   state?: string;
   text?: string;
   toolName?: string;

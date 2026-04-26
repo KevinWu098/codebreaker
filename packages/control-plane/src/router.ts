@@ -3,10 +3,18 @@ import {
   CreateBenchmarkRunRequestSchema,
   CreateCveFollowupRequestSchema,
   CveFollowupStageKindSchema,
+  getBenchmarkTokenLimits,
+  ListBenchmarkRunsQuerySchema,
+  ListCveFollowupsQuerySchema,
 } from "@codebreaker/benchmark-runner/schemas";
 import { createGitTreeStore } from "@codebreaker/control-plane/artifacts/repository";
 import { BenchmarkDatasetService } from "@codebreaker/control-plane/benchmarks/dataset";
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
+import {
+  devinStatusDecorator,
+  enrichStages,
+  modalSandboxDecorator,
+} from "@codebreaker/control-plane/cve-followup/enrich";
 import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
 import { BenchmarkRunStore } from "@codebreaker/control-plane/db/benchmark-runs";
 import { CveFollowupStore } from "@codebreaker/control-plane/db/cve-followups";
@@ -99,6 +107,7 @@ export const createRouter = (): Hono<{
   app.use("/benchmark-tasks", jwtAuth);
   app.use("/benchmark-runs", jwtAuth);
   app.use("/benchmark-runs/*", jwtAuth);
+  app.use("/cve-followups", jwtAuth);
   app.use("/admin/*", jwtAuth);
 
   const cveFollowupDetail = async (env: Env, runId: string) => {
@@ -107,10 +116,15 @@ export const createRouter = (): Hono<{
     if (!f) {
       return null;
     }
+    const stages = await cve.listStages(f.id);
+    const decorated = await enrichStages(stages, [
+      modalSandboxDecorator(env),
+      devinStatusDecorator(env),
+    ]);
     return {
       events: await cve.listEvents(f.id),
       followup: f,
-      stages: await cve.listStages(f.id),
+      stages: decorated,
       validations: await cve.listValidationsForFollowup(f.id),
     };
   };
@@ -120,12 +134,17 @@ export const createRouter = (): Hono<{
     zValidator("query", ListSessionsQuerySchema),
     async (context) => {
       const query = context.req.valid("query");
-      const sessions = await context.get("sessionStore").list(query);
+      const store = context.get("sessionStore");
+      const [sessions, total] = await Promise.all([
+        store.list(query),
+        store.count(query.status ? { status: query.status } : {}),
+      ]);
 
       return context.json({
         limit: query.limit,
         offset: query.offset,
         sessions,
+        total,
       });
     }
   );
@@ -138,26 +157,52 @@ export const createRouter = (): Hono<{
     });
   });
 
-  app.get("/benchmark-runs", async (context) => {
-    const store = new BenchmarkRunStore(context.env.DB);
-    let runs = await store.list();
-    const runningRunIds = runs
-      .filter((run) => run.status === "running")
-      .map((run) => run.id);
-
-    if (runningRunIds.length > 0) {
-      const orchestrator = new BenchmarkRunOrchestrator(context.env);
-
-      await Promise.allSettled(
-        runningRunIds.map((id) => orchestrator.reconcile(id))
+  app.get(
+    "/cve-followups",
+    zValidator("query", ListCveFollowupsQuerySchema),
+    async (context) => {
+      const { limit } = context.req.valid("query");
+      const cve = new CveFollowupStore(context.env.DB);
+      const followupRows = await cve.listRecent(limit);
+      const followups = await Promise.all(
+        followupRows.map(async (followup) => ({
+          followup,
+          stages: await cve.listStages(followup.id),
+        }))
       );
-      runs = await store.list();
-    }
 
-    return context.json({
-      runs,
-    });
-  });
+      return context.json({ followups });
+    }
+  );
+
+  app.get(
+    "/benchmark-runs",
+    zValidator("query", ListBenchmarkRunsQuerySchema),
+    async (context) => {
+      const query = context.req.valid("query");
+      const store = new BenchmarkRunStore(context.env.DB);
+      const runningRunIds = await store.listRunningIds();
+
+      if (runningRunIds.length > 0) {
+        const orchestrator = new BenchmarkRunOrchestrator(context.env);
+        await Promise.allSettled(
+          runningRunIds.map((id) => orchestrator.reconcile(id))
+        );
+      }
+
+      const [runs, total] = await Promise.all([
+        store.list({ limit: query.limit, offset: query.offset }),
+        store.count(),
+      ]);
+
+      return context.json({
+        limit: query.limit,
+        offset: query.offset,
+        runs,
+        total,
+      });
+    }
+  );
 
   app.post(
     "/benchmark-runs",
@@ -232,15 +277,18 @@ export const createRouter = (): Hono<{
         return jsonError("Benchmark run not found", "run_not_found", 404);
       }
 
+      const tokenLimits = getBenchmarkTokenLimits(run.difficulty);
       const request: CreateBenchmarkRunRequest = {
+        autoFollowup: false,
         autoStart: false,
         cleanupPolicy: run.cleanupPolicy,
         difficulty: run.difficulty,
-        maxInputTokens: 300_000,
+        maxInputTokens: tokenLimits.maxInputTokens,
+        maxOutputTokens: tokenLimits.maxOutputTokens,
         maxSteps: 50,
         maxToolCalls: 40,
-        maxTotalTokens: 400_000,
-        maxTurns: 1,
+        maxTotalTokens: tokenLimits.maxTotalTokens,
+        maxTurns: 20,
         model: {
           id: run.modelId,
           provider: run.modelProvider,
@@ -286,8 +334,8 @@ export const createRouter = (): Hono<{
     "/benchmark-runs/:id/followup",
     zValidator("param", BenchmarkRunParamsSchema),
     async (context) => {
-      const { id } = context.req.valid("param");
-      const detail = await cveFollowupDetail(context.env, id);
+      const { id: runId } = context.req.valid("param");
+      const detail = await cveFollowupDetail(context.env, runId);
       if (!detail) {
         return jsonError(
           "No CVE follow-up for this run",
@@ -338,10 +386,11 @@ export const createRouter = (): Hono<{
           400
         );
       }
+      const cveOrch = new CveFollowupOrchestrator(context.env);
       context.executionCtx.waitUntil(
-        new CveFollowupOrchestrator(context.env)
-          .reconcileActiveFollowups()
-          .then(() => undefined)
+        cveOrch.reconcileOne(detail.followup.id).catch((error) => {
+          console.error("[cve-followup] POST /followup reconcile", error);
+        })
       );
       return context.json(detail, outcome === "created" ? 201 : 200);
     }
@@ -352,8 +401,9 @@ export const createRouter = (): Hono<{
     zValidator("param", FollowupStageRetryParamsSchema),
     async (context) => {
       const { id, kind } = context.req.valid("param");
+      const cveOrch = new CveFollowupOrchestrator(context.env);
       try {
-        await new CveFollowupOrchestrator(context.env).retryStage(id, kind);
+        await cveOrch.retryStage(id, kind);
       } catch (error) {
         const message = error instanceof Error ? error.message : "retry failed";
         if (message === "Devin is not configured") {
@@ -364,8 +414,8 @@ export const createRouter = (): Hono<{
         }
         return jsonError(message, "cve_followup_retry_failed", 400);
       }
-      const detail = await cveFollowupDetail(context.env, id);
-      if (!detail) {
+      const detailAfterRetry = await cveFollowupDetail(context.env, id);
+      if (!detailAfterRetry) {
         return jsonError(
           "No CVE follow-up for this run",
           "cve_followup_not_found",
@@ -373,11 +423,14 @@ export const createRouter = (): Hono<{
         );
       }
       context.executionCtx.waitUntil(
-        new CveFollowupOrchestrator(context.env)
-          .reconcileActiveFollowups()
-          .then(() => undefined)
+        cveOrch.reconcileOne(detailAfterRetry.followup.id).catch((error) => {
+          console.error(
+            "[cve-followup] POST /followup/.../retry reconcile",
+            error
+          );
+        })
       );
-      return context.json(detail);
+      return context.json(detailAfterRetry);
     }
   );
 
@@ -507,7 +560,7 @@ export const createRouter = (): Hono<{
       );
 
       return context.json({
-        messages: await withDORetry(() => agent.getMessages()),
+        messages: await withDORetry(() => agent.getMessagesWithTiming()),
       });
     }
   );

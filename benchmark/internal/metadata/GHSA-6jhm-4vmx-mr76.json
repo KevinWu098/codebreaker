@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6jhm-4vmx-mr76",
+  "post_patch_commit": "c7a62a8c82219b50589257f79021da1df1a76808",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only one non-test source file (mod/h5pactivity/classes/external/get_user_attempts.php). The execute function accepted a $sortorder parameter via the external web service API and passed it directly into SQL queries. The fix adds get_safe_orderby() validation to restrict sort columns to id, firstname, lastname with optional ASC/DESC direction. Location derived from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

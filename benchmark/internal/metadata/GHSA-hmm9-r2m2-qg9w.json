@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hmm9-r2m2-qg9w",
+  "post_patch_commit": "82867229e01fbccd8caa83ac37a4a8c5537f459f",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit is the merge of PR #1624 into master. The fix updated the vendored nats-io/jwt/v2 library to add nil checks in Export.Validate, Exports.Validate, Import.Validate, and Imports.Validate, and reordered issuer trust checks in server/accounts.go (checkActivation) and server/server.go (verifyAccountClaims) to run before calling Validate. Five non-test source files were modified making this a noisy patch. Locations were derived from the patch diff since the advisory description does not name specific files or functions.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

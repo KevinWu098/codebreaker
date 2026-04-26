@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3gcm-f6qx-ff7p",
+  "post_patch_commit": "4af067a444a579f260d99e8c8eb0ae3d5d9b811a",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit (4af067a) replaced the dangerous Function() constructor call in convertToValidJSONString with JSON5.parse() across 12 source files. The vulnerability location was derived from the advisory description which explicitly names the convertToValidJSONString function and the CustomMCP node, corroborated by the patch diff showing the Function('return ' + inputString)() call being replaced. The patch is noisy because it also switched JSON parsing to JSON5 in unrelated files (ExecuteFlow, HTTP, Iteration, Requests* tools).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

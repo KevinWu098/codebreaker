@@ -85,6 +85,7 @@ export const ListSessionsResponseSchema = z.object({
   limit: z.number().int().positive(),
   offset: z.number().int().nonnegative(),
   sessions: z.array(SessionRowSchema),
+  total: z.number().int().nonnegative(),
 });
 export type ListSessionsResponse = z.infer<typeof ListSessionsResponseSchema>;
 

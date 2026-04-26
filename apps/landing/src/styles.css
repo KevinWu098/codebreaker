@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --bg: 10 42 120;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: rgb(var(--bg));
+}
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: rgb(var(--bg));
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+  }
+}

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 interface DefinitionFieldProps {
   children: React.ReactNode;
-  label: string;
+  label: React.ReactNode;
   mono?: boolean;
   numeric?: boolean;
 }

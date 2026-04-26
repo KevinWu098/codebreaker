@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-javamelody-001",
+  "ghsa_id": "GHSA-cqhr-jqvc-qw9p",
+  "codebase": {
+    "repo": "https://github.com/javamelody/javamelody",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "7f9460e61bc2d942af3fee19041deda6c8f85816"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTML report generation and rendering layer"
+    },
+    "L2": {
+      "description": "A cross-site scripting (XSS) vulnerability exists where user-controlled message content is embedded into dynamically generated HTML output without proper encoding, allowing an attacker to inject arbitrary scripts that execute in the context of other users' browsers."
+    },
+    "L3": {
+      "area": "HTML report generation and rendering layer",
+      "description": "A cross-site scripting (XSS) vulnerability exists where user-controlled message content is embedded into dynamically generated HTML output without proper encoding, allowing an attacker to inject arbitrary scripts that execute in the context of other users' browsers."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 10.0,
+    "reason": "User-controlled message strings are passed to a JavaScript alert call in generated HTML without HTML encoding, allowing injection of arbitrary script content via crafted input.",
+    "locations": [
+      {
+        "file": "javamelody-core/src/main/java/net/bull/javamelody/HtmlCoreReport.java",
+        "function": "writeMessageIfNotNull"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5gjg-jgh4-gppm",
+  "post_patch_commit": "5a78f8d5c41ce60dcf9f61aaf47a7a8dc3e0002f",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only websocket.go, adding authentication logic to the socketHandler function. In the pre-patch code, socketHandler never calls options.AuthenticateMethod and never sets UserData in the Request struct passed to the endpoint handle. The location was derived directly from the patch diff, which shows the authentication call and UserData assignment were added to the socketHandler function.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

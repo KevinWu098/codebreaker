@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-dssp-001",
+  "ghsa_id": "GHSA-77cc-w3wm-6whp",
+  "codebase": {
+    "repo": "https://github.com/e-Contract/dssp",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "b0a59e5115895129be50c1b3bacd14008fbaf287"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "XML response parsing and signature verification in the digital signature service client"
+    },
+    "L2": {
+      "description": "An XML External Entity (XXE) injection vulnerability exists in the XML parsing logic used to process digital signature service responses and metadata. The XML parser does not disable external entity resolution or doctype declarations, allowing an attacker to inject crafted XML payloads that reference external entities. This can lead to disclosure of internal files, server-side request forgery, or denial of service."
+    },
+    "L3": {
+      "area": "XML response parsing and signature verification in the digital signature service client",
+      "description": "An XML External Entity (XXE) injection vulnerability exists in the XML parsing logic used to process digital signature service responses and metadata. The XML parser does not disable external entity resolution or doctype declarations, allowing an attacker to inject crafted XML payloads that reference external entities. This can lead to disclosure of internal files, server-side request forgery, or denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The DocumentBuilderFactory used to parse XML sign responses and metadata does not disable doctype declarations, allowing XML External Entity injection via crafted XML input.",
+    "locations": [
+      {
+        "file": "dssp-client/src/main/java/be/e_contract/dssp/client/SignResponseVerifier.java",
+        "function": "checkSignResponse"
+      },
+      {
+        "file": "dssp-client/src/main/java/be/e_contract/dssp/client/metadata/DigitalSignatureServiceMetadata.java",
+        "function": "DigitalSignatureServiceMetadata"
+      }
+    ]
+  }
+}

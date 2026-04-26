@@ -6,6 +6,7 @@ import type {
   CreateCveFollowupRequest,
   CveFollowupDetailResponse,
   CveFollowupStageKind,
+  ListBenchmarkRunsQuery,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
 } from "@codebreaker/benchmark-runner/schemas";
@@ -32,8 +33,18 @@ export class BenchmarkApiClient {
     return this.request("/benchmark-tasks");
   }
 
-  listRuns(): Promise<ListBenchmarkRunsResponse> {
-    return this.request("/benchmark-runs");
+  listRuns(
+    query: Partial<ListBenchmarkRunsQuery> = {}
+  ): Promise<ListBenchmarkRunsResponse> {
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value === undefined) {
+        continue;
+      }
+      search.set(key, String(value));
+    }
+    const qs = search.toString();
+    return this.request(qs ? `/benchmark-runs?${qs}` : "/benchmark-runs");
   }
 
   createRun(

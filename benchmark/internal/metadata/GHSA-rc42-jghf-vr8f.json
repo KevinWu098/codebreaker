@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rc42-jghf-vr8f",
+  "post_patch_commit": "29a5837c29620e33857d7a5afce01384e3f8e41a",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit adds a length validation (maximum: 2048) to the name attribute in the User model. Only one non-test source file was changed (publify_core/app/models/user.rb). The vulnerability location was derived directly from the patch diff. The function is null because the validation is a class-level declaration in a Rails model, not inside a specific method.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vgv5-cxvh-vfxh",
+  "post_patch_commit": "d708ed548e1d6f254ba81a21de8ba543a53b5598",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit d708ed5 fixes read_varint overflow by changing Py_ssize_t (signed, platform-dependent) types to unsigned long long in both read_varint and write_varint functions in varint.pyx. The .c file is auto-generated from the .pyx Cython source. Only 2 non-test source files changed (varint.pyx and its generated varint.c), so the patch is not noisy. Locations derived directly from the patch diff targeting the two functions modified.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

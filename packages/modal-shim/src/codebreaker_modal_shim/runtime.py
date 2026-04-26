@@ -1,9 +1,4 @@
-import base64
 import json
-import os
-import posixpath
-import re
-import shlex
 import time
 from collections.abc import AsyncIterator, Callable
 from typing import Any
@@ -27,95 +22,50 @@ from codebreaker_modal_shim.schemas import (
     WriteRequest,
     WriteResponse,
 )
-
-STDIO_LIMIT_BYTES = 256 * 1024
-IDEMPOTENCY_TTL_SECONDS = 15 * 60
-RATE_LIMIT_WINDOW_SECONDS = 60
-RATE_LIMIT_REQUESTS = 60
+from codebreaker_shim_shared.helpers import (
+    STDIO_LIMIT_BYTES,
+    cap_text,
+    check_rate_limit,
+    forget_sandbox,
+    get_metadata,
+    git_auth_args,
+    last_nonempty_line,
+    list_metadata,
+    redact_diagnostics_for_client,
+    repo_name_from_url,
+    require_auth,
+    resolve_workdir,
+    shell_quote,
+    with_idempotency as _with_idempotency,
+)
 
 SANDBOXES = modal.Dict.from_name("codebreaker-sandboxes", create_if_missing=True)
 IDEMPOTENCY = modal.Dict.from_name("codebreaker-idempotency", create_if_missing=True)
 RATE_LIMITS = modal.Dict.from_name("codebreaker-ratelimits", create_if_missing=True)
-
-_REDACT_AUTH_BASIC = re.compile(
-    r"Authorization:\s*Basic\s+[A-Za-z0-9+/=]+", re.IGNORECASE
-)
-_REDACT_AUTH_BEARER = re.compile(
-    r"Authorization:\s*Bearer\s+[^\s'\"`]+", re.IGNORECASE
-)
-
-
-def redact_diagnostics_for_client(message: str) -> str:
-    """
-    Error strings can embed the full git command line, including
-    `http.extraHeader=... Authorization: Basic <base64(user:token)>` which must
-    never be returned in API responses or stored downstream.
-    """
-    if not message:
-        return message
-    out = _REDACT_AUTH_BASIC.sub("Authorization: Basic <redacted>", message)
-    return _REDACT_AUTH_BEARER.sub("Authorization: Bearer <redacted>", out)
+TIMEOUT_EXIT_CODE = 124
 
 
 class ModalSandboxManager:
     def require_auth(self, request: Request) -> None:
-        expected_secret = os.environ.get("SHIM_SECRET")
-
-        if not expected_secret:
-            raise HTTPException(status_code=500, detail="SHIM_SECRET is not configured")
-
-        if request.headers.get("X-Shim-Secret") != expected_secret:
-            raise HTTPException(status_code=401, detail="Invalid shim secret")
+        require_auth(request)
 
     def check_rate_limit(self, session_id: str) -> None:
-        now = time.time()
-        timestamps = [
-            timestamp
-            for timestamp in RATE_LIMITS.get(session_id, [])
-            if now - float(timestamp) < RATE_LIMIT_WINDOW_SECONDS
-        ]
-
-        if len(timestamps) >= RATE_LIMIT_REQUESTS:
-            raise HTTPException(
-                headers={"Retry-After": str(RATE_LIMIT_WINDOW_SECONDS)},
-                status_code=429,
-                detail="Rate limit exceeded",
-            )
-
-        RATE_LIMITS[session_id] = [*timestamps, now]
+        check_rate_limit(session_id, RATE_LIMITS)
 
     def cached_response(self, request: Request) -> dict[str, Any] | None:
-        key = request.headers.get("X-Idempotency-Key")
+        from codebreaker_shim_shared.helpers import cached_response as _cached_response
 
-        if not key:
-            return None
-
-        cached = IDEMPOTENCY.get(key)
-
-        if not cached:
-            return None
-
-        if float(cached["expires_at"]) < time.time():
-            del IDEMPOTENCY[key]
-            return None
-
-        return dict(cached["response"])
+        return _cached_response(request, IDEMPOTENCY)
 
     def store_response(self, request: Request, response: dict[str, Any]) -> None:
-        key = request.headers.get("X-Idempotency-Key")
+        from codebreaker_shim_shared.helpers import store_response as _store_response
 
-        if not key:
-            return
-
-        IDEMPOTENCY[key] = {
-            "expires_at": time.time() + IDEMPOTENCY_TTL_SECONDS,
-            "response": response,
-        }
+        _store_response(request, response, IDEMPOTENCY)
 
     def ensure_sandbox(self, session_id: str, profile_name: str) -> tuple[modal.Sandbox, SandboxMetadata]:
         profile = resolve_profile(profile_name)  # type: ignore[arg-type]
         fingerprint = profile_fingerprint(profile)
-        existing = self.get_metadata(session_id)
+        existing = get_metadata(session_id, SANDBOXES)
 
         if existing and existing.image_fingerprint == fingerprint:
             return modal.Sandbox.from_id(existing.sandbox_id), existing
@@ -144,9 +94,6 @@ class ModalSandboxManager:
         )
         SANDBOXES[session_id] = metadata.model_dump(mode="json")
 
-        # New sandboxes have no /workspace yet. Modal needs an existing workdir
-        # before the process starts, so bootstrap mkdir from a path that always
-        # exists in the image (see checkout_git_repo -> exec with default cwd).
         self.exec(
             ExecRequest(
                 command=f"mkdir -p {shell_quote(profile.workdir)}",
@@ -159,15 +106,10 @@ class ModalSandboxManager:
         return sandbox, metadata
 
     def get_metadata(self, session_id: str) -> SandboxMetadata | None:
-        metadata = SANDBOXES.get(session_id)
-
-        return SandboxMetadata.model_validate(metadata) if metadata else None
+        return get_metadata(session_id, SANDBOXES)
 
     def list_metadata(self) -> list[SandboxMetadata]:
-        return [
-            SandboxMetadata.model_validate(metadata)
-            for metadata in SANDBOXES.values()
-        ]
+        return list_metadata(SANDBOXES)
 
     def exec(self, request: ExecRequest) -> ExecResult:
         self.check_rate_limit(request.session_id)
@@ -178,19 +120,22 @@ class ModalSandboxManager:
             profile = resolve_profile(metadata.profile)
             cwd = resolve_workdir(request.cwd, profile.workdir)
             timeout_seconds = request.timeout_seconds or profile.timeout_seconds
+            wrapped_command = (
+                f"timeout {int(timeout_seconds)}s bash -lc {shell_quote(request.command)}"
+            )
             started_at = time.monotonic()
 
             try:
                 process = sandbox.exec(
                     "bash",
                     "-lc",
-                    request.command,
+                    wrapped_command,
                     workdir=cwd,
-                    timeout=timeout_seconds,
+                    timeout=timeout_seconds + 2,
                 )
             except modal.exception.NotFoundError as error:
                 last_error = error
-                self.forget_sandbox(request.session_id)
+                forget_sandbox(request.session_id, SANDBOXES)
 
                 if attempt == 0:
                     continue
@@ -213,6 +158,7 @@ class ModalSandboxManager:
                 stderr_truncated=stderr_truncated,
                 stdout=stdout,
                 stdout_truncated=stdout_truncated,
+                timed_out=int(exit_code) == TIMEOUT_EXIT_CODE,
             )
 
         raise last_error or RuntimeError("sandbox exec failed")
@@ -255,6 +201,8 @@ class ModalSandboxManager:
         )
 
     def write_file(self, request: WriteRequest) -> WriteResponse:
+        import base64
+
         content = base64.b64decode(request.content_base64)
         command = "\n".join(
             [
@@ -283,6 +231,8 @@ class ModalSandboxManager:
         return WriteResponse(bytes_written=len(content), path=request.path)
 
     def checkout_git_repo(self, request: GitCheckoutRequest) -> GitCheckoutResponse:
+        import posixpath
+
         profile = resolve_profile(request.profile)
         repo_path = (
             resolve_workdir(request.path, profile.workdir)
@@ -302,15 +252,23 @@ class ModalSandboxManager:
                 '  cd "$repo_path"',
                 '  git remote set-url origin "$remote_url"',
                 f"  git {auth_args} fetch origin \"$branch\"",
-                f"  git {auth_args} fetch origin \"$checkout_ref\" || true",
-                '  git checkout --detach "$checkout_ref"',
-                '  git reset --hard "$checkout_ref"',
+                '  if git rev-parse --verify --quiet "$checkout_ref^{commit}" >/dev/null; then',
+                '    git checkout --detach "$checkout_ref"',
+                "  else",
+                f"    git {auth_args} fetch origin \"$checkout_ref\"",
+                "    git checkout --detach FETCH_HEAD",
+                "  fi",
+                "  git reset --hard HEAD",
                 "else",
                 '  rm -rf "$repo_path"',
                 f"  git {auth_args} clone --branch \"$branch\" \"$remote_url\" \"$repo_path\"",
                 '  cd "$repo_path"',
-                f"  git {auth_args} fetch origin \"$checkout_ref\" || true",
-                '  git checkout --detach "$checkout_ref"',
+                '  if git rev-parse --verify --quiet "$checkout_ref^{commit}" >/dev/null; then',
+                '    git checkout --detach "$checkout_ref"',
+                "  else",
+                f"    git {auth_args} fetch origin \"$checkout_ref\"",
+                "    git checkout --detach FETCH_HEAD",
+                "  fi",
                 "fi",
                 "git rev-parse HEAD",
             ]
@@ -376,7 +334,7 @@ class ModalSandboxManager:
         )
 
     def terminate(self, request: TerminateRequest) -> dict[str, bool]:
-        metadata = self.get_metadata(request.session_id)
+        metadata = get_metadata(request.session_id, SANDBOXES)
 
         if not metadata:
             return {"terminated": False}
@@ -384,58 +342,20 @@ class ModalSandboxManager:
         try:
             modal.Sandbox.from_id(metadata.sandbox_id).terminate()
         finally:
-            self.forget_sandbox(request.session_id)
+            forget_sandbox(request.session_id, SANDBOXES)
 
         return {"terminated": True}
 
     def forget_sandbox(self, session_id: str) -> None:
-        if self.get_metadata(session_id):
-            del SANDBOXES[session_id]
+        forget_sandbox(session_id, SANDBOXES)
 
 
-def shell_quote(value: str) -> str:
-    return shlex.quote(value)
-
-
-def git_auth_args(request: GitCheckoutRequest | GitCommitRequest) -> str:
-    if request.credential.type == "token-header":
-        header = f"Authorization: Bearer {request.credential.password}"
-    else:
-        encoded = base64.b64encode(
-            f"{request.credential.username}:{request.credential.password}".encode()
-        ).decode()
-        header = f"Authorization: Basic {encoded}"
-
-    return f"-c http.extraHeader={shell_quote(header)}"
-
-
-def repo_name_from_url(remote_url: str) -> str:
-    name = remote_url.rstrip("/").rsplit("/", maxsplit=1)[-1]
-
-    if name.endswith(".git"):
-        name = name[:-4]
-
-    return name or "repo"
-
-
-def last_nonempty_line(value: str) -> str | None:
-    for line in reversed(value.splitlines()):
-        stripped = line.strip()
-
-        if stripped:
-            return stripped
-
-    return None
-
-
-def resolve_workdir(cwd: str | None, default_workdir: str) -> str:
-    if not cwd:
-        return default_workdir
-
-    if posixpath.isabs(cwd):
-        return posixpath.normpath(cwd)
-
-    return posixpath.normpath(posixpath.join(default_workdir, cwd))
+def with_idempotency(
+    _manager: ModalSandboxManager,
+    request: Request,
+    operation: Callable[[], dict[str, Any]],
+) -> dict[str, Any]:
+    return _with_idempotency(request, operation, IDEMPOTENCY)
 
 
 def read_stream(stream: Any) -> bytes:
@@ -444,24 +364,3 @@ def read_stream(stream: Any) -> bytes:
         return value.encode() if isinstance(value, str) else bytes(value)
 
     return b""
-
-
-def cap_text(value: bytes, limit: int) -> tuple[str, bool]:
-    truncated = len(value) > limit
-    return value[:limit].decode(errors="replace"), truncated
-
-
-def with_idempotency(
-    manager: ModalSandboxManager,
-    request: Request,
-    operation: Callable[[], dict[str, Any]],
-) -> dict[str, Any]:
-    cached = manager.cached_response(request)
-
-    if cached is not None:
-        return cached
-
-    response = operation()
-    manager.store_response(request, response)
-
-    return response

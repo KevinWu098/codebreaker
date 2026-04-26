@@ -23,7 +23,7 @@ export const createBenchmarkSubmitTool = (
   tools: {
     [BENCHMARK_SUBMIT_TOOL_NAME]: tool({
       description:
-        "Submit the final benchmark result. The argument shape is validated against the task contract. Use this when the run is in the submission turn—do not use any other tool on that turn.",
+        "Submit the strongest single final benchmark result object. The argument shape is validated against the task contract. Use this when the run is in the submission turn—do not write JSON in an assistant message or use any other tool on that turn.",
       execute: (input) => {
         const parsed = AgentOutputSchema.parse(input);
         onRecord(parsed);

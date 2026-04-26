@@ -22,6 +22,57 @@ const FORK_IN_PROGRESS_DELAY_MS = 2000;
 type GitHubRepository =
   RestEndpointMethodTypes["repos"]["get"]["response"]["data"];
 
+export interface CreateOctokitOptions {
+  apiVersion?: string;
+  auth: string;
+  baseUrl: string;
+  userAgent?: string;
+}
+
+/**
+ * Construct a fully-configured Octokit (Bearer auth + `X-GitHub-Api-Version`
+ * header + custom User-Agent) for any module that needs to talk to GitHub.
+ * Shared by `GitHubGitTreeStore` and the CVE follow-up GitHub helpers.
+ */
+export const createOctokit = (options: CreateOctokitOptions): Octokit => {
+  const apiVersion = options.apiVersion ?? "2022-11-28";
+  const userAgent = options.userAgent ?? "codebreaker-control-plane (Octokit)";
+  const octokit = new Octokit({
+    auth: options.auth,
+    baseUrl: options.baseUrl,
+    userAgent,
+  });
+  octokit.hook.before("request", (requestOptions) => {
+    const { headers } = requestOptions;
+    if (!headers || typeof headers !== "object") {
+      return;
+    }
+    Object.assign(headers, {
+      "X-GitHub-Api-Version": apiVersion,
+    });
+  });
+  return octokit;
+};
+
+/**
+ * Convenience wrapper that pulls auth + headers from the worker `Env`.
+ * Returns `null` when `GITHUB_TOKEN` is not configured (callers fall back to
+ * a no-op path so the follow-up keeps running).
+ */
+export const createOctokitFromEnv = (env: Env): Octokit | null => {
+  if (!env.GITHUB_TOKEN) {
+    return null;
+  }
+  return createOctokit({
+    auth: env.GITHUB_TOKEN,
+    baseUrl: trimTrailingSlash(
+      env.GITHUB_API_BASE_URL ?? "https://api.github.com"
+    ),
+    ...(env.GITHUB_API_VERSION ? { apiVersion: env.GITHUB_API_VERSION } : {}),
+    ...(env.GITHUB_USER_AGENT ? { userAgent: env.GITHUB_USER_AGENT } : {}),
+  });
+};
+
 export interface GitHubGitTreeStoreOptions {
   isOrg: boolean;
   octokit: Octokit;
@@ -95,29 +146,43 @@ export class GitHubGitTreeStore implements GitTreeStore {
     });
   }
 
+  /**
+   * All repository names visible to the token under this owner (org or user).
+   * Used for bulk checks (e.g. compare benchmark tasks vs existing target mirrors).
+   */
+  async listRepoNames(): Promise<Set<string>> {
+    const names = new Set<string>();
+
+    if (this.isOrg) {
+      for await (const response of this.octokit.paginate.iterator(
+        this.octokit.repos.listForOrg,
+        { org: this.owner, per_page: 100, type: "all" }
+      )) {
+        for (const repo of response.data) {
+          names.add(repo.name);
+        }
+      }
+    } else {
+      for await (const response of this.octokit.paginate.iterator(
+        this.octokit.repos.listForUser,
+        { per_page: 100, username: this.owner, type: "all" }
+      )) {
+        for (const repo of response.data) {
+          names.add(repo.name);
+        }
+      }
+    }
+
+    return names;
+  }
+
   private static createOctokit(options: {
     apiVersion: string;
     auth: string;
     baseUrl: string;
     userAgent: string;
   }): Octokit {
-    const octokit = new Octokit({
-      auth: options.auth,
-      baseUrl: options.baseUrl,
-      userAgent: options.userAgent,
-    });
-
-    octokit.hook.before("request", (requestOptions) => {
-      const { headers } = requestOptions;
-      if (!headers || typeof headers !== "object") {
-        return;
-      }
-      Object.assign(headers, {
-        "X-GitHub-Api-Version": options.apiVersion,
-      });
-    });
-
-    return octokit;
+    return createOctokit(options);
   }
 
   async ensureStableTarget(

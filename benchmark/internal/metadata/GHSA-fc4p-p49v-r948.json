@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fc4p-p49v-r948",
+  "post_patch_commit": "296b2adee151b7a4eaeea7a2916bd4120e8d5bb3",
+  "noisy_patch": true,
+  "curation_notes": "The advisory references release tag 0.31.0.0 as the patched version. The specific XSS fix is in commit 296b2ad which adds esc() calls around firstname and surname fields in the UserController. The pre-patch commit 594b590 is the direct parent of the fix commit. The vulnerability location was derived from the patch diff showing the addition of esc() output encoding in the users() function. The patch commit is noisy as it includes a major security hardening, Shield integration, and framework upgrade affecting 100+ files.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

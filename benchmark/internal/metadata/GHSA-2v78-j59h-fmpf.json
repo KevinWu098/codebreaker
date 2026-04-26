@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-2v78-j59h-fmpf",
+  "post_patch_commit": "a134e06d740f9d7c287f74c0af2cd06206774364",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit a134e06 fixes two functions that had swapped length and capacity arguments in Vec::from_raw_parts(). Locations derived directly from the patch diff: guarded_transmute_vec_permissive in src/lib.rs and guarded_transmute_to_bytes_vec in src/to_bytes.rs. Both are the only non-test source files changed. The advisory description confirms the swapped-arguments mechanism.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

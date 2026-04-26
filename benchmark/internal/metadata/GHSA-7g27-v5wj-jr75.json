@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7g27-v5wj-jr75",
+  "post_patch_commit": "65d7070f4bfd016864cbbaefbd506bbc85d2fa92",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a merge (65d7070) of PR free5gc/udm#78. Two files changed: internal/sbi/api_httpcallback.go (added input validation for NotifyItems and SUPI format, fixed route path) and internal/sbi/processor/notifier.go (added nil check after UdmUeFindBySupi call). The core vulnerability is in notifier.go where the ok return value from UdmUeFindBySupi was discarded with _, allowing a nil ue pointer to be dereferenced. The api_httpcallback.go changes add defense-in-depth validation. Both files are listed as locations since both contribute to the vulnerability surface.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

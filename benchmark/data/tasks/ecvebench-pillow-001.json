@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-pillow-001",
+  "ghsa_id": "GHSA-vcqg-3p29-xw73",
+  "codebase": {
+    "repo": "https://github.com/python-pillow/Pillow",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "a79b65c47c7dc6fe623aadf09aa6192fc54548f3"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Image codec and decoding routines"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists in the TIFF image decoding logic where a multiplication of image dimension parameters derived from the file header is used to compute a memory reallocation size without first checking for overflow. A crafted TIFF file with very large dimension values can cause the multiplication to wrap around, leading to a smaller-than-expected buffer allocation followed by an out-of-bounds write."
+    },
+    "L3": {
+      "area": "Image codec and decoding routines",
+      "description": "An integer overflow vulnerability exists in the TIFF image decoding logic where a multiplication of image dimension parameters derived from the file header is used to compute a memory reallocation size without first checking for overflow. A crafted TIFF file with very large dimension values can cause the multiplication to wrap around, leading to a smaller-than-expected buffer allocation followed by an out-of-bounds write."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 8.8,
+    "reason": "The TIFF decoding function multiplies image dimension parameters (tile dimensions or rows-per-strip) by the row byte size to compute a reallocation size without checking for integer overflow, allowing a crafted TIFF to trigger a heap buffer overflow via a wrapped allocation size.",
+    "locations": [
+      {
+        "file": "src/libImaging/TiffDecode.c",
+        "function": "ImagingLibTiffDecode"
+      }
+    ]
+  }
+}

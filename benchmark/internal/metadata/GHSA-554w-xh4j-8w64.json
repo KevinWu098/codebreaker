@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-554w-xh4j-8w64",
+  "post_patch_commit": "1da75dfcecd4d169e34809ade55748384e8af6c1",
+  "noisy_patch": false,
+  "curation_notes": "Only one non-test source file changed (mlflow/utils/uri.py). The patch adds urllib.parse.unquote() to decode URL-encoded paths before validation in validate_path_is_safe(). Location derived directly from the patch diff. The advisory description and CWE IDs (CWE-22, CWE-29) confirm path-traversal classification.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

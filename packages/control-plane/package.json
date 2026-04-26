@@ -24,6 +24,10 @@
       "types": "./src/cve-followup/devin.ts",
       "default": "./src/cve-followup/devin.ts"
     },
+    "./cve-followup/enrich": {
+      "types": "./src/cve-followup/enrich.ts",
+      "default": "./src/cve-followup/enrich.ts"
+    },
     "./cve-followup/prompts": {
       "types": "./src/cve-followup/prompts.ts",
       "default": "./src/cve-followup/prompts.ts"
@@ -39,6 +43,10 @@
     "./cve-followup/validation": {
       "types": "./src/cve-followup/validation.ts",
       "default": "./src/cve-followup/validation.ts"
+    },
+    "./cve-followup/repro-github": {
+      "types": "./src/cve-followup/repro-github.ts",
+      "default": "./src/cve-followup/repro-github.ts"
     },
     "./artifacts/github": {
       "types": "./src/artifacts/github.ts",
@@ -126,7 +134,10 @@
     }
   },
   "scripts": {
+    "check-targets": "node --experimental-strip-types src/scripts/ensure-stable-targets.ts --check",
     "ensure-targets": "node --experimental-strip-types src/scripts/ensure-stable-targets.ts",
+    "fail-stale-sessions": "node ./scripts/fail-stale-running-sessions.mjs",
+    "generate:benchmark-fixtures": "node ./scripts/generate-benchmark-fixtures.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -139,6 +150,7 @@
     "@codebreaker/benchmark-runner": "workspace:*",
     "@codebreaker/shared": "workspace:*",
     "@hono/zod-validator": "0.7.6",
+    "@modelcontextprotocol/sdk": "1.29.0",
     "@octokit/request-error": "7.1.0",
     "@octokit/rest": "22.0.1",
     "agents": "0.11.5",

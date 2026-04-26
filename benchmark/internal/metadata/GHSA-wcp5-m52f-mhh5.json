@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wcp5-m52f-mhh5",
+  "post_patch_commit": "c3e457f7a16facfe563eade82b0fa8736a8c96f9",
+  "noisy_patch": true,
+  "curation_notes": "The advisory explicitly names GanttProjectReader and PhoenixReader as affected components. The patch modifies 9 source files (noisy), centralizing XML unmarshalling into new UnmarshalHelper and XmlReaderHelper classes that disable doctype declarations. Locations derived from the advisory description, confirmed by patch diff showing SAXParserFactory usage without disallow-doctype-decl in those readers' read() methods. Other readers (ConceptDrawProjectReader, GanttDesignerReader, MSPDIReader, PlannerReader, PrimaveraPMFileReader) were also patched but not named in the advisory.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

@@ -1,8 +1,10 @@
 import type {
   BenchmarkRunDetailResponse,
   CveFollowupDetailResponse,
+  ListBenchmarkRunsQuery,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
+  ListCveFollowupsResponse,
 } from "@codebreaker/benchmark-runner/schemas";
 import type {
   AdminShimHealthResponse,
@@ -19,7 +21,7 @@ import type {
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { ApiClientError, api } from "@/lib/api";
 import { isAuthorized, useConnection } from "@/lib/connection";
-import { POLLING } from "@/lib/polling";
+import { getCveFollowupPollIntervalMs, POLLING } from "@/lib/polling";
 import { qk } from "@/lib/query-keys";
 
 export const useSessionsQuery = (
@@ -49,16 +51,15 @@ export const useBenchmarkTasksQuery = (): UseQueryResult<
   });
 };
 
-export const useBenchmarkRunsQuery = (): UseQueryResult<
-  ListBenchmarkRunsResponse,
-  Error
-> => {
+export const useBenchmarkRunsQuery = (
+  query: Partial<ListBenchmarkRunsQuery> = {}
+): UseQueryResult<ListBenchmarkRunsResponse, Error> => {
   const connection = useConnection();
 
   return useQuery({
     enabled: isAuthorized(connection),
-    queryFn: () => api.listBenchmarkRuns(),
-    queryKey: qk.benchmarkRuns(connection),
+    queryFn: () => api.listBenchmarkRuns(query),
+    queryKey: [...qk.benchmarkRuns(connection), query],
     refetchInterval: POLLING.benchmarks.runs,
   });
 };
@@ -83,11 +84,25 @@ export const useCveFollowupQuery = (
   const connection = useConnection();
   const canFetch = options?.enabled ?? true;
 
-  return useQuery({
+  return useQuery<CveFollowupDetailResponse | null, Error>({
     enabled: isAuthorized(connection) && canFetch,
     queryFn: () => api.getCveFollowup(runId),
     queryKey: qk.cveFollowup(connection, runId),
-    refetchInterval: POLLING.benchmarks.cveFollowup,
+    refetchInterval: (query) => getCveFollowupPollIntervalMs(query.state.data),
+  });
+};
+
+export const useCveFollowupsListQuery = (): UseQueryResult<
+  ListCveFollowupsResponse,
+  Error
+> => {
+  const connection = useConnection();
+
+  return useQuery({
+    enabled: isAuthorized(connection),
+    queryFn: () => api.listCveFollowups(200),
+    queryKey: qk.cveFollowupsList(connection),
+    refetchInterval: POLLING.benchmarks.cveFollowupsList,
   });
 };
 

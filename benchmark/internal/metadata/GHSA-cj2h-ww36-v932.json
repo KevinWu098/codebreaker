@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cj2h-ww36-v932",
+  "post_patch_commit": "f5441e69d4c991b77318bb661b31ab6acb2c7ea7",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit is the merge of PR #7023 into master. Only one non-test source file was changed (nomad/server.go). The vulnerability was in the getTLSConf function, which set up TLS for RPC but did not validate the certificate's DNS names for correct role (client/server) and region. The patch adds a VerifyPeerCertificate callback (rpcNameAndRegionValidator) that checks the certificate's SAN and CommonName against expected role and region patterns. Location derived from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

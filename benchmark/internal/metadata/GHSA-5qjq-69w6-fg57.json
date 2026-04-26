@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-5qjq-69w6-fg57",
+  "post_patch_commit": "440bed81b8019dff00642c8f493b4909d505a28a",
+  "noisy_patch": false,
+  "curation_notes": "The advisory explicitly references commit flarum/framework@440bed8 as the patch. Only one source file was changed: js/src/common/Translator.ts (renamed to .tsx). The patch adds HTML escaping of string parameters in the preprocessParameters method by wrapping them in JSX fragments before returning. The pre-patch code returned raw string parameters that were then rendered as HTML DOM nodes, enabling XSS through any user input field that passes through the translation system.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

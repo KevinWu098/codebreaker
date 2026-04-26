@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-platform-001",
+  "ghsa_id": "GHSA-ph6g-p72v-pc3p",
+  "codebase": {
+    "repo": "https://github.com/orchidsoftware/platform",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "8b8ced1a0ed6db5a01348279b36f79978ed8967e"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Request handling and server-side state management"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where a request parameter containing serialized state data is deserialized without proper validation. An attacker can craft a malicious serialized payload that, when processed, results in remote code execution."
+    },
+    "L3": {
+      "area": "Request handling and server-side state management",
+      "description": "An insecure deserialization vulnerability exists where a request parameter containing serialized state data is deserialized without proper validation. An attacker can craft a malicious serialized payload that, when processed, results in remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The extractState method deserializes user-supplied data from the _state request parameter using PHP's unserialize() without proper validation, allowing an attacker to execute arbitrary code via crafted serialized payloads.",
+    "locations": [
+      {
+        "file": "src/Screen/Screen.php",
+        "function": "extractState"
+      }
+    ]
+  }
+}

@@ -2,12 +2,14 @@ import {
   type TieredToolSet,
   ToolTier,
 } from "@codebreaker/control-plane/tools/tiers";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { CompatibilityCallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { tool } from "ai";
 import { z } from "zod";
 
 const DEEPWIKI_MCP_URL = "https://mcp.deepwiki.com/mcp";
 const MAX_RESULT_CHARS = 64_000;
-const LINE_SPLIT_RE = /\r?\n/;
 
 const RepoNameSchema = z
   .string()
@@ -29,27 +31,6 @@ type DeepWikiToolName =
   | "ask_question"
   | "read_wiki_contents"
   | "read_wiki_structure";
-
-interface JsonRpcResponse {
-  error?: {
-    code?: number;
-    data?: unknown;
-    message: string;
-  };
-  id?: string;
-  result?: unknown;
-}
-
-interface DeepWikiToolResult {
-  content?: Array<{
-    text?: string;
-    type?: string;
-  }>;
-  isError?: boolean;
-  structuredContent?: {
-    result?: string;
-  };
-}
 
 export const createDeepWikiTools = (): TieredToolSet => ({
   tiers: {
@@ -91,161 +72,141 @@ export const askDeepWikiQuestion = async (input: {
     repoName: input.repoName,
   });
 
+const createMcpClient = async (): Promise<Client> => {
+  const transport = new StreamableHTTPClientTransport(
+    new URL(DEEPWIKI_MCP_URL)
+  );
+  const client = new Client({ name: "codebreaker", version: "1.0.0" });
+  // Type assertion needed: SDK's StreamableHTTPClientTransport.sessionId is
+  // `string | undefined` but Transport expects `string` under exactOptionalPropertyTypes.
+  await client.connect(transport as Parameters<typeof client.connect>[0]);
+  return client;
+};
+
 const callDeepWikiTool = async (
   name: DeepWikiToolName,
   arguments_: Record<string, unknown>
 ): Promise<{ result: string; truncated: boolean }> => {
-  const response = await fetch(DEEPWIKI_MCP_URL, {
-    body: JSON.stringify({
-      id: crypto.randomUUID(),
-      jsonrpc: "2.0",
-      method: "tools/call",
-      params: {
-        arguments: arguments_,
-        name,
-      },
-    }),
-    headers: {
-      accept: "application/json, text/event-stream",
-      "content-type": "application/json",
-    },
-    method: "POST",
-  });
+  const client = await createMcpClient();
 
-  if (!response.ok) {
-    throw new Error(
-      `DeepWiki MCP request failed with HTTP ${response.status}: ${await response.text()}`
+  try {
+    const response = await client.callTool(
+      { arguments: arguments_, name },
+      CompatibilityCallToolResultSchema
     );
+
+    if (response.isError) {
+      let detail: string;
+      try {
+        detail = extractText(response);
+      } catch {
+        detail = JSON.stringify(response);
+      }
+      throw new Error(`DeepWiki tool returned an error: ${detail}`);
+    }
+
+    return capResult(extractText(response));
+  } finally {
+    await client.close();
   }
-
-  const rpcResponse = parseMcpResponse(await response.text());
-
-  if (rpcResponse.error) {
-    throw new Error(`DeepWiki MCP error: ${rpcResponse.error.message}`);
-  }
-
-  const result = extractToolResult(rpcResponse.result);
-
-  if (result.isError) {
-    throw new Error(`DeepWiki tool returned an error: ${resultText(result)}`);
-  }
-
-  return capResult(resultText(result));
 };
 
-const parseMcpResponse = (body: string): JsonRpcResponse => {
-  const trimmedBody = body.trim();
+type ToolCallResult = Awaited<ReturnType<Client["callTool"]>> & {
+  toolResult?: unknown;
+};
 
-  if (trimmedBody.startsWith("{")) {
-    return parseJsonRpcResponse(trimmedBody);
+const normalizeContentBlocks = (raw: unknown): unknown[] => {
+  if (Array.isArray(raw)) {
+    return raw;
+  }
+  if (raw !== undefined && raw !== null) {
+    return [raw];
+  }
+  return [];
+};
+
+const textFromStructured = (sc: unknown): string | undefined => {
+  if (typeof sc === "string" && sc.length > 0) {
+    return sc;
+  }
+  if (sc && typeof sc === "object" && "result" in sc) {
+    const r = (sc as { result: unknown }).result;
+    if (typeof r === "string") {
+      return r;
+    }
+  }
+  if (sc && typeof sc === "object") {
+    return JSON.stringify(sc, null, 2);
+  }
+  return;
+};
+
+const textFromLegacyToolResult = (tr: unknown): string | undefined => {
+  if (typeof tr === "string") {
+    return tr;
+  }
+  if (tr && typeof tr === "object" && "result" in (tr as object)) {
+    const r = (tr as { result: unknown }).result;
+    if (typeof r === "string") {
+      return r;
+    }
+  }
+  if (tr !== null && typeof tr !== "undefined") {
+    return JSON.stringify(tr, null, 2);
+  }
+  return;
+};
+
+const textFromContentBlocks = (blocks: unknown[]): string | undefined => {
+  const textParts: string[] = [];
+  for (const item of blocks) {
+    if (
+      typeof item === "object" &&
+      item !== null &&
+      "type" in item &&
+      item.type === "text" &&
+      "text" in item &&
+      typeof item.text === "string"
+    ) {
+      textParts.push(item.text);
+    }
+  }
+  if (textParts.length > 0) {
+    return textParts.join("\n\n");
+  }
+  if (blocks.length > 0) {
+    return JSON.stringify(blocks, null, 2);
+  }
+  return;
+};
+
+const extractText = (response: ToolCallResult): string => {
+  const fromSc = textFromStructured(response.structuredContent);
+  if (fromSc !== undefined) {
+    return fromSc;
   }
 
-  for (const line of trimmedBody.split(LINE_SPLIT_RE)) {
-    if (line.startsWith("data: ")) {
-      return parseJsonRpcResponse(line.slice("data: ".length));
+  if ("toolResult" in response && response.toolResult != null) {
+    const fromTr = textFromLegacyToolResult(response.toolResult);
+    if (fromTr !== undefined) {
+      return fromTr;
     }
   }
 
-  throw new Error("DeepWiki MCP response did not contain a JSON-RPC payload");
-};
-
-const parseJsonRpcResponse = (body: string): JsonRpcResponse => {
-  const parsed: unknown = JSON.parse(body);
-
-  if (!isRecord(parsed)) {
-    throw new Error("DeepWiki MCP response was not an object");
+  const fromBlocks = textFromContentBlocks(
+    normalizeContentBlocks(response.content)
+  );
+  if (fromBlocks !== undefined) {
+    return fromBlocks;
   }
 
-  const response: JsonRpcResponse = {};
-
-  if (typeof parsed.id === "string") {
-    response.id = parsed.id;
-  }
-
-  if ("result" in parsed) {
-    response.result = parsed.result;
-  }
-
-  if (isRecord(parsed.error) && typeof parsed.error.message === "string") {
-    response.error = {
-      message: parsed.error.message,
-    };
-
-    if (typeof parsed.error.code === "number") {
-      response.error.code = parsed.error.code;
-    }
-
-    if ("data" in parsed.error) {
-      response.error.data = parsed.error.data;
-    }
-  }
-
-  return response;
-};
-
-const extractToolResult = (value: unknown): DeepWikiToolResult => {
-  if (!isRecord(value)) {
-    throw new Error("DeepWiki MCP tool result was not an object");
-  }
-
-  const result: DeepWikiToolResult = {};
-
-  if (Array.isArray(value.content)) {
-    result.content = value.content
-      .filter(isRecord)
-      .map((item) => ({
-        ...(typeof item.text === "string" ? { text: item.text } : {}),
-        ...(typeof item.type === "string" ? { type: item.type } : {}),
-      }))
-      .filter((item) => item.text || item.type);
-  }
-
-  if (typeof value.isError === "boolean") {
-    result.isError = value.isError;
-  }
-
-  if (isRecord(value.structuredContent)) {
-    result.structuredContent = {};
-
-    if (typeof value.structuredContent.result === "string") {
-      result.structuredContent.result = value.structuredContent.result;
-    }
-  }
-
-  return result;
-};
-
-const resultText = (result: DeepWikiToolResult): string => {
-  if (result.structuredContent?.result) {
-    return result.structuredContent.result;
-  }
-
-  const textContent =
-    result.content
-      ?.map((item) => item.text)
-      .filter((text): text is string => Boolean(text))
-      .join("\n\n") ?? "";
-
-  if (!textContent) {
-    throw new Error("DeepWiki MCP tool result did not include text content");
-  }
-
-  return textContent;
+  throw new Error("DeepWiki MCP tool result did not include text content");
 };
 
 const capResult = (result: string): { result: string; truncated: boolean } => {
   if (result.length <= MAX_RESULT_CHARS) {
-    return {
-      result,
-      truncated: false,
-    };
+    return { result, truncated: false };
   }
 
-  return {
-    result: result.slice(0, MAX_RESULT_CHARS),
-    truncated: true,
-  };
+  return { result: result.slice(0, MAX_RESULT_CHARS), truncated: true };
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;

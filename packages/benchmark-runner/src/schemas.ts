@@ -5,12 +5,38 @@ const GHSA_ID_PATTERN = /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/;
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const DATASET_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-export const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 300_000;
+export const DEFAULT_BENCHMARK_MAX_INPUT_TOKENS = 250_000;
+export const DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS = 50_000;
 export const DEFAULT_BENCHMARK_MAX_STEPS = 50;
 export const DEFAULT_BENCHMARK_MAX_TOOL_CALLS = 40;
-export const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 500_000;
-export const DEFAULT_BENCHMARK_MAX_TURNS = 2;
+export const DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS = 300_000;
+export const DEFAULT_BENCHMARK_MAX_TURNS = 10;
 export const DEFAULT_BENCHMARK_TIMEOUT_SECONDS = 600;
+
+export const L0_BENCHMARK_MAX_INPUT_TOKENS = 350_000;
+export const L0_BENCHMARK_MAX_OUTPUT_TOKENS = 50_000;
+export const L0_BENCHMARK_MAX_TOTAL_TOKENS = 400_000;
+
+export interface BenchmarkTokenLimits {
+  maxInputTokens: number;
+  maxOutputTokens: number;
+  maxTotalTokens: number;
+}
+
+export const getBenchmarkTokenLimits = (
+  difficulty: Difficulty
+): BenchmarkTokenLimits =>
+  difficulty === "L0"
+    ? {
+        maxInputTokens: L0_BENCHMARK_MAX_INPUT_TOKENS,
+        maxOutputTokens: L0_BENCHMARK_MAX_OUTPUT_TOKENS,
+        maxTotalTokens: L0_BENCHMARK_MAX_TOTAL_TOKENS,
+      }
+    : {
+        maxInputTokens: DEFAULT_BENCHMARK_MAX_INPUT_TOKENS,
+        maxOutputTokens: DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS,
+        maxTotalTokens: DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS,
+      };
 
 export const GhsaIdSchema = z.string().regex(GHSA_ID_PATTERN);
 export type GhsaId = z.infer<typeof GhsaIdSchema>;
@@ -196,6 +222,7 @@ export type BenchmarkRunModel = z.infer<typeof BenchmarkRunModelSchema>;
 
 export const CreateBenchmarkRunRequestSchema = z
   .object({
+    autoFollowup: z.boolean().default(false),
     autoStart: z.boolean().default(true),
     cleanupPolicy: BenchmarkCleanupPolicySchema.default("retain"),
     difficulty: DifficultySchema,
@@ -208,6 +235,11 @@ export const CreateBenchmarkRunRequestSchema = z
       .positive()
       .default(DEFAULT_BENCHMARK_MAX_INPUT_TOKENS),
     model: BenchmarkRunModelSchema,
+    maxOutputTokens: z
+      .number()
+      .int()
+      .positive()
+      .default(DEFAULT_BENCHMARK_MAX_OUTPUT_TOKENS),
     maxToolCalls: z
       .number()
       .int()
@@ -349,9 +381,20 @@ export type ListBenchmarkTasksResponse = z.infer<
   typeof ListBenchmarkTasksResponseSchema
 >;
 
+export const ListBenchmarkRunsQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).default(30),
+  offset: z.coerce.number().int().nonnegative().default(0),
+});
+export type ListBenchmarkRunsQuery = z.infer<
+  typeof ListBenchmarkRunsQuerySchema
+>;
+
 export const ListBenchmarkRunsResponseSchema = z
   .object({
+    limit: z.number().int().positive(),
+    offset: z.number().int().nonnegative(),
     runs: z.array(BenchmarkRunRowSchema),
+    total: z.number().int().nonnegative(),
   })
   .strict();
 export type ListBenchmarkRunsResponse = z.infer<
@@ -397,12 +440,46 @@ export const ReproManifestTierSchema = z.enum([
 ]);
 export type ReproManifestTier = z.infer<typeof ReproManifestTierSchema>;
 
+/**
+ * Devin occasionally emits the legacy keys `exitCode`/`marker` instead of
+ * `expectedExitCode`/`expectedMarker`. Accept both shapes and normalize at the
+ * schema layer so the orchestrator never sees the legacy form.
+ */
 export const ReproManifestOutcomeSchema = z
   .object({
-    expectedExitCode: z.number().int(),
-    expectedMarker: z.string().min(1),
+    exitCode: z.number().int().optional(),
+    expectedExitCode: z.number().int().optional(),
+    expectedMarker: z.string().min(1).optional(),
+    marker: z.string().min(1).optional(),
   })
-  .strict();
+  .passthrough()
+  .transform((value, ctx) => {
+    const expectedExitCode = value.expectedExitCode ?? value.exitCode;
+    const expectedMarker = value.expectedMarker ?? value.marker;
+    if (expectedExitCode === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "expectedExitCode (or legacy exitCode) is required",
+      });
+      return z.NEVER;
+    }
+    if (expectedMarker === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "expectedMarker (or legacy marker) is required",
+      });
+      return z.NEVER;
+    }
+    return { expectedExitCode, expectedMarker };
+  })
+  .pipe(
+    z
+      .object({
+        expectedExitCode: z.number().int(),
+        expectedMarker: z.string().min(1),
+      })
+      .strict()
+  );
 export type ReproManifestOutcome = z.infer<typeof ReproManifestOutcomeSchema>;
 
 export const ReproManifestObservationalSchema = z
@@ -464,13 +541,21 @@ export type CveFollowupStageStatus = z.infer<
 >;
 
 export const CveFollowupEventKindSchema = z.enum([
+  "artifact_from_task",
   "created",
   "repro_dispatched",
   "repro_validated",
+  /** repro.json found on branch while Devin session status was still non-terminal */
+  "repro_github_ready",
   "fix_dispatched",
   "fix_validated",
+  "review_repro_dispatched",
+  "review_fix_dispatched",
   "review_repro_done",
   "review_fix_done",
+  "validation_started",
+  "validation_finished",
+  "stage_skipped",
   "failed",
   "cancelled",
   "triage",
@@ -489,6 +574,24 @@ export const CveFollowupStageRowSchema = z
     id: z.string().min(1),
     kind: CveFollowupStageKindSchema,
     lastError: z.string().nullable(),
+    /**
+     * Devin session status, fetched live from Devin's API at response time.
+     * Null when the stage has no Devin session or when the live fetch failed
+     * or was skipped (e.g. Devin not configured, or stage already terminal).
+     */
+    liveDevinStatus: z.string().nullable().optional(),
+    modalSandbox: z
+      .object({
+        createdAt: z.number(),
+        dashboardCommand: z.string().min(1),
+        profile: z.string().min(1),
+        sandboxId: z.string().min(1),
+        sessionId: z.string().min(1),
+        snapshotId: z.string().nullable(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     prUrl: z.string().nullable(),
     status: CveFollowupStageStatusSchema,
     updatedAt: z.string().datetime(),
@@ -537,6 +640,7 @@ export const CveFollowupRowSchema = z
     deepwikiContext: z.string().nullable(),
     ghsaId: GhsaIdSchema,
     id: z.string().min(1),
+    repoName: z.string().nullable(),
     runId: z.string().min(1),
     status: CveFollowupStatusSchema,
     taskId: z.string().min(1),
@@ -544,6 +648,14 @@ export const CveFollowupRowSchema = z
   })
   .strict();
 export type CveFollowupRow = z.infer<typeof CveFollowupRowSchema>;
+
+export const CveFollowupSummarySchema = z
+  .object({
+    followup: CveFollowupRowSchema,
+    stages: z.array(CveFollowupStageRowSchema),
+  })
+  .strict();
+export type CveFollowupSummary = z.infer<typeof CveFollowupSummarySchema>;
 
 export const CveFollowupDetailResponseSchema = z
   .object({
@@ -555,6 +667,22 @@ export const CveFollowupDetailResponseSchema = z
   .strict();
 export type CveFollowupDetailResponse = z.infer<
   typeof CveFollowupDetailResponseSchema
+>;
+
+export const ListCveFollowupsQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(500).default(200),
+  })
+  .strict();
+export type ListCveFollowupsQuery = z.infer<typeof ListCveFollowupsQuerySchema>;
+
+export const ListCveFollowupsResponseSchema = z
+  .object({
+    followups: z.array(CveFollowupSummarySchema),
+  })
+  .strict();
+export type ListCveFollowupsResponse = z.infer<
+  typeof ListCveFollowupsResponseSchema
 >;
 
 export const CreateCveFollowupRequestSchema = z
@@ -625,6 +753,24 @@ export const summarizeTask = (task: TaskInstance): BenchmarkTaskSummary => {
   });
 };
 
+/**
+ * Score a single agent output against ground truth.
+ *
+ * Vulnerability detection is a prerequisite gate — if wrong, the score is 0.
+ * Empirically, agents almost always get the binary vulnerable/not-vulnerable
+ * verdict correct, so weighting it would inflate scores without adding signal.
+ *
+ * When the gate passes, the composite score is a weighted sum:
+ *   score = 0.3 × vuln_class_correct + 0.7 × location_recall
+ *
+ * Location recall dominates (70%) because localization is the hardest and most
+ * useful part of the task in a real security triage workflow. Classification
+ * is secondary (30%) — a wrong label is a nuisance, not a failure.
+ *
+ * Function names are required in the agent output to encourage deeper analysis
+ * but are intentionally not scored because agents rarely predict them accurately
+ * enough for reliable measurement.
+ */
 export const scoreAgentOutput = (
   task: TaskInstance,
   output: AgentOutput
@@ -644,10 +790,10 @@ export const scoreAgentOutput = (
     expectedLocations.size === 0
       ? 0
       : correctLocations / expectedLocations.size;
-  const score =
-    Number(vulnerableMatched) * 0.5 +
-    Number(vulnClassMatched) * 0.25 +
-    locationScore * 0.25;
+
+  const score = vulnerableMatched
+    ? Number(vulnClassMatched) * 0.3 + locationScore * 0.7
+    : 0;
 
   return BenchmarkRunScoreSchema.parse({
     correctLocations,

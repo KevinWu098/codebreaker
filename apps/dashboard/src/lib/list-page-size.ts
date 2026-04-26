@@ -1,0 +1,1 @@
+export const DASHBOARD_LIST_PAGE_SIZE = 30;

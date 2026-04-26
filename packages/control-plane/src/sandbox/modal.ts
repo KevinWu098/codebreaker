@@ -9,6 +9,9 @@ import {
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 100;
+const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
+const EXEC_REQUEST_GRACE_MS = 1000;
+const GIT_REQUEST_TIMEOUT_MS = 300_000;
 const AUTH_BASIC_RE = /Authorization:\s*Basic\s+[A-Za-z0-9+/=]+/gi;
 const AUTH_BEARER_RE = /Authorization:\s*Bearer\s+[^\s'"`]+/gi;
 
@@ -128,9 +131,13 @@ export class ModalExecutor {
   }
 
   async exec(options: ExecRemoteOptions): Promise<ExecResult> {
+    const timeoutMs = options.timeoutSeconds
+      ? options.timeoutSeconds * 1000 + EXEC_REQUEST_GRACE_MS
+      : undefined;
     const result = await this.request<ShimExecResult>("POST", "/exec", {
       body: toShimExecRequest(options),
       idempotencyKey: crypto.randomUUID(),
+      ...(timeoutMs ? { timeoutMs } : {}),
     });
 
     return fromShimExecResult(result);
@@ -180,6 +187,7 @@ export class ModalExecutor {
       {
         body: toShimGitCheckoutRequest(options),
         idempotencyKey: crypto.randomUUID(),
+        timeoutMs: GIT_REQUEST_TIMEOUT_MS,
       }
     );
     const checkout = {
@@ -201,6 +209,7 @@ export class ModalExecutor {
       {
         body: toShimGitCommitRequest(options),
         idempotencyKey: crypto.randomUUID(),
+        timeoutMs: GIT_REQUEST_TIMEOUT_MS,
       }
     );
     const commit = {
@@ -228,21 +237,46 @@ export class ModalExecutor {
       auth?: boolean;
       body?: unknown;
       idempotencyKey?: string;
+      timeoutMs?: number;
     } = {}
   ): Promise<T> {
+    const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     let lastError: unknown;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
       const init: RequestInit = {
         headers: this.headers(options),
         method,
+        signal: controller.signal,
       };
 
       if (options.body) {
         init.body = JSON.stringify(options.body);
       }
 
-      const response = await fetch(`${this.url}${path}`, init);
+      let response: Response;
+      try {
+        response = await fetch(`${this.url}${path}`, init);
+      } catch (error) {
+        clearTimeout(timeoutId);
+        lastError = controller.signal.aborted
+          ? new Error(
+              `Modal shim ${method} ${path} did not respond within ${timeoutMs}ms`
+            )
+          : error;
+
+        if (attempt === MAX_RETRIES - 1) {
+          break;
+        }
+
+        await delay(retryDelayMs(null, attempt));
+        continue;
+      }
+
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         return response.json() as Promise<T>;
@@ -328,8 +362,8 @@ const fromShimExecResult = (result: ShimExecResult): ExecResult =>
 const shouldRetry = (status: number): boolean =>
   status === 408 || status === 409 || status === 429 || status >= 500;
 
-const retryDelayMs = (response: Response, attempt: number): number => {
-  const retryAfter = response.headers.get("Retry-After");
+const retryDelayMs = (response: Response | null, attempt: number): number => {
+  const retryAfter = response?.headers.get("Retry-After");
 
   if (retryAfter) {
     const seconds = Number(retryAfter);

@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-sofa-rpc-001",
+  "ghsa_id": "GHSA-7q8p-9953-pxvr",
+  "codebase": {
+    "repo": "https://github.com/sofastack/sofa-rpc",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "f4b4ed5bb7d55ad98cba6ec0855a494a8b094c28"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "RPC serialization and codec configuration layer"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where the protection mechanism used to restrict deserialization of potentially dangerous classes can be bypassed using a gadget chain composed entirely of JDK classes. This allows an attacker to achieve remote command execution without relying on any third-party components."
+    },
+    "L3": {
+      "area": "RPC serialization and codec configuration layer",
+      "description": "An insecure deserialization vulnerability exists where the protection mechanism used to restrict deserialization of potentially dangerous classes can be bypassed using a gadget chain composed entirely of JDK classes. This allows an attacker to achieve remote command execution without relying on any third-party components."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The deserialization blacklist used by the SOFA Hessian protocol is insufficient, allowing a gadget chain composed entirely of JDK classes to bypass the protection and achieve remote command execution.",
+    "locations": [
+      {
+        "file": "codec/codec-api/src/main/resources/sofa-rpc/serialize_blacklist.txt",
+        "function": null
+      }
+    ]
+  }
+}

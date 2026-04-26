@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-oathkeeper-001",
+  "ghsa_id": "GHSA-p224-6x5r-fjpm",
+  "codebase": {
+    "repo": "https://github.com/ory/oathkeeper",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "271e90e4acba4ff6af573a95820acf294b7d4fa6"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "HTTP request processing and access rule matching"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability exists where an attacker can craft HTTP requests containing relative path components that bypass access control rules. The raw, un-normalized request path is used during rule evaluation, allowing requests to match permissive rules while the upstream server normalizes the path and serves protected resources."
+    },
+    "L3": {
+      "area": "HTTP request processing and access rule matching",
+      "description": "A path traversal vulnerability exists where an attacker can craft HTTP requests containing relative path components that bypass access control rules. The raw, un-normalized request path is used during rule evaluation, allowing requests to match permissive rules while the upstream server normalizes the path and serves protected resources."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 10.0,
+    "reason": "The request URL path is not normalized before rule matching, allowing path traversal sequences to bypass access control rules and reach protected upstream resources.",
+    "locations": [
+      {
+        "file": "rule/rule.go",
+        "function": "IsMatching"
+      },
+      {
+        "file": "proxy/request_handler.go",
+        "function": "InitializeAuthnSession"
+      },
+      {
+        "file": "proxy/proxy.go",
+        "function": "ConfigureBackendURL"
+      }
+    ]
+  }
+}

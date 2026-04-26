@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j8q9-5rp9-4mv9",
+  "post_patch_commit": "ae72835078156a3ff3b5b17e2a235189ef892af7",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit is the merge commit of PR #2663 into the 1.4.x branch. Two source files were modified: statement_iterator.rs (moved column name population from the constructor to a lazy method called after sqlite3_step) and stmt.rs (corrected the lifetime annotation on field_name to reflect SQLite's actual pointer validity semantics). Locations derived directly from the patch diff. CHANGELOG, Cargo.toml, and test config changes were excluded.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

@@ -39,6 +39,16 @@ const messageFor = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
+const benchmarkRunUrl = (runId: string): string => {
+  const url = new URL(window.location.href);
+  url.searchParams.set("view", "benchmarks");
+  url.searchParams.set("benchmark", runId);
+  url.searchParams.set("tab", "results");
+  url.searchParams.delete("followupRun");
+  url.searchParams.delete("session");
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
 const replaceBenchmarkRun = (
   data: ListBenchmarkRunsResponse | undefined,
   response: BenchmarkRunActionResponse
@@ -48,6 +58,7 @@ const replaceBenchmarkRun = (
   }
 
   return {
+    ...data,
     runs: data.runs.map((run) =>
       run.id === response.run.id ? response.run : run
     ),
@@ -98,7 +109,14 @@ export const useCreateBenchmarkRunMutation = () => {
       toast.error(messageFor(error, "benchmark run failed"));
     },
     onSuccess: (response) => {
-      toast.success(`benchmark ${response.run.id.slice(0, 8)}… started`);
+      toast.success(`benchmark ${response.run.id.slice(0, 8)}… started`, {
+        action: {
+          label: "open",
+          onClick: () => {
+            window.location.assign(benchmarkRunUrl(response.run.id));
+          },
+        },
+      });
       queryClient.invalidateQueries({ queryKey: qk.benchmarkRuns(connection) });
     },
   });
@@ -133,8 +151,8 @@ export const useCancelBenchmarkRunMutation = (runId: string) => {
     },
     onSuccess: (response) => {
       toast.success(`benchmark ${runId.slice(0, 8)}… stopped`);
-      queryClient.setQueryData<ListBenchmarkRunsResponse>(
-        qk.benchmarkRuns(connection),
+      queryClient.setQueriesData<ListBenchmarkRunsResponse>(
+        { queryKey: qk.benchmarkRuns(connection) },
         (data) => replaceBenchmarkRun(data, response)
       );
       queryClient.setQueryData<BenchmarkRunDetailResponse>(
@@ -188,6 +206,9 @@ export const useCreateCveFollowupMutation = (runId: string) => {
         queryKey: qk.cveFollowup(connection, runId),
       });
       queryClient.invalidateQueries({
+        queryKey: qk.cveFollowupsList(connection),
+      });
+      queryClient.invalidateQueries({
         queryKey: qk.benchmarkRun(connection, runId),
       });
     },
@@ -209,6 +230,9 @@ export const useCancelCveFollowupMutation = (runId: string) => {
         queryKey: qk.cveFollowup(connection, runId),
       });
       queryClient.invalidateQueries({
+        queryKey: qk.cveFollowupsList(connection),
+      });
+      queryClient.invalidateQueries({
         queryKey: qk.benchmarkRun(connection, runId),
       });
     },
@@ -228,6 +252,9 @@ export const useRetryCveFollowupStageMutation = (runId: string) => {
       toast.success("stage queued for retry");
       queryClient.invalidateQueries({
         queryKey: qk.cveFollowup(connection, runId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.cveFollowupsList(connection),
       });
       queryClient.invalidateQueries({
         queryKey: qk.benchmarkRun(connection, runId),

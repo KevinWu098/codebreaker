@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-c79v-2rjq-965m",
+  "post_patch_commit": "b3e3959d14814f42ee2197c504c322bcbe12347d",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit b3e3959 modifies ByteCodeEmitter.cpp in the StartEmitFunction method to add conditional checks before instantiating the parameter scope in split scope scenarios. Only one non-test source file was changed. The location was derived directly from the patch diff. The test file test/es6/default-splitscope.js was excluded as a test file.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

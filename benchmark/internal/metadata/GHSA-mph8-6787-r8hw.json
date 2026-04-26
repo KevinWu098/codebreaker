@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-mph8-6787-r8hw",
+  "post_patch_commit": "d86e185e485b6330216dee8e854455c694e3a36e",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit d86e185 was directly referenced in the advisory. It modifies 2 source files: lib/VM/Interpreter.cpp (transientObjectPutErrorMessage function, which shared a single SmallU16String allocator between two getUTF16Ref calls) and include/hermes/VM/StringView.h (added assertion that allocator must be empty in getUTF16Ref). Primary vulnerability location is in Interpreter.cpp where the shared allocator caused a use-after-free when the second getUTF16Ref call invalidated the reference returned by the first. The fix uses two separate allocators (tmp1, tmp2).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}

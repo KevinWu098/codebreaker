@@ -1,17 +1,16 @@
 import type { SaveMessagesResult } from "@cloudflare/think";
+import { parseAgentOutputs } from "@codebreaker/benchmark-runner/agent-core/output";
 import type {
   AgentOutput,
   BenchmarkRunRow,
   CreateBenchmarkRunRequest,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
-  AgentOutputSchema,
-  DEFAULT_BENCHMARK_MAX_INPUT_TOKENS,
   DEFAULT_BENCHMARK_MAX_STEPS,
   DEFAULT_BENCHMARK_MAX_TOOL_CALLS,
-  DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS,
   DEFAULT_BENCHMARK_MAX_TURNS,
   DEFAULT_BENCHMARK_TIMEOUT_SECONDS,
+  getBenchmarkTokenLimits,
   scoreBestCandidate,
 } from "@codebreaker/benchmark-runner/schemas";
 import {
@@ -33,14 +32,21 @@ import type {
 import type { SandboxProfileName } from "@codebreaker/shared/schemas/sandbox";
 import { getAgentByName } from "agents";
 
+interface BenchmarkSubmissionAgent {
+  getMessages(): Promise<unknown>;
+  popPendingBenchmarkOutput(): Promise<AgentOutput | null>;
+  requestFollowUp(content: string): Promise<SaveMessagesResult>;
+}
+
 const AGENT_TURN_COMPLETION_GRACE_SECONDS = 30;
 // Hard ceiling, in seconds, on how long any benchmark run is allowed to stay
 // in the `running` state before the watchdog finalizes it. Sized to comfortably
 // exceed the largest configured `timeoutSeconds + AGENT_TURN_COMPLETION_GRACE`.
 const WATCHDOG_MAX_RUNNING_SECONDS = 900;
 const BENCHMARK_SUBMIT_FOLLOWUP_PROMPT =
-  "The exploration turn is over. The only tool you may use on this turn is `submit_benchmark_result`. Call it once with your final result (schema-enforced). Do not use any other tools. Base your answer on the prior transcript and tool results.";
-const BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS = 120;
+  "The exploration turn is over. You must call `submit_benchmark_result` once with your strongest single final result object (schema-enforced). Do not write JSON in an assistant message. Do not use any other tools. Base your answer on the prior transcript and tool results.";
+const BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS = 300;
+const BENCHMARK_SUBMIT_MAX_ATTEMPTS = 3;
 
 export class BenchmarkRunOrchestrator {
   private readonly dataset: BenchmarkDatasetService;
@@ -78,16 +84,20 @@ export class BenchmarkRunOrchestrator {
       id: run.modelId,
       provider: run.modelProvider,
     };
+    const tokenLimits = getBenchmarkTokenLimits(run.difficulty);
     const maxInputTokens =
-      request?.maxInputTokens ?? DEFAULT_BENCHMARK_MAX_INPUT_TOKENS;
+      request?.maxInputTokens ?? tokenLimits.maxInputTokens;
+    const maxOutputTokens =
+      request?.maxOutputTokens ?? tokenLimits.maxOutputTokens;
     const maxSteps = request?.maxSteps ?? DEFAULT_BENCHMARK_MAX_STEPS;
     const maxToolCalls =
       request?.maxToolCalls ?? DEFAULT_BENCHMARK_MAX_TOOL_CALLS;
     const maxTotalTokens =
-      request?.maxTotalTokens ?? DEFAULT_BENCHMARK_MAX_TOTAL_TOKENS;
+      request?.maxTotalTokens ?? tokenLimits.maxTotalTokens;
     const maxTurns = request?.maxTurns ?? DEFAULT_BENCHMARK_MAX_TURNS;
     const timeoutSeconds =
       request?.timeoutSeconds ?? DEFAULT_BENCHMARK_TIMEOUT_SECONDS;
+    const autoFollowup = request?.autoFollowup ?? false;
 
     await this.runs.update({ id: runId, status: "running" });
 
@@ -102,6 +112,7 @@ export class BenchmarkRunOrchestrator {
         metadata: record.metadata,
         model,
         maxInputTokens,
+        maxOutputTokens,
         maxToolCalls,
         maxTotalTokens,
         task: record.task,
@@ -214,9 +225,11 @@ export class BenchmarkRunOrchestrator {
         runId,
       });
 
-      await new CveFollowupOrchestrator(
-        this.env
-      ).scheduleAfterBenchmarkCompletedIfEligible(runId);
+      if (autoFollowup) {
+        await new CveFollowupOrchestrator(
+          this.env
+        ).scheduleAfterBenchmarkCompletedIfEligible(runId);
+      }
 
       const finalRun = await this.requireRun(runId);
 
@@ -582,57 +595,111 @@ export class BenchmarkRunOrchestrator {
 
     await withDORetry(() => agent.enableBenchmarkSubmitMode());
     agent = await getAgent();
-    let submitResult: SaveMessagesResult;
-    try {
-      submitResult = await withTimeout(
-        withDORetry(() =>
-          agent.requestFollowUp(BENCHMARK_SUBMIT_FOLLOWUP_PROMPT)
-        ),
-        BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS * 1000,
-        `Benchmark submission turn did not complete within ${BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS}s`
+    return this.resolveBenchmarkSubmission({
+      agent,
+      firstError,
+      getAgent,
+      raw0,
+      runId,
+    });
+  }
+
+  private async resolveBenchmarkSubmission(input: {
+    agent: BenchmarkSubmissionAgent;
+    firstError: Error | undefined;
+    getAgent: () => Promise<BenchmarkSubmissionAgent>;
+    raw0: string;
+    runId: string;
+  }): Promise<{ candidates: AgentOutput[]; finalRawOutput: string }> {
+    let agent = input.agent;
+    let raw1 = "";
+    let lastSubmissionError: Error | undefined;
+
+    for (
+      let attempt = 1;
+      attempt <= BENCHMARK_SUBMIT_MAX_ATTEMPTS;
+      attempt += 1
+    ) {
+      const prompt =
+        attempt === 1
+          ? BENCHMARK_SUBMIT_FOLLOWUP_PROMPT
+          : `${BENCHMARK_SUBMIT_FOLLOWUP_PROMPT}\n\nPrevious submission attempt ${attempt - 1} did not record a valid result. You must call \`submit_benchmark_result\` now.`;
+      let submitResult: SaveMessagesResult;
+      try {
+        submitResult = await withTimeout(
+          withDORetry(() => agent.requestFollowUp(prompt)),
+          BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS * 1000,
+          `Benchmark submission turn did not complete within ${BENCHMARK_SUBMIT_TURN_TIMEOUT_SECONDS}s`
+        );
+      } catch (retryError) {
+        lastSubmissionError =
+          retryError instanceof Error
+            ? retryError
+            : new Error(String(retryError));
+        await this.runs.addEvent({
+          details: { attempt, error: lastSubmissionError.message },
+          kind: "result_parse_failed",
+          message: "Benchmark submission turn failed; retrying if possible",
+          runId: input.runId,
+        });
+        agent = await input.getAgent();
+        continue;
+      }
+
+      if (submitResult.status !== "completed") {
+        lastSubmissionError = new Error(
+          `Submission turn ${submitResult.status}`
+        );
+        await this.runs.addEvent({
+          details: { attempt, status: submitResult.status },
+          kind: "result_parse_failed",
+          message:
+            "Benchmark submission turn did not complete; retrying if possible",
+          runId: input.runId,
+        });
+        agent = await input.getAgent();
+        continue;
+      }
+
+      agent = await input.getAgent();
+      const fromTool1 = await withDORetry(() =>
+        agent.popPendingBenchmarkOutput()
       );
-    } catch (retryError) {
-      throw new ParseFailureError(
-        firstError?.message ?? "parse failed",
-        raw0,
-        retryError instanceof Error ? retryError : undefined
-      );
+      if (fromTool1) {
+        return {
+          candidates: [fromTool1],
+          finalRawOutput: JSON.stringify(fromTool1, null, 2),
+        };
+      }
+
+      raw1 = await this.readAssistantOutput(agent);
+      try {
+        return {
+          candidates: parseAgentOutputs(raw1),
+          finalRawOutput: raw1,
+        };
+      } catch (secondError) {
+        lastSubmissionError =
+          secondError instanceof Error
+            ? secondError
+            : new Error(String(secondError));
+        await this.runs.addEvent({
+          details: { attempt, error: lastSubmissionError.message },
+          kind: "result_parse_failed",
+          message:
+            "Benchmark submission turn produced no valid result; retrying if possible",
+          runId: input.runId,
+        });
+      }
     }
 
-    if (submitResult.status !== "completed") {
-      throw new ParseFailureError(
-        firstError?.message ?? "parse failed",
-        raw0,
-        new Error(`Submission turn ${submitResult.status}`)
-      );
-    }
-
-    agent = await getAgent();
-    const fromTool1 = await withDORetry(() =>
-      agent.popPendingBenchmarkOutput()
+    throw new ParseFailureError(
+      lastSubmissionError?.message ??
+        input.firstError?.message ??
+        "parse failed",
+      raw1 || input.raw0,
+      lastSubmissionError
     );
-    if (fromTool1) {
-      return {
-        candidates: [fromTool1],
-        finalRawOutput: JSON.stringify(fromTool1, null, 2),
-      };
-    }
-
-    const raw1 = await this.readAssistantOutput(agent);
-    try {
-      return {
-        candidates: parseAgentOutputs(raw1),
-        finalRawOutput: raw1,
-      };
-    } catch (secondError) {
-      throw new ParseFailureError(
-        secondError instanceof Error
-          ? secondError.message
-          : String(secondError),
-        raw1 || raw0,
-        secondError instanceof Error ? secondError : undefined
-      );
-    }
   }
 
   /**
@@ -744,36 +811,6 @@ const describeFailure = (
   };
 };
 
-const MAX_CANDIDATES = 3;
-
-/**
- * Extract up to {@link MAX_CANDIDATES} valid AgentOutput JSON objects from
- * the raw assistant text. Each object is independently validated against
- * {@link AgentOutputSchema}. At least one must parse successfully.
- */
-const parseAgentOutputs = (rawOutput: string): AgentOutput[] => {
-  const jsonStrings = extractJsonObjects(rawOutput);
-
-  const outputs: AgentOutput[] = [];
-  for (const json of jsonStrings) {
-    if (outputs.length >= MAX_CANDIDATES) {
-      break;
-    }
-    try {
-      const parsed = JSON.parse(json) as unknown;
-      outputs.push(AgentOutputSchema.parse(parsed));
-    } catch {
-      // skip malformed candidates
-    }
-  }
-
-  if (outputs.length === 0) {
-    throw new Error("Agent did not return a valid JSON benchmark result");
-  }
-
-  return outputs;
-};
-
 const withTimeout = async <T>(
   promise: Promise<T>,
   timeoutMs: number,
@@ -791,109 +828,4 @@ const withTimeout = async <T>(
       clearTimeout(timeoutId);
     }
   }
-};
-
-/**
- * Starting at index `i` (which must point to an opening `"`), advance past
- * the closing `"`, handling `\"` escapes. Returns the index of the character
- * immediately after the closing quote.
- */
-const skipJsonString = (value: string, i: number): number => {
-  let pos = i + 1;
-  while (pos < value.length) {
-    if (value[pos] === "\\" && pos + 1 < value.length) {
-      pos += 2;
-    } else if (value[pos] === '"') {
-      return pos + 1;
-    } else {
-      pos++;
-    }
-  }
-  return pos;
-};
-
-/**
- * True when the character after `{` (ignoring whitespace) is `"` or `}`,
- * indicating the block is likely a real JSON object rather than a JS-like
- * block with unquoted keys (e.g. `{type:"reasoning", ...}`).
- */
-const looksLikeJsonObjectStart = (
-  value: string,
-  openBraceIdx: number
-): boolean => {
-  for (let j = openBraceIdx + 1; j < value.length; j++) {
-    const c = value[j];
-    if (c === " " || c === "\t" || c === "\n" || c === "\r") {
-      continue;
-    }
-    return c === '"' || c === "}";
-  }
-  return false;
-};
-
-/**
- * From an opening `{`, find the matching `}` by tracking balanced braces.
- * Skips JSON string literals so that braces inside them don't affect depth.
- * Returns the index of the closing brace, or -1 if unmatched.
- */
-const findMatchingBrace = (value: string, openIdx: number): number => {
-  let depth = 0;
-  for (let i = openIdx; i < value.length; i++) {
-    const ch = value[i];
-    if (ch === '"' && depth > 0) {
-      i = skipJsonString(value, i) - 1;
-      continue;
-    }
-    if (ch === "{") {
-      depth++;
-    } else if (ch === "}") {
-      depth--;
-      if (depth === 0) {
-        return i;
-      }
-    }
-  }
-  return -1;
-};
-
-/**
- * Extract top-level JSON objects from a string. Only considers blocks that
- * start with `{"` (a quoted first key), which filters out non-JSON blocks
- * like `{type:"reasoning", text:"..."}` whose unquoted keys and unescaped
- * inner quotes would corrupt brace-depth tracking. Each candidate is
- * validated with `JSON.parse` so the scanner can recover from false matches.
- */
-const extractJsonObjects = (value: string): string[] => {
-  const results: string[] = [];
-  let searchFrom = 0;
-
-  while (searchFrom < value.length) {
-    let start = -1;
-    for (let i = searchFrom; i < value.length; i++) {
-      if (value[i] === "{" && looksLikeJsonObjectStart(value, i)) {
-        start = i;
-        break;
-      }
-    }
-    if (start === -1) {
-      break;
-    }
-
-    const end = findMatchingBrace(value, start);
-    if (end === -1) {
-      searchFrom = start + 1;
-      continue;
-    }
-
-    const candidate = value.slice(start, end + 1);
-    try {
-      JSON.parse(candidate);
-      results.push(candidate);
-      searchFrom = end + 1;
-    } catch {
-      searchFrom = start + 1;
-    }
-  }
-
-  return results;
 };

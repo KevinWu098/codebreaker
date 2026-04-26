@@ -6,8 +6,10 @@ import type {
   CreateCveFollowupRequest,
   CveFollowupDetailResponse,
   CveFollowupStageKind,
+  ListBenchmarkRunsQuery,
   ListBenchmarkRunsResponse,
   ListBenchmarkTasksResponse,
+  ListCveFollowupsResponse,
 } from "@codebreaker/benchmark-runner/schemas";
 import type {
   AdminShimHealthResponse,
@@ -146,8 +148,21 @@ export const api = {
   listBenchmarkTasks: (): Promise<ListBenchmarkTasksResponse> =>
     request<ListBenchmarkTasksResponse>("/benchmark-tasks"),
 
-  listBenchmarkRuns: (): Promise<ListBenchmarkRunsResponse> =>
-    request<ListBenchmarkRunsResponse>("/benchmark-runs"),
+  listBenchmarkRuns: (
+    query: Partial<ListBenchmarkRunsQuery> = {}
+  ): Promise<ListBenchmarkRunsResponse> =>
+    request<ListBenchmarkRunsResponse>(
+      "/benchmark-runs",
+      {},
+      query as Record<string, unknown>
+    ),
+
+  listCveFollowups: (limit?: number): Promise<ListCveFollowupsResponse> =>
+    request<ListCveFollowupsResponse>(
+      "/cve-followups",
+      {},
+      limit === undefined ? undefined : { limit }
+    ),
 
   createBenchmarkRun: (
     body: CreateBenchmarkRunRequest

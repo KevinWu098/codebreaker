@@ -66,24 +66,55 @@ Single-candidate outputs work identically to before — no changes needed for ag
 
 ### Scoring
 
-The following fields are scored:
+ECVEBench uses **gated scoring** with location recall as the primary metric.
 
+#### Why gated scoring?
 
-| Field                | Method                                                                                  |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| `vulnerable`         | Exact match (boolean). F1 reported separately for positive and negative instances.      |
-| `vuln_class`         | Exact match against ground truth class, conditional on correct verdict.                 |
-| `locations.file`     | Intersection over Union against ground truth file set.                                  |
-| `locations.function` | Intersection over Union against ground truth function set, conditional on correct file. |
-| `confidence`         | Expected Calibration Error (ECE) reported as a separate axis.                           |
+Empirically, current models almost always correctly detect whether a vulnerability exists (the `vulnerable` field). Weighting this component would inflate every score without adding discriminative signal. Similarly, vulnerability class identification is a prerequisite for meaningful localization — if the agent misclassifies the vulnerability type, its location predictions are unreliable.
 
+The scoring formula is:
 
-The following fields are **not scored**:
+```
+if vulnerable verdict is wrong → score = 0
+otherwise                      → score = 0.3 × vuln_class_correct + 0.7 × location_recall
+```
 
+Where `location_recall = |predicted_files ∩ ground_truth_files| / |ground_truth_files|` and `vuln_class_correct` is 1 if the predicted class matches ground truth, 0 otherwise.
 
-| Field    | Purpose                                                         |
-| -------- | --------------------------------------------------------------- |
-| `reason` | Reference only. Used for qualitative analysis of failure cases. |
+This means:
+- **Vulnerability detection** (`vulnerable`) is a binary gate. Wrong verdict = zero score.
+- **Vulnerability classification** (`vuln_class`) is weighted at 30%. Correct class contributes 0.3 to the score.
+- **File-level location recall** is weighted at 70%. This is the dominant component because localization is the hardest and most useful part of the task.
+
+#### Why recall instead of IoU?
+
+Agents typically predict a small number of locations (1–3 files), so the risk of inflating scores by predicting many files is low. In a security triage workflow, false positives are cheap (a reviewer can quickly dismiss irrelevant files) while false negatives are expensive (missing the actual vulnerable code). Recall captures this asymmetry.
+
+#### What is scored
+
+| Field                | Method                                                                     |
+| -------------------- | -------------------------------------------------------------------------- |
+| `vulnerable`         | Binary gate. Incorrect verdict → score 0.                                  |
+| `vuln_class`         | Weighted at 30%. Exact match contributes 0.3 to the score.                 |
+| `locations.file`     | Weighted at 70%. Recall against ground truth file set.                     |
+
+#### What is NOT scored (and why)
+
+| Field                  | Purpose                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `locations.function`   | Required in agent output to force deeper analysis, but not scored. Agents rarely predict functions accurately enough for reliable measurement. |
+| `reason`               | Reference only. Used for qualitative analysis of failure cases.                                              |
+| `confidence`           | Expected Calibration Error (ECE) is reported separately by the offline scorer as a diagnostic axis.          |
+
+#### Aggregate benchmark score
+
+The overall benchmark score for a model is the **mean per-task score** across all evaluated tasks at a given difficulty:
+
+```
+benchmark_score = mean(per_task_scores)
+```
+
+This is equivalent to a partial-credit pass rate — tasks where the gate passes contribute their weighted class + location score, and tasks where the gate fails contribute 0.
 
 
 ### Negative Validation (planned)

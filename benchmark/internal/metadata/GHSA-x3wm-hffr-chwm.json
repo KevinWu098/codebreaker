@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x3wm-hffr-chwm",
+  "post_patch_commit": "bc93694201a291493778ce5369a72befeca5ba7d",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies a single file (SimpleParameterList.java) with 1 non-test source file changed. The vulnerability is in the toString(int, boolean) method which serializes parameter values into SQL text. The pre-patch code directly concatenated parameter values into SQL strings with minimal escaping. The patch introduces a quoteAndCast() helper that properly escapes literals using Utils.escapeLiteral() and wraps values in parentheses to prevent SQL injection via line comment generation. Locations derived from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
