@@ -16,8 +16,8 @@
       "description": "An XML External Entity (XXE) and XML Entity Expansion vulnerability exists where the XML parser used during spreadsheet processing does not disable doctype declarations, external entity resolution, or entity reference expansion. A crafted input file could trigger XML entity expansion, leading to denial of service, information disclosure, or server-side request forgery."
     },
     "L3": {
-      "area": "Spreadsheet file parsing and data extraction logic",
-      "description": "An XML External Entity (XXE) and XML Entity Expansion vulnerability exists where the XML parser used during spreadsheet processing does not disable doctype declarations, external entity resolution, or entity reference expansion. A crafted input file could trigger XML entity expansion, leading to denial of service, information disclosure, or server-side request forgery."
+      "area": "XML document parsing and transformation utilities within the spreadsheet streaming library",
+      "description": "An XML External Entity (XXE) and XML Entity Expansion vulnerability exists in the DOM-based XML parser used to process OOXML spreadsheet content. The parser does not disable doctype declarations, external entity resolution, or entity reference expansion. A crafted .xlsx file could trigger XML entity expansion, leading to denial of service, information disclosure, or server-side request forgery."
     }
   },
   "ground_truth": {
