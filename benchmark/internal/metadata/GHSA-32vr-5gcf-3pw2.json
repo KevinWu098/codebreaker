@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-32vr-5gcf-3pw2",
+  "post_patch_commit": "b1048da6a55ced5b89c8767904646caf079e8128",
+  "noisy_patch": false,
+  "curation_notes": "The advisory describes a YAML deserialization RCE in PraisonAI agent definitions. The patch commit b1048da ('refactor: harden input validation and bump to 1.5.115/4.5.115') modifies src/praisonai/praisonai/cli/features/agent_tools.py to (1) reject absolute file paths in _sanitize_filepath and (2) add semicolon as a dangerous command separator in _sanitize_command. Only 1 non-test source file was changed. The advisory description references TypeScript/js-yaml but the actual codebase and fix are in Python. The pre-assigned class insecure-deserialization is retained because the root cause is untrusted YAML agent definitions being deserialized and their tool operations executed with insufficient input validation (CWE-502).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
