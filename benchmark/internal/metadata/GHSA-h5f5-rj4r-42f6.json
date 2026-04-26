@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-h5f5-rj4r-42f6",
+  "post_patch_commit": "46de5d01ae2741ffe04c36270fc62c6d490f65c9",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 46de5d0 adds a ctx.lookup(principal.toString()) call inside getLdapContextUsingStartTls in LdapRealm.java. Without this lookup, the LDAP context was configured with credentials but authentication was never triggered when using STARTTLS. The pre-assigned class auth-bypass (CWE-287) is correct — the vulnerability allows login with any valid username and arbitrary password. Only 1 non-test source file was changed. No sibling files share the same vulnerability pattern; getSystemLdapContextUsingStartTls delegates to the same fixed function.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
