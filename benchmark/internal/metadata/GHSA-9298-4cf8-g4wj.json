@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-9298-4cf8-g4wj",
   "post_patch_commit": "e4359018537af376cf24bd13616d861e2fb76f65",
   "noisy_patch": false,
-  "curation_notes": "The patch modifies only src/waitress/channel.py (1 non-test source file). The fix adds a check in the received() method, under the requests_lock, to return False if will_close or close_when_flushed is set, preventing the race condition where a pipelined request could be queued and serviced after the connection was marked for closure due to an invalid first request. Location derived directly from the patch diff.",
+  "curation_notes": "Re-curated with updated L3 hints. The patch modifies only src/waitress/channel.py (1 non-test source file). The fix adds a check in the received() method, under the requests_lock, to return False if will_close or close_when_flushed is set, preventing the race condition where a pipelined request could be queued and serviced after the connection was marked for closure due to an invalid first request. L3 area narrowed to channel-level data reception and pipelining queue management to distinguish from the broader L1 hint. L3 description adds recv_bytes boundary condition and TOCTOU framing. Vulnerability class race-condition confirmed from CWE-367 (TOCTOU) and the patch diff which adds lock-protected closure state checks.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
