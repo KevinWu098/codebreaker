@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-84cw-mxhv-qvv4",
+  "post_patch_commit": "b4b3d51f33c7623d312f289252dd7bbb8f58bbe6",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The patch replaced naive path.replace('/', os.sep) calls in radicale/storage/filesystem.py with a new pathutils.path_to_filesystem() function that validates each path component. The vulnerable pattern appears in the _path property and the children, is_node, and is_leaf classmethods, each of which independently constructs filesystem paths from user-supplied URL paths. The sibling multifilesystem.py inherits from filesystem.Collection and uses the same _path property but does not contain its own path conversion code. The database.py sibling uses SQLAlchemy and is unaffected. Pre-assigned vulnerability class path-traversal (CWE-22) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
