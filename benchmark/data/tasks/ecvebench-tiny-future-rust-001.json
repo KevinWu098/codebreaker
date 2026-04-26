@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-tiny-future-rust-001",
+  "ghsa_id": "GHSA-m296-j53x-xv95",
+  "codebase": {
+    "repo": "https://github.com/KizzyCode/tiny_future-rust",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "50bd80f874c851413a721bbe144eeba4dfb68b4e"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Asynchronous task execution and concurrency primitives"
+    },
+    "L2": {
+      "description": "A data race vulnerability exists where a concurrency primitive's thread-safety marker trait implementations lack proper bounds on their generic type parameters. This allows non-thread-safe types such as Cell to be shared across thread boundaries, enabling concurrent mutable access to shared state without synchronization. Exploitation can lead to undefined behavior and data corruption in concurrent programs."
+    },
+    "L3": {
+      "area": "The Future type's unsafe thread-safety marker trait implementations",
+      "description": "A data race vulnerability exists in the Future type's unsafe Send and Sync trait implementations. The implementations unconditionally assert thread-safety for all generic type parameters, including those that are not themselves thread-safe. This allows non-thread-safe types to be wrapped in a Future and sent across thread boundaries, enabling concurrent mutable access to shared state and leading to undefined behavior."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 8.1,
+    "reason": "The Future type's Send trait is implemented without requiring the generic type parameters T and U to also implement Send, allowing non-thread-safe types to be sent across thread boundaries and causing data races.",
+    "locations": [
+      {
+        "file": "src/lib.rs",
+        "function": null
+      }
+    ]
+  }
+}
