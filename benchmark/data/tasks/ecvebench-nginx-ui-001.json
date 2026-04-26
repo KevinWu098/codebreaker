@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-nginx-ui-001",
+  "ghsa_id": "GHSA-xvq9-4vpv-227m",
+  "codebase": {
+    "repo": "https://github.com/0xJacky/nginx-ui",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "d67b8428e44d61ea280e96d918ca1b552fd7ea7f"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Certificate and TLS resource management API layer"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability exists in the certificate import feature where user-supplied file paths for certificate and key storage are passed directly to file-write operations without any validation or sanitization. An attacker can specify arbitrary file system paths to write attacker-controlled content to any location on the host, potentially leading to remote code execution if critical application configuration files are overwritten."
+    },
+    "L3": {
+      "area": "SSL certificate import and modification API endpoints and the underlying certificate file persistence logic",
+      "description": "A path traversal vulnerability exists in the SSL certificate import feature where user-supplied file paths for certificate and key storage are passed directly to file-write operations without any validation or sanitization. An attacker can supply arbitrary file system paths via the certificate management REST API to write attacker-controlled content to any location on the host, potentially achieving remote code execution by overwriting the application's configuration file to change the startup command."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 9.8,
+    "reason": "The Import Certificate feature accepts arbitrary user-controlled file paths for SSL certificate and key storage and writes user-supplied content to those paths without any validation or sanitization, allowing an attacker to write to any location on the host file system.",
+    "locations": [
+      {
+        "file": "api/certificate/certificate.go",
+        "function": "AddCert"
+      },
+      {
+        "file": "api/certificate/certificate.go",
+        "function": "ModifyCert"
+      },
+      {
+        "file": "internal/cert/write_file.go",
+        "function": "WriteFile"
+      }
+    ]
+  }
+}

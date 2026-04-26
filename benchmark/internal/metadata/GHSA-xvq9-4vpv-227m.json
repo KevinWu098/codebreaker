@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xvq9-4vpv-227m",
+  "post_patch_commit": "8581bdd3c6f49ab345b773517ba9173fa7fc6199",
+  "noisy_patch": true,
+  "curation_notes": "Primary locations derived from the advisory description which explicitly references the AddCert handler in api/certificate/certificate.go and the WriteFile function in internal/cert/write_file.go. The patch adds input validation bindings (publickey_path, privatekey_path, publickey, privatekey) to the certJson struct used by both AddCert and ModifyCert, preventing arbitrary paths from reaching WriteFile. The patch is noisy (7 non-test files changed) because it also refactors the validation initialization from api/api.go into a new internal/validation package and adds certificate content validation helpers. The vulnerability class path-traversal matches the pre-assigned CWE-22 and the advisory description of arbitrary file write via unsanitized paths.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
