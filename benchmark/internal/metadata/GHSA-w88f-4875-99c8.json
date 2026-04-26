@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-w88f-4875-99c8",
   "post_patch_commit": "142d319f0a20ce2be59707db0abf3c52dfa35d0f",
   "noisy_patch": false,
-  "curation_notes": "Patch commit from PR #18368. Only one non-test/non-doc source file changed: KerberosAuthenticator.java. The vulnerability is in the init() method where ThreadLocalRandom (non-crypto PRNG) was used as a fallback for the cookie signature secret, and in getInitParameters() where the secret was only conditionally passed. Locations derived directly from the patch diff.",
+  "curation_notes": "Re-curated with updated hints. Patch from PR #18368 (merged as 142d319f0a). Only one non-test source file changed: KerberosAuthenticator.java. The vulnerability is in init() where ThreadLocalRandom (non-crypto PRNG) was used as a fallback for the cookie signature secret, and in getInitParameters() where the secret was only conditionally passed. Vulnerability class crypto-weakness confirmed from CWE-338 (Use of Cryptographically Weak PRNG) — the patch removes ThreadLocalRandom and makes the secret configuration mandatory. No sibling files share the same vulnerability pattern.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
