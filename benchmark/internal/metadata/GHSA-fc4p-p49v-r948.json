@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-fc4p-p49v-r948",
   "post_patch_commit": "296b2adee151b7a4eaeea7a2916bd4120e8d5bb3",
   "noisy_patch": true,
-  "curation_notes": "The advisory references release tag 0.31.0.0 as the patched version. The specific XSS fix is in commit 296b2ad which adds esc() calls around firstname and surname fields in the UserController. The pre-patch commit 594b590 is the direct parent of the fix commit. The vulnerability location was derived from the patch diff showing the addition of esc() output encoding in the users() function. The patch commit is noisy as it includes a major security hardening, Shield integration, and framework upgrade affecting 100+ files.",
+  "curation_notes": "Re-curated with updated guidelines. The advisory references release tag 0.31.0.0 as the patched version. The patch commit 296b2ad adds esc() output encoding around firstname and surname fields in the users() function of UserController.php. The pre-patch commit 594b590 is the direct parent. The vulnerability location was derived from the patch diff showing the missing esc() call when constructing the fullname property from database-stored firstname and surname values for the DataTable AJAX response. The patch is noisy (185 files changed) as it includes a major security hardening, Shield authentication integration, AJAX refactoring, and localization updates. L3 hints were improved to be more specific than L1/L2, narrowing to the user account management module and naming the input fields involved. Sibling check: PermgroupController.php in the same directory does not have the same vulnerability pattern. Views (updateUser.php, profile.php) render user data in form value attributes without esc() but serve a different architectural role.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

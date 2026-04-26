@@ -16,8 +16,8 @@
       "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled input fields are persisted to the database without proper sanitization and subsequently rendered in an administrative interface without output encoding. An attacker can inject persistent JavaScript payloads that execute automatically in the context of authenticated administrative users, enabling session hijacking, privilege escalation, and full administrative account compromise."
     },
     "L3": {
-      "area": "Backend administration and content management modules",
-      "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled input fields are persisted to the database without proper sanitization and subsequently rendered in an administrative interface without output encoding. An attacker can inject persistent JavaScript payloads that execute automatically in the context of authenticated administrative users, enabling session hijacking, privilege escalation, and full administrative account compromise."
+      "area": "Backend user account management module and its data rendering layer",
+      "description": "A stored cross-site scripting (XSS) vulnerability exists where user-controlled name and surname fields are persisted to the database without proper sanitization and subsequently rendered in the administrative user listing interface without output encoding. An attacker can inject persistent JavaScript payloads through the user creation feature that execute automatically when backend users view the user management page, enabling session hijacking and full administrative account compromise."
     }
   },
   "ground_truth": {
