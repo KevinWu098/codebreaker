@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gmpm-xp43-f7g6",
+  "post_patch_commit": "2c7af7ec481ceffd0d14ce2d7c045e475fd71dc6",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only lib/VM/Interpreter.cpp (plus 2 test files). The fix changes a uint32_t pointer cast to int32_t for reading SwitchImm jump table offsets, fixing a signed-to-unsigned conversion error (CWE-195/CWE-681). The pre-assigned class 'integer-overflow' is correct as the signedness error causes unsigned wrapping of negative branch offsets. Location derived from the patch diff — the vulnerable code is in the CASE(SwitchImm) block inside Interpreter::interpretFunction. No sibling files contain the same pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
