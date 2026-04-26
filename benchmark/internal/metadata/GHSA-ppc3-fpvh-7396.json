@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-ppc3-fpvh-7396",
+  "post_patch_commit": "fa70e507e5555e1adb4f6518479fc408a7abd0e6",
+  "noisy_patch": false,
+  "curation_notes": "Single-file patch in UnJarResources.java replacing a non-atomic createTempFile/delete/mkdirs sequence with an atomic Files.createTempDirectory call. Vulnerability class race-condition confirmed from CWE-362 and the TOCTOU pattern in the diff. No sibling files contain the same vulnerability pattern. Location derived directly from the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
