@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-jpgg-cp2x-qrw3",
   "post_patch_commit": "5a78f8d5c41ce60dcf9f61aaf47a7a8dc3e0002f",
   "noisy_patch": false,
-  "curation_notes": "The advisory (duplicate of GHSA-5gjg-jgh4-gppm / CVE-2021-4236) explicitly describes the vulnerability: WebSocket requests do not call the AuthenticateMethod, leaving UserData nil. The patch commit 5a78f8d modifies only websocket.go, adding the AuthenticateMethod invocation and nil-check logic in the socketHandler function. Location derived directly from the single-file patch diff.",
+  "curation_notes": "Re-curation of GHSA-jpgg-cp2x-qrw3 (duplicate of GHSA-5gjg-jgh4-gppm / CVE-2021-4236). The advisory describes WebSocket requests not executing AuthenticateMethod, leading to nil pointer dereference or authentication bypass. The patch commit 5a78f8d modifies only websocket.go, adding AuthenticateMethod invocation and nil-check logic in the socketHandler function. Kept pre-assigned vuln_class null-deref as CWE-476 is explicitly listed and the nil pointer dereference is the primary crash vector. Updated L1 hint for broader coverage, and L3 hints now properly narrow to WebSocket-specific subsystem distinct from L1/L2. No sibling files share the vulnerability — http.go and api.go both properly call AuthenticateMethod.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
