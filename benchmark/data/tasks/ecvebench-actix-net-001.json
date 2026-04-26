@@ -16,8 +16,8 @@
       "description": "A use-after-free vulnerability exists in an asynchronous I/O framing component due to an unsound safety assertion that allows a pinned wrapper type to be moved freely. The inner I/O stream, which may depend on stable memory placement, can be invalidated when the enclosing type is relocated after pinning. This violates Rust's pin safety guarantees and can lead to memory corruption, arbitrary code execution, or denial of service via a crafted I/O type."
     },
     "L3": {
-      "area": "Asynchronous stream processing and data framing infrastructure",
-      "description": "A use-after-free vulnerability exists in an asynchronous I/O framing component due to an unsound safety assertion that allows a pinned wrapper type to be moved freely. The inner I/O stream, which may depend on stable memory placement, can be invalidated when the enclosing type is relocated after pinning. This violates Rust's pin safety guarantees and can lead to memory corruption, arbitrary code execution, or denial of service via a crafted I/O type."
+      "area": "The codec crate's I/O framing layer that unifies stream and sink interfaces for encoding and decoding",
+      "description": "A use-after-free vulnerability exists in the codec crate's asynchronous I/O framing component due to an unsound blanket trait implementation that unconditionally marks the wrapper type as safe to relocate in memory. When the inner I/O stream relies on stable memory placement (i.e., it is not inherently movable after pinning), the wrapper's unsafe pin projections hand out pinned references to memory that may have already been moved. This violates Rust's pin safety guarantees and can lead to memory corruption, arbitrary code execution, or denial of service."
     }
   },
   "ground_truth": {

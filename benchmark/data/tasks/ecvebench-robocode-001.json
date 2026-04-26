@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Cache management and temporary file cleanup utilities"
+      "area": "File system operations, I/O handling, and resource cleanup utilities in the core module"
     },
     "L2": {
-      "description": "A path traversal vulnerability exists in a recursive file deletion routine that does not validate whether target paths remain within an allowed base directory. An attacker can supply specially crafted inputs containing directory traversal sequences to cause the deletion of arbitrary files on the system."
+      "description": "A path traversal vulnerability exists in a recursive file deletion routine that does not validate whether resolved file paths remain within an intended base directory. An attacker can supply specially crafted inputs containing directory traversal sequences to escape the target directory and cause deletion of arbitrary files on the system."
     },
     "L3": {
-      "area": "Cache management and temporary file cleanup utilities",
-      "description": "A path traversal vulnerability exists in a recursive file deletion routine that does not validate whether target paths remain within an allowed base directory. An attacker can supply specially crafted inputs containing directory traversal sequences to cause the deletion of arbitrary files on the system."
+      "area": "Cache cleaning and file deletion utilities in the core application module",
+      "description": "A path traversal vulnerability exists in a recursive file deletion method used during cache cleaning operations that does not verify whether resolved file paths remain within the allowed cache base directory. An attacker can craft directory traversal sequences that escape the intended cache directory, leading to unauthorized deletion of arbitrary files on the system."
     }
   },
   "ground_truth": {
