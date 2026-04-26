@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9xfq-8j3r-xp5g",
+  "post_patch_commit": "81ffe9cbd19c7fa6899c97a5ac7b3ec14b30ac06",
+  "noisy_patch": true,
+  "curation_notes": "Pre-assigned as insecure-deserialization from CWE-502, but the vulnerability is signature malleability due to missing range validation on deserialized signature components — reclassified to crypto-weakness. The patch adds checks in the SetBytes function for both ECDSA and EdDSA Signature types to ensure R and S are non-zero and less than the relevant modulus. The fix is replicated across 21 curve-specific marshal.go files (11 ECDSA + 10 EdDSA) generated from two templates. All locations list the same vulnerable function (SetBytes on Signature) in each curve's marshal.go.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
