@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-6973-8887-87ff",
   "post_patch_commit": "d02059053181ed8ddad6b59a0adfd661ef5cd823",
   "noisy_patch": true,
-  "curation_notes": "Locations derived from the patch diff. The advisory explicitly names SkipBlockProof::verify as the primary target, but the patch fixes the same unchecked BitSet-to-u16 cast pattern in TendermintProof::verify and DoubleVoteProof::verify as well. All three verify methods in skip_block.rs, tendermint.rs, and equivocation_proof.rs are listed as vulnerable locations. The multisig.rs file was not listed as a location since it only contains the newly added checked_signer_slots helper function (the fix), not vulnerable pre-patch code.",
+  "curation_notes": "Locations derived from the patch diff. The advisory names SkipBlockProof::verify as the primary target, but the patch fixes the same unchecked BitSet-to-u16 cast pattern in TendermintProof::verify and DoubleVoteProof::verify as well. All three verify methods in skip_block.rs, tendermint.rs, and equivocation_proof.rs are listed as vulnerable locations. multisig.rs is excluded because it only contains the newly added checked_signer_slots helper (the fix itself, not vulnerable pre-patch code). The pre-assigned class integer-overflow is correct: the root cause is usize-to-u16 truncation of signer slot indices. L3 hints were updated to be more specific than L1/L2 per updated guidelines.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
