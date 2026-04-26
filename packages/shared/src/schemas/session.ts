@@ -68,7 +68,9 @@ export const RunBudgetConfigSchema = z.object({
 export type RunBudgetConfig = z.infer<typeof RunBudgetConfigSchema>;
 
 export const SessionConfigSchema = z.object({
+  activeTools: z.array(z.string().min(1)).optional(),
   benchmark: BenchmarkConfigSchema.optional(),
+  benchmarkHarnessMode: z.enum(["full", "minimal"]).optional(),
   compaction: CompactionConfigSchema.default(defaultCompactionConfig),
   extensionPolicy: ExtensionPolicySchema.default("readonly"),
   budgets: RunBudgetConfigSchema.default({

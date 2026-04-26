@@ -122,6 +122,18 @@ export const App = (): React.JSX.Element => {
         )}
         {view === "benchmarks" && (
           <BenchmarksPanel
+            onOpenFollowupRun={(runId) =>
+              setParams(
+                {
+                  benchmark: null,
+                  followupRun: runId,
+                  session: null,
+                  tab: null,
+                  view: "followups",
+                },
+                { history: "push" }
+              )
+            }
             onOpenSession={(sessionId) =>
               setParams(
                 { view: "sessions", session: sessionId, tab: null },

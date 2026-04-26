@@ -98,6 +98,7 @@ export class BenchmarkRunOrchestrator {
     const timeoutSeconds =
       request?.timeoutSeconds ?? DEFAULT_BENCHMARK_TIMEOUT_SECONDS;
     const autoFollowup = request?.autoFollowup ?? false;
+    const harnessMode = request?.harnessMode ?? "full";
 
     await this.runs.update({ id: runId, status: "running" });
 
@@ -107,6 +108,7 @@ export class BenchmarkRunOrchestrator {
       const sessionConfig = toBenchmarkSessionConfig({
         ...(artifactOwner ? { artifactOwner } : {}),
         difficulty: run.difficulty,
+        harnessMode,
         maxSteps,
         maxTurns,
         metadata: record.metadata,
@@ -177,7 +179,12 @@ export class BenchmarkRunOrchestrator {
       });
       const turnResult = await withTimeout(
         agent.requestFollowUp(
-          benchmarkInitialPrompt(record.task, run.difficulty, artifactOwner)
+          benchmarkInitialPrompt(
+            record.task,
+            run.difficulty,
+            artifactOwner,
+            harnessMode
+          )
         ),
         (timeoutSeconds + AGENT_TURN_COMPLETION_GRACE_SECONDS) * 1000,
         `Agent turn did not complete within ${

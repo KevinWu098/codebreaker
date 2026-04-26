@@ -283,6 +283,7 @@ export const createRouter = (): Hono<{
         autoStart: false,
         cleanupPolicy: run.cleanupPolicy,
         difficulty: run.difficulty,
+        harnessMode: "full",
         maxInputTokens: tokenLimits.maxInputTokens,
         maxOutputTokens: tokenLimits.maxOutputTokens,
         maxSteps: 50,
@@ -788,6 +789,17 @@ export const createRouter = (): Hono<{
       sandboxes: await context.get("executor").listSandboxes(),
     })
   );
+
+  /**
+   * One-time / ops: fail every *active* (pending or running) CVE follow-up, stop
+   * Devin sessions, terminate known Modal validation sandboxes. Same JWT as
+   * other admin routes. Snapshots ids at the start; safe to run once.
+   */
+  app.post("/admin/cve-followups/purge-all", async (context) => {
+    const cve = new CveFollowupOrchestrator(context.env);
+    const { purged, requested } = await cve.purgeAllActiveCveFollowups();
+    return context.json({ purged, requested });
+  });
 
   app.notFound(() => jsonError("Not found", "not_found", 404));
 
