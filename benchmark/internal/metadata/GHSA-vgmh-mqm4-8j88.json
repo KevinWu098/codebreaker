@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vgmh-mqm4-8j88",
+  "post_patch_commit": "108f540ea8acb6073751a1aa386085c1cdc4fd1e",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from both the advisory description and patch diff. The advisory explicitly names all six affected functions: Prc::from_rc, Prc::project, Prc::try_from_rc, Parc::from_arc, Parc::project, and Parc::try_from_arc. The patch adds 'static lifetime bounds to the generic type parameter U in from_rc/try_from_rc/from_arc/try_from_arc and adds T: 'static to project in both modules. src/prc.rs and src/sync.rs are siblings (same pattern, same vulnerability) — both included as locations. The remaining source file changes (src/erased_ptr.rs, src/vtable.rs) were only Rust warning fixes unrelated to the security issue. Pre-assigned vulnerability class use-after-free confirmed: CWE-416 matches and the advisory explicitly describes the use-after-free scenario.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
