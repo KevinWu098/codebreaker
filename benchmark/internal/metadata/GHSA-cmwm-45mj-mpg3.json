@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cmwm-45mj-mpg3",
+  "post_patch_commit": "fcb0dbca0ec72b22fe0c9ddc8abc9cb188a0ff31",
+  "noisy_patch": false,
+  "curation_notes": "Single file patched: src/test/java/io/scif/util/DefaultSampleFilesService.java. The patch adds a normalized path check in the downloadAndUnpackResource function to ensure extracted ZIP entries cannot escape the target directory (Zip Slip). No sibling files in the same directory handle ZIP extraction. Pre-assigned vulnerability class path-traversal (CWE-22) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
