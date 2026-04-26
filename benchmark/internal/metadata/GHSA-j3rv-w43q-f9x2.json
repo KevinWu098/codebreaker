@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-j3rv-w43q-f9x2",
   "post_patch_commit": "c50bfff55e6aa5e90588ce355b71e83cf176b068",
   "noisy_patch": true,
-  "curation_notes": "The patch commit is a merge commit (c50bfff) that merged a security fix PR directly from the GHSA. The vulnerability location was derived from the patch diff: src/utils/parse.js contained an eval() call in the parse() function that executed any string starting with 'function' as JavaScript code. While 4 source files were changed (JsonTree.js, JsonFunctionValue.js, JsonNode.js, parse.js), only parse.js contained the actual vulnerability; the other files were modified to wire through a new allowFunctionEvaluation prop and use a safer functionToString helper.",
+  "curation_notes": "Re-curation with updated hints. The vulnerability is in src/utils/parse.js where the parse() function uses eval() to execute any string starting with 'function' as JavaScript code. The patch (merge commit c50bfff) replaced eval() with a regex-validated Function constructor and added an allowFunctionEvaluation prop. 4 non-test source files changed (JsonTree.js, JsonFunctionValue.js, JsonNode.js, parse.js), but only parse.js contains the actual vulnerability; the others wire through the new prop. Kept pre-assigned command-injection class — CWE-95 (Eval Injection) maps to dynamic code execution, and command-injection is the closest valid class for unsafe eval() usage among the 13 available classes.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

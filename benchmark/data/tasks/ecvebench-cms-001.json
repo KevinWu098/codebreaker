@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Server-side request processing and dynamic component configuration"
+      "area": "Server-side HTTP request handling and dynamic object configuration pipeline"
     },
     "L2": {
-      "description": "A code injection vulnerability allows unauthenticated remote attackers to execute arbitrary PHP code on the server. User-supplied data from HTTP request parameters is passed directly to the application's internal component instantiation mechanism without sanitization. An attacker can craft malicious configuration payloads that leverage the framework's component configuration features to attach and execute arbitrary code, resulting in full remote code execution."
+      "description": "An insecure deserialization vulnerability allows unauthenticated remote attackers to achieve arbitrary code execution. User-supplied data from HTTP request body parameters is directly used to instantiate and configure framework component objects without validation. An attacker can craft a malicious payload containing special configuration keys that the framework's object creation mechanism interprets as executable callback registrations, resulting in full remote code execution on the server."
     },
     "L3": {
-      "area": "Server-side request processing and dynamic component configuration",
-      "description": "A code injection vulnerability allows unauthenticated remote attackers to execute arbitrary PHP code on the server. User-supplied data from HTTP request parameters is passed directly to the application's internal component instantiation mechanism without sanitization. An attacker can craft malicious configuration payloads that leverage the framework's component configuration features to attach and execute arbitrary code, resulting in full remote code execution."
+      "area": "Conditions management subsystem and its server-side request pre-processing logic",
+      "description": "An insecure deserialization vulnerability allows unauthenticated remote attackers to achieve arbitrary code execution. User-supplied data from HTTP request body parameters is directly used to instantiate and configure Yii2 framework component objects within the conditions management subsystem without validation. An attacker can craft a malicious payload containing special configuration keys that the framework's object creation mechanism interprets as event handler or behavior attachments, resulting in full remote code execution on the server."
     }
   },
   "ground_truth": {
     "vulnerable": true,
-    "vuln_class": "command-injection",
+    "vuln_class": "insecure-deserialization",
     "cvss": 10.0,
-    "reason": "User-supplied configuration arrays from HTTP request body parameters are passed unsanitized to the framework's component instantiation, allowing an attacker to inject event handlers or behaviors that execute arbitrary PHP code on the server.",
+    "reason": "User-supplied configuration arrays from HTTP request body parameters are passed unsanitized to the Yii2 framework's component instantiation mechanism, allowing an attacker to inject event handlers or behaviors via special 'on X' and 'as X' keys that execute arbitrary PHP code on the server.",
     "locations": [
       {
         "file": "src/controllers/ConditionsController.php",

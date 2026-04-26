@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-9p4w-fq8m-2hp7",
   "post_patch_commit": "75c8009db32e6829b0ad92ca13bf458178442bd3",
   "noisy_patch": false,
-  "curation_notes": "Patch commit found directly in advisory references. Only one non-test source file (src/executor.ts) was changed. The fix converts a conditional else-if block into a standalone if block, ensuring prototype chain checks are applied universally during property access rather than only when static method checks are not triggered. The vulnerable function is an anonymous callback passed to addOps for LispType.Prop operations, so function is set to null.",
+  "curation_notes": "Patch commit found directly in advisory references. Only one non-test source file (src/executor.ts) was changed. The fix converts a conditional else-if block into a standalone if block, ensuring prototype chain checks are applied universally during property access rather than only when static method checks are not triggered. The vulnerable code is an anonymous callback passed to addOps for LispType.Prop operations, so function is set to null. Pre-assigned class command-injection retained: CWE-94 (Code Injection) and CWE-1321 (Prototype Pollution) map to sandbox escape enabling arbitrary command execution via child_process. Re-curated with improved L2/L3 hints: L3 area now names the specific subsystem (property access handler + prototype chain validation), and L3 description adds distinguishing context about conditional branching and function object handling.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

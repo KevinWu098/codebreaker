@@ -13,11 +13,11 @@
       "area": "Script parsing and compilation pipeline"
     },
     "L2": {
-      "description": "A memory corruption vulnerability exists in the JavaScript engine where internal parse-time optimization data structures are incorrectly referenced during function parameter list processing. When crafted JavaScript containing nested constructs such as arrow functions or function expressions within formal parameters is parsed, this leads to out-of-bounds memory access and potential remote code execution."
+      "description": "A memory corruption vulnerability exists in the JavaScript engine's parser where internal optimization data structures are incorrectly referenced during formal parameter list processing. When crafted JavaScript containing nested constructs such as arrow functions or function expressions within default parameter values is parsed, an out-of-bounds memory access occurs, enabling potential remote code execution."
     },
     "L3": {
-      "area": "Script parsing and compilation pipeline",
-      "description": "A memory corruption vulnerability exists in the JavaScript engine where internal parse-time optimization data structures are incorrectly referenced during function parameter list processing. When crafted JavaScript containing nested constructs such as arrow functions or function expressions within formal parameters is parsed, this leads to out-of-bounds memory access and potential remote code execution."
+      "area": "Function declaration parsing and formal parameter handling within the script parser",
+      "description": "A memory corruption vulnerability exists in the JavaScript engine's parser where deferred parse optimization data is incorrectly consulted while processing function formal parameter lists. When a function declaration includes default parameter values containing nested arrow functions, function expressions, or accessor definitions, stale internal references lead to out-of-bounds memory access and potential remote code execution."
     }
   },
   "ground_truth": {

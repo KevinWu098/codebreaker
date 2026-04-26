@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-p9m8-27x8-rg87",
   "post_patch_commit": "d6707503ec2f20947f79e38f861dba93b39df9da",
   "noisy_patch": false,
-  "curation_notes": "The advisory references two commits: d670750 (PR #493, prevents arbitrary EL expression evaluation in CronValidator) and cfd2880 (PR #494, removes user expression from CronParser error messages). The core vulnerability is in CronValidator.isValid() where e.getMessage() containing user input is passed to buildConstraintViolationWithTemplate(), which evaluates Java EL expressions. Used d670750 as the patch commit since it fixes the primary vulnerability. The pre-patch commit 6f91560 is its first parent and contains the fully vulnerable code.",
+  "curation_notes": "Re-curation. The advisory references two commits: d670750 (PR #493, prevents arbitrary EL expression evaluation in CronValidator) and cfd2880 (PR #494, removes user expression from CronParser error messages). Used d670750 as the patch commit since it fixes the primary vulnerability. Pre-patch commit 6f91560 is its first parent. Added CronParser.java:parse as a second location because in the pre-patch code it embeds the user-controlled cron expression into the error message (via String.format with '%s'), which is then propagated through the exception chain to the EL template evaluation in CronValidator.isValid(). Vulnerability class kept as command-injection: while technically an EL injection (CWE-94), the EL expressions enable arbitrary OS command execution via Runtime.exec(), and command-injection is the closest of the 13 valid classes.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
