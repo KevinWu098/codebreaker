@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Data value parsing and input processing pipeline"
+      "area": "Data value submission and type conversion utilities"
     },
     "L2": {
-      "description": "An arbitrary code execution vulnerability exists where user-controlled string values in the JSON data are automatically interpreted and executed as code without proper sanitization. When displaying or editing data from untrusted sources, crafted input values can trigger execution of arbitrary JavaScript in the browser, leading to full compromise of the client-side application."
+      "description": "An arbitrary code execution vulnerability exists where user-controlled string values within JSON data are dynamically evaluated as executable code without proper sanitization. When processing data from untrusted sources, specially crafted string values that resemble function definitions are passed directly to a dynamic code evaluation mechanism, allowing execution of arbitrary JavaScript in the browser context."
     },
     "L3": {
-      "area": "Data value parsing and input processing pipeline",
-      "description": "An arbitrary code execution vulnerability exists where user-controlled string values in the JSON data are automatically interpreted and executed as code without proper sanitization. When displaying or editing data from untrusted sources, crafted input values can trigger execution of arbitrary JavaScript in the browser, leading to full compromise of the client-side application."
+      "area": "Default value parsing logic for submitted JSON string values",
+      "description": "An arbitrary code execution vulnerability exists where the default value parser dynamically evaluates string values that begin with a function keyword as executable JavaScript code using an unsafe dynamic evaluation call. When the editable JSON tree component displays or processes data from untrusted sources without a custom value parser callback, attacker-controlled strings can trigger arbitrary code execution in the browser context."
     }
   },
   "ground_truth": {
