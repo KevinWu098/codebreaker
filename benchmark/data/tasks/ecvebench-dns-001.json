@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "DNS protocol request construction and message handling"
+      "area": "DNS protocol message construction and serialization"
     },
     "L2": {
-      "description": "A DNS client library uses a non-cryptographic pseudorandom number generator to produce request identifiers, making them predictable. An attacker who can observe or guess the sequence of identifiers could craft forged DNS responses that are accepted as legitimate, enabling DNS cache poisoning or response spoofing."
+      "description": "A DNS client library uses a non-cryptographic pseudorandom number generator to produce transaction identifiers for outgoing queries. The predictable sequence of identifiers allows a network attacker to forge DNS responses that match expected transaction IDs, enabling DNS cache poisoning or response spoofing."
     },
     "L3": {
-      "area": "DNS protocol request construction and message handling",
-      "description": "A DNS client library uses a non-cryptographic pseudorandom number generator to produce request identifiers, making them predictable. An attacker who can observe or guess the sequence of identifiers could craft forged DNS responses that are accepted as legitimate, enabling DNS cache poisoning or response spoofing."
+      "area": "DNS request construction and transaction identifier generation",
+      "description": "A DNS client library uses the platform's standard non-cryptographic pseudorandom number generator to produce transaction identifiers for outgoing DNS queries. Because the PRNG state is predictable, an attacker who can observe a small number of DNS transactions can anticipate future identifiers and craft forged responses that are accepted as legitimate, enabling DNS cache poisoning."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "crypto-weakness",
     "cvss": 9.8,
-    "reason": "The DNS request class uses System.Random, a non-cryptographic PRNG, to generate request identifiers, allowing an attacker to predict IDs and spoof DNS responses.",
+    "reason": "The DNS request class uses System.Random, a non-cryptographic PRNG, to generate request transaction identifiers, allowing an attacker to predict IDs and spoof DNS responses.",
     "locations": [
       {
         "file": "DNS/Protocol/Request.cs",

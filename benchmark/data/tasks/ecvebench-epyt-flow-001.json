@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Data serialization and deserialization infrastructure"
+      "area": "Data input/output, persistence, and object encoding infrastructure"
     },
     "L2": {
-      "description": "An insecure deserialization vulnerability exists in the JSON parsing logic. When processing incoming JSON data, the deserializer honors a special type annotation field that allows an attacker to specify arbitrary modules and classes to be dynamically imported and instantiated with attacker-controlled arguments. This can be exploited to invoke dangerous system-level classes, leading to arbitrary command execution."
+      "description": "An insecure deserialization vulnerability exists in the JSON parsing logic. When processing incoming JSON data, the deserializer honors a special type descriptor that allows an attacker to specify arbitrary modules and classes to be dynamically imported and instantiated with attacker-controlled arguments. This can be exploited to invoke dangerous system-level classes, leading to arbitrary command execution."
     },
     "L3": {
-      "area": "Data serialization and deserialization infrastructure",
-      "description": "An insecure deserialization vulnerability exists in the JSON parsing logic. When processing incoming JSON data, the deserializer honors a special type annotation field that allows an attacker to specify arbitrary modules and classes to be dynamically imported and instantiated with attacker-controlled arguments. This can be exploited to invoke dangerous system-level classes, leading to arbitrary command execution."
+      "area": "Custom JSON serialization and deserialization logic for domain objects",
+      "description": "An insecure deserialization vulnerability exists in the custom JSON parsing logic used by the REST API and for loading persisted JSON files. The deserializer supports a special type descriptor that dynamically imports and instantiates arbitrary Python classes with attacker-controlled arguments, enabling remote code execution via dangerous system-level process execution utilities."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "insecure-deserialization",
     "cvss": 10.0,
-    "reason": "The custom JSON deserializer uses a __type__ field to dynamically import and instantiate arbitrary classes with attacker-controlled arguments, enabling remote code execution via classes such as subprocess.Popen.",
+    "reason": "The custom JSON deserializer uses a type descriptor field to dynamically import and instantiate arbitrary classes with attacker-controlled arguments, enabling remote code execution via classes such as subprocess.Popen.",
     "locations": [
       {
         "file": "epyt_flow/serialization.py",

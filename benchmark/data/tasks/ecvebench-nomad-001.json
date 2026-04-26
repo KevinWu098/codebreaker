@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "RPC transport layer and inter-node connection security configuration"
+      "area": "Cluster communication and inter-node RPC transport layer"
     },
     "L2": {
-      "description": "An improper certificate validation vulnerability exists where TLS certificates used for mutual TLS (mTLS) RPC communication are not correctly validated for their associated role and region. A certificate signed by a trusted CA but bearing incorrect role or region claims is accepted without proper verification, allowing an attacker to escalate privileges by impersonating a different node type or accessing services in a region they are not authorized for."
+      "description": "An improper certificate validation vulnerability exists where TLS certificates used for mutual TLS (mTLS) RPC communication between cluster nodes are not properly validated for their associated role and region claims. A certificate signed by a trusted CA but issued for a different role or region is accepted without verification, allowing an attacker to escalate privileges by impersonating a different node type or accessing services in an unauthorized region."
     },
     "L3": {
-      "area": "RPC transport layer and inter-node connection security configuration",
-      "description": "An improper certificate validation vulnerability exists where TLS certificates used for mutual TLS (mTLS) RPC communication are not correctly validated for their associated role and region. A certificate signed by a trusted CA but bearing incorrect role or region claims is accepted without proper verification, allowing an attacker to escalate privileges by impersonating a different node type or accessing services in a region they are not authorized for."
+      "area": "Nomad server RPC TLS configuration and connection setup",
+      "description": "An improper certificate validation vulnerability exists where TLS certificates used for mutual TLS (mTLS) RPC communication between Nomad cluster nodes are not properly validated for their associated role and region claims. When server hostname verification is enabled, the server accepts any certificate signed by the correct CA without checking whether the certificate's subject names match the expected node role (client or server) and region, allowing privilege escalation through certificate impersonation."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "crypto-weakness",
     "cvss": 9.8,
-    "reason": "The TLS configuration for RPC connections only verified that client certificates were signed by the correct CA and had not expired, but did not validate the certificate's role and region fields, allowing privilege escalation via certificate impersonation.",
+    "reason": "The TLS configuration for RPC connections only verified that client certificates were signed by the correct CA and had not expired, but did not validate the certificate's DNS names or common name for the expected role and region, allowing privilege escalation via certificate impersonation.",
     "locations": [
       {
         "file": "nomad/server.go",

@@ -16,8 +16,8 @@
       "description": "An insecure deserialization vulnerability exists in the schema parsing logic where Java classes referenced via schema metadata annotations can be instantiated without restriction. An attacker can craft a malicious schema that specifies arbitrary class names, leading to remote code execution when data containing such schemas is read and deserialized. There is no validation or allowlisting of which packages or classes are permitted to be instantiated through schema-defined type references."
     },
     "L3": {
-      "area": "Data serialization schema processing and record conversion components",
-      "description": "An insecure deserialization vulnerability exists in the schema parsing logic where Java classes referenced via schema metadata annotations can be instantiated without restriction. An attacker can craft a malicious schema that specifies arbitrary class names, leading to remote code execution when data containing such schemas is read and deserialized. There is no validation or allowlisting of which packages or classes are permitted to be instantiated through schema-defined type references."
+      "area": "Avro data type converter classes responsible for handling schema-annotated custom types during record deserialization",
+      "description": "An insecure deserialization vulnerability exists where Java classes specified via schema metadata annotations for custom string-representable types can be loaded and instantiated via reflection without any package or class validation. When a Parquet file containing an Avro schema with attacker-controlled class references is read, the referenced classes are instantiated through their String constructors, enabling remote code execution. The vulnerability is in the Avro module's handling of schema-defined type conversions for stringable class references during data deserialization."
     }
   },
   "ground_truth": {
