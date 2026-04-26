@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-q5vh-6whw-x745",
   "post_patch_commit": "2fcb4998887959b4fa11894a068d689189742cb1",
   "noisy_patch": true,
-  "curation_notes": "Locations derived from the patch diff. The core vulnerability is in parse_jwt_token in user_credentials.py, which decoded the JWT bearer token but did not verify the issuer claim against allowed AAD tenants. Secondary locations are the info and negotiate endpoint handlers, which lacked call_if_user authorization wrappers. The patch modifies 12 files total, but many are deployment configs, docs, type models, and tests. Core vulnerability locations are the 3 API service source files listed.",
+  "curation_notes": "Re-curated with updated hint guidelines. Primary vulnerability is in parse_jwt_token in user_credentials.py, which decoded the JWT bearer token but did not verify the issuer claim against allowed AAD tenants. Secondary locations are the info and negotiate endpoint handlers, which lacked call_if_user authorization wrappers — all other HTTP endpoints already used call_if_user/call_if_agent. No sibling files share the same vulnerability pattern. The patch modifies 12 files total (8 non-test source files), but many are deployment scripts, type models, and docs generators. L3 hints now differentiate from L1/L2 by naming Azure Active Directory and JWT-specific context. Vulnerability class auth-bypass confirmed from CWE-285/CWE-346/CWE-863 and the patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
