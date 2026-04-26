@@ -16,8 +16,8 @@
       "description": "An integer overflow and resultant heap-based buffer overflow exists in the zip archive creation routines. When adding a new file entry to an archive, certain header field lengths are stored in 16-bit values. Providing a long filename, comment, or extra field that exceeds the 16-bit range causes an integer overflow, potentially leading to a heap-based buffer overflow."
     },
     "L3": {
-      "area": "Archive file creation and compression utilities",
-      "description": "An integer overflow and resultant heap-based buffer overflow exists in the zip archive creation routines. When adding a new file entry to an archive, certain header field lengths are stored in 16-bit values. Providing a long filename, comment, or extra field that exceeds the 16-bit range causes an integer overflow, potentially leading to a heap-based buffer overflow."
+      "area": "MiniZip contributed module's zip archive creation routines",
+      "description": "An integer overflow and resultant heap-based buffer overflow exists in the MiniZip zip archive creation routines. When adding a new file entry to a zip archive, the filename, comment, and extra field lengths are stored in 16-bit header fields. Providing values longer than 65535 bytes causes an integer overflow when these lengths are truncated to 16 bits, leading to a heap-based buffer overflow during header construction."
     }
   },
   "ground_truth": {
