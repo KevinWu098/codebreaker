@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-mm8j-9x84-m9cv",
+  "post_patch_commit": "64dd9502708c25782abc54f1941b21bac711d3da",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references commit a37f594 (test-only, added after the fix) and the v1.2.1...v1.2.2 release comparison. The actual security fix is commit 64dd950 ('fix idempotence'), which replaces direct charAt() lookups with new unescapedChar()/unescapedCharRev() helper methods in the sanitizeString method. This ensures escape sequences are properly decoded when checking for dangerous HTML/XML patterns (<script, <!--, -->, ]]>). The pre-patch commit (89d91f3, parent of 64dd950) contains a partial mitigation that checks for backslash characters but does not properly decode escape sequences. Only one non-test source file was modified: src/main/java/com/google/json/JsonSanitizer.java. The vulnerability class was pre-assigned as xxe (CWE-611); while the vulnerability mechanism is closer to output encoding bypass enabling HTML/XML injection, the CDATA section delimiter aspect relates to XML contexts consistent with the CWE assignment.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-25"
+}
