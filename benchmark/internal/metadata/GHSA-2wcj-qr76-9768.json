@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-2wcj-qr76-9768",
+  "post_patch_commit": "19da5c0c4d8c5e4dfef2a92e24141c3f51884dcc",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit (19da5c0) is a batch security fix addressing multiple vulnerabilities across 18 files. The specific fix for CVE-2023-52303 (put_along_axis null dereference) is in paddle/fluid/pybind/op_function_common.cc, where four CastPyArg functions (CastPyArg2Ints, CastPyArg2Longs, CastPyArg2Floats, CastPyArg2Float64s) had PySequence_Check(obj) conditions that incorrectly treated 0-d tensor objects as Python sequences. The fix adds !PyObject_TypeCheck(obj, p_tensor_type) to exclude tensors from the sequence handling path. The gather_scatter_functor.cc change in the same commit is cosmetic (blank line removal). The pre-assigned vuln_class null-deref is correct per CWE-476 and the advisory description stating nullptr/segfault.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
