@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8qvf-mr4w-9x2c",
+  "post_patch_commit": "c6b382f363b73ac32c402a2db3aadc7784f66a5b",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies only _make_file_path in mesop/server/state_session.py. The advisory also explicitly names this function and the FileStateSessionBackend class. No sibling files share the same vulnerability pattern — the MemoryStateSessionBackend uses dict keys rather than file paths and is not susceptible to path traversal. Pre-assigned class path-traversal confirmed by CWE-22, advisory description, and patch diff which adds token validation and resolved-path containment checks.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
