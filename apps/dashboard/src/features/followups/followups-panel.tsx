@@ -74,32 +74,34 @@ export const FollowupsPanel = ({
             className="min-w-0 overflow-hidden"
             title="workflows"
           >
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>follow-up</th>
-                  <th>task</th>
-                  <th>ghsa</th>
-                  <th>status</th>
-                  <th>
-                    <DevinWord />
-                  </th>
-                  <th>auto</th>
-                  <th>run</th>
-                  <th className="w-28 whitespace-nowrap">updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <FollowupTableRow
-                    key={row.followup.id}
-                    onSelect={onSelectRun}
-                    row={row}
-                    selected={row.followup.runId === selectedRunId}
-                  />
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>follow-up</th>
+                    <th>task</th>
+                    <th>ghsa</th>
+                    <th>status</th>
+                    <th>
+                      <DevinWord />
+                    </th>
+                    <th>auto</th>
+                    <th>run</th>
+                    <th className="w-28 whitespace-nowrap">updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <FollowupTableRow
+                      key={row.followup.id}
+                      onSelect={onSelectRun}
+                      row={row}
+                      selected={row.followup.runId === selectedRunId}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           {selectedRunId && enabled ? (

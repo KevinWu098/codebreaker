@@ -34,6 +34,16 @@ import type {
   SessionStateResponse,
   UpdateArtifactStateRequest,
 } from "@codebreaker/shared/schemas/api";
+import type {
+  AuditActionResponse,
+  AuditDetailResponse,
+  CreateAuditRequest,
+  FindingActionResponse,
+  ListAuditsQuery,
+  ListAuditsResponse,
+  ListFindingsQuery,
+  ListFindingsResponse,
+} from "@codebreaker/shared/schemas/audits";
 import { connectionStore } from "@/lib/connection";
 
 export class ApiClientError extends Error {
@@ -354,6 +364,61 @@ export const api = {
       `/sessions/${encodeURIComponent(id)}/artifacts/commit`,
       {
         body: JSON.stringify(body),
+        method: "POST",
+      }
+    ),
+
+  listAudits: (
+    query: Partial<ListAuditsQuery> = {}
+  ): Promise<ListAuditsResponse> =>
+    request<ListAuditsResponse>(
+      "/audits",
+      {},
+      query as Record<string, unknown>
+    ),
+
+  createAudit: (
+    body: CreateAuditRequest
+  ): Promise<{ audit: AuditActionResponse["audit"] }> =>
+    request<{ audit: AuditActionResponse["audit"] }>("/audits", {
+      body: JSON.stringify(body),
+      method: "POST",
+    }),
+
+  getAudit: (id: string): Promise<AuditDetailResponse> =>
+    request<AuditDetailResponse>(`/audits/${encodeURIComponent(id)}`),
+
+  listAuditFindings: (
+    id: string,
+    query: Partial<ListFindingsQuery> = {}
+  ): Promise<ListFindingsResponse> =>
+    request<ListFindingsResponse>(
+      `/audits/${encodeURIComponent(id)}/findings`,
+      {},
+      query as Record<string, unknown>
+    ),
+
+  cancelAudit: (id: string): Promise<AuditActionResponse> =>
+    request<AuditActionResponse>(`/audits/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+    }),
+
+  cleanupAudit: (id: string): Promise<AuditActionResponse> =>
+    request<AuditActionResponse>(`/audits/${encodeURIComponent(id)}/cleanup`, {
+      method: "POST",
+    }),
+
+  dismissAuditFinding: (
+    auditId: string,
+    findingId: string,
+    notes: string
+  ): Promise<FindingActionResponse> =>
+    request<FindingActionResponse>(
+      `/audits/${encodeURIComponent(auditId)}/findings/${encodeURIComponent(
+        findingId
+      )}/dismiss`,
+      {
+        body: JSON.stringify({ notes }),
         method: "POST",
       }
     ),

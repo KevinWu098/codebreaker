@@ -8,6 +8,7 @@ import {
 } from "@codebreaker/shared/schemas/sandbox";
 
 const MAX_RETRIES = 3;
+const MAX_ATTEMPTS_DEFAULT = MAX_RETRIES + 1;
 const RETRY_BASE_MS = 100;
 const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
 const EXEC_REQUEST_GRACE_MS = 1000;
@@ -56,8 +57,21 @@ export interface ModalExecutorOptions {
 }
 
 export interface ExecRemoteOptions {
+  /**
+   * Caller-provided abort signal. When it fires, the in-flight HTTP request
+   * to the Modal shim is cancelled and any in-progress retries are halted.
+   * Tool wrappers pass their per-call timeout signal here so the underlying
+   * fetch never outlives the tool-level timeout.
+   */
+  abortSignal?: AbortSignal | undefined;
   command: string;
   cwd?: string | undefined;
+  /**
+   * Maximum HTTP attempts (initial + retries). Tool calls pass `1` so a
+   * single network blip cannot multiply the wall-clock budget. Defaults to
+   * the executor-wide MAX_ATTEMPTS for non-tool callers (e.g. provisioning).
+   */
+  maxAttempts?: number | undefined;
   profile?: SandboxProfileName | undefined;
   sessionId: string;
   timeoutSeconds?: number | undefined;
@@ -138,15 +152,22 @@ export class ModalExecutor {
       body: toShimExecRequest(options),
       idempotencyKey: crypto.randomUUID(),
       ...(timeoutMs ? { timeoutMs } : {}),
+      ...(options.abortSignal ? { signal: options.abortSignal } : {}),
+      ...(options.maxAttempts === undefined
+        ? {}
+        : { maxAttempts: options.maxAttempts }),
     });
 
     return fromShimExecResult(result);
   }
 
   async readFile(input: {
+    abortSignal?: AbortSignal | undefined;
+    maxAttempts?: number | undefined;
     path: string;
     profile?: SandboxProfileName;
     sessionId: string;
+    timeoutMs?: number | undefined;
   }): Promise<Uint8Array> {
     const result = await this.request<ShimReadResponse>("POST", "/read", {
       body: {
@@ -155,16 +176,24 @@ export class ModalExecutor {
         session_id: input.sessionId,
       },
       idempotencyKey: crypto.randomUUID(),
+      ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs }),
+      ...(input.abortSignal ? { signal: input.abortSignal } : {}),
+      ...(input.maxAttempts === undefined
+        ? {}
+        : { maxAttempts: input.maxAttempts }),
     });
 
     return base64ToBytes(result.content_base64);
   }
 
   writeFile(input: {
+    abortSignal?: AbortSignal | undefined;
     content: Uint8Array;
+    maxAttempts?: number | undefined;
     path: string;
     profile?: SandboxProfileName;
     sessionId: string;
+    timeoutMs?: number | undefined;
   }): Promise<ShimWriteResponse> {
     return this.request<ShimWriteResponse>("POST", "/write", {
       body: {
@@ -174,6 +203,11 @@ export class ModalExecutor {
         session_id: input.sessionId,
       },
       idempotencyKey: crypto.randomUUID(),
+      ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs }),
+      ...(input.abortSignal ? { signal: input.abortSignal } : {}),
+      ...(input.maxAttempts === undefined
+        ? {}
+        : { maxAttempts: input.maxAttempts }),
     });
   }
 
@@ -237,62 +271,127 @@ export class ModalExecutor {
       auth?: boolean;
       body?: unknown;
       idempotencyKey?: string;
+      maxAttempts?: number;
+      signal?: AbortSignal;
       timeoutMs?: number;
     } = {}
   ): Promise<T> {
     const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+    const maxAttempts = Math.max(
+      1,
+      options.maxAttempts ?? MAX_ATTEMPTS_DEFAULT
+    );
     let lastError: unknown;
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-      const init: RequestInit = {
-        headers: this.headers(options),
-        method,
-        signal: controller.signal,
-      };
-
-      if (options.body) {
-        init.body = JSON.stringify(options.body);
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      if (options.signal?.aborted) {
+        throw new Error(
+          `Modal shim ${method} ${path} cancelled before attempt ${attempt + 1}`
+        );
       }
 
-      let response: Response;
-      try {
-        response = await fetch(`${this.url}${path}`, init);
-      } catch (error) {
-        clearTimeout(timeoutId);
-        lastError = controller.signal.aborted
-          ? new Error(
-              `Modal shim ${method} ${path} did not respond within ${timeoutMs}ms`
-            )
-          : error;
+      const outcome = await this.attemptRequest<T>(method, path, options, {
+        attempt,
+        maxAttempts,
+        timeoutMs,
+      });
 
-        if (attempt === MAX_RETRIES - 1) {
-          break;
-        }
-
-        await delay(retryDelayMs(null, attempt));
-        continue;
+      if (outcome.kind === "ok") {
+        return outcome.value;
       }
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        return response.json() as Promise<T>;
-      }
-
-      const body = await response.text();
-      lastError = new Error(redactHttpCredentialsInText(body));
-
-      if (!shouldRetry(response.status) || attempt === MAX_RETRIES - 1) {
+      lastError = outcome.error;
+      if (outcome.kind === "failed") {
         break;
       }
-
-      await delay(retryDelayMs(response, attempt));
     }
 
     throw lastError;
+  }
+
+  /**
+   * Run one HTTP attempt against the Modal shim. Returns one of:
+   *  - `ok`     — body parsed successfully; bubble it up.
+   *  - `retry`  — transient error or retryable HTTP status; caller should
+   *               wait and try again unless the attempt budget is spent.
+   *  - `failed` — terminal error (non-retryable status, caller cancelled,
+   *               or attempts exhausted). Caller should throw `error`.
+   */
+  private async attemptRequest<T>(
+    method: "GET" | "POST",
+    path: string,
+    options: {
+      auth?: boolean;
+      body?: unknown;
+      idempotencyKey?: string;
+      signal?: AbortSignal;
+    },
+    state: { attempt: number; maxAttempts: number; timeoutMs: number }
+  ): Promise<
+    | { kind: "ok"; value: T }
+    | { kind: "retry"; error: unknown }
+    | { kind: "failed"; error: unknown }
+  > {
+    const { attempt, maxAttempts, timeoutMs } = state;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const onCallerAbort = (): void => controller.abort();
+    options.signal?.addEventListener("abort", onCallerAbort, { once: true });
+
+    const init: RequestInit = {
+      headers: this.headers(options),
+      method,
+      signal: controller.signal,
+    };
+
+    if (options.body) {
+      init.body = JSON.stringify(options.body);
+    }
+
+    const cleanup = (): void => {
+      clearTimeout(timeoutId);
+      options.signal?.removeEventListener("abort", onCallerAbort);
+    };
+
+    let response: Response;
+    try {
+      response = await fetch(`${this.url}${path}`, init);
+    } catch (error) {
+      cleanup();
+      if (options.signal?.aborted) {
+        return {
+          error: new Error(
+            `Modal shim ${method} ${path} cancelled by caller after ${timeoutMs}ms cap`
+          ),
+          kind: "failed",
+        };
+      }
+      const wrappedError = controller.signal.aborted
+        ? new Error(
+            `Modal shim ${method} ${path} did not respond within ${timeoutMs}ms`
+          )
+        : error;
+      if (attempt === maxAttempts - 1) {
+        return { error: wrappedError, kind: "failed" };
+      }
+      await delay(retryDelayMs(null, attempt));
+      return { error: wrappedError, kind: "retry" };
+    }
+
+    cleanup();
+
+    if (response.ok) {
+      return { kind: "ok", value: (await response.json()) as T };
+    }
+
+    const body = await response.text();
+    const error = new Error(redactHttpCredentialsInText(body));
+
+    if (!shouldRetry(response.status) || attempt === maxAttempts - 1) {
+      return { error, kind: "failed" };
+    }
+
+    await delay(retryDelayMs(response, attempt));
+    return { error, kind: "retry" };
   }
 
   private headers(options: {

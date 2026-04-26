@@ -1,5 +1,6 @@
 import { estimateTokenUsageCost } from "@codebreaker/shared/lib/models";
 import {
+  getAuditIdFromSessionId,
   getBenchmarkRunIdFromSessionId,
   truncateId,
 } from "@codebreaker/shared/lib/utils";
@@ -12,7 +13,7 @@ import {
 } from "@radix-ui/react-tabs";
 import { ChevronLeft, Square, Trash2 } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
@@ -73,6 +74,7 @@ const formatSessionRepo = (
 interface SessionDetailProps {
   onArchived: () => void;
   onBack: () => void;
+  onOpenAudit?: (auditId: string) => void;
   onOpenBenchmarkRun?: (runId: string) => void;
   sessionId: string;
 }
@@ -81,6 +83,7 @@ interface HeaderProps {
   loading: boolean;
   onArchived: () => void;
   onBack: () => void;
+  onOpenAudit?: (auditId: string) => void;
   onOpenBenchmarkRun?: (runId: string) => void;
   onRefresh: () => void;
   row: SessionRow | undefined;
@@ -91,12 +94,16 @@ const SessionHeader = ({
   loading,
   onArchived,
   onBack,
+  onOpenAudit,
   onOpenBenchmarkRun,
   onRefresh,
   row,
   sessionId,
 }: HeaderProps): React.JSX.Element => {
+  const auditId = getAuditIdFromSessionId(sessionId);
   const benchmarkRunId = getBenchmarkRunIdFromSessionId(sessionId);
+  const backLabel =
+    auditId && onOpenAudit ? "back to audit" : "back to sessions";
   const [confirming, setConfirming] = useState(false);
   const archive = useArchiveSessionMutation(sessionId);
   const finalize = useFinalizeSessionMutation(sessionId);
@@ -120,7 +127,7 @@ const SessionHeader = ({
             type="button"
           >
             <ChevronLeft aria-hidden="true" size={12} />
-            <span>back to sessions</span>
+            <span>{backLabel}</span>
           </button>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="lowercase">{row?.title ?? truncateId(sessionId)}</h1>
@@ -144,6 +151,18 @@ const SessionHeader = ({
                 type="button"
               >
                 {benchmarkRunId.slice(0, 8)}
+              </button>
+            </div>
+          ) : null}
+          {auditId && onOpenAudit ? (
+            <div className="text-xs">
+              <span className="text-fg-muted">audit </span>
+              <button
+                className="id-link font-mono"
+                onClick={() => onOpenAudit(auditId)}
+                type="button"
+              >
+                {auditId.slice(0, 8)}
               </button>
             </div>
           ) : null}
@@ -208,9 +227,11 @@ const ConfirmArchive = ({
 );
 
 const SessionRowCard = ({
+  onOpenAudit,
   onOpenBenchmarkRun,
   row,
 }: {
+  onOpenAudit?: (auditId: string) => void;
   onOpenBenchmarkRun?: (runId: string) => void;
   row: SessionRow;
 }): React.JSX.Element => {
@@ -221,9 +242,12 @@ const SessionRowCard = ({
     modelProvider: row.modelProvider,
     outputTokens: row.outputTokens,
   });
+  const auditIdFromSession = getAuditIdFromSessionId(row.id);
   const benchmarkRunId = getBenchmarkRunIdFromSessionId(row.id);
-  const idValue =
-    benchmarkRunId && onOpenBenchmarkRun ? (
+
+  let idValue: ReactNode = row.id;
+  if (benchmarkRunId && onOpenBenchmarkRun) {
+    idValue = (
       <button
         className="id-link break-all text-left"
         onClick={() => onOpenBenchmarkRun(benchmarkRunId)}
@@ -232,9 +256,19 @@ const SessionRowCard = ({
       >
         {row.id}
       </button>
-    ) : (
-      row.id
     );
+  } else if (auditIdFromSession && onOpenAudit) {
+    idValue = (
+      <button
+        className="id-link break-all text-left"
+        onClick={() => onOpenAudit(auditIdFromSession)}
+        title="open audit"
+        type="button"
+      >
+        {row.id}
+      </button>
+    );
+  }
 
   return (
     <Card title="d1 session row">
@@ -292,6 +326,7 @@ const SessionRowCard = ({
 export const SessionDetail = ({
   onArchived,
   onBack,
+  onOpenAudit,
   onOpenBenchmarkRun,
   sessionId,
 }: SessionDetailProps): React.JSX.Element => {
@@ -301,8 +336,12 @@ export const SessionDetail = ({
   );
   const session = useSessionQuery(sessionId);
   const state = useSessionStateQuery(sessionId);
-  const config = useSessionConfigQuery(sessionId, tab === "config");
+  const config = useSessionConfigQuery(
+    sessionId,
+    tab === "config" || tab === "sandbox"
+  );
   const row = session.data?.session;
+  const sharedModalSessionId = config.data?.config?.audit?.sandboxSessionId;
 
   return (
     <div className="space-y-4">
@@ -310,6 +349,7 @@ export const SessionDetail = ({
         loading={session.isFetching || state.isFetching}
         onArchived={onArchived}
         onBack={onBack}
+        {...(onOpenAudit ? { onOpenAudit } : {})}
         {...(onOpenBenchmarkRun ? { onOpenBenchmarkRun } : {})}
         onRefresh={() => {
           session.refetch();
@@ -333,6 +373,7 @@ export const SessionDetail = ({
             <ErrorState error={session.error} title="load failed" />
             {row && (
               <SessionRowCard
+                {...(onOpenAudit ? { onOpenAudit } : {})}
                 {...(onOpenBenchmarkRun ? { onOpenBenchmarkRun } : {})}
                 row={row}
               />
@@ -384,7 +425,12 @@ export const SessionDetail = ({
         </TabsContent>
 
         <TabsContent className="mt-4 outline-none" value="sandbox">
-          <SandboxPanel sessionId={sessionId} />
+          <SandboxPanel
+            {...(sharedModalSessionId
+              ? { remoteSessionId: sharedModalSessionId }
+              : {})}
+            sessionId={sessionId}
+          />
         </TabsContent>
       </TabsRoot>
     </div>

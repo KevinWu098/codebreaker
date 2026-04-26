@@ -29,6 +29,11 @@
       "import": "./src/schemas/api.ts",
       "default": "./src/schemas/api.ts"
     },
+    "./schemas/audits": {
+      "types": "./src/schemas/audits.ts",
+      "import": "./src/schemas/audits.ts",
+      "default": "./src/schemas/audits.ts"
+    },
     "./schemas/artifacts": {
       "types": "./src/schemas/artifacts.ts",
       "import": "./src/schemas/artifacts.ts",

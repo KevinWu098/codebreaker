@@ -1,4 +1,5 @@
 import { BenchmarkConfigSchema } from "@codebreaker/shared/schemas/artifacts";
+import { AuditConfigSchema } from "@codebreaker/shared/schemas/audits";
 import {
   ExtensionPolicySchema,
   ModelProviderSchema,
@@ -69,6 +70,7 @@ export type RunBudgetConfig = z.infer<typeof RunBudgetConfigSchema>;
 
 export const SessionConfigSchema = z.object({
   activeTools: z.array(z.string().min(1)).optional(),
+  audit: AuditConfigSchema.optional(),
   benchmark: BenchmarkConfigSchema.optional(),
   benchmarkHarnessMode: z.enum(["full", "minimal"]).optional(),
   compaction: CompactionConfigSchema.default(defaultCompactionConfig),

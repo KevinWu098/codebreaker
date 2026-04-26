@@ -1,0 +1,88 @@
+import { useEffect } from "react";
+import { CoverageSection } from "@/viz/benchmark/sections/coverage";
+import { ExistingGapsSection } from "@/viz/benchmark/sections/existing-gaps";
+import { IntroSection } from "@/viz/benchmark/sections/intro";
+import { SourcingSection } from "@/viz/benchmark/sections/sourcing";
+import { StrengthsSection } from "@/viz/benchmark/sections/strengths";
+import { TransformSection } from "@/viz/benchmark/sections/transform";
+import { WhyBenchmarksSection } from "@/viz/benchmark/sections/why-benchmarks";
+
+export function BenchmarkVizPage() {
+  useEffect(() => {
+    document.body.dataset.page = "viz-benchmark";
+    document.title = "ECVEBench · how we built it";
+    return () => {
+      document.body.removeAttribute("data-page");
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--ink))]">
+      <Header />
+      <main>
+        <IntroSection />
+        <WhyBenchmarksSection />
+        <ExistingGapsSection />
+        <SourcingSection />
+        <TransformSection />
+        <CoverageSection />
+        <StrengthsSection />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+function Header() {
+  return (
+    <header className="sticky top-0 z-50 border-white/15 border-b bg-[rgb(var(--bg))]/80 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 md:px-12">
+        <a
+          aria-label="Codebreaker home"
+          className="flex items-center gap-2 font-medium text-sm text-white tracking-tight transition hover:text-white/80"
+          href="/"
+        >
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-white" />
+          codebreaker
+        </a>
+        <nav className="hidden items-center gap-1 text-white/80 text-xs uppercase tracking-[0.18em] md:flex">
+          <a className="rounded-full px-3 py-1.5 hover:text-white" href="/">
+            Home
+          </a>
+          <span
+            aria-current="page"
+            className="rounded-full bg-white/10 px-3 py-1.5 text-white"
+          >
+            Viz · Benchmark
+          </span>
+          <a
+            className="rounded-full px-3 py-1.5 hover:text-white"
+            href="/viz/harness"
+          >
+            Viz · Harness
+          </a>
+          <a
+            className="rounded-full px-3 py-1.5 hover:text-white"
+            href="/animations/benchmark"
+          >
+            Animation · Curation
+          </a>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="border-white/15 border-t bg-[rgb(var(--bg-deep))]">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-6 py-10 text-white/60 text-xs md:flex-row md:items-center md:justify-between md:px-12">
+        <span>
+          ECVEBench · v0.1.0 · snapshot{" "}
+          <span className="font-mono">2026-04-26</span>
+        </span>
+        <span className="font-mono">codebreaker · /viz/benchmark</span>
+      </div>
+    </footer>
+  );
+}

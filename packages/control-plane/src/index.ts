@@ -1,3 +1,4 @@
+import { AuditOrchestrator } from "@codebreaker/control-plane/audits/orchestrator";
 import { BenchmarkRunOrchestrator } from "@codebreaker/control-plane/benchmarks/orchestrator";
 import { CveFollowupOrchestrator } from "@codebreaker/control-plane/cve-followup/orchestrator";
 import { verifyRequestJwt } from "@codebreaker/control-plane/http/auth";
@@ -9,7 +10,10 @@ import { createRouter } from "@codebreaker/control-plane/router";
 import type { Env } from "@codebreaker/control-plane/types";
 import { routeAgentRequest } from "agents";
 
-// biome-ignore lint/performance/noBarrelFile: Cloudflare requires Durable Object classes to be exported from the Worker entrypoint.
+// biome-ignore lint/performance/noBarrelFile: Cloudflare requires Durable Object classes in the Worker entrypoint.
+export { AuditCoordinatorAgent } from "@codebreaker/control-plane/audits/coordinator-agent";
+export { AuditInvestigatorAgent } from "@codebreaker/control-plane/audits/investigator-agent";
+export { AuditValidatorAgent } from "@codebreaker/control-plane/audits/validator-agent";
 export { SessionAgent } from "@codebreaker/control-plane/session/agent";
 
 const router = createRouter();
@@ -75,11 +79,13 @@ export default {
   ): void {
     const cve = new CveFollowupOrchestrator(env);
     const bench = new BenchmarkRunOrchestrator(env);
+    const audits = new AuditOrchestrator(env);
     context.waitUntil(
       Promise.all([
         bench.watchdogScan(),
         cve.reconcileActiveFollowups(),
         cve.watchdogScan(),
+        audits.watchdogScan(),
       ]).then(() => undefined)
     );
   },

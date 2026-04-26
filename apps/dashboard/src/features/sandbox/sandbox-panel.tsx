@@ -19,6 +19,11 @@ import { useSandboxQuery } from "@/hooks/queries";
 import { formatDuration, formatRelativeTime } from "@/lib/format";
 
 interface SandboxPanelProps {
+  /**
+   * When set (e.g. audit investigators), Modal exec/sandbox calls use this id
+   * so the UI targets the same disk as the shared git checkout.
+   */
+  remoteSessionId?: string | undefined;
   sessionId: string;
 }
 
@@ -36,6 +41,7 @@ const recordKey = (record: ExecRecord): string =>
   `${record.startedAt}-${record.command.length}`;
 
 export const SandboxPanel = ({
+  remoteSessionId,
   sessionId,
 }: SandboxPanelProps): React.JSX.Element => {
   const cmdId = useId();
@@ -43,8 +49,9 @@ export const SandboxPanel = ({
   const profileFieldId = useId();
   const timeoutId = useId();
 
-  const sandbox = useSandboxQuery(sessionId);
-  const exec = useExecSandboxMutation(sessionId);
+  const modalSessionId = remoteSessionId ?? sessionId;
+  const sandbox = useSandboxQuery(modalSessionId);
+  const exec = useExecSandboxMutation(modalSessionId);
 
   const [command, setCommand] = useState("uname -a");
   const [cwd, setCwd] = useState("");
@@ -105,6 +112,13 @@ export const SandboxPanel = ({
 
   return (
     <div className="space-y-4">
+      {remoteSessionId && remoteSessionId !== sessionId ? (
+        <p className="text-fg-muted text-xs">
+          This agent shares the coordinator&apos;s Modal disk. Inspecting{" "}
+          <span className="font-mono text-fg">{modalSessionId}</span> (not this
+          DO&apos;s id <span className="font-mono">{sessionId}</span>).
+        </p>
+      ) : null}
       <Card
         actions={
           <RefreshButton

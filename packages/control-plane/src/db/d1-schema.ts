@@ -6,6 +6,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 
 export const sessions = sqliteTable("sessions", {
+  agentRole: text("agent_role"),
   artifactLatestCommitSha: text("artifact_latest_commit_sha"),
   artifactPath: text("artifact_path"),
   artifactStatus: text("artifact_status"),
@@ -137,6 +138,79 @@ export const cveFollowupEvents = sqliteTable("cve_followup_events", {
   createdAt: text("created_at").notNull(),
   details: text("details"),
   followupId: text("followup_id").notNull(),
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  message: text("message").notNull(),
+});
+
+export const audits = sqliteTable("audits", {
+  cleanupCompletedAt: text("cleanup_completed_at"),
+  completedAt: text("completed_at"),
+  coordinatorSessionId: text("coordinator_session_id"),
+  createdAt: text("created_at").notNull(),
+  error: text("error"),
+  highConfidenceCount: integer("high_confidence_count").notNull().default(0),
+  id: text("id").primaryKey(),
+  minConfidence: integer("min_confidence").notNull().default(0),
+  mirrorRepoFullName: text("mirror_repo_full_name"),
+  modelId: text("model_id").notNull(),
+  modelProvider: text("model_provider").notNull(),
+  ref: text("ref"),
+  repoUrl: text("repo_url").notNull(),
+  sandboxProfile: text("sandbox_profile"),
+  startedAt: text("started_at"),
+  status: text("status").notNull(),
+  title: text("title"),
+  totalCandidates: integer("total_candidates").notNull().default(0),
+  updatedAt: text("updated_at").notNull(),
+  validatedCount: integer("validated_count").notNull().default(0),
+});
+
+export const auditShards = sqliteTable(
+  "audit_shards",
+  {
+    auditId: text("audit_id").notNull(),
+    completedAt: text("completed_at"),
+    createdAt: text("created_at").notNull(),
+    error: text("error"),
+    id: text("id").primaryKey(),
+    investigatorSessionId: text("investigator_session_id"),
+    kind: text("kind").notNull(),
+    startedAt: text("started_at"),
+    status: text("status").notNull(),
+    summary: text("summary"),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("audit_shards_audit_kind").on(table.auditId, table.kind),
+  ]
+);
+
+export const auditFindings = sqliteTable("audit_findings", {
+  auditId: text("audit_id").notNull(),
+  confidence: integer("confidence").notNull(),
+  createdAt: text("created_at").notNull(),
+  cwe: text("cwe"),
+  description: text("description").notNull(),
+  evidence: text("evidence").notNull(),
+  id: text("id").primaryKey(),
+  locationsJson: text("locations_json").notNull(),
+  pocSketch: text("poc_sketch"),
+  referencesJson: text("references_json").notNull().default("[]"),
+  severity: text("severity").notNull(),
+  shardId: text("shard_id"),
+  status: text("status").notNull(),
+  title: text("title").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  validationNotes: text("validation_notes"),
+  validatorSessionId: text("validator_session_id"),
+  vulnClass: text("vuln_class").notNull(),
+});
+
+export const auditEvents = sqliteTable("audit_events", {
+  auditId: text("audit_id").notNull(),
+  createdAt: text("created_at").notNull(),
+  details: text("details"),
   id: text("id").primaryKey(),
   kind: text("kind").notNull(),
   message: text("message").notNull(),
