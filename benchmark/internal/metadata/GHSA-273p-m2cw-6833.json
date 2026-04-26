@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-273p-m2cw-6833",
+  "post_patch_commit": "39bae3d192bce48ef4ef2cbd1788fb5770fee8cd",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff. The primary vulnerability is in pkg/types/cose/v0.0.1/entry.go where Canonicalize dereferences v.sign1Msg.Payload without a nil check — validate() returns nil when message is empty, leaving sign1Msg uninitialized. Additional nil dereferences were fixed in IndexKeys and Unmarshal (missing PublicKey check) in the same file. The patch also fixes pkg/types/dsse/v0.0.1/entry.go where Unmarshal dereferences ProposedContent.Envelope and Canonicalize dereferences a signature pointer without nil checks. The cmd/cleanup-index/main.go change is a spelling fix only. Pre-assigned class null-deref confirmed — CWE-476 and the patch both clearly show nil pointer dereference fixes.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
