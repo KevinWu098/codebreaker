@@ -81,7 +81,7 @@ const BENCHMARK_TAB_IDS = ["results", "create"] as const;
 
 /** dl: UA `dd` margin causes overlap; `min-w-0` lets long values wrap in `1fr`. */
 const BENCHMARK_DL_GRID =
-  "grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,auto)_1fr] sm:items-baseline [&_dt]:m-0 [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:break-words";
+  "grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,auto)_1fr] sm:items-baseline [&_dt]:m-0 [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:wrap-break-word";
 
 type BenchmarkTab = (typeof BENCHMARK_TAB_IDS)[number];
 
@@ -816,7 +816,7 @@ const BenchmarkRunScoringDetail = ({
           </span>
         </dd>
         <dt className="text-fg-muted">vuln class (×0.3)</dt>
-        <dd className="break-words">
+        <dd className="wrap-break-word">
           expected {result.expectedVulnClass ?? "—"} · predicted{" "}
           {result.predictedVulnClass ?? "—"} ·{" "}
           <span
@@ -1710,7 +1710,7 @@ const BenchmarkRunsTable = ({
                 )}
               </td>
               <td className="num">{scoreColumnForRun(run)}</td>
-              <td className="max-w-[14rem] whitespace-normal text-fg-muted text-xs">
+              <td className="max-w-56 whitespace-normal text-fg-muted text-xs">
                 {benchmarkRunTokensLine(run)}
               </td>
               <td className="text-fg-muted">
@@ -1751,7 +1751,7 @@ const BenchmarkRunAgentReview = ({
             {percentText(output.confidence)}
           </dd>
           <dt className="text-fg-muted">reason</dt>
-          <dd className="whitespace-pre-wrap break-words">
+          <dd className="wrap-break-word whitespace-pre-wrap">
             {output.reason ?? "—"}
           </dd>
           <dt className="text-fg-muted">predicted locs</dt>
@@ -1768,7 +1768,7 @@ const BenchmarkRunAgentReview = ({
               {task.ground_truth.vuln_class}
             </dd>
             <dt className="text-fg-muted">reason</dt>
-            <dd className="whitespace-pre-wrap break-words">
+            <dd className="wrap-break-word whitespace-pre-wrap">
               {task.ground_truth.reason}
             </dd>
           </dl>
