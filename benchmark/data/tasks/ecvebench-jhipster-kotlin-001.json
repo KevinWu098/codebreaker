@@ -1,0 +1,51 @@
+{
+  "task_id": "ecvebench-jhipster-kotlin-001",
+  "ghsa_id": "GHSA-j3rh-8vwq-wh84",
+  "codebase": {
+    "repo": "https://github.com/jhipster/jhipster-kotlin",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "f7b482c29950c3a6248703458cd36d343a7a13a8"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Server-side service layer templates and utility modules for code generation"
+    },
+    "L2": {
+      "description": "A cryptographic weakness exists where security-sensitive random values, including passwords, password reset tokens, and activation keys, are generated using a pseudo-random number generator that is not cryptographically secure. An attacker who obtains a single generated value can reverse-engineer the internal PRNG state and predict all past and future token values, enabling targeted account takeover."
+    },
+    "L3": {
+      "area": "Server-side random value generation utility template used for authentication tokens and user credentials",
+      "description": "A cryptographic weakness exists where all security-sensitive random strings — including passwords, password reset tokens, activation keys, and session remember-me tokens — are generated using Apache Commons Lang's non-cryptographically-secure PRNG instead of a SecureRandom-backed source. An attacker who obtains a single generated token can reverse-engineer the internal PRNG state and predict all past and future token values."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.8,
+    "reason": "The application uses RandomStringUtils with its default non-cryptographically-secure PRNG to generate all security-sensitive random values including passwords, reset tokens, and activation keys, allowing an attacker who obtains one token to predict all past and future tokens.",
+    "locations": [
+      {
+        "file": "generators/server/templates/src/main/kotlin/package/service/util/RandomUtil.kt.ejs",
+        "function": "generatePassword"
+      },
+      {
+        "file": "generators/server/templates/src/main/kotlin/package/service/util/RandomUtil.kt.ejs",
+        "function": "generateActivationKey"
+      },
+      {
+        "file": "generators/server/templates/src/main/kotlin/package/service/util/RandomUtil.kt.ejs",
+        "function": "generateResetKey"
+      },
+      {
+        "file": "generators/server/templates/src/main/kotlin/package/service/util/RandomUtil.kt.ejs",
+        "function": "generateSeriesData"
+      },
+      {
+        "file": "generators/server/templates/src/main/kotlin/package/service/util/RandomUtil.kt.ejs",
+        "function": "generateTokenData"
+      }
+    ]
+  }
+}
