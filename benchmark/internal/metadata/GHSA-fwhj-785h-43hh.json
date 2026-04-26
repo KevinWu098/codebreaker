@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fwhj-785h-43hh",
+  "post_patch_commit": "bb14c5da3e64b03f207c7f38139eb60e97c278fc",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the advisory description and patch diff. The advisory explicitly identifies KillAction (api.go:79) and RestartAction (api.go:1285) as crashing via nil-pointer dereference on execReqLogEntry.Binding.Action, and StartActionByGet (api.go:239) as the entry point that creates orphaned log entries with nil bindings. The patch also adds nil checks to StartActionAndWait, StartActionByGetAndWait, and DumpPublicIdActionMap in api.go, as well as sibling functions buildAction in apiActions.go and buildDefaultDashboard in dashboards.go, all of which dereference binding.Action without nil guards. Vulnerability class null-deref confirmed — CWE-476 matches directly and the patch exclusively adds nil/nil-binding checks before pointer dereferences.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

@@ -1,0 +1,63 @@
+{
+  "task_id": "ecvebench-olivetin-002",
+  "ghsa_id": "GHSA-fwhj-785h-43hh",
+  "codebase": {
+    "repo": "https://github.com/OliveTin/OliveTin",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "235493e471249b07cf20abdf5850f9ba38d8effa"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "API request handling and action execution management"
+    },
+    "L2": {
+      "description": "A nil-pointer dereference vulnerability exists where API handlers process execution tracking requests without validating that internal data structures are fully initialized. An unauthenticated attacker can create incomplete state entries through one API endpoint and then trigger crashes via other endpoints that assume the state is valid, resulting in denial of service through repeated server panics."
+    },
+    "L3": {
+      "area": "API handlers for action execution lifecycle management, including starting, stopping, and restarting action executions",
+      "description": "A nil-pointer dereference vulnerability exists where API handlers for managing action execution lifecycle fail to validate that binding references within execution log entries are non-nil before dereferencing them. An unauthenticated attacker can create orphaned execution log entries with nil bindings by supplying an invalid action identifier, and then trigger nil-pointer dereferences by calling lifecycle management endpoints with the resulting tracking IDs, causing server panics and denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 5.3,
+    "reason": "API handlers dereference execution log entry binding and action fields without nil checks, allowing an unauthenticated attacker to trigger server panics by first creating a log entry with a nil binding via an invalid action ID, then calling endpoints that assume the binding is valid.",
+    "locations": [
+      {
+        "file": "service/internal/api/api.go",
+        "function": "KillAction"
+      },
+      {
+        "file": "service/internal/api/api.go",
+        "function": "RestartAction"
+      },
+      {
+        "file": "service/internal/api/api.go",
+        "function": "StartActionByGet"
+      },
+      {
+        "file": "service/internal/api/api.go",
+        "function": "StartActionAndWait"
+      },
+      {
+        "file": "service/internal/api/api.go",
+        "function": "StartActionByGetAndWait"
+      },
+      {
+        "file": "service/internal/api/api.go",
+        "function": "DumpPublicIdActionMap"
+      },
+      {
+        "file": "service/internal/api/apiActions.go",
+        "function": "buildAction"
+      },
+      {
+        "file": "service/internal/api/dashboards.go",
+        "function": "buildDefaultDashboard"
+      }
+    ]
+  }
+}
