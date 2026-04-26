@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6v92-r5mx-h5fx",
+  "post_patch_commit": "33a942e62b6fbf6a35d41f1c735bda2d64c163d0",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only src/smolagents/local_python_executor.py (1 non-test source file). The fix wraps static tool functions returned by evaluate_name with safer_func, which checks return values against unauthorized modules and DANGEROUS_FUNCTIONS. Previously, static_tools[name.id] was returned without any safety wrapper, allowing sandbox escape via indirect attribute access on return values. Kept pre-assigned class command-injection (CWE-94) since the sandbox escape enables arbitrary code/command execution. No sibling files share the same vulnerability pattern; remote_executors.py does not use the same evaluate_name/static_tools dispatch logic.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
