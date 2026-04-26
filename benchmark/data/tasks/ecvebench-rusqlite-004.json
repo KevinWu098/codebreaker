@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Native FFI bindings and database extension API wrappers"
+      "area": "Extension wrappers and native database API integration"
     },
     "L2": {
-      "description": "A use-after-free vulnerability exists where a temporary string object is converted to a raw C pointer and immediately deallocated, leaving a dangling pointer that is subsequently passed to a native API function call. This can lead to memory corruption, potentially allowing an attacker to achieve arbitrary code execution."
+      "description": "A use-after-free vulnerability exists where a temporary C-compatible string object is converted to a raw pointer and immediately deallocated, leaving a dangling pointer that is subsequently passed to a native API function call. This can lead to memory corruption, potentially allowing an attacker to achieve arbitrary code execution."
     },
     "L3": {
-      "area": "Native FFI bindings and database extension API wrappers",
-      "description": "A use-after-free vulnerability exists where a temporary string object is converted to a raw C pointer and immediately deallocated, leaving a dangling pointer that is subsequently passed to a native API function call. This can lead to memory corruption, potentially allowing an attacker to achieve arbitrary code execution."
+      "area": "Database session extension bindings and change-set management",
+      "description": "A use-after-free vulnerability exists in the database session extension bindings where temporary C-compatible string objects are converted to raw pointers in the same expression, causing the temporary to be deallocated while the dangling pointer is subsequently passed to native session management API calls. This can lead to memory corruption, potentially allowing arbitrary code execution."
     }
   },
   "ground_truth": {
