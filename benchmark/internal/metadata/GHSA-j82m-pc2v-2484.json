@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j82m-pc2v-2484",
+  "post_patch_commit": "99097738b5561639e9bf247c55d8103236618bf3",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modified only src/runtime/parser/utils/props.ts (the validateProp function). The patch replaced a simple string prefix check with a new isAnchorLinkAllowed function that decodes HTML entities and URL-encoded characters before validating against the deny list. Sibling files in the same directory (html-tags-list.ts, plugins.ts) serve different roles and do not contain URL validation logic. Pre-assigned vulnerability class xss confirmed — CWE-79 matches the advisory description of XSS via HTML entity-encoded javascript: protocol bypass.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
