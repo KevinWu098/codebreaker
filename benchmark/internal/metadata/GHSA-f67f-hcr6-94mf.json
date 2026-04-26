@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-f67f-hcr6-94mf",
+  "post_patch_commit": "26c4e07df780f11b7e901ad2d88b3dc5ce8a1aca",
+  "noisy_patch": true,
+  "curation_notes": "Primary location derived from the advisory description which explicitly names the ZenClaw Discord Integration workflow. The patch commit also fixes the same shell injection pattern in two sibling workflow files in the same directory (telegram-notifications.yml and dependabot-auto-merge.yml), which interpolate github.event.* values directly into run blocks. A fourth file (mcp/obsidian/server.py) was also changed in the patch commit but addresses clear-text logging, not command injection, so it is excluded from locations. The patch is noisy because 4 non-test source files were modified. Vulnerability class command-injection confirmed: CWE-78 matches the pattern of unsanitized input passed to shell execution via GitHub Actions template expressions.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
