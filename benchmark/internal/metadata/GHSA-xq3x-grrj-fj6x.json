@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xq3x-grrj-fj6x",
+  "post_patch_commit": "61cbff5124c61e292994099372b11c06cdb5b80b",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff. The patch adds a check for '..' in the request URI in the Download function (server/http_download.go) and strips all '.' characters from the user-supplied path form value in the upload function (server/http_upload.go). Both fixes address path traversal via unsanitized user input. The pre-assigned class 'path-traversal' matches the CWE IDs (CWE-22, CWE-24) and the patch behavior. Sibling HTTP handler files (http_remove.go, http_info.go) use r.FormValue(\"path\") but were not patched and use the path for LevelDB lookups rather than direct filesystem access, so they are not included.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
