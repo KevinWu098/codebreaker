@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-xf99-j42q-5w5p",
+  "post_patch_commit": "daaf211e20feaab89f8c1a65343b0daf064a7322",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit daaf211e20 ('fix(node-host): fail closed on unbound interpreter approvals') modifies one source file: src/node-host/invoke-system-run-plan.ts plus docs and tests. The core vulnerability is in resolveMutableFileOperandIndex which fails to identify file operands for interpreter-style runners not in the MUTABLE_ARGV1_INTERPRETER_PATTERNS set (e.g. tsx, jiti, ts-node), returning null. resolveMutableFileOperandSnapshotSync then returns { ok: true, snapshot: null } instead of failing closed, skipping file-content binding. The fix adds a fail-closed guard via requiresStableInterpreterApprovalBindingWithShellCommand and resolveGenericInterpreterScriptOperandIndex. Pre-assigned class race-condition (CWE-367 TOCTOU) is correct: the approval checks a benign script but the script can be swapped before execution when binding is missing.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
