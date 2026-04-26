@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-w5fq-8965-c969",
   "post_patch_commit": "d395054dc2c360690239f2aedc6fd3ae9b46e279",
   "noisy_patch": true,
-  "curation_notes": "Patch commit d395054dc2c3 is a merge commit from the private repo (canonical/fix/cloud-spec-auth-3.6) that fixes the CloudSpec authorization bypass along with a macaroon token race condition. 11 files changed (8 non-test), making this a noisy patch. The primary vulnerability location was derived from the advisory description which explicitly names the CloudSpec method on the Controller facade, confirmed by the diff which adds authorization checks (superuser/model admin permission verification) to the CloudSpec function in the common cloudspec package. The pre-patch code only checks basic model tag authorization via getAuthFunc but does not verify elevated privileges before returning credential details.",
+  "curation_notes": "Patch commit d395054dc2c3 is a merge commit from the private repo (canonical/fix/cloud-spec-auth-3.6) that fixes the CloudSpec authorization bypass. 11 files changed total with 8 non-test source files, making this a noisy patch. However, the core vulnerability fix is concentrated in cloudspec.go — the other source file changes either pass new controllerTag and authorizer parameters to CloudSpec constructors (5 register.go files + controller.go) or fix a separate macaroon token race condition (locallogin.go). The primary location was derived from the advisory description (CloudSpec method on the Controller facade) and confirmed by the diff, which adds superuser and model admin permission checks to the CloudSpec function before returning credential details. Pre-patch, the CloudSpec function only checked basic model tag authorization via getAuthFunc without verifying elevated privileges.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
