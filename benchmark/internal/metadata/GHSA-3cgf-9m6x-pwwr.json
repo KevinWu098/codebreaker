@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-3cgf-9m6x-pwwr",
   "post_patch_commit": "45fd77ee43c38eea4d6f4e2e56c1667a55ec654f",
   "noisy_patch": false,
-  "curation_notes": "Patch modifies only src/unlock_notify.rs (1 file). The fix changes fired() and wait() from &mut self to &self, holds the mutex guard while calling notify_one(), and changes the callback to use shared references instead of creating aliased &mut from raw pointers. Locations derived directly from the patch diff.",
+  "curation_notes": "Re-curated with improved hints. Patch modifies only src/unlock_notify.rs (1 file). The fix changes fired() and wait() from &mut self to &self, holds the mutex guard while calling notify_one(), and changes the callback to use shared references instead of creating aliased &mut from raw pointers. L3 hints now properly differentiate from L1/L2 by naming the shared-cache lock notification subsystem. No sibling files contain the same vulnerability pattern. Vulnerability class race-condition confirmed from CWE-362 and patch analysis.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

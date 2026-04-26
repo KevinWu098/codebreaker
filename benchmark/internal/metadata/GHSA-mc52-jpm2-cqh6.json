@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-mc52-jpm2-cqh6",
   "post_patch_commit": "1b17985c5a438858b4cbe4e1e57cf000aeea0772",
   "noisy_patch": false,
-  "curation_notes": "Patch commit is a squash merge of PR #17392. Only one non-test source file was changed (runtime/permissions/prompter.rs). The fix adds locking of stdout and stderr streams in the TtyPrompter::prompt method to prevent concurrent threads from writing to the terminal while the permission prompt is displayed. Location derived directly from the patch diff.",
+  "curation_notes": "Re-curated with updated hint guidelines. Patch commit is a squash merge of PR #17392. Only one non-test source file was changed (runtime/permissions/prompter.rs). The fix adds locking of stdout and stderr streams in the TtyPrompter prompt method to prevent concurrent threads from writing to the terminal while the permission prompt is displayed. L3 hints now differentiated from L1/L2 with more specific subsystem targeting (terminal-based prompting, stdio stream management) and distinguishing context (Web Workers, exclusive I/O locks). Pre-assigned vuln_class race-condition confirmed — CWE-362 maps directly and the fix adds synchronization primitives.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

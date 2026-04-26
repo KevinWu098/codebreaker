@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Dataset loading and remote data source retrieval"
+      "area": "Data ingestion and remote resource download handling"
     },
     "L2": {
-      "description": "A path traversal vulnerability exists where a filename extracted from a remote server's HTTP response header is used to construct a local file path without proper sanitization. An attacker controlling the server can supply a crafted filename containing path traversal sequences or absolute paths, leading to arbitrary file write on the local system, which can result in remote code execution."
+      "description": "A path traversal vulnerability exists where a filename extracted from an HTTP response header of a remote server is used to construct a local file path without proper sanitization. An attacker who controls the remote server can supply a crafted filename containing directory traversal sequences or absolute path components, resulting in arbitrary file write on the client machine and potential remote code execution."
     },
     "L3": {
-      "area": "Dataset loading and remote data source retrieval",
-      "description": "A path traversal vulnerability exists where a filename extracted from a remote server's HTTP response header is used to construct a local file path without proper sanitization. An attacker controlling the server can supply a crafted filename containing path traversal sequences or absolute paths, leading to arbitrary file write on the local system, which can result in remote code execution."
+      "area": "HTTP-based dataset source download and local file path construction",
+      "description": "A path traversal vulnerability exists where a filename extracted from the Content-Disposition header of an HTTP response is used to construct a local file path without proper sanitization. When loading a dataset from an HTTP/HTTPS URL, an attacker who controls the remote server can supply a crafted filename containing directory traversal sequences or absolute path components, resulting in arbitrary file write on the client machine and potential remote code execution."
     }
   },
   "ground_truth": {

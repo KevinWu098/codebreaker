@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Concurrency and synchronization primitives for database operations"
+      "area": "Database connection lifecycle and state management internals"
     },
     "L2": {
-      "description": "A data race vulnerability exists in the database unlock notification mechanism where mutable references are unsafely aliased from raw pointers in a concurrent callback context, and a mutex guard is released before a condition variable is signaled, allowing unsynchronized access to shared state."
+      "description": "A data race vulnerability exists where mutable references are unsafely aliased from raw pointers within a concurrent callback invoked by the underlying C library, and a mutex guard is released before a condition variable is signaled, allowing unsynchronized access to shared state between threads."
     },
     "L3": {
-      "area": "Concurrency and synchronization primitives for database operations",
-      "description": "A data race vulnerability exists in the database unlock notification mechanism where mutable references are unsafely aliased from raw pointers in a concurrent callback context, and a mutex guard is released before a condition variable is signaled, allowing unsynchronized access to shared state."
+      "area": "Database lock contention handling and its blocking notification mechanism",
+      "description": "A data race vulnerability exists in the mechanism that handles blocking waits for database lock releases in a shared-cache configuration. Mutable references are unsafely aliased from raw pointers within a concurrent callback invoked by the underlying SQLite C library, and a mutex guard is dropped before a condition variable is signaled, creating unsynchronized access to shared state."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "race-condition",
     "cvss": 9.8,
-    "reason": "The UnlockNotification type allows creating aliased mutable references from raw pointers in the unlock-notify callback, violating Rust's memory safety guarantees, and drops the mutex guard before signaling the condition variable, creating a data race on shared state.",
+    "reason": "The UnlockNotification type allows creating aliased mutable references from raw pointers in the unlock-notify callback and drops the mutex guard before signaling the condition variable, creating data races on shared state.",
     "locations": [
       {
         "file": "src/unlock_notify.rs",

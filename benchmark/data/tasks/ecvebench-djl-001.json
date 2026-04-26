@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Model artifact retrieval and resource management utilities"
+      "area": "Model artifact management and utility infrastructure"
     },
     "L2": {
       "description": "An absolute path traversal vulnerability exists where archived artifacts with entries containing absolute path names are not properly sanitized during extraction. A crafted archive can include entries with leading file separator characters, causing files to be written to arbitrary locations on the filesystem instead of the intended target directory, potentially overwriting critical system files."
     },
     "L3": {
-      "area": "Model artifact retrieval and resource management utilities",
-      "description": "An absolute path traversal vulnerability exists where archived artifacts with entries containing absolute path names are not properly sanitized during extraction. A crafted archive can include entries with leading file separator characters, causing files to be written to arbitrary locations on the filesystem instead of the intended target directory, potentially overwriting critical system files."
+      "area": "Archive extraction utilities for tar and zip formats within the model artifact management layer",
+      "description": "An absolute path traversal vulnerability exists in the archive extraction routines used for unpacking model artifacts in tar and zip formats. Archive entries with leading file separator characters are not stripped during extraction, allowing files to be written to arbitrary locations on the filesystem instead of the intended target directory. This enables overwriting of system files through crafted model archive packages."
     }
   },
   "ground_truth": {
