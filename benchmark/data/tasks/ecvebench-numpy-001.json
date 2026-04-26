@@ -13,22 +13,26 @@
       "area": "Data persistence and file loading infrastructure"
     },
     "L2": {
-      "description": "An insecure deserialization vulnerability exists where loading data from untrusted sources permits arbitrary code execution. The default configuration allows deserialization of arbitrary Python objects from crafted serialized data, enabling remote code execution when a user loads a malicious file."
+      "description": "An insecure deserialization vulnerability exists where the default configuration allows deserialization of arbitrary Python objects from crafted serialized data files. When a user loads data from an untrusted source, attacker-controlled serialized objects can trigger arbitrary code execution without any explicit opt-in from the caller."
     },
     "L3": {
-      "area": "Data persistence and file loading infrastructure",
-      "description": "An insecure deserialization vulnerability exists where loading data from untrusted sources permits arbitrary code execution. The default configuration allows deserialization of arbitrary Python objects from crafted serialized data, enabling remote code execution when a user loads a malicious file."
+      "area": "NumPy's binary array file format loading routines for .npy and .npz files",
+      "description": "An insecure deserialization vulnerability exists where loading NumPy's binary array file formats from untrusted sources permits arbitrary code execution. The default configuration invokes Python pickle deserialization without requiring explicit opt-in from the caller, allowing crafted serialized object arrays embedded in these file formats to execute arbitrary code upon loading."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "insecure-deserialization",
     "cvss": 9.8,
-    "reason": "NumPy's data loading functions default to allow_pickle=True, enabling deserialization of arbitrary Python objects via pickle. An attacker can craft a malicious serialized file that executes arbitrary code when loaded.",
+    "reason": "NumPy's data loading functions default to allow_pickle=True, enabling deserialization of arbitrary Python objects via pickle. An attacker can craft a malicious .npy or .npz file that executes arbitrary code when loaded.",
     "locations": [
       {
         "file": "numpy/lib/npyio.py",
         "function": "load"
+      },
+      {
+        "file": "numpy/lib/npyio.py",
+        "function": "NpzFile.__init__"
       },
       {
         "file": "numpy/lib/format.py",
