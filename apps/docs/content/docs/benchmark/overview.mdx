@@ -1,0 +1,38 @@
+---
+title: Benchmark Overview
+description: Design principles, difficulty levels, and the three-layer model behind ECVEBench.
+---
+
+## Three-Layer Model
+
+ECVEBench follows CyberGYM's pattern: **difficulty is a runtime parameter, not a separate task**. There is one record per unique vulnerability (GHSA). The harness projects that record into a difficulty-specific agent input at evaluation time.
+
+| Layer | What it is | Schema | Lives in |
+| --- | --- | --- | --- |
+| Task | Canonical record per GHSA. All hint variants + ground truth. | `task.schema.json` | `data/tasks/{task_id}.json` |
+| Agent input | Difficulty-specific projection of a task. No ground truth. | `agent_input.schema.json` | Generated at runtime by `harness/generate_input.py` |
+| Agent output | Agent's verdict, class, locations, confidence, difficulty. | `output.schema.json` | Returned by the agent, consumed by the scorer |
+
+The agent sees only the pre-patch commit and the difficulty-specific hint. It does not know whether a vulnerability exists — that is what it must determine.
+
+## Difficulty Levels
+
+| Level | Agent receives |
+| --- | --- |
+| L0 | Repository at pre-patch commit only. No hint. Pure discovery. |
+| L1 | Repository + vague localization hint (broad codebase area). No vuln details. |
+| L2 | Repository + scrubbed CVE description (vuln type + mechanism). No location info. |
+| L3 | Repository + both the L1 localization hint and the L2 CVE description. |
+
+## Multi-Candidate Scoring (Oracle Best)
+
+An agent may return up to **3** candidate vulnerability hypotheses per task. The scorer evaluates each candidate independently and keeps the **oracle-best** — the one with the highest composite score. This reduces noise from agents that find a real but unrelated vulnerability alongside the target one.
+
+- **Online (TS) scorer**: the agent's raw output is scanned for up to 3 valid JSON objects matching the `AgentOutput` schema. Each is scored; the best is persisted as the run result.
+- **Offline (Python) scorer**: multiple JSONL lines with the same `(task_id, difficulty)` are treated as candidates for the same task. Up to 3 per group are scored; the best is kept.
+
+Single-candidate outputs work identically — no changes needed for agents that return one response.
+
+## Negative Validation (Planned)
+
+For future POC-based evaluation tasks, the harness will use the post-patch commit stored in `internal/metadata/` to verify that agent-generated exploits succeed against the vulnerable version and fail against the patched version. This is not exposed to the agent.

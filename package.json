@@ -8,6 +8,7 @@
   "name": "codebreaker",
   "scripts": {
     "build:dashboard": "pnpm --dir apps/dashboard build",
+    "build:docs": "pnpm --dir apps/docs build",
     "build:landing": "pnpm --dir apps/landing build",
     "check": "ultracite check",
     "db:apply:local": "pnpm --dir packages/control-plane exec wrangler d1 migrations apply codebreaker-sessions --local --config wrangler.jsonc",
@@ -15,6 +16,7 @@
     "db:generate": "pnpm --dir packages/control-plane exec drizzle-kit generate --config drizzle.config.ts",
     "db:studio": "pnpm --dir packages/control-plane exec drizzle-kit studio --config drizzle.config.ts",
     "dev:dashboard": "pnpm --dir apps/dashboard dev",
+    "dev:docs": "pnpm --dir apps/docs dev",
     "dev:landing": "pnpm --dir apps/landing dev",
     "dev:docker-shim": "cd packages/docker-shim && PYTHONPATH=src:../shim-shared/src uvicorn codebreaker_docker_shim.main:create_fastapi_app --factory --reload --host 0.0.0.0 --port 8000",
     "dev:token": "pnpm --dir apps/dashboard mint-dev-token",

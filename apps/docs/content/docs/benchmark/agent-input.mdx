@@ -1,0 +1,56 @@
+---
+title: Agent Input
+description: How task records are projected into difficulty-specific agent inputs.
+---
+
+The harness projects a task record into an agent input at a given difficulty. The agent never sees ground truth or hints for difficulties other than the one it is being run at. See `schema/agent_input.schema.json` for the formal schema.
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `task_id` | string | GHSA-level identifier (matches `task_id` in task file). |
+| `difficulty` | `"L0"` \| `"L1"` \| `"L2"` \| `"L3"` | Difficulty level this input was rendered at. |
+| `codebase.repo` | string | GitHub repository URL |
+| `codebase.language` | string | Primary language |
+| `codebase.ecosystem` | string | Package ecosystem (e.g. npm, pip, maven, go) |
+| `codebase.commit` | string | Full 40-character pre-patch SHA |
+| `hint` | object \| null | The hint at this difficulty. `null` for L0. |
+
+## Generating an Agent Input
+
+### CLI
+
+```bash
+python benchmark/harness/generate_input.py \
+    --task-id ecvebench-filebrowser-001 \
+    --difficulty L1
+```
+
+### Library
+
+```python
+from benchmark.harness import generate_input, load_task
+from pathlib import Path
+
+task = load_task(Path("benchmark/data/tasks"), "ecvebench-filebrowser-001")
+agent_input = generate_input(task, "L1")
+```
+
+## Example Output (L1)
+
+```json
+{
+  "task_id": "ecvebench-filebrowser-001",
+  "difficulty": "L1",
+  "codebase": {
+    "repo": "https://github.com/filebrowser/filebrowser",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "4bd7d69c82163b201a987e99c0c50d7ecc6ee5f1"
+  },
+  "hint": {
+    "area": "User authentication and account management"
+  }
+}
+```
