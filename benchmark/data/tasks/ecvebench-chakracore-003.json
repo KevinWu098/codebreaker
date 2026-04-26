@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "JIT compilation and function object lifecycle management"
+      "area": "Script engine runtime function management and type lifecycle infrastructure"
     },
     "L2": {
-      "description": "A memory corruption vulnerability exists in the scripting engine's handling of function object types during entry point cleanup. A specific function type is not included when iterating over all registered types, causing stale JIT entry points to persist after garbage collection. An attacker can exploit this via crafted script to achieve remote code execution."
+      "description": "A use-after-free vulnerability exists in the scripting engine where one of the internal type representations used by the JIT compiler is excluded from a cleanup routine that iterates over all such types. This omission causes stale compiled entry points to reference freed memory after garbage collection, allowing a remote attacker to achieve code execution via crafted script."
     },
     "L3": {
-      "area": "JIT compilation and function object lifecycle management",
-      "description": "A memory corruption vulnerability exists in the scripting engine's handling of function object types during entry point cleanup. A specific function type is not included when iterating over all registered types, causing stale JIT entry points to persist after garbage collection. An attacker can exploit this via crafted script to achieve remote code execution."
+      "area": "ChakraCore runtime base layer managing function body types and JIT entry point lifecycle",
+      "description": "A use-after-free vulnerability exists in ChakraCore's function type management where one of the function object types is deliberately excluded from an iteration routine that processes all registered types during JIT entry point cleanup. After garbage collection reclaims the backing memory, the unprocessed type's stale entry points reference freed memory, enabling remote code execution via crafted JavaScript."
     }
   },
   "ground_truth": {
     "vulnerable": true,
-    "vuln_class": "buffer-overflow",
+    "vuln_class": "use-after-free",
     "cvss": 9.8,
-    "reason": "The MapFunctionObjectTypes function omits one of the function types when iterating, leaving stale JIT entry points after cleanup. This leads to memory corruption that can be exploited for remote code execution via crafted JavaScript.",
+    "reason": "The MapFunctionObjectTypes function omits undeferredFunctionType when iterating over function types during entry point cleanup, leaving stale JIT-compiled entry points that reference garbage-collected memory. This use-after-free enables remote code execution via crafted JavaScript.",
     "locations": [
       {
         "file": "lib/Runtime/Base/FunctionBody.h",
