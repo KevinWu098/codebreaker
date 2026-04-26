@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-p8gp-2w28-mhwg",
+  "post_patch_commit": "75b11eae2de528bf89ede3fb1f7ed057ddbb4d24",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which adds datetime format validation in index.js within the plugin.start function, specifically inside the stream.onValue callback. The only other JS file (run.js) is a development runner script and does not contain the same vulnerability pattern. Pre-assigned class command-injection is correct: CWE-78 matches the unsanitized datetime input interpolated into a shell command executed via spawn('sh', ['-c', ...]).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
