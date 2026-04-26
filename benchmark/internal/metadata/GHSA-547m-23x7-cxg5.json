@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-547m-23x7-cxg5",
+  "post_patch_commit": "19da5c0c4d8c5e4dfef2a92e24141c3f51884dcc",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit (19da5c0) is a batch security fix touching 18 source files across multiple subsystems. The advisory PDSA-2023-011 specifically describes a null pointer dereference in paddle.nextafter when tensor dims are invalid (e.g., shape [0,0,0,0,0]). The fix in paddle/fluid/pybind/op_function_common.cc adds !PyObject_TypeCheck(obj, p_tensor_type) checks to CastPyArg2Ints, CastPyArg2Longs, CastPyArg2Floats, and CastPyArg2Float64s, preventing PaddlePaddle tensors from being incorrectly treated as Python sequences during argument casting. The other 17 file changes fix unrelated security issues bundled in the same commit. Pre-assigned vuln_class null-deref matches CWE-476 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
