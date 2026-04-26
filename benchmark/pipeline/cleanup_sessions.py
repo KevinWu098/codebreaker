@@ -105,7 +105,8 @@ def terminate_session(client: httpx.Client, devin_id: str) -> bool:
         return False
 
 
-def run(*, dry_run: bool = False, status_only: bool = False) -> int:
+def run(*, dry_run: bool = False, status_only: bool = False, filter_states: set[tuple[str, str]] | None = None) -> int:
+    target_states = filter_states or TERMINABLE
     with _client() as client:
         print("Fetching curation sessions...")
         sessions = list_curation_sessions(client)
@@ -122,9 +123,10 @@ def run(*, dry_run: bool = False, status_only: bool = False) -> int:
 
         to_terminate = [
             s for s in sessions
-            if (s.get("status"), s.get("status_detail")) in TERMINABLE
+            if (s.get("status"), s.get("status_detail")) in target_states
         ]
-        print(f"\nTerminable (finished / inactive): {len(to_terminate)}")
+        label = ", ".join(f"{s}/{d}" for s, d in sorted(target_states))
+        print(f"\nTargeting ({label}): {len(to_terminate)}")
 
         if status_only or not to_terminate:
             return 0
@@ -184,12 +186,28 @@ def main(argv: list[str] | None = None) -> int:
         "--poll", type=int, nargs="?", const=120, default=None, metavar="SECS",
         help="Run in a loop, cleaning up every N seconds (default: 120).",
     )
+    parser.add_argument(
+        "--filter", type=str, action="append", metavar="STATUS/DETAIL",
+        help=(
+            "Only terminate sessions matching this state (e.g. 'running/waiting_for_user'). "
+            "Can be specified multiple times. Default: finished + inactive + user_request."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    filter_states: set[tuple[str, str]] | None = None
+    if args.filter:
+        filter_states = set()
+        for f in args.filter:
+            parts = f.split("/", 1)
+            if len(parts) != 2:
+                parser.error(f"--filter must be 'status/detail', got: {f}")
+            filter_states.add((parts[0], parts[1]))
 
     if args.poll is not None:
         return poll(interval=args.poll)
 
-    return run(dry_run=args.dry_run, status_only=args.status)
+    return run(dry_run=args.dry_run, status_only=args.status, filter_states=filter_states)
 
 
 if __name__ == "__main__":
