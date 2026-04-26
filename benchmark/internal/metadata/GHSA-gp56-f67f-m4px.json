@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-gp56-f67f-m4px",
+  "post_patch_commit": "86be2930d1c54eb7575102563302b2f3bafcb653",
+  "noisy_patch": false,
+  "curation_notes": "Primary vulnerability is in modules/Fileeditor/Controllers/Fileeditor.php in the saveFile() and createFile() methods, which lack file extension validation. The patch adds an allowedExtensions whitelist and checks in both functions. The commit also addresses separate issues (info disclosure in forgotPassword, session check in isLoggedIn, filter route changes) but the RCE vulnerability is localized to the file editor controller. Pre-assigned class command-injection retained: while the mechanism is unrestricted file creation (CWE-434) rather than direct exec() injection, the exploit chain leads to arbitrary command execution via webshell, and no other class among the 13 valid options fits better. No sibling files found in the Fileeditor Controllers directory.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
