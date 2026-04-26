@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j3rh-8vwq-wh84",
+  "post_patch_commit": "deec3587ef7721cf5de5b960d43e9b68beff6193",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit (deec358) is a large version upgrade to JHipster 6.3.0 that changed 52 files (33+ non-test source files), making this a noisy patch. The security-relevant change is isolated to RandomUtil.kt.ejs, where all five random-value-generating functions (generatePassword, generateActivationKey, generateResetKey, generateSeriesData, generateTokenData) were switched from using RandomStringUtils.randomAlphanumeric/randomNumeric (backed by a non-cryptographic PRNG) to a shared SecureRandom-backed helper. Locations derived from the patch diff since the advisory description also pointed to the same file. No sibling files with the same vulnerability pattern were found — RandomUtil.kt.ejs is the sole random value generation utility in the project.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
