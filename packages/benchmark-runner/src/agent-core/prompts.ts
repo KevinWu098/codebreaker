@@ -27,6 +27,7 @@ export const BENCHMARK_SKILLS_CONTEXT = [
   "Skill: submission",
   "- Return up to 3 distinct vulnerability hypotheses, strongest first.",
   "- Use lower confidence for partially confirmed runner-up hypotheses.",
+  "- In Think runs, call `submit_benchmark_result` as soon as you have enough evidence for your strongest result.",
 ].join("\n");
 
 export type BenchmarkAgentEnvironment = "direct" | "think";
@@ -204,7 +205,7 @@ const buildSystemPrompt = (
     contexts.submission,
     "",
     input.environment === "think"
-      ? "Dedicated submission turn: when exploration is complete, call `submit_benchmark_result` on the submission turn rather than pasting final JSON during exploration."
+      ? "Use `submit_benchmark_result` as soon as exploration has produced the strongest schema-valid result. If exploration ends without a tool call, a dedicated submission recovery turn may still ask you to call it."
       : "Because this direct run may not have tools, be explicit about uncertainty and do not invent inspected evidence.",
   ].join("\n");
 };
@@ -229,6 +230,6 @@ const buildInitialPrompt = (
     contexts.submission,
     "",
     input.environment === "think"
-      ? "Do not output final JSON directly during exploration. When done, wait for the dedicated submission turn and call `submit_benchmark_result`."
+      ? "Do not output final JSON directly. Call `submit_benchmark_result` when you have enough evidence for the strongest result."
       : "Return the best valid JSON object(s) now. No prose, no markdown fences.",
   ].join("\n");

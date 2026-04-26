@@ -135,6 +135,7 @@
   },
   "scripts": {
     "ensure-targets": "node --experimental-strip-types src/scripts/ensure-stable-targets.ts",
+    "fail-stale-sessions": "node ./scripts/fail-stale-running-sessions.mjs",
     "generate:benchmark-fixtures": "node ./scripts/generate-benchmark-fixtures.mjs",
     "typecheck": "tsc --noEmit"
   },

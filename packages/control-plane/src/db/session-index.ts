@@ -10,8 +10,6 @@ import {
   SessionConfigSchema,
 } from "@codebreaker/shared/schemas/session";
 
-const STALE_RUNNING_SESSION_SECONDS = 300;
-
 interface SessionRowRecord {
   artifact_latest_commit_sha: string | null;
   artifact_path: string | null;
@@ -313,32 +311,6 @@ export class SessionIndexStore {
         )
         .bind(timestamp, input.id, input.id, input.eventId, timestamp),
     ]);
-  }
-
-  async failStaleRunningSessions(
-    maxAgeSeconds = STALE_RUNNING_SESSION_SECONDS
-  ): Promise<{ failed: string[] }> {
-    const cutoff = new Date(Date.now() - maxAgeSeconds * 1000).toISOString();
-    const timestamp = nowIso();
-    const stale = await this.db
-      .prepare(
-        `select id from sessions
-        where status = 'running' and updated_at < ?`
-      )
-      .bind(cutoff)
-      .all<{ id: string }>();
-    const ids = stale.results.map((row) => row.id);
-
-    for (const id of ids) {
-      await this.setStatus({
-        completedAt: timestamp,
-        eventId: `stale-running:${id}:${timestamp}`,
-        id,
-        status: "failed",
-      });
-    }
-
-    return { failed: ids };
   }
 
   private recordEventStatement(input: {

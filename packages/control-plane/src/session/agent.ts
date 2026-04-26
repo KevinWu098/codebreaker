@@ -332,13 +332,6 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       };
     }
 
-    if (ctx.toolName === BENCHMARK_SUBMIT_TOOL_NAME) {
-      return {
-        action: "block",
-        reason: `The ${BENCHMARK_SUBMIT_TOOL_NAME} tool is only available on the dedicated submission turn after exploration.`,
-      };
-    }
-
     const gitBlock = this.detectProhibitedGitCommand(ctx);
 
     if (gitBlock) {
@@ -703,7 +696,10 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       return toolNames;
     }
 
-    return toolNames.filter((toolName) => toolName !== "execute");
+    return [
+      ...toolNames.filter((toolName) => toolName !== "execute"),
+      BENCHMARK_SUBMIT_TOOL_NAME,
+    ];
   }
 
   private async ensureSessionReady(): Promise<void> {
