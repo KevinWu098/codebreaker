@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g7rj-q722-245g",
+  "post_patch_commit": "846a39476eed552ce427f0f76888d8d89fe90887",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit updates the vm2 dependency in packages/jsreport-core/package.json from 3.9.11 to 3.9.17, fixing CVE-2023-29017 (a vm2 sandbox escape). No jsreport source files were modified—only package.json, yarn.lock, and a test file. The location is derived from the source file that imports and instantiates vm2 (VM, VMScript): packages/jsreport-core/lib/worker/sandbox/createSandbox.js. The function is null because the vulnerable code path is the module-level default export (an anonymous function). Kept the pre-assigned class command-injection because the sandbox escape allows attacker-controlled template code to execute arbitrary OS commands via child_process.execSync.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
