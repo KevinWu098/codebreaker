@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-ghwq-7v3r-5433",
+  "post_patch_commit": "f95aa762f89adb4c5ae187e2ee11c37add784ee9",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit f95aa76 modifies only lib/Runtime/Library/JavascriptArray.cpp (plus test files). The fix adds IsFillFromPrototypes() checks to the concat fast paths in ConcatArgs, ConcatIntArgs, and ConcatFloatArgs to exclude arrays filled from prototypes from the fast path, preventing reentrancy-induced length mutation from causing heap overflow. Pre-assigned class buffer-overflow is correct — the commit message explicitly describes a heap overflow in CopyNativeIntArrayElementsToVar.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
