@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-golz4-001",
+  "ghsa_id": "GHSA-4wp2-8rm2-jgmh",
+  "codebase": {
+    "repo": "https://github.com/cloudflare/golz4",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "2dcef6a6aeec3ad36816c726fb1386460d27a466"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data decompression and decoding layer"
+    },
+    "L2": {
+      "description": "A memory corruption vulnerability exists in the data decompression bindings, where a deprecated C API is used that does not perform bounds checking on the output buffer. Crafted compressed input can cause an out-of-bounds write, potentially leading to arbitrary code execution."
+    },
+    "L3": {
+      "area": "LZ4 compression library Go bindings and decompression routines",
+      "description": "A buffer overflow vulnerability exists in the LZ4 decompression bindings where a deprecated C API function is called without proper bounds validation on the output buffer. When processing crafted LZ4-compressed data, the decompression routine can write beyond allocated memory bounds, potentially allowing arbitrary code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "buffer-overflow",
+    "cvss": 9.8,
+    "reason": "The Uncompress function uses the deprecated LZ4_uncompress C API which does not perform bounds checking, allowing crafted compressed input to write beyond the allocated output buffer and corrupt memory.",
+    "locations": [
+      {
+        "file": "lz4.go",
+        "function": "Uncompress"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4wp2-8rm2-jgmh",
+  "post_patch_commit": "199f5f7878062ca17a98e079f2dbe1205e2ed898",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (lz4.go), replacing the deprecated LZ4_uncompress C API call with LZ4_decompress_safe in the Uncompress function. The deprecated API does not perform bounds checking on the output buffer, enabling out-of-bounds writes. Sibling file lz4_hc.go only contains compression functions and does not use LZ4_uncompress, so no sibling locations were added. Pre-assigned class buffer-overflow (from CWE-787) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
