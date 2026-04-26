@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "SBI request processing and subscriber context management"
+      "area": "Service request handling and subscriber identity management"
     },
     "L2": {
-      "description": "A nil interface conversion vulnerability exists in the authentication service's request handling logic. When processing an authentication request, the code attempts to perform a type assertion on an interface value without first verifying it is non-nil. A remote attacker can trigger a panic and crash the service by sending a crafted request that causes a lookup for a non-existent internal mapping, resulting in a complete denial of service."
+      "description": "A nil pointer dereference vulnerability exists where the service attempts to perform an interface type assertion on a value retrieved from an internal context store without first verifying the value is non-nil. A remote attacker can trigger a panic and crash the service by sending a crafted authentication request that causes a lookup to return nil when the expected subscriber mapping does not exist, resulting in denial of service."
     },
     "L3": {
-      "area": "SBI request processing and subscriber context management",
-      "description": "A nil interface conversion vulnerability exists in the authentication service's request handling logic. When processing an authentication request, the code attempts to perform a type assertion on an interface value without first verifying it is non-nil. A remote attacker can trigger a panic and crash the service by sending a crafted request that causes a lookup for a non-existent internal mapping, resulting in a complete denial of service."
+      "area": "UE authentication request processing in the service-based interface layer",
+      "description": "A nil pointer dereference vulnerability exists in the UE authentication resynchronization flow where the service performs interface type assertions on values retrieved from subscriber identity mapping stores without nil checks. When processing a resynchronization request for a non-existent subscriber, the service panics due to a nil interface conversion, resulting in denial of service."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "null-deref",
     "cvss": 8.7,
-    "reason": "The UeAuthPostRequestProcedure function performs interface type assertions on values retrieved from internal context maps without nil checks, causing a panic when a crafted authentication request references non-existent subscriber identity mappings.",
+    "reason": "The UE authentication post-request procedure performs interface type assertions on values retrieved from subscriber identity context maps without nil checks, causing a panic when a crafted authentication request with resynchronization info references a non-existent SUCI-SUPI mapping.",
     "locations": [
       {
         "file": "internal/sbi/processor/ue_authentication.go",
