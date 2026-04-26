@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7945-5mcv-f2pp",
+  "post_patch_commit": "24409e98a260176765956ec766a04cb35984fab1",
+  "noisy_patch": false,
+  "curation_notes": "Primary location is osdp_reply_name in src/osdp_common.c, which the patch directly fixes by changing 'if (name[0] == '\\0')' to 'if (!name)'. Sibling function osdp_cmd_name in the same file has the identical vulnerability pattern — a sparse names array indexed by command ID with the same missing null check before dereferencing. Pre-assigned class null-deref (CWE-476) is correct; the fix is a straightforward null pointer check.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
