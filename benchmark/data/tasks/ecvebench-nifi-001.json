@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Data flow content processing and transformation"
+      "area": "Content parsing and transformation within the data processing pipeline"
     },
     "L2": {
-      "description": "An XML External Entity (XXE) vulnerability exists where a SAX parser used to process XML content does not disable external general entity resolution or disallow DOCTYPE declarations. An attacker can supply crafted malicious XML input to cause information disclosure or remote code execution."
+      "description": "An XML External Entity (XXE) vulnerability exists where an XML parser used to process XML content does not disable external general entity resolution or disallow DOCTYPE declarations. An attacker can supply crafted malicious XML input containing external entity references to cause information disclosure or remote code execution."
     },
     "L3": {
-      "area": "Data flow content processing and transformation",
-      "description": "An XML External Entity (XXE) vulnerability exists where a SAX parser used to process XML content does not disable external general entity resolution or disallow DOCTYPE declarations. An attacker can supply crafted malicious XML input to cause information disclosure or remote code execution."
+      "area": "XML content splitting and element extraction processors in the standard data flow processing bundle",
+      "description": "An XML External Entity (XXE) vulnerability exists where a SAX parser used to split XML documents into individual elements does not disable external general entity resolution or disallow DOCTYPE declarations. When processing attacker-controlled XML input, external entity references can be resolved, leading to information disclosure or remote code execution."
     }
   },
   "ground_truth": {
