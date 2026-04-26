@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g4r8-28fp-f255",
+  "post_patch_commit": "ad6615b3ec41353e614f6ea5fdd5b046442a832b",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only ResponseParser.java (plus Changelog). The fix adds XXE protections to the DocumentBuilderFactory in the parse() method: disallowing doctype declarations, disabling entity expansion, and disabling XInclude. No sibling files use DocumentBuilderFactory, so only one location is listed. The pre-assigned class 'xxe' matches CWE-611 and the patch behavior.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
