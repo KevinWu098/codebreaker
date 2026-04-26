@@ -1,0 +1,55 @@
+{
+  "task_id": "ecvebench-psutil-001",
+  "ghsa_id": "GHSA-qfc5-mcwq-26q8",
+  "codebase": {
+    "repo": "https://github.com/giampaolo/psutil",
+    "language": "c",
+    "ecosystem": "pip",
+    "commit": "ef032158fd72790ab2be14e99c45c32d66d96291"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Native C extension modules for cross-platform system data collection and conversion"
+    },
+    "L2": {
+      "description": "A double free vulnerability exists in native C extension code where Python object reference counts are decremented within loops that convert operating system data structures into Python objects. After decrementing, the pointers are not nullified, so if an error occurs during object creation in a subsequent loop iteration, the error cleanup path decrements already-freed references again, resulting in a double free that can lead to denial of service or potentially arbitrary code execution."
+    },
+    "L3": {
+      "area": "Platform-specific C extension modules that collect system metrics such as logged-in users, disk partitions, network counters, and process information for each supported operating system",
+      "description": "A double free vulnerability exists in the platform-specific C extension modules where Python object reference counts are decremented within loops that convert operating system data structures (such as user sessions, disk partitions, process lists, and network connections) into Python objects. The pointers are not nullified after their reference count is decremented at the end of each loop iteration, so when an error occurs during object creation in a subsequent iteration, the error cleanup path frees already-released objects again, resulting in a double free."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 7.5,
+    "reason": "Python object reference counts are decremented via Py_DECREF within loops without nullifying the pointers afterward, causing a double free when the error cleanup path calls Py_XDECREF on stale pointers to already-freed objects.",
+    "locations": [
+      {
+        "file": "psutil/_psutil_aix.c",
+        "function": "psutil_users"
+      },
+      {
+        "file": "psutil/_psutil_bsd.c",
+        "function": "psutil_users"
+      },
+      {
+        "file": "psutil/_psutil_linux.c",
+        "function": "psutil_users"
+      },
+      {
+        "file": "psutil/_psutil_osx.c",
+        "function": "psutil_pids"
+      },
+      {
+        "file": "psutil/_psutil_sunos.c",
+        "function": "psutil_users"
+      },
+      {
+        "file": "psutil/_psutil_windows.c",
+        "function": "psutil_users"
+      }
+    ]
+  }
+}
