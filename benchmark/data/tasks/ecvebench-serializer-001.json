@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-serializer-001",
+  "ghsa_id": "GHSA-j68w-pg49-f6vx",
+  "codebase": {
+    "repo": "https://github.com/symfony/serializer",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "d89f7d242d1bdf0c281bb498c840538c8071ec10"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data encoding and decoding layer for structured content formats"
+    },
+    "L2": {
+      "description": "An XML external entity (XXE) vulnerability exists where the XML parser does not disable external entity processing when deserializing input. An attacker can craft XML input containing external entity declarations to read arbitrary files from the file system or perform server-side request forgery."
+    },
+    "L3": {
+      "area": "XML encoding and decoding component for the serialization subsystem",
+      "description": "An XML external entity (XXE) vulnerability exists where the XML parser does not disable external entity processing when deserializing XML input. An attacker can craft XML input containing external entity declarations to read arbitrary files from the file system. The issue occurs during the XML-to-object decoding process in the serialization framework."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML decoder does not disable external entity loading before parsing XML input, allowing an attacker to include arbitrary files from the file system via crafted external entity declarations.",
+    "locations": [
+      {
+        "file": "Encoder/XmlEncoder.php",
+        "function": "decode"
+      }
+    ]
+  }
+}

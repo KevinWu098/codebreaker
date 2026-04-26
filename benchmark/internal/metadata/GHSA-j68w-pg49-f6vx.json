@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j68w-pg49-f6vx",
+  "post_patch_commit": "0943a06a663b573d7319fc1acd56d3484eaaa430",
+  "noisy_patch": false,
+  "curation_notes": "Single-file patch adding libxml_disable_entity_loader(true) and libxml_use_internal_errors(true) before simplexml_load_string() in the decode method of Encoder/XmlEncoder.php. Pre-assigned class xxe confirmed — CWE-611 matches the fix which disables external entity processing. No sibling files contain XML parsing; JsonEncoder.php is the only other encoder and does not use XML APIs.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
