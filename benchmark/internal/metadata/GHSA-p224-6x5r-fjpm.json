@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-p224-6x5r-fjpm",
   "post_patch_commit": "8e0002140491c592db41fa141dc6ad68f417e2b2",
   "noisy_patch": true,
-  "curation_notes": "Locations derived from patch diff. The patch adds path.Clean() normalization in three non-test source files: rule/rule.go (IsMatching), proxy/request_handler.go (InitializeAuthnSession), and proxy/proxy.go (ConfigureBackendURL). Two additional non-test files (rule/engine_glob.go and rule/repository_memory.go) had only cosmetic changes (renaming unused parameters to _). Marked as noisy because 5 non-test source files were changed in total.",
+  "curation_notes": "Locations derived from the patch diff. The patch adds path.Clean() normalization in three non-test source files: rule/rule.go (IsMatching), proxy/request_handler.go (InitializeAuthnSession), and proxy/proxy.go (ConfigureBackendURL). Two additional non-test files (rule/engine_glob.go and rule/repository_memory.go) had only cosmetic changes (renaming unused parameters to _). Marked as noisy because 5 non-test source files were changed in total. Vulnerability class path-traversal confirmed: CWE-23 (Relative Path Traversal) matches, the patch adds path normalization, and the advisory explicitly describes path traversal authorization bypass. No sibling files found with the same unpatched vulnerability pattern. Re-curated with updated L3 hints that are now more specific than L1/L2.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

@@ -16,8 +16,8 @@
       "description": "An XML external entity (XXE) vulnerability exists where the XML parser used to process contents from zip archive input is not configured to prevent external entity attacks. An attacker who can control the archive input for a build step can craft a malicious XML file that uses external entities to extract secrets from the host system or perform server-side request forgery."
     },
     "L3": {
-      "area": "Build result log parsing and archive processing",
-      "description": "An XML external entity (XXE) vulnerability exists where the XML parser used to process contents from zip archive input is not configured to prevent external entity attacks. An attacker who can control the archive input for a build step can craft a malicious XML file that uses external entities to extract secrets from the host system or perform server-side request forgery."
+      "area": "XML document parsing utilities within the build log processing subsystem",
+      "description": "An XML external entity (XXE) vulnerability exists where the XML parser used to process log data entries extracted from zip archives is not configured to prevent external entity attacks. An attacker who can control the zip archive input for a TestComplete test build step can craft a malicious XML file that uses external entities to extract secrets from the Jenkins controller or perform server-side request forgery."
     }
   },
   "ground_truth": {
