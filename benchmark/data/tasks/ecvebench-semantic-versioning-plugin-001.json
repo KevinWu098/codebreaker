@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-semantic-versioning-plugin-001",
+  "ghsa_id": "GHSA-h8p8-6378-649p",
+  "codebase": {
+    "repo": "https://github.com/jenkinsci/semantic-versioning-plugin",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "c67a89822f86a7d10498ea2783b833052b719086"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Build definition file parsing and version extraction logic"
+    },
+    "L2": {
+      "description": "An XML external entity (XXE) vulnerability exists where the XML parser used to process build definition files does not disable external entity resolution, allowing an attacker to read arbitrary files or perform server-side request forgery via a crafted XML document."
+    },
+    "L3": {
+      "area": "Maven POM build definition parsing and XML document processing components",
+      "description": "An XML external entity (XXE) vulnerability exists where the XML parser used to process Maven POM build definition files does not disable external entity resolution. An attacker who can control the contents of the POM file being parsed can include malicious external entity declarations to read arbitrary files from the system or perform server-side request forgery."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML parser in the POM file parsing logic uses DocumentBuilderFactory without disabling external entity resolution, allowing XXE attacks that can lead to arbitrary file reads or SSRF.",
+    "locations": [
+      {
+        "file": "src/main/java/org/jenkinsci/plugins/SemanticVersioning/parsing/PomParser.java",
+        "function": "invoke"
+      }
+    ]
+  }
+}
