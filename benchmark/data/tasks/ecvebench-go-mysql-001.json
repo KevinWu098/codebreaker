@@ -13,11 +13,11 @@
       "area": "Database replication and data synchronization infrastructure"
     },
     "L2": {
-      "description": "A cryptographic weakness exists where UUID identifiers are generated using an insecure pseudo-random number generator. The underlying randomness source is not cryptographically secure, making generated identifiers predictable to an attacker who can observe prior outputs. This could allow an attacker to forge or predict identity values used in replication protocols."
+      "description": "A cryptographic weakness exists where UUID identifiers are generated using a pseudo-random number generator that is not cryptographically secure. An attacker who can observe prior UUID outputs could predict future values, allowing them to forge or guess identity tokens used in database communication protocols."
     },
     "L3": {
-      "area": "Database replication and data synchronization infrastructure",
-      "description": "A cryptographic weakness exists where UUID identifiers are generated using an insecure pseudo-random number generator. The underlying randomness source is not cryptographically secure, making generated identifiers predictable to an attacker who can observe prior outputs. This could allow an attacker to forge or predict identity values used in replication protocols."
+      "area": "Binary log replication synchronization and connection setup logic",
+      "description": "A cryptographic weakness exists where UUID identifiers used during replica connection initialization in the binary log replication protocol are generated using a pseudo-random number generator that is not cryptographically secure. An attacker who can observe prior UUID outputs could predict future values, allowing them to impersonate replica instances during the replication handshake."
     }
   },
   "ground_truth": {
