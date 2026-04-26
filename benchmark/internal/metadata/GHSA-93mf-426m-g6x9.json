@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-93mf-426m-g6x9",
+  "post_patch_commit": "e1768a5d272e9da649dfb8588595e5c6e4e640bf",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies 2 non-test source files (plugin/etcd/etcd.go and plugin/etcd/setup.go). The vulnerability is in the TTL() function which casts kv.Lease (a 64-bit lease identifier) to uint32, producing incorrect TTL values. No sibling files share this pattern. Pre-assigned class integer-overflow (from CWE-681) is correct — the bug is an incorrect integer type conversion/truncation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
