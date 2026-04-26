@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-554w-xh4j-8w64",
   "post_patch_commit": "1da75dfcecd4d169e34809ade55748384e8af6c1",
   "noisy_patch": false,
-  "curation_notes": "Only one non-test source file changed (mlflow/utils/uri.py). The patch adds urllib.parse.unquote() to decode URL-encoded paths before validation in validate_path_is_safe(). Location derived directly from the patch diff. The advisory description and CWE IDs (CWE-22, CWE-29) confirm path-traversal classification.",
+  "curation_notes": "Re-curated with updated guidelines. Only one non-test source file changed (mlflow/utils/uri.py). The patch adds urllib.parse.unquote() to decode URL-encoded paths before validation in validate_path_is_safe(). Location derived directly from the patch diff. The advisory description and CWE IDs (CWE-22, CWE-29) confirm path-traversal classification. L3 hints now differentiated from L1/L2 — L3 area narrows to URI/path validation utilities, L3 description adds detail about percent-encoded dot-dot-slash patterns and the specific API endpoints involved. No sibling files share the same vulnerability pattern.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
