@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-beego-001",
+  "ghsa_id": "GHSA-r6qh-j42j-pw64",
+  "codebase": {
+    "repo": "https://github.com/beego/beego",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "5a366cd62b555354a917a2d153e6563fe4d6eb88"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Logging infrastructure and its various output transport backends"
+    },
+    "L2": {
+      "description": "A cryptographic weakness exists where TLS certificate verification is unconditionally disabled in a network transport configuration, allowing man-in-the-middle attacks to intercept or modify traffic. An attacker in a privileged network position could exploit this to read or alter sensitive data in transit."
+    },
+    "L3": {
+      "area": "Email notification transport within the logging subsystem",
+      "description": "A cryptographic weakness exists where TLS certificate verification is unconditionally disabled when establishing secure connections for email-based log notification delivery. An attacker in a privileged network position could intercept or modify email traffic containing sensitive log data via a man-in-the-middle attack."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 8.8,
+    "reason": "The SMTP log writer hardcodes InsecureSkipVerify to true in its TLS configuration, unconditionally disabling server certificate validation and enabling man-in-the-middle attacks on email log delivery.",
+    "locations": [
+      {
+        "file": "core/logs/smtp.go",
+        "function": "sendMail"
+      }
+    ]
+  }
+}
