@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-j5wx-jvw3-j363",
+  "post_patch_commit": "3f47b17393defac535aaae3334c28809486fc7b8",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 293b106 on GitHub corresponds to 3f47b17393 in the repository history (same message 'FIX: SQLi in contact groups form (#11869)'). The original commit SHA was unreachable via fetch but the equivalent merge commit was found via git log --grep. The patch changes a single file (formContactGroup.php) replacing direct string concatenation of $cg_id into a SQL query with a prepared statement using bindValue. Two sibling files (formHostGroup.php, formEscalation.php) in adjacent configObject directories contain the identical vulnerability pattern — unsanitized identifier interpolation into SQL query strings. Pre-assigned class sql-injection confirmed by both the CWE-89 mapping and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
