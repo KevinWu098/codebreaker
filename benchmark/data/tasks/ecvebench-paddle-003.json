@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-paddle-003",
+  "ghsa_id": "GHSA-2wcj-qr76-9768",
+  "codebase": {
+    "repo": "https://github.com/PaddlePaddle/Paddle",
+    "language": "c++",
+    "ecosystem": "pip",
+    "commit": "db700d10ff685a2f3340fa2b827ed165fc222f70"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Python-C++ binding layer for operator dispatch and argument handling"
+    },
+    "L2": {
+      "description": "A null pointer dereference vulnerability exists where passing a zero-dimensional tensor to certain tensor manipulation operations causes the argument parsing layer to misidentify the tensor object as a Python sequence type. This leads to incorrect iteration over the tensor's internal data, resulting in a segfault and denial of service."
+    },
+    "L3": {
+      "area": "Operator argument type casting and conversion utilities in the Python-C++ pybind interface",
+      "description": "A null pointer dereference vulnerability exists where passing a zero-dimensional tensor (scalar) to the put_along_axis operator causes the argument type conversion logic to misidentify the tensor object as a Python sequence. The sequence type check does not exclude tensor types, leading to incorrect element iteration and a segfault when processing the operator's inputs, resulting in denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 4.7,
+    "reason": "A null pointer dereference occurs in PaddlePaddle's operator argument type conversion when a zero-dimensional tensor is incorrectly identified as a Python sequence, causing a segfault in paddle.put_along_axis.",
+    "locations": [
+      {
+        "file": "paddle/fluid/pybind/op_function_common.cc",
+        "function": "CastPyArg2Ints"
+      },
+      {
+        "file": "paddle/fluid/pybind/op_function_common.cc",
+        "function": "CastPyArg2Longs"
+      },
+      {
+        "file": "paddle/fluid/pybind/op_function_common.cc",
+        "function": "CastPyArg2Floats"
+      },
+      {
+        "file": "paddle/fluid/pybind/op_function_common.cc",
+        "function": "CastPyArg2Float64s"
+      }
+    ]
+  }
+}
