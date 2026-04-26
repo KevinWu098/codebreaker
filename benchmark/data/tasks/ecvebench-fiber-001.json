@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-fiber-001",
+  "ghsa_id": "GHSA-68rr-p4fp-j59v",
+  "codebase": {
+    "repo": "https://github.com/gofiber/fiber",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "4ff945a6d70c6bb3acb6803d05100e1c7b19ab63"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Internal utility and helper library functions"
+    },
+    "L2": {
+      "description": "A cryptographic weakness exists where UUID generation functions silently fall back to producing predictable, all-zero identifiers when the underlying secure random number generator fails to provide entropy. No error is surfaced to callers, allowing security-critical code paths such as session management, CSRF protection, and rate limiting to unknowingly rely on colliding, predictable identifiers."
+    },
+    "L3": {
+      "area": "Internal UUID generation utilities within the framework's vendored helper library",
+      "description": "A cryptographic weakness exists where UUID generation functions silently fall back to producing predictable, all-zero identifiers when the underlying secure random number generator fails to provide entropy on Go versions prior to 1.24. Instead of signaling the failure, the functions return a constant zero-value UUID, allowing security-critical middleware components such as session management, CSRF tokens, and request ID generation to unknowingly rely on colliding, predictable identifiers."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.2,
+    "reason": "UUID generation functions silently fall back to returning a predictable all-zero UUID when crypto/rand fails to provide entropy, instead of propagating the error to callers.",
+    "locations": [
+      {
+        "file": "utils/common.go",
+        "function": "UUID"
+      },
+      {
+        "file": "utils/common.go",
+        "function": "UUIDv4"
+      }
+    ]
+  }
+}
