@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "XML document parsing and processing utilities"
+      "area": "General-purpose utility classes for data parsing and document processing"
     },
     "L2": {
       "description": "An XML External Entity (XXE) vulnerability exists where an XML processing component does not enable secure processing restrictions. An attacker can supply a crafted XML document that references external entities, potentially leading to disclosure of confidential data, server-side request forgery, or denial of service."
     },
     "L3": {
-      "area": "XML document parsing and processing utilities",
-      "description": "An XML External Entity (XXE) vulnerability exists where an XML processing component does not enable secure processing restrictions. An attacker can supply a crafted XML document that references external entities, potentially leading to disclosure of confidential data, server-side request forgery, or denial of service."
+      "area": "XML document parsing and schema validation utility classes",
+      "description": "An XML External Entity (XXE) vulnerability exists where the schema factory used during XML schema validation does not have secure processing enabled. When validating XML documents against a schema file, an attacker can supply crafted input containing external entity references, potentially leading to disclosure of confidential data, server-side request forgery, or denial of service."
     }
   },
   "ground_truth": {
