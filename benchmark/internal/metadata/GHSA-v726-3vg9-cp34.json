@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-v726-3vg9-cp34",
+  "post_patch_commit": "978fdc5731feddee2bb84fd072e59d6d7c1a8bbe",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit is a large sync (33 files, including barcode, CSV/JSON data connectors, HTML export, and other unrelated changes). The security-relevant changes add a ScriptSecurity feature: a blacklist of dangerous keywords (GetType, typeof, DllImport, LoadLibrary, GetProcAddress) in Config.cs, stub classes shadowing dangerous .NET namespaces (System.IO, System.Diagnostics, System.Reflection, System.Net, System.Threading) in StubClasses.cs, and a script validation hook in ScriptSecurity.cs/WebReport.cs. The primary vulnerability location is AssemblyDescriptor.InternalCompile, which compiles user-supplied report expressions into .NET assemblies without any security checks. Kept pre-assigned auth-bypass class (CWE-862) because the core issue is missing authorization controls on what code operations report templates can perform.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
