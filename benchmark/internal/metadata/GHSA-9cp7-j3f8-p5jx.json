@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-9cp7-j3f8-p5jx",
   "post_patch_commit": "8d626bbb14f82160a08cbca53e0749f475f5742c",
   "noisy_patch": true,
-  "curation_notes": "Advisory explicitly names server/actions/action_cloudstore_file_upload.go and the cloudstore.file.upload action. Patch touches 8 non-test source files adding filepath.Clean and traversal-stripping loops across multiple upload handlers. Locations derived from the advisory description since the patch is noisy. The two vulnerable functions in the named file are unzip (zip slip) and DoAction (path traversal in filename and atPath parameters).",
+  "curation_notes": "Re-curated with updated guidelines. Advisory explicitly names server/actions/action_cloudstore_file_upload.go and the cloudstore.file.upload action. Patch touches 8 non-test source files adding filepath.Clean and traversal-stripping loops across multiple upload/file handlers. Primary locations derived from the advisory description (unzip and DoAction in the named file). Sibling locations added for action_csv_to_entity.go and action_xls_to_entity.go — both are in the same directory, serve the same role (file upload action handlers), and contain the identical unsanitized filename-to-filepath pattern. L1/L2/L3 hints improved: L1 broadened, L3 made more specific than L1/L2 with subsystem-level targeting. Vuln class path-traversal confirmed from CWE-22 and patch behavior.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
