@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-24q2-6x37-cgcx",
+  "post_patch_commit": "36402c22eef49d60edd73a2f312f8e28fe0bd1cb",
+  "noisy_patch": true,
+  "curation_notes": "The advisory explicitly names product/card.php and the status_batch parameter. The patch commit fixes multiple unsanitized GETPOST calls in card.php (status_batch, customcode, country_id, statut, statut_buy, finished, accountancy codes) by adding type filters. It also enhances test_sql_and_script_inject in main.inc.php with a stricter type 3 mode, adds SQL injection protection to select_thirdparty_list in html.form.class.php, and makes a minor fix in societe/ajax/company.php. Since 4 non-test source files were changed, the patch is marked noisy. Location derived from the advisory description which explicitly names the file. No sibling files in htdocs/product/ share the same status_batch vulnerability pattern. Pre-assigned class sql-injection confirmed correct based on CWE-89 and the patch adding input type sanitization to prevent SQL injection.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
