@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-scratch-vm-001",
+  "ghsa_id": "GHSA-vc9j-fhvv-8vrf",
+  "codebase": {
+    "repo": "https://github.com/scratchfoundation/scratch-vm",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "b67ba75d8b1df4268a9d6727bbc4f32f153c9131"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Project file serialization and deserialization logic"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where untrusted project files can embed crafted opcode strings containing special characters. During deserialization, these opcodes are parsed to extract extension identifiers without proper sanitization, allowing an attacker to inject arbitrary URLs that are then loaded and executed as worker scripts, resulting in remote code execution."
+    },
+    "L3": {
+      "area": "SB3 project format deserialization and extension identifier resolution",
+      "description": "An insecure deserialization vulnerability exists where crafted SB3 project files can embed opcode strings with special characters such as underscores in unexpected positions. During SB3 deserialization, the extension identifier extraction logic splits opcodes on a delimiter without sanitizing the resulting prefix, allowing an attacker to inject arbitrary URLs that are loaded and executed as worker scripts, resulting in remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The getExtensionIdForOpcode function in the SB3 deserializer extracts extension IDs from opcodes without sanitizing special characters, allowing crafted project files to inject arbitrary URLs that are loaded and executed as worker scripts.",
+    "locations": [
+      {
+        "file": "src/serialization/sb3.js",
+        "function": "getExtensionIdForOpcode"
+      }
+    ]
+  }
+}
