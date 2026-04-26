@@ -69,10 +69,11 @@ import { DASHBOARD_LIST_PAGE_SIZE } from "@/lib/list-page-size";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_MODEL = MODEL_OPTIONS_BY_PROVIDER.kimi[0];
-const BENCHMARK_MAX_INPUT_TOKENS = 300_000;
+const BENCHMARK_MAX_INPUT_TOKENS = 250_000;
+const BENCHMARK_MAX_OUTPUT_TOKENS = 50_000;
 const BENCHMARK_MAX_STEPS = 50;
 const BENCHMARK_MAX_TOOL_CALLS = 40;
-const BENCHMARK_MAX_TOTAL_TOKENS = 400_000;
+const BENCHMARK_MAX_TOTAL_TOKENS = 300_000;
 const BENCHMARK_MAX_TURNS = 20;
 const BENCHMARK_TIMEOUT_SECONDS = 600;
 const BATCH_CREATE_DELAY_MS = 500;
@@ -99,6 +100,7 @@ const createBenchmarkRequestFromRun = (
   cleanupPolicy: run.cleanupPolicy,
   difficulty: run.difficulty,
   maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
+  maxOutputTokens: BENCHMARK_MAX_OUTPUT_TOKENS,
   maxSteps: BENCHMARK_MAX_STEPS,
   maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
   maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
@@ -140,6 +142,7 @@ const createBenchmarkRequestsFromBatch = ({
             cleanupPolicy,
             difficulty,
             maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
+            maxOutputTokens: BENCHMARK_MAX_OUTPUT_TOKENS,
             maxSteps: BENCHMARK_MAX_STEPS,
             maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
             maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,
@@ -1186,6 +1189,7 @@ export const BenchmarksPanel = ({
         cleanupPolicy: "retain",
         difficulty,
         maxInputTokens: BENCHMARK_MAX_INPUT_TOKENS,
+        maxOutputTokens: BENCHMARK_MAX_OUTPUT_TOKENS,
         maxSteps: BENCHMARK_MAX_STEPS,
         maxToolCalls: BENCHMARK_MAX_TOOL_CALLS,
         maxTotalTokens: BENCHMARK_MAX_TOTAL_TOKENS,

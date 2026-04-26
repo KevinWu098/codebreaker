@@ -281,10 +281,11 @@ export const createRouter = (): Hono<{
         autoStart: false,
         cleanupPolicy: run.cleanupPolicy,
         difficulty: run.difficulty,
-        maxInputTokens: 300_000,
+        maxInputTokens: 250_000,
+        maxOutputTokens: 50_000,
         maxSteps: 50,
         maxToolCalls: 40,
-        maxTotalTokens: 400_000,
+        maxTotalTokens: 300_000,
         maxTurns: 20,
         model: {
           id: run.modelId,

@@ -844,6 +844,10 @@ export class SessionAgent extends Think<Env, SessionAgentState> {
       return `Input token budget reached (${inputTokens}/${budgets.maxInputTokens})`;
     }
 
+    if (budgets?.maxOutputTokens && outputTokens >= budgets.maxOutputTokens) {
+      return `Output token budget reached (${outputTokens}/${budgets.maxOutputTokens})`;
+    }
+
     if (budgets?.maxTotalTokens && totalTokens >= budgets.maxTotalTokens) {
       return `Total token budget reached (${totalTokens}/${budgets.maxTotalTokens})`;
     }

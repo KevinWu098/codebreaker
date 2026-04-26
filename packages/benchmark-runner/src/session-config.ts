@@ -22,6 +22,7 @@ export interface BenchmarkSessionConfigInput {
   artifactOwner?: string;
   difficulty: Difficulty;
   maxInputTokens?: number;
+  maxOutputTokens?: number;
   maxSteps?: number;
   maxToolCalls?: number;
   maxTotalTokens?: number;
@@ -36,6 +37,7 @@ export const toBenchmarkSessionConfig = ({
   artifactOwner,
   difficulty,
   maxInputTokens,
+  maxOutputTokens,
   maxSteps,
   maxToolCalls,
   maxTotalTokens,
@@ -65,6 +67,7 @@ export const toBenchmarkSessionConfig = ({
     compaction: defaultCompactionConfig,
     budgets: {
       maxInputTokens: maxInputTokens ?? null,
+      maxOutputTokens: maxOutputTokens ?? null,
       maxToolCalls: maxToolCalls ?? null,
       maxTotalTokens: maxTotalTokens ?? null,
     },
