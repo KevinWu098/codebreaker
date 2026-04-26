@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-cvj7-5f3c-9vg9",
+  "post_patch_commit": "e8f60b6a4cd28d475ef1b5acf0f2608a5865c992",
+  "noisy_patch": true,
+  "curation_notes": "Locations derived from the patch diff of PR #3977. The patch is noisy (11 non-test source files changed) as it refactors uint variable representation across the slashing validation pipeline and type definitions. Primary vulnerability is in the type system where Slot/Epoch use UintNumInf64 (JavaScript number) instead of UintBn64 (BigInt), and in all functions that process AttesterSlashing and ProposerSlashing objects with those number-based types. Vulnerability class confirmed as integer-overflow matching CWE-190.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
