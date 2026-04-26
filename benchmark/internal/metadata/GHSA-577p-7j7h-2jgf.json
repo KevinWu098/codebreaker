@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-577p-7j7h-2jgf",
+  "post_patch_commit": "99aeec1efec9213e87098d42eb09439e7ee0bb6a",
+  "noisy_patch": true,
+  "curation_notes": "The patch introduces a centralized protocol whitelist (allowedProtocols) in the Options class, replacing ad-hoc protocol checks scattered across multiple resource loading entry points. Before the patch, phar:// URIs were not blocked in CSS loading (Stylesheet::load_css_file), image caching (Cache::resolve_url), font registration (FontMetrics::registerFont), and HTML loading (Dompdf::loadHtmlFile), allowing them to reach file_get_contents() via Helpers::getFileContent() and trigger PHP PHAR deserialization. The patch modifies 8 non-test source files (noisy) because the protocol validation logic was duplicated across all resource loading paths. Locations derived from the patch diff, focusing on entry points where missing protocol validation allowed phar:// URIs through to file_get_contents().",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
