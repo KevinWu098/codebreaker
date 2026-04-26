@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-82rr-mq4r-p4r3",
+  "post_patch_commit": "e001430aa9fb53d2502fb6f036f6c51c578d2016",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references two commits fixing issue #308. Commit e001430a is the primary patch: it removes the direct AJAX endpoint from PortalPollsNotes.fnc.php that used unsanitized $_POST['votes'] and moves the poll voting logic to modules/misc/Portal.php using the sanitized $_REQUEST array. A follow-up commit (519af055) additionally fixes key sanitization in Warehouse.php's array_rwalk function. The pre-patch commit (0f5d1f1d) is the parent of the primary patch, where the vulnerable AJAX handler directly passes $_POST array keys as $poll_id into SQL queries in PortalPollsVote(). Pre-assigned class sql-injection is correct — the vulnerability is a textbook unsanitized input interpolation into SQL.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
