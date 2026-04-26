@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x67x-vg9m-65c3",
+  "post_patch_commit": "24ead980daf11ba563e4fb2516187a56a71ad319",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as buffer-overflow from CWE-119, but the advisory title is 'Integer overflow in base64' and the description explicitly states 'integer overflow bug when calculating the size of a buffer'. The patch replaces unchecked arithmetic with checked_add and checked_mul in the encoded_size function. Reclassified to integer-overflow. Primary location is the encoded_size function in src/lib.rs which performs the unchecked arithmetic. The callers encode_config and encode_config_buf were also patched to handle the new Option return type, but the root vulnerability is the overflow in encoded_size. No sibling files contain the same pattern — src/tables.rs only holds static lookup tables.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
