@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wp34-mqw5-jj85",
+  "post_patch_commit": "6b83f9d0708337a9f8b709c1624a8587021ceba2",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies only src/lib.rs in the split_at method of Arena<T>. The fix stores the result of selected.borrow() in a temporary variable so the same index is used consistently. No sibling files exist — nano-arena is a single-file library crate. Vulnerability class use-after-free (CWE-416) confirmed: the advisory explicitly states the bug enables 'use-after-frees' through unsound aliasing violations when Borrow returns different indices on successive calls.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
