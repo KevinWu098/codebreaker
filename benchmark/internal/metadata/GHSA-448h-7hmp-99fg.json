@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-448h-7hmp-99fg",
+  "post_patch_commit": "f74773f4520adff6b70a7d445417aa9769f61fa6",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit f74773f fixes CVE-2017-0223 by passing plastRParen to the recursive ParseExpr call in lib/Parser/Parse.cpp, correcting the right parenthesis location calculation for lambdas with parenthesized assignment expressions. Only 1 non-test source file was changed. The pre-assigned class buffer-overflow (from CWE-119) is correct — the commit message explicitly states 'we overwrite the buffer allocated in ScriptFunction::EnsureSourceString'. No sibling files share this vulnerability pattern as the fix is specific to a single call site in the expression parser.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
