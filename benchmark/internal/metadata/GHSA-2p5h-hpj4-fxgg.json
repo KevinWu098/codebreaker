@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-2p5h-hpj4-fxgg",
+  "post_patch_commit": "ca938740264f1fcb18f91cba8e4039c518ecb75b",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit ca938740 fixes issue #766 by adding an empty-string check on the resolved path before assigning it to the files_ vector entry in CoreFile::parse_(). Only one source file was changed. The pre-assigned class null-deref (CWE-476) is correct: the segmentation fault occurs because a resolved path is used without verifying it is non-empty, causing a null pointer dereference. No sibling files share the same vulnerability pattern — the other .tcc files in the core/ directory handle different ELF note types (auxiliary vectors, process status, process info) and do not perform file path resolution.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
