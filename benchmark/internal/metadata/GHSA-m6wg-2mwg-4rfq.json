@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-m6wg-2mwg-4rfq",
+  "post_patch_commit": "92153bcb59bd2f511e502262c46c7bd660e21733",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #23 (tagged v0.1.1). The fix adds runtime.KeepAlive() calls throughout gpgme.go and data.go to prevent the Go garbage collector from freeing wrapper objects while C code still holds pointers to their fields. Primary locations selected are Verify (explicitly mentioned in the advisory for GPG signature verification), Decrypt (another critical crypto operation), and Data.Close (representative of the Data handle use-after-free pattern). The pre-assigned vulnerability class use-after-free is correct: CWE-416 maps directly, the advisory describes it as use-after-free, and the patch confirms the fix is adding GC liveness barriers.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
