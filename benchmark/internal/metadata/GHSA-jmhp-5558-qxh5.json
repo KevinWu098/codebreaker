@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-jmhp-5558-qxh5",
   "post_patch_commit": "f2cce35a04fac756cecc7a4c55e23758b99288c1",
   "noisy_patch": false,
-  "curation_notes": "Locations derived from both the advisory description and the patch diff. The advisory explicitly names the file and function. The patch modifies only one source file, replacing exec() with execFile() and adding destination validation. The vulnerability is in performTraceroute() which interpolates user-controlled destination into shell command strings passed to child_process.exec().",
+  "curation_notes": "Locations derived from both the advisory description and the patch diff. The advisory explicitly names the file and function. The patch modifies only one source file (NetworkPathMonitor.ts), changing exec() to execFile() with an args array and adding destination validation via isValidDestination(). The vulnerable function is performTraceroute which interpolated user-controlled destination into a shell command string.",
   "dataset_version": "0.1.0",
   "snapshot_date": "2026-04-25"
 }
