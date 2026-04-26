@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9hc7-6w9r-wj94",
+  "post_patch_commit": "a9022772b2f1ce38929b5b81eccc670ac9d3ab23",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only src/lib.rs (1 non-test source file). The vulnerability is in the gen macro which computes MASK = $len - 1 instead of ($len as usize).next_power_of_two() - 1. For non-power-of-two alphabet sizes (base58 with 58 chars, base62 with 62 chars), this produces a bitmask with permanently zeroed bits, restricting output to 16/58 and 32/62 characters respectively. The fix also adds rejection sampling to ensure uniform distribution. No sibling files exist — the entire library is a single source file. Pre-assigned class crypto-weakness (CWE-331 Insufficient Entropy) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
