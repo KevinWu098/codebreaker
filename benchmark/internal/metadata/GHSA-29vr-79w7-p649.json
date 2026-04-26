@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-29vr-79w7-p649",
+  "post_patch_commit": "49bcb19be5e0320e7e1535f34fe00f16a3cf3b28",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as auth-bypass from CWE-863, but the patch fixes command injection: three view functions (project_configure, project_clone, project_parse) concatenated user input into shell command strings and passed them to Popen with shell=True. The fix switches all three to list-based commands with shell=False and tightens the regex sanitization on project_name to also strip whitespace. The duplicate advisory GHSA-9w7f-m4j4-j3xw explicitly describes this as remote code execution. Reclassified to command-injection. Only one source file was changed (gerapy/server/core/views.py), so the patch is not noisy. All three vulnerable functions live in the same file and share the identical pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
