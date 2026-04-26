@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-go-tuf-001",
+  "ghsa_id": "GHSA-4f8r-qqr9-fq8j",
+  "codebase": {
+    "repo": "https://github.com/theupdateframework/go-tuf",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "f95222bdd22d2ac4e5b8ed6fe912b645e213c3b5"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Delegation metadata resolution and target update retrieval logic"
+    },
+    "L2": {
+      "description": "A race condition vulnerability exists where delegation role lookups use an unordered data structure, causing non-deterministic traversal order of delegated roles. This can result in the wrong artifact being selected when multiple delegations exist, as the iteration order varies unpredictably between executions."
+    },
+    "L3": {
+      "area": "Delegation role resolution within the TUF metadata package and the target updater's delegation graph traversal",
+      "description": "A race condition vulnerability exists where delegation role lookups for target files use an unordered map data structure instead of an ordered list, causing non-deterministic traversal order during the graph walk of delegated roles. When multiple delegations exist in a TUF repository's target metadata, the inconsistent ordering can result in the wrong artifact being downloaded."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 7.5,
+    "reason": "The GetRolesForTarget function returns a Go map, whose iteration order is non-deterministic, causing delegation roles to be traversed in an inconsistent order that can lead to downloading the wrong artifact.",
+    "locations": [
+      {
+        "file": "metadata/metadata.go",
+        "function": "GetRolesForTarget"
+      },
+      {
+        "file": "metadata/updater/updater.go",
+        "function": "preOrderDepthFirstWalk"
+      }
+    ]
+  }
+}
