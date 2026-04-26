@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-rc57-9r3x-98cq",
+  "post_patch_commit": "8cf4158567b3fada4b869fdf7058233eb6a32a62",
+  "noisy_patch": false,
+  "curation_notes": "The advisory references PR #3808, which was merged then immediately reverted. The actual fix was re-applied in PR #3815 (commit 8cf4158). The pre-patch commit is the parent of PR #3815's merge commit. The vulnerability is in KieModuleMarshaller.java within the KieModuleValidator inner class: the validate() method creates XML validators via schema.newValidator() without setting ACCESS_EXTERNAL_DTD or ACCESS_EXTERNAL_SCHEMA to empty strings, and the loadSchema()/loadOldSchema() methods create SchemaFactory instances without secure processing configuration. Only one source file was changed in the patch. No sibling files in the same directory share the vulnerable pattern. Pre-assigned class xxe is correct (CWE-611, XXE via unrestricted XML validator).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

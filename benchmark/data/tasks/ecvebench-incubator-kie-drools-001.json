@@ -1,0 +1,43 @@
+{
+  "task_id": "ecvebench-incubator-kie-drools-001",
+  "ghsa_id": "GHSA-rc57-9r3x-98cq",
+  "codebase": {
+    "repo": "https://github.com/apache/incubator-kie-drools",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "9c0695ee593744fd39ff3116cc2bd498cae41cb0"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "XML-based module configuration parsing and validation logic"
+    },
+    "L2": {
+      "description": "An XML External Entity (XXE) injection vulnerability exists where the XML validator does not disable external entity resolution. An attacker can supply a crafted XML document that causes the parser to process external DTD and schema references, potentially leading to disclosure of sensitive files or server-side request forgery."
+    },
+    "L3": {
+      "area": "KIE module descriptor XML schema validation within the rule engine compiler",
+      "description": "An XML External Entity (XXE) injection vulnerability exists in the KIE module descriptor validation logic. The XML schema validator used to check module configuration files does not set properties to restrict external DTD or external schema access, allowing an attacker to inject external entity declarations into a crafted XML input and read arbitrary files or perform server-side request forgery."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The XML schema validator in KieModuleMarshaller does not disable external entity resolution (ACCESS_EXTERNAL_DTD and ACCESS_EXTERNAL_SCHEMA are not restricted), allowing XXE injection through crafted XML module descriptor input.",
+    "locations": [
+      {
+        "file": "drools-compiler/src/main/java/org/drools/compiler/kproject/models/KieModuleMarshaller.java",
+        "function": "validate"
+      },
+      {
+        "file": "drools-compiler/src/main/java/org/drools/compiler/kproject/models/KieModuleMarshaller.java",
+        "function": "loadSchema"
+      },
+      {
+        "file": "drools-compiler/src/main/java/org/drools/compiler/kproject/models/KieModuleMarshaller.java",
+        "function": "loadOldSchema"
+      }
+    ]
+  }
+}
