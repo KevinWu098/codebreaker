@@ -21,7 +21,8 @@ const ExecRemoteInputSchema = z.object({
 });
 
 const GIT_COMMAND_RE = /\bgit\b/;
-const EXEC_REMOTE_MAX_TIMEOUT_SECONDS = 15;
+const MODAL_TOOL_MAX_TIMEOUT_SECONDS = 15;
+const EXEC_REMOTE_MAX_TIMEOUT_SECONDS = MODAL_TOOL_MAX_TIMEOUT_SECONDS;
 const REMOTE_READ_DEFAULT_MAX_BYTES = 24_000;
 const REMOTE_READ_HARD_MAX_BYTES = 96_000;
 
@@ -39,6 +40,13 @@ const RemoteWriteInputSchema = z.object({
   contentBase64: z.string().min(1),
   path: z.string().min(1),
 });
+
+interface RemoteWriteResult {
+  error?: string;
+  ok: boolean;
+  path: string;
+  timedOut: boolean;
+}
 
 export interface ModalToolOptions {
   defaultProfile?: SandboxProfileName;
@@ -96,10 +104,9 @@ export const createModalTools = ({
       },
     }),
     remote_read: tool({
-      description:
-        "Read a file from the session's configured remote Modal sandbox and return base64 content. Output is truncated to a budget-friendly window; for larger reads use exec_remote with `sed -n 'A,Bp'`, `head`, `tail`, or `grep -n -C`.",
+      description: `Read a file from the session's configured remote Modal sandbox and return base64 content. Calls are capped at ${MODAL_TOOL_MAX_TIMEOUT_SECONDS} seconds and return a timed-out result if they exceed that budget. Output is truncated to a budget-friendly window; for larger reads use exec_remote with \`sed -n 'A,Bp'\`, \`head\`, \`tail\`, or \`grep -n -C\`.`,
       inputSchema: RemoteReadInputSchema,
-      execute: async ({ maxBytes, path }) => {
+      execute: ({ maxBytes, path }) => {
         const input: {
           path: string;
           profile?: SandboxProfileName;
@@ -113,38 +120,51 @@ export const createModalTools = ({
           input.profile = defaultProfile;
         }
 
-        const content = await executor.readFile(input);
         const limit = Math.min(
           maxBytes ?? REMOTE_READ_DEFAULT_MAX_BYTES,
           REMOTE_READ_HARD_MAX_BYTES
         );
-        const totalBytes = content.byteLength;
-        const truncated = totalBytes > limit;
-        const slice = truncated ? content.subarray(0, limit) : content;
 
-        const result: {
-          contentBase64: string;
-          path: string;
-          totalBytes: number;
-          truncated: boolean;
-          hint?: string;
-        } = {
-          contentBase64: bytesToBase64(slice),
-          path,
-          totalBytes,
-          truncated,
-        };
-
-        if (truncated) {
-          result.hint = `File is ${totalBytes} bytes; only the first ${limit} bytes are returned. To inspect more, use exec_remote with sed -n 'A,Bp', head, tail, or grep -n -C against this path.`;
-        }
-
-        return result;
+        return withToolTimeout(
+          (async () => {
+            const content = await executor.readFile(input);
+            const totalBytes = content.byteLength;
+            const truncated = totalBytes > limit;
+            const slice = truncated ? content.subarray(0, limit) : content;
+            const result: {
+              contentBase64: string;
+              path: string;
+              timedOut: boolean;
+              totalBytes: number;
+              truncated: boolean;
+              error?: string;
+              hint?: string;
+            } = {
+              contentBase64: bytesToBase64(slice),
+              path,
+              timedOut: false,
+              totalBytes,
+              truncated,
+            };
+            if (truncated) {
+              result.hint = `File is ${totalBytes} bytes; only the first ${limit} bytes are returned. To inspect more, use exec_remote with sed -n 'A,Bp', head, tail, or grep -n -C against this path.`;
+            }
+            return result;
+          })(),
+          MODAL_TOOL_MAX_TIMEOUT_SECONDS,
+          () => ({
+            contentBase64: "",
+            error: `remote_read for ${path} exceeded the ${MODAL_TOOL_MAX_TIMEOUT_SECONDS}s timeout. Retry with a more specific path or use exec_remote with a small sed/head range and continue.`,
+            path,
+            timedOut: true,
+            totalBytes: 0,
+            truncated: false,
+          })
+        );
       },
     }),
     remote_write: tool({
-      description:
-        "Write base64 content to a file in the session's configured remote Modal sandbox.",
+      description: `Write base64 content to a file in the session's configured remote Modal sandbox. Calls are capped at ${MODAL_TOOL_MAX_TIMEOUT_SECONDS} seconds and return a timed-out result if they exceed that budget.`,
       inputSchema: RemoteWriteInputSchema,
       execute: ({ contentBase64, path }) => {
         const input: {
@@ -162,7 +182,20 @@ export const createModalTools = ({
           input.profile = defaultProfile;
         }
 
-        return executor.writeFile(input);
+        return withToolTimeout<RemoteWriteResult>(
+          executor.writeFile(input).then(() => ({
+            ok: true,
+            path,
+            timedOut: false,
+          })),
+          MODAL_TOOL_MAX_TIMEOUT_SECONDS,
+          () => ({
+            error: `remote_write for ${path} exceeded the ${MODAL_TOOL_MAX_TIMEOUT_SECONDS}s timeout. Reduce the payload size or split the write across multiple calls and continue.`,
+            ok: false,
+            path,
+            timedOut: true,
+          })
+        );
       },
     }),
   },
@@ -176,24 +209,31 @@ const assertNoGitCommand = (command: string): void => {
   }
 };
 
-const withExecTimeout = async (
+const withExecTimeout = (
   promise: Promise<ExecResult>,
   command: string,
   timeoutSeconds: number
-): Promise<ExecResult> => {
+): Promise<ExecResult> =>
+  withToolTimeout(promise, timeoutSeconds, () => ({
+    command,
+    durationMs: timeoutSeconds * 1000,
+    exitCode: 124,
+    stderr: `Command exceeded the ${timeoutSeconds}s exec_remote timeout. Narrow the search, scope the directory, add --include filters, or use a smaller head/sed range and continue.`,
+    stderrTruncated: false,
+    stdout: "",
+    stdoutTruncated: false,
+    timedOut: true,
+  }));
+
+const withToolTimeout = async <T>(
+  promise: Promise<T>,
+  timeoutSeconds: number,
+  buildTimeoutResult: () => T
+): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<ExecResult>((resolve) => {
+  const timeout = new Promise<T>((resolve) => {
     timeoutId = setTimeout(() => {
-      resolve({
-        command,
-        durationMs: timeoutSeconds * 1000,
-        exitCode: 124,
-        stderr: `Command exceeded the ${timeoutSeconds}s exec_remote timeout. Narrow the search, scope the directory, add --include filters, or use a smaller head/sed range and continue.`,
-        stderrTruncated: false,
-        stdout: "",
-        stdoutTruncated: false,
-        timedOut: true,
-      });
+      resolve(buildTimeoutResult());
     }, timeoutSeconds * 1000);
   });
 

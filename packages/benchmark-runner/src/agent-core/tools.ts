@@ -111,7 +111,7 @@ export const TOOL_CAPABILITIES = [
   },
   {
     description:
-      "Submit the final schema-validated benchmark result on the dedicated submission turn.",
+      "Submit the final schema-validated benchmark result. Use this even after exploration, tool, or time budget is exhausted; submit the best calibrated result available rather than stopping without a submission.",
     id: "benchmark_submission",
     risk: "read",
     thinkToolNames: ["submit_benchmark_result"],

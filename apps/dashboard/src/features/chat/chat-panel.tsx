@@ -35,6 +35,7 @@ import {
 import type { MessagePart } from "@/components/tool-call-part";
 import { Spinner } from "@/components/ui/spinner";
 import { useConnection } from "@/lib/connection";
+import { formatRelativeTime } from "@/lib/format";
 
 interface ChatPanelProps {
   sessionId: string;
@@ -144,13 +145,29 @@ const ChatLoadingMessage = (): React.JSX.Element => (
   </Message>
 );
 
+interface MessageMetadataWithTimestamp {
+  createdAt?: string | number | Date;
+}
+
+const messageTimestamp = (message: UIMessage): Date | null => {
+  const metadata = message.metadata as MessageMetadataWithTimestamp | undefined;
+  const candidate = metadata?.createdAt;
+  if (candidate === undefined || candidate === null) {
+    return null;
+  }
+  const parsed = candidate instanceof Date ? candidate : new Date(candidate);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 interface ChatMessageItemProps {
+  fallbackSentAt: Date | null;
   message: UIMessage;
   showTransientParts: boolean;
 }
 
 const ChatMessageItem = memo(
   ({
+    fallbackSentAt,
     message,
     showTransientParts,
   }: ChatMessageItemProps): React.JSX.Element => {
@@ -159,6 +176,18 @@ const ChatMessageItem = memo(
     const renderableParts = message.parts.filter((part) =>
       isRenderableMessagePart(part as MessagePart, showTransientParts)
     );
+    const sentAt = messageTimestamp(message) ?? fallbackSentAt;
+    const partFirstSeenRef = useRef<Map<string, Date>>(new Map());
+
+    const partStartedAt = useCallback((key: string): Date => {
+      const cached = partFirstSeenRef.current.get(key);
+      if (cached) {
+        return cached;
+      }
+      const stamp = new Date();
+      partFirstSeenRef.current.set(key, stamp);
+      return stamp;
+    }, []);
 
     return (
       <Message from={message.role}>
@@ -180,11 +209,21 @@ const ChatMessageItem = memo(
                 partKey={key}
                 role={message.role}
                 showTransientParts={showTransientParts}
+                startedAt={partStartedAt(key)}
                 variant="live"
               />
             );
           })}
         </MessageContent>
+        {sentAt ? (
+          <time
+            className="mt-1 block text-[10px] text-fg-subtle group-[.is-user]:ml-auto group-[.is-user]:text-right"
+            dateTime={sentAt.toISOString()}
+            title={sentAt.toLocaleString()}
+          >
+            {formatRelativeTime(sentAt)}
+          </time>
+        ) : null}
         {text && <ChatMessageActions text={text} />}
       </Message>
     );
@@ -227,6 +266,7 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
     [connection.baseUrl]
   );
   const [draft, setDraft] = useState("");
+  const firstSeenRef = useRef<Map<string, Date>>(new Map());
   const agentOptions = useMemo<Parameters<typeof useAgent>[0]>(
     () => ({
       agent: "session-agent",
@@ -268,6 +308,33 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
   const latestMessageId = latestMessage?.id;
   const showLoadingMessage = isStreaming && !hasAssistantText(latestMessage);
 
+  const firstSeenAt = useCallback((messageId: string): Date => {
+    const cached = firstSeenRef.current.get(messageId);
+    if (cached) {
+      return cached;
+    }
+    const stamp = new Date();
+    firstSeenRef.current.set(messageId, stamp);
+    return stamp;
+  }, []);
+
+  useEffect(() => {
+    const seen = firstSeenRef.current;
+    const now = new Date();
+    const liveIds = new Set<string>();
+    for (const message of chat.messages) {
+      liveIds.add(message.id);
+      if (!seen.has(message.id)) {
+        seen.set(message.id, now);
+      }
+    }
+    for (const id of seen.keys()) {
+      if (!liveIds.has(id)) {
+        seen.delete(id);
+      }
+    }
+  }, [chat.messages]);
+
   return (
     <Card
       actions={
@@ -298,6 +365,7 @@ export const ChatPanel = ({ sessionId }: ChatPanelProps): React.JSX.Element => {
             ) : (
               chat.messages.map((message) => (
                 <ChatMessageItem
+                  fallbackSentAt={firstSeenAt(message.id)}
                   key={message.id}
                   message={message}
                   showTransientParts={

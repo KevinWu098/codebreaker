@@ -10,6 +10,15 @@ import { RefreshButton } from "@/components/refresh-button";
 import { Spinner } from "@/components/spinner";
 import type { MessagePart } from "@/components/tool-call-part";
 import { useSessionMessagesQuery } from "@/hooks/queries";
+import { formatRelativeTime } from "@/lib/format";
+
+const parseSentAt = (value: string | number | undefined): Date | null => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 
 interface MessagesPanelProps {
   sessionId: string;
@@ -37,8 +46,18 @@ const partKey = (
 const messageKey = (message: Message, fallbackId: string): string =>
   message.id ?? fallbackId;
 
-const renderPart = (part: MessagePart, key: string): React.JSX.Element => (
-  <MessagePartRenderer key={key} part={part} partKey={key} variant="static" />
+const renderPart = (
+  part: MessagePart,
+  key: string,
+  startedAt: Date | null
+): React.JSX.Element => (
+  <MessagePartRenderer
+    key={key}
+    part={part}
+    partKey={key}
+    startedAt={startedAt}
+    variant="static"
+  />
 );
 
 export const MessagesPanel = ({
@@ -85,6 +104,7 @@ export const MessagesPanel = ({
           const renderableParts = raw.parts?.filter((part) =>
             isRenderableMessagePart(part)
           );
+          const sentAt = parseSentAt(raw.createdAt);
 
           return (
             <article
@@ -105,9 +125,18 @@ export const MessagesPanel = ({
               </header>
               <div className="mt-1 space-y-2">
                 {renderableParts?.map((part, partIndex) =>
-                  renderPart(part, partKey(raw, fallbackId, partIndex))
+                  renderPart(part, partKey(raw, fallbackId, partIndex), sentAt)
                 )}
               </div>
+              {sentAt ? (
+                <time
+                  className="mt-1 block text-[10px] text-fg-subtle"
+                  dateTime={sentAt.toISOString()}
+                  title={sentAt.toLocaleString()}
+                >
+                  {formatRelativeTime(sentAt)}
+                </time>
+              ) : null}
             </article>
           );
         })}

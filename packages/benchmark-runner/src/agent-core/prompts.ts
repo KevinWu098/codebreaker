@@ -28,6 +28,7 @@ export const BENCHMARK_SKILLS_CONTEXT = [
   "- Return up to 3 distinct vulnerability hypotheses, strongest first.",
   "- Use lower confidence for partially confirmed runner-up hypotheses.",
   "- In Think runs, call `submit_benchmark_result` as soon as you have enough evidence for your strongest result.",
+  "- If you run out of exploration/tool/time budget, you can and should still call `submit_benchmark_result` with your best schema-valid result instead of stopping without a submission.",
 ].join("\n");
 
 export type BenchmarkAgentEnvironment = "direct" | "think";
@@ -131,6 +132,7 @@ const buildContexts = (
       "- The first object must be your highest-confidence finding.",
       "- Return at most 3 locations per object, ranked; `locations[0]` is the single best site for that finding.",
       "- Lower confidence to 0.6 or below when evidence is partial.",
+      "- Budget exhaustion is not a blocker to submission: if you cannot inspect more, submit your best schema-valid result with calibrated confidence.",
     ].join("\n"),
     task: [
       `Task: ${input.task.task_id}`,
@@ -166,7 +168,7 @@ const buildToolGuide = (
     "",
     "Preferred bounded command idioms when shell tools are available:",
     `- Work under ${repoPath}.`,
-    "- Shell calls time out after 15 seconds; use narrow, scoped searches and continue from timed-out results instead of retrying the same broad command.",
+    "- Every remote tool call (exec_remote, remote_read, remote_write) is capped at 15 seconds and returns a timed-out result if it exceeds that budget; use narrow, scoped reads/searches and continue from timed-out results instead of retrying the same broad operation.",
     "- Git commands are prohibited because repository metadata can reveal patch/answer information.",
     "- Listing: `ls -la <dir>` or language/package-manager manifest inspection.",
     "- Searching: `grep -RIn --include='*.<ext>' -E 'pat1|pat2|pat3' <scoped-dir> | head -N`.",
@@ -205,7 +207,7 @@ const buildSystemPrompt = (
     contexts.submission,
     "",
     input.environment === "think"
-      ? "Use `submit_benchmark_result` as soon as exploration has produced the strongest schema-valid result. If exploration ends without a tool call, a dedicated submission recovery turn may still ask you to call it."
+      ? "Use `submit_benchmark_result` as soon as exploration has produced the strongest schema-valid result. If you run out of exploration, tool, or time budget, you can and should still call `submit_benchmark_result` with the best schema-valid result you can justify. If exploration ends without a tool call, a dedicated submission recovery turn may still ask you to call it."
       : "Because this direct run may not have tools, be explicit about uncertainty and do not invent inspected evidence.",
   ].join("\n");
 };
@@ -230,6 +232,6 @@ const buildInitialPrompt = (
     contexts.submission,
     "",
     input.environment === "think"
-      ? "Do not output final JSON directly. Call `submit_benchmark_result` when you have enough evidence for the strongest result."
+      ? "Do not output final JSON directly. Call `submit_benchmark_result` when you have enough evidence for the strongest result. If you run out of exploration, tool, or time budget, still call `submit_benchmark_result` with your best schema-valid result and calibrated confidence."
       : "Return the best valid JSON object(s) now. No prose, no markdown fences.",
   ].join("\n");
