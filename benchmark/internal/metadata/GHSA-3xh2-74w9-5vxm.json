@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3xh2-74w9-5vxm",
+  "post_patch_commit": "5b740c29263eb386f33f265561c8262522f19d37",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only conn.go (1 non-test source file). The fix introduces a setReadRemaining helper that validates the readRemaining value is non-negative before assignment, preventing integer overflow when casting uint64 wire values to int64. The primary vulnerable location is the advanceFrame function where frame payload lengths (especially the 64-bit case) are read as uint64 and cast directly to int64 without overflow checks. An additional overflow check was added for readLength accumulation. The pre-assigned class integer-overflow is correct: CWE-190 (Integer Overflow) directly matches the vulnerability mechanism.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
