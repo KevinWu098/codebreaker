@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-mysql-binuuid-rails-001",
+  "ghsa_id": "GHSA-6j63-35hj-vmcg",
+  "codebase": {
+    "repo": "https://github.com/nedap/mysql-binuuid-rails",
+    "language": "ruby",
+    "ecosystem": "rubygems",
+    "commit": "687a6c159ed9765e59df439a118deb841f69d6fe"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Data type serialization and database value handling layer"
+    },
+    "L2": {
+      "description": "A SQL injection vulnerability exists where user-supplied values are serialized into a binary representation for database storage without validation, allowing an attacker to inject arbitrary SQL through crafted input strings. The binary data type bypasses default string escaping, so malicious input is passed directly into queries."
+    },
+    "L3": {
+      "area": "UUID binary type serialization and its conversion to database-storable hex values",
+      "description": "A SQL injection vulnerability exists where user-supplied UUID values are serialized into a binary hex representation for MySQL storage without validating that the input is a legitimate UUID. Because the binary data type bypasses ActiveRecord's default string escaping, a crafted value containing SQL metacharacters is passed directly into queries instead of being properly quoted."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "sql-injection",
+    "cvss": 9.8,
+    "reason": "The serialize method strips dashes from user-supplied UUID values and wraps them in a Binary Data object without validating that the input is a valid hexadecimal UUID, allowing arbitrary SQL injection since ActiveRecord does not explicitly escape Binary data types.",
+    "locations": [
+      {
+        "file": "lib/mysql-binuuid/type.rb",
+        "function": "serialize"
+      }
+    ]
+  }
+}
