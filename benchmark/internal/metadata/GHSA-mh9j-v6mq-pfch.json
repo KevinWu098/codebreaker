@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-mh9j-v6mq-pfch",
+  "post_patch_commit": "25084603b7ea771eebe263d39744fe6abf1f8d61",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit (25084603) removed the entire bundled src/module/smarty/ directory to fix issue #206. The original repo (matyhtf/framework) has been deleted from GitHub; commit data was recovered from Software Heritage Archive. The primary vulnerability is in Smarty.class.php's _parse_resource_name function, which concatenates user-supplied template resource names with the template base directory path without sanitizing directory traversal sequences. The patch is noisy because it removed the entire Smarty module (multiple PHP source files across several subdirectories) rather than fixing the specific path validation. The vulnerability class path-traversal matches CWE-22 and the advisory description of 'path manipulation'.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
