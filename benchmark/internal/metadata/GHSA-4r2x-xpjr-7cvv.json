@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4r2x-xpjr-7cvv",
+  "post_patch_commit": "54e21708e8aa3f2e9978adc023782110b78ce163",
+  "noisy_patch": false,
+  "curation_notes": "This GHSA describes a chain of two vulnerabilities: (1) CWE-532 — API error messages leak Python object memory addresses (e.g. '<_io.BytesIO object at 0x...>'), enabling ASLR bypass, and (2) CWE-122 — a heap buffer overflow in the JPEG2000 decoder (OpenCV/FFmpeg) triggered by malicious cdef box color channel remapping in video frames. The patch commit (PR #31987) addresses the info leak by adding a sanitize_message function that strips memory addresses from error responses. A second PR (#32668) bumps the opencv-python dependency to 4.13 to fix the heap overflow in the bundled codec. Locations are derived from the patch diff — the two error handler functions in api_server.py that returned unsanitized messages to API clients. Pre-assigned class buffer-overflow retained as CWE-122 is the primary exploitable vulnerability in the chain.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
