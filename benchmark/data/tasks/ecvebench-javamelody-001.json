@@ -16,8 +16,8 @@
       "description": "A cross-site scripting (XSS) vulnerability exists where user-controlled message content is embedded into dynamically generated HTML output without proper encoding, allowing an attacker to inject arbitrary scripts that execute in the context of other users' browsers."
     },
     "L3": {
-      "area": "HTML report generation and rendering layer",
-      "description": "A cross-site scripting (XSS) vulnerability exists where user-controlled message content is embedded into dynamically generated HTML output without proper encoding, allowing an attacker to inject arbitrary scripts that execute in the context of other users' browsers."
+      "area": "Core HTML report generator responsible for rendering status messages and action feedback in the monitoring dashboard",
+      "description": "A cross-site scripting (XSS) vulnerability exists where user-controlled status messages are written into inline JavaScript blocks within dynamically generated HTML monitoring reports. The message content is JavaScript-encoded but not HTML-encoded before being embedded in a script context, allowing script injection when crafted input is supplied."
     }
   },
   "ground_truth": {
