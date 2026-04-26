@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-vh2g-6c4x-5hmp",
+  "post_patch_commit": "ec58700f6dff8e5b4af1544f6205ec362b593092",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies 2 source files: src/api/users.js (adds type whitelist validation in generateExport) and src/socket.io/user/profile.js (replaces object spread with explicit property pick in doExport). Both are primary locations. No sibling files share the same vulnerability pattern. Pre-assigned class path-traversal (CWE-22) is correct — the unvalidated type parameter is interpolated into a file path for child_process.fork().",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
