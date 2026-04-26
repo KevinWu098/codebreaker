@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Elliptic curve signature handling and verification"
+      "area": "Elliptic curve signature parsing and cryptographic verification logic"
     },
     "L2": {
-      "description": "An integer overflow vulnerability exists in the signature parsing logic of a SECP256K1 library. The signature components are not validated against the curve order during parsing, allowing values larger than the curve order to be accepted. This enables an attacker to craft signatures that should be invalid but pass verification, undermining the integrity of cryptographic signature validation."
+      "description": "An integer overflow vulnerability exists in the signature parsing logic of an elliptic curve cryptography library. The R and S components of a signature are not validated against the curve order during parsing, allowing values that exceed the curve order to be silently accepted after modular reduction. This enables an attacker to craft signatures with overflowed parameters that pass verification, undermining cryptographic signature integrity."
     },
     "L3": {
-      "area": "Elliptic curve signature handling and verification",
-      "description": "An integer overflow vulnerability exists in the signature parsing logic of a SECP256K1 library. The signature components are not validated against the curve order during parsing, allowing values larger than the curve order to be accepted. This enables an attacker to craft signatures that should be invalid but pass verification, undermining the integrity of cryptographic signature validation."
+      "area": "SECP256K1 signature parsing and deserialization routines",
+      "description": "An integer overflow vulnerability exists in the signature parsing routines of a SECP256K1 elliptic curve library. When parsing fixed-size byte arrays into signature scalar components, the overflow flag returned by the scalar deserialization is silently discarded, causing values larger than the curve order to wrap around via modular reduction. This allows crafted signatures with overflowed R or S parameters to be accepted as valid and pass verification."
     }
   },
   "ground_truth": {
