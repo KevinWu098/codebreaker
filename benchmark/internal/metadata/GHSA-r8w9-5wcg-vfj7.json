@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r8w9-5wcg-vfj7",
+  "post_patch_commit": "90d4fe00df870acd3d38f3dc4face9aacab8fbb9",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies 2 source files: src/sys/windows/event.rs (helper addition) and src/sys/windows/named_pipe.rs (core fix). The vulnerability is in notify_readable and notify_writable methods of the Io impl in named_pipe.rs, which posted IOCP completion events directly without checking deregistration status. The fix introduces a schedule_event method that uses an event-specific Overlapped pointer and an event_done callback that verifies io.token.is_some() before delivering the event. No sibling files are affected — the advisory explicitly states only named pipes are vulnerable. Vulnerability class use-after-free matches CWE-416 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
