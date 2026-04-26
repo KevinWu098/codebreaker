@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-stack-dst-rs-001",
+  "ghsa_id": "GHSA-8mjx-h23h-w2pg",
+  "codebase": {
+    "repo": "https://github.com/thepowersgang/stack_dst-rs",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "807e9d45019c02369e11d40bd181cbf7bb7981fc"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Dynamic collection storage and element insertion logic"
+    },
+    "L2": {
+      "description": "A double-free vulnerability exists where a collection's internal bookkeeping prematurely updates its size before element data is fully written. If a panic occurs during element cloning, the collection's destructor will iterate over the incorrectly-sized region, attempting to drop uninitialized or already-freed memory."
+    },
+    "L3": {
+      "area": "Stack-based dynamically-sized type (DST) collection and its element cloning push operations",
+      "description": "A double-free vulnerability exists in a stack-based dynamically-sized type collection. The internal offset tracking used capacity is incremented before clone operations on input slice elements complete. If a clone call panics, the destructor iterates over the now-incorrectly-sized region and attempts to free already-freed or uninitialized elements, causing a double-free."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "use-after-free",
+    "cvss": 9.8,
+    "reason": "The push_cloned function calls push_inner which increments the stack's internal offset before clone operations complete, so if clone panics the stack's destructor will double-free or drop uninitialized memory.",
+    "locations": [
+      {
+        "file": "src/stack.rs",
+        "function": "push_cloned"
+      },
+      {
+        "file": "src/stack.rs",
+        "function": "push_inner"
+      }
+    ]
+  }
+}
