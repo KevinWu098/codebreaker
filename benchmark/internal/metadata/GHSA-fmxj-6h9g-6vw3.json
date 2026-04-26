@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fmxj-6h9g-6vw3",
+  "post_patch_commit": "6dde93758d42455cb90ef324407919ed67668b9b",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as path-traversal from CWE-36, but the patch fixes unsanitized user inputs interpolated into shell command strings via Python string formatting. The fix replaces direct string interpolation with argparse-based argument passing and adds shlex.quote() sanitization in both backend.py (predict method) and scoring_server/__init__.py (get_cmd function). Reclassified to command-injection. Locations derived from the patch diff: backend.py predict() constructed a python -c command with .format() using repr() of user inputs, and get_cmd() interpolated host/port directly into gunicorn/waitress command strings.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
