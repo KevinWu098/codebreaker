@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jrg3-qq99-35g7",
+  "post_patch_commit": "9bffc3913aeb8472c11bb543243004b4b4376f16",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 9bffc39 adds a class whitelist mechanism to restrict which classes can be instantiated during JSON deserialization. The vulnerability is in MapToBean.map2bean(), where ClassLoaderUtil.loadClass(className) is called with the class name extracted directly from JSON input without any validation when setClassMetadataName is configured. The patch adds a classnameWhitelist field to JsonParserBase, an allowClass() API to JsonParser, and a checkClassName() validation in MapToBean before class loading. Three non-test source files were changed (JsonParser.java, JsonParserBase.java, MapToBean.java). No sibling files share the same vulnerability pattern. Pre-assigned class insecure-deserialization (CWE-502) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
