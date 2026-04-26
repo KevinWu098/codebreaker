@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fr6q-jv7j-35g3",
+  "post_patch_commit": "d7039d034e02fa358e6656565157cedf5fa83288",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit d7039d0 modifies src/mZip.mjs and src/m7z.mjs (2 source files). The fix replaces full file path exposure in decompression status messages with just the filename using getFileName(). The broader path traversal vulnerability is in mZip.mjs unzip/extract where path.join(fpTar, file.path) joins archive entry paths to the target directory without validating that the result stays within the intended extraction directory (classic Zip Slip). The m7z.mjs unzip function has a similar pattern where the output directory path is passed to the 7z executable without sanitization. Both locations are derived directly from the patch diff. No sibling files found — WZip.mjs is only a re-export and checkTarget.mjs is a utility. Vulnerability class path-traversal confirmed from CWE-22, advisory description, and code analysis.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
