@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x2p8-rgfm-qw3v",
+  "post_patch_commit": "5ee097dbede547023e88f60ed3f430ff09398b87",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only one file (NERServlet.java). The fix validates the user-supplied classifier parameter against the loaded model map before reflecting it in response headers and processing. Pre-assigned class auth-bypass (from CWE-863 Incorrect Authorization) is correct: the vulnerability is that the server does not verify the classifier parameter is a valid/known resource before operating on it. No sibling files in the webapp directory contain the same vulnerability pattern (only JSP templates alongside the servlet).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
