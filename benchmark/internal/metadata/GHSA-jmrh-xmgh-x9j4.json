@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-jmrh-xmgh-x9j4",
+  "post_patch_commit": "31a760c2147e3e73a403baf6d7de34dc50429c85",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff which swaps decorator ordering on 9 functions across 3 blueprint files (backups/__init__.py, backups/restore.py, browser_steps/__init__.py). The advisory mentions 13 routes across 5 files, but the patch commit only modifies these 3 source files (plus 1 test file). Sibling blueprint modules (check_proxies, imports, rss, etc.) were spot-checked and do not exhibit the same vulnerability pattern with @login_optionally_required. The pre-assigned class auth-bypass (from CWE-863) is correct — the fix reorders decorators so @blueprint.route() is outermost, ensuring the auth-wrapped function is registered.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
