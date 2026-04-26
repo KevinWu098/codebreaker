@@ -10,7 +10,7 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Data buffering and memory management utilities"
+      "area": "HTTP client data handling and response processing utilities"
     },
     "L2": {
       "description": "A use-after-free vulnerability exists in a type conversion implementation where a raw memory region is reinterpreted as a new owned allocation, but the original owner of the memory is not prevented from running its destructor. When the original owner is dropped, the backing memory is freed while the new allocation still references it, leading to potential memory corruption or undefined behavior."
