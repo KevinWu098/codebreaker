@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Cryptographic signing state management and persistence"
+      "area": "Distributed validator signing and consensus vote management"
     },
     "L2": {
-      "description": "A race condition exists in the consensus signature state handling. When two signing requests arrive nearly simultaneously for the same block height, round, and step, a split read-write lock pattern allows both requests to pass safety checks before either updates the state. This enables conflicting signatures to be produced for the same block, constituting a double-sign protocol violation that results in stake slashing penalties."
+      "description": "A race condition exists in the consensus signature state handling where concurrent signing requests for the same block height, round, and step can both pass a safety check before either updates the shared state. The check and update operations use separate locking scopes, creating a TOCTOU (time-of-check-to-time-of-use) gap that allows conflicting signatures to be produced and broadcast for the same block, constituting a double-sign protocol violation that results in stake slashing penalties."
     },
     "L3": {
-      "area": "Cryptographic signing state management and persistence",
-      "description": "A race condition exists in the consensus signature state handling. When two signing requests arrive nearly simultaneously for the same block height, round, and step, a split read-write lock pattern allows both requests to pass safety checks before either updates the state. This enables conflicting signatures to be produced for the same block, constituting a double-sign protocol violation that results in stake slashing penalties."
+      "area": "Cosigner signature state tracking and high watermark persistence",
+      "description": "A race condition exists in the cosigner's signature state handling where the safety check against the current high watermark (height-round-step) and the subsequent state update use separate locking scopes. When two concurrent sign requests arrive for the same height-round-step, both can pass the safety check under their respective locks before either writes the updated state, creating a TOCTOU gap. This allows conflicting signatures (e.g., a non-nil and a nil block ID vote) to be produced for the same block, constituting a double-sign violation in the Cosmos validator protocol."
     }
   },
   "ground_truth": {

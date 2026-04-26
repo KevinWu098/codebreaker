@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-6wxf-7784-62fp",
   "post_patch_commit": "fb49be9baed30942b81b42da2b4f7040a2a83c02",
   "noisy_patch": false,
-  "curation_notes": "The patch commit fb49be9 modifies only one non-test source file (signer/sign_state.go). The vulnerability was in the Save method which called GetErrorIfLessOrEqual (with its own lock) and then cacheAndMarshal (with a separate lock), creating a TOCTOU race condition. The fix combines both operations into a single blockDoubleSign method under one mutex lock. Locations derived from the patch diff, consistent with the advisory description of the split read-write lock pattern in signature state handling.",
+  "curation_notes": "Re-curation. Only one non-test source file changed (signer/sign_state.go). The vulnerability was in the Save method which called GetErrorIfLessOrEqual (acquiring its own read lock) and then cacheAndMarshal (acquiring a separate write lock) as two non-atomic operations. This TOCTOU race allowed two concurrent sign requests for the same HRS to both pass the safety check before either updated the state, enabling a double-sign. The fix combines both into a single blockDoubleSign method under one mutex lock. Previous curation had L3 hints identical to L1/L2; updated L3 to be more specific (names cosigner subsystem, high watermark concept, and Cosmos validator context). L1 broadened to cover the full signing subsystem. Vulnerability class race-condition confirmed from CWE-362 and advisory description.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
