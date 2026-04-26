@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-7p94-766c-hgjp",
+  "post_patch_commit": "1056b323af6462455571302e766b67cf300aea18",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as command-injection from CWE-94, but the patch fixes a Zip Slip (path traversal) vulnerability in _unzip_iter where zipfile.extractall() is called without validating member paths. The advisory title explicitly states 'Zip Slip Vulnerability' and the fix adds path canonicalization and traversal checks. Reclassified to path-traversal. Primary location derived from the patch diff: only nltk/downloader.py was modified (non-test). No sibling files contain similar extractall() calls without validation.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
