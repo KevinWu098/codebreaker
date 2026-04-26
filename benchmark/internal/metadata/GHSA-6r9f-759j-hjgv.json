@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6r9f-759j-hjgv",
+  "post_patch_commit": "e01505b1ea49f4f13956cd12b7ce01b83d2ee085",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies 2 source files (src/executor.ts, src/utils.ts). The core fix is in src/executor.ts where a new sanitizeArray function is added to strip privileged Function references from arrays returned by sandboxed function calls. The vulnerability location is the addOps callback for LispType.Call in executor.ts, which handles all function invocations in the sandbox — two call sites (direct function calls and method calls on objects) both lacked return value sanitization. The utils.ts change is a minor type annotation tightening (Map<any,any> to Map<Function,Function>) and is not a primary vulnerability location. Kept pre-assigned class command-injection: although the root cause is sandbox escape via leaked Function constructor, the impact is unsanitized user input (sandboxed code) reaching OS command execution (child_process.execSync), which aligns with command-injection.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
