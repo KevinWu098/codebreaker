@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-pippo-001",
+  "ghsa_id": "GHSA-rmm5-g63h-m6g9",
+  "codebase": {
+    "repo": "https://github.com/pippo-java/pippo",
+    "language": "java",
+    "ecosystem": "maven",
+    "commit": "8531461923c325063473fa73a864a73676482ed0"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Content type processing and data format serialization engines"
+    },
+    "L2": {
+      "description": "An XML external entity (XXE) vulnerability exists because an XML parser does not disable external entity processing when deserializing XML content. An attacker can craft XML input with external entity declarations to read arbitrary files from the server, perform server-side request forgery (SSRF), or cause denial of service."
+    },
+    "L3": {
+      "area": "JAXB and XML-based content type serialization engines",
+      "description": "An XML external entity (XXE) vulnerability exists where a JAXB-based XML parser does not disable external entity processing when deserializing XML content from incoming requests. An attacker can craft XML input with external entity declarations to read arbitrary files from the server, perform server-side request forgery (SSRF), or cause denial of service."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xxe",
+    "cvss": 9.8,
+    "reason": "The JAXB XML unmarshaller in the content deserialization engine does not disable external entity processing, allowing attackers to inject XML external entity declarations to read files or perform SSRF.",
+    "locations": [
+      {
+        "file": "pippo-content-type-parent/pippo-jaxb/src/main/java/ro/pippo/jaxb/JaxbEngine.java",
+        "function": "fromString"
+      }
+    ]
+  }
+}
