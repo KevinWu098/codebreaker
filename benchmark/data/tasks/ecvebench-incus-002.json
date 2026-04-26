@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-incus-002",
+  "ghsa_id": "GHSA-8mpq-fmr3-6jxv",
+  "codebase": {
+    "repo": "https://github.com/lxc/incus",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "96e120e828e474be5e29bbed987b81abc0044d98"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Container filesystem provisioning and permission management"
+    },
+    "L2": {
+      "description": "A TOCTOU race condition exists in the container filesystem ownership shifting process. When reassigning file ownership and permissions during container filesystem setup, path-based system calls for chown and chmod are used sequentially. An attacker who can modify the container's filesystem between these calls can substitute a symbolic link, causing the permission change to target an arbitrary file on the host, enabling arbitrary permission modifications."
+    },
+    "L3": {
+      "area": "Container UID/GID shifting and identity map set operations within shared platform utilities",
+      "description": "A TOCTOU race condition exists in the container filesystem UID shifting process. When the identity map shift operation walks the container directory tree to reassign file ownership and permissions, it uses separate path-based system calls for chown and chmod. A symbolic link created in the time window between these operations — possible when the server's root filesystem is network-shared — allows an attacker to redirect the permission change to an arbitrary file on the host."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 8.1,
+    "reason": "The doUidshiftIntoContainer function uses path-based os.Lchown and os.Chmod calls sequentially without atomic file descriptor operations, allowing a TOCTOU race where a symlink substituted between calls redirects chmod to an arbitrary file on the host.",
+    "locations": [
+      {
+        "file": "shared/idmapset.go",
+        "function": "doUidshiftIntoContainer"
+      }
+    ]
+  }
+}
