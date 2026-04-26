@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Random value generation and cryptographic utility functions"
+      "area": "Cryptographic utility functions and random data generation"
     },
     "L2": {
-      "description": "A random digit generation routine uses a flawed mapping from random bytes to decimal digits, producing a biased distribution. The conversion arithmetic does not evenly partition the byte value space across the ten possible digit outputs, causing some digits to appear more frequently than others over a large number of invocations."
+      "description": "A random digit generation routine uses a flawed arithmetic mapping from cryptographic random bytes to decimal digits, producing a biased (non-uniform) distribution. Because 256 is not evenly divisible by 10, the conversion does not evenly partition the byte value space across the ten possible digit outputs, causing some digits to appear more frequently than others and reducing the effective entropy of the generated output."
     },
     "L3": {
-      "area": "Random value generation and cryptographic utility functions",
-      "description": "A random digit generation routine uses a flawed mapping from random bytes to decimal digits, producing a biased distribution. The conversion arithmetic does not evenly partition the byte value space across the ten possible digit outputs, causing some digits to appear more frequently than others over a large number of invocations."
+      "area": "The random digit generation utility within the cryptographic helper module",
+      "description": "A random digit generation routine divides each random byte value by a non-integer constant and floors the result to map it to a digit 0-9, producing a biased distribution. Because 256 is not evenly divisible by 10, some digits are generated with probability 26/256 while others appear with probability 25/256, reducing the effective entropy of the output and undermining the cryptographic strength of generated digit strings."
     }
   },
   "ground_truth": {
