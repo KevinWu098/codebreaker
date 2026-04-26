@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4mq2-gc4j-cmw6",
+  "post_patch_commit": "28cff3ac4d4c117ab25b5396954676d624b6cb46",
+  "noisy_patch": false,
+  "curation_notes": "The patch commit is a merge commit (28cff3a) merging PR #326 into gofiber/template. The first parent (fd5a1ab) is the pre-patch commit. The fix changes pongo2.SetAutoescape(false) to pongo2.SetAutoescape(e.autoEscape) in the Load() function and sets autoEscape to true by default in all engine constructors. Only one non-test source file was modified (django/django.go). Other template engines in the repo (ace, amber, handlebars, html, jet, mustache, pug, slim) use different template libraries and do not share this pongo2-specific autoescape pattern. The pre-assigned vulnerability class 'xss' is correct per CWE-79 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
