@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-g92r-9rxw-cmgx",
+  "post_patch_commit": "fe6e9f02ef1b26a03134b9becda12687ee5f3214",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies a single file (Captcha.php) with two changes: (1) a type fix adding floor() in drawText(), and (2) the security fix in validateCaptchaCode() changing the sanity check from rejecting only empty captcha codes to rejecting codes whose length does not match the expected captcha length. The vulnerability location is derived directly from the patch diff. No sibling files contain the same vulnerability pattern. Pre-assigned class auth-bypass (CWE-287) is confirmed — the fix addresses improper validation of CAPTCHA challenge-response codes.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
