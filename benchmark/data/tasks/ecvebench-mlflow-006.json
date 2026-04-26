@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-mlflow-006",
+  "ghsa_id": "GHSA-fmxj-6h9g-6vw3",
+  "codebase": {
+    "repo": "https://github.com/mlflow/mlflow",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "330bf0b38b07d4adf3fae99af1b44c8e857f514a"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Model serving and prediction execution backend"
+    },
+    "L2": {
+      "description": "A command injection vulnerability exists where user-controlled values such as file paths, content type, and server host parameters are directly interpolated into shell command strings using string formatting without proper sanitization. An attacker can craft malicious input values to inject and execute arbitrary operating system commands."
+    },
+    "L3": {
+      "area": "PyFunc prediction backend and scoring server command construction",
+      "description": "A command injection vulnerability exists where user-controlled values including model URIs, input/output file paths, content type, and server host/port are directly interpolated into shell command strings using Python string formatting without proper escaping. When predictions are generated through the CLI backend or when the model scoring server is started, an attacker can inject arbitrary shell commands through crafted parameter values."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "command-injection",
+    "cvss": 10.0,
+    "reason": "User-controlled values including file paths, content type, and server host parameters are directly interpolated into shell command strings via Python string formatting without sanitization, allowing arbitrary command execution.",
+    "locations": [
+      {
+        "file": "mlflow/pyfunc/backend.py",
+        "function": "predict"
+      },
+      {
+        "file": "mlflow/pyfunc/scoring_server/__init__.py",
+        "function": "get_cmd"
+      }
+    ]
+  }
+}
