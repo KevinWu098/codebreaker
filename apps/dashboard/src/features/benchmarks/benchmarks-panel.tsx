@@ -82,7 +82,7 @@ const BENCHMARK_TAB_IDS = ["results", "create"] as const;
 
 /** dl: UA `dd` margin causes overlap; `min-w-0` lets long values wrap in `1fr`. */
 const BENCHMARK_DL_GRID =
-  "grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,auto)_1fr] sm:items-baseline [&_dt]:m-0 [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:break-words";
+  "grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,auto)_1fr] sm:items-baseline [&_dt]:m-0 [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:wrap-break-word";
 
 type BenchmarkTab = (typeof BENCHMARK_TAB_IDS)[number];
 
@@ -232,6 +232,7 @@ const createBenchmarkRequestFromRun = (
     autoStart: true,
     cleanupPolicy: run.cleanupPolicy,
     difficulty: run.difficulty,
+    harnessMode: "full",
     maxInputTokens: tokenLimits.maxInputTokens,
     maxOutputTokens: tokenLimits.maxOutputTokens,
     maxSteps: BENCHMARK_MAX_STEPS,
@@ -251,6 +252,7 @@ const createBenchmarkRequestsFromBatch = ({
   autoFollowup,
   cleanupPolicy,
   difficulties,
+  minimalHarnessForOtherModels,
   models,
   repeatCount,
   tasks,
@@ -258,6 +260,7 @@ const createBenchmarkRequestsFromBatch = ({
   autoFollowup: boolean;
   cleanupPolicy: BenchmarkCleanupPolicy;
   difficulties: Difficulty[];
+  minimalHarnessForOtherModels: boolean;
   models: BenchmarkRunModel[];
   repeatCount: number;
   tasks: BenchmarkTaskSummary[];
@@ -276,6 +279,11 @@ const createBenchmarkRequestsFromBatch = ({
             autoStart: true,
             cleanupPolicy,
             difficulty,
+            harnessMode:
+              minimalHarnessForOtherModels &&
+              benchmarkModelValue(model) !== DEFAULT_MODEL_VALUE
+                ? "minimal"
+                : "full",
             maxInputTokens: tokenLimits.maxInputTokens,
             maxOutputTokens: tokenLimits.maxOutputTokens,
             maxSteps: BENCHMARK_MAX_STEPS,
@@ -297,12 +305,14 @@ const createBenchmarkRequestsFromBatch = ({
 const buildBatchRequests = ({
   autoFollowup,
   difficulties,
+  minimalHarnessForOtherModels,
   models,
   repeatCount,
   tasks,
 }: {
   autoFollowup: boolean;
   difficulties: Difficulty[];
+  minimalHarnessForOtherModels: boolean;
   models: BenchmarkRunModel[];
   repeatCount: number;
   tasks: BenchmarkTaskSummary[];
@@ -331,6 +341,7 @@ const buildBatchRequests = ({
     autoFollowup,
     cleanupPolicy: "retain",
     difficulties,
+    minimalHarnessForOtherModels,
     models,
     repeatCount,
     tasks,
@@ -374,6 +385,8 @@ const benchmarkBatchPreviewCount = ({
 };
 
 const modelValue = (model: (typeof MODEL_OPTIONS)[number]): string =>
+  `${model.provider}/${model.id}`;
+const benchmarkModelValue = (model: BenchmarkRunModel): string =>
   `${model.provider}/${model.id}`;
 const DEFAULT_MODEL_VALUE = modelValue(DEFAULT_MODEL);
 
@@ -936,7 +949,7 @@ const BenchmarkRunScoringDetail = ({
           </span>
         </dd>
         <dt className="text-fg-muted">vuln class (×0.3)</dt>
-        <dd className="break-words">
+        <dd className="wrap-break-word">
           expected {result.expectedVulnClass ?? "—"} · predicted{" "}
           {result.predictedVulnClass ?? "—"} ·{" "}
           <span
@@ -1225,12 +1238,14 @@ const BenchmarkResultsSummary = ({
 */
 
 export interface BenchmarksPanelProps {
+  onOpenFollowupRun?: (runId: string) => void;
   onOpenSession?: (sessionId: string) => void;
   onSelectRun?: (runId: string) => void;
   selectedRunId?: string | null;
 }
 
 export const BenchmarksPanel = ({
+  onOpenFollowupRun,
   onOpenSession,
   onSelectRun,
   selectedRunId,
@@ -1282,6 +1297,10 @@ export const BenchmarksPanel = ({
     String(DEFAULT_BATCH_REPEAT_COUNT)
   );
   const [batchAutoFollowup, setBatchAutoFollowup] = useState(false);
+  const [
+    batchMinimalHarnessForOtherModels,
+    setBatchMinimalHarnessForOtherModels,
+  ] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
   const [batchRunCount, setBatchRunCount] = useState<number | null>(null);
   const taskOptions = tasks.data?.tasks ?? [];
@@ -1308,7 +1327,8 @@ export const BenchmarksPanel = ({
   };
   const selectedRun = activeRunId ? (
     <BenchmarkRunDetail
-      {...(onOpenSession ? { onOpenSession } : {})}
+      onOpenFollowupRun={onOpenFollowupRun}
+      onOpenSession={onOpenSession}
       onSelectRun={selectRun}
       runId={activeRunId}
     />
@@ -1333,6 +1353,7 @@ export const BenchmarksPanel = ({
         autoStart: true,
         cleanupPolicy: "retain",
         difficulty,
+        harnessMode: "full",
         maxInputTokens: tokenLimits.maxInputTokens,
         maxOutputTokens: tokenLimits.maxOutputTokens,
         maxSteps: BENCHMARK_MAX_STEPS,
@@ -1374,6 +1395,7 @@ export const BenchmarksPanel = ({
     const result = buildBatchRequests({
       autoFollowup: batchAutoFollowup,
       difficulties: batchDifficulties,
+      minimalHarnessForOtherModels: batchMinimalHarnessForOtherModels,
       models: selectedBatchModels,
       repeatCount: repeatCountNumber,
       tasks: selectedBatchTasks,
@@ -1677,6 +1699,21 @@ export const BenchmarksPanel = ({
                   />
                   <span>start CVE follow-ups after completed benchmarks</span>
                 </label>
+                <label className="flex items-start gap-2 text-xs">
+                  <input
+                    checked={batchMinimalHarnessForOtherModels}
+                    onChange={(event) =>
+                      setBatchMinimalHarnessForOtherModels(
+                        event.currentTarget.checked
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  <span>
+                    all other models will run WITHOUT the harness (base prompt,
+                    no skills, minimal read/search tools)
+                  </span>
+                </label>
               </div>
             </div>
             <fieldset className="mt-4 space-y-2 text-xs">
@@ -1709,7 +1746,10 @@ export const BenchmarksPanel = ({
               This will create {batchPreviewCount} run(s): supported selected
               task/level pairs x models x repeat count, waiting 0.5s between
               each run creation. The default selection uses only{" "}
-              {DEFAULT_MODEL.label}.
+              {DEFAULT_MODEL.label}.{" "}
+              {batchMinimalHarnessForOtherModels
+                ? `Non-${DEFAULT_MODEL.label} models will use the minimal harness.`
+                : "All models will use the full harness."}
             </p>
             {batchError && (
               <div className="error-card mt-3 text-xs" role="alert">
@@ -1803,7 +1843,7 @@ const BenchmarkRunsTable = ({
                 )}
               </td>
               <td className="num">{scoreColumnForRun(run)}</td>
-              <td className="max-w-[14rem] whitespace-normal text-fg-muted text-xs">
+              <td className="max-w-56 whitespace-normal text-fg-muted text-xs">
                 {benchmarkRunTokensLine(run)}
               </td>
               <td className="text-fg-muted">
@@ -1844,7 +1884,7 @@ const BenchmarkRunAgentReview = ({
             {percentText(output.confidence)}
           </dd>
           <dt className="text-fg-muted">reason</dt>
-          <dd className="whitespace-pre-wrap break-words">
+          <dd className="wrap-break-word whitespace-pre-wrap">
             {output.reason ?? "—"}
           </dd>
           <dt className="text-fg-muted">predicted locs</dt>
@@ -1861,7 +1901,7 @@ const BenchmarkRunAgentReview = ({
               {task.ground_truth.vuln_class}
             </dd>
             <dt className="text-fg-muted">reason</dt>
-            <dd className="whitespace-pre-wrap break-words">
+            <dd className="wrap-break-word whitespace-pre-wrap">
               {task.ground_truth.reason}
             </dd>
           </dl>
@@ -1918,6 +1958,24 @@ const BenchmarkRunEventsTimeline = ({
       </ol>
     )}
   </div>
+);
+
+const BenchmarkRunFollowupSection = ({
+  onOpenFollowupRun,
+  run,
+  runId,
+}: {
+  onOpenFollowupRun: ((runId: string) => void) | undefined;
+  run: BenchmarkRunRow | undefined;
+  runId: string;
+}): React.JSX.Element => (
+  <CveFollowupRunSection
+    onOpenInFollowups={
+      onOpenFollowupRun ? () => onOpenFollowupRun(runId) : undefined
+    }
+    runId={runId}
+    runStatus={run?.status ?? "pending"}
+  />
 );
 
 const CLIPBOARD_RESET_MS = 2000;
@@ -1983,11 +2041,13 @@ const buildSessionValue = (
 };
 
 const BenchmarkRunDetail = ({
+  onOpenFollowupRun,
   onOpenSession,
   onSelectRun,
   runId,
 }: {
-  onOpenSession?: (sessionId: string) => void;
+  onOpenFollowupRun: ((runId: string) => void) | undefined;
+  onOpenSession: ((sessionId: string) => void) | undefined;
   onSelectRun?: (runId: string) => void;
   runId: string;
 }): React.JSX.Element => {
@@ -2125,9 +2185,10 @@ const BenchmarkRunDetail = ({
           task={detail.data.task}
         />
       )}
-      <CveFollowupRunSection
+      <BenchmarkRunFollowupSection
+        onOpenFollowupRun={onOpenFollowupRun}
+        run={run}
         runId={runId}
-        runStatus={run?.status ?? "pending"}
       />
       {detail.data && (
         <BenchmarkRunEventsTimeline events={detail.data.events} />

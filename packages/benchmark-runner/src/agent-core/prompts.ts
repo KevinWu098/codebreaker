@@ -3,6 +3,7 @@ import {
   toolGuideForMode,
 } from "@codebreaker/benchmark-runner/agent-core/tools";
 import {
+  type BenchmarkHarnessMode,
   type Difficulty,
   renderAgentInput,
   type TaskInstance,
@@ -37,6 +38,7 @@ export interface BenchmarkAgentPromptInput {
   artifactOwner?: string;
   difficulty: Difficulty;
   environment: BenchmarkAgentEnvironment;
+  harnessMode?: BenchmarkHarnessMode;
   promptPack?: BenchmarkPromptPackName;
   task: TaskInstance;
   toolMode: BenchmarkToolMode;
@@ -102,6 +104,7 @@ export const buildBenchmarkAgentPrompt = (
 const buildContexts = (
   input: BenchmarkAgentPromptInput
 ): BenchmarkAgentPromptContexts => {
+  const harnessMode = input.harnessMode ?? "full";
   const renderedInput = renderAgentInput(input.task, input.difficulty);
   const repoPath = repoPathFor(input.task);
   const deepWikiRepo = deepWikiRepoNameFor(input.task, input.artifactOwner);
@@ -122,7 +125,7 @@ const buildContexts = (
       "Prioritize concrete evidence from inspected code over broad speculation.",
       "Stay within the available tools and configured execution policy.",
     ].join("\n"),
-    skills: BENCHMARK_SKILLS_CONTEXT,
+    skills: harnessMode === "full" ? BENCHMARK_SKILLS_CONTEXT : "",
     submission: [
       "Each result object must match this schema:",
       "{",
@@ -176,7 +179,10 @@ const buildContexts = (
       "Rendered benchmark input:",
       JSON.stringify(renderedInput, null, 2),
     ].join("\n"),
-    toolGuide: buildToolGuide(input.toolMode, repoPath, deepWikiRepo),
+    toolGuide:
+      harnessMode === "full"
+        ? buildToolGuide(input.toolMode, repoPath, deepWikiRepo)
+        : buildMinimalToolGuide(input.toolMode, repoPath),
   };
 };
 
@@ -212,6 +218,20 @@ const buildToolGuide = (
     `DeepWiki orientation target: \`${deepWikiRepo}\`. Use it for maps and hypotheses, then verify against local files before finalizing.`,
   ].join("\n");
 
+const buildMinimalToolGuide = (
+  toolMode: BenchmarkToolMode,
+  repoPath: string
+): string =>
+  [
+    toolGuideForMode(toolMode),
+    "",
+    "Minimal tool mode:",
+    `- Work under ${repoPath}.`,
+    "- Use only the active read/search tools needed to inspect the checked-out source.",
+    "- Git commands are prohibited because repository metadata can reveal patch/answer information.",
+    "- Keep reads and searches narrow; stop once you have enough evidence for a schema-valid result.",
+  ].join("\n");
+
 const buildSystemPrompt = (
   input: BenchmarkAgentPromptInput,
   contexts: BenchmarkAgentPromptContexts
@@ -235,9 +255,9 @@ const buildSystemPrompt = (
     "Tool Guide:",
     contexts.toolGuide,
     "",
-    "Cybersecurity Skills:",
-    contexts.skills,
-    "",
+    ...(contexts.skills
+      ? ["Cybersecurity Skills:", contexts.skills, ""]
+      : ["Cybersecurity Skills: none.", ""]),
     "Output Contract:",
     contexts.submission,
     "",
