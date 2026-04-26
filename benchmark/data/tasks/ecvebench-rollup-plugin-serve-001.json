@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-rollup-plugin-serve-001",
+  "ghsa_id": "GHSA-4j46-mp85-mv8c",
+  "codebase": {
+    "repo": "https://github.com/thgh/rollup-plugin-serve",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "71cc20d4fed8da9f9ab23603b7633b5c2ce49d5c"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Static file serving and HTTP request handling"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability exists where user-supplied URL paths are decoded but not sanitized before being used to read files from the content base directories. An attacker can use directory traversal sequences to read arbitrary files outside the intended content directories."
+    },
+    "L3": {
+      "area": "HTTP request listener and file path resolution logic for serving static content",
+      "description": "A path traversal vulnerability exists where user-supplied URL paths are decoded but not normalized before being resolved against content base directories to serve static files. An attacker can use directory traversal sequences in the URL to read arbitrary files outside the intended content directories."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 9.8,
+    "reason": "The request listener decodes the URL path but does not normalize it, allowing directory traversal sequences (e.g., ../) to escape the content base directories and read arbitrary files from the filesystem.",
+    "locations": [
+      {
+        "file": "src/index.js",
+        "function": "serve"
+      }
+    ]
+  }
+}

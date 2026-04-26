@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4j46-mp85-mv8c",
+  "post_patch_commit": "3d144f2f47e86fcba34f5a144968da94220e3969",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only src/index.js. It adds path normalization via normalize() from the 'path' module to the URL path inside the requestListener closure within the serve() function. Before the fix, the decoded URL path was used directly to resolve file paths against content base directories, allowing ../ sequences to traverse outside the intended directories. The vulnerability class path-traversal matches the CWE-22 classification and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
