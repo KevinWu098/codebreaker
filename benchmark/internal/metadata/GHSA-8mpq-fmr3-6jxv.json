@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8mpq-fmr3-6jxv",
+  "post_patch_commit": "19c6961cc1012c8a529f20807328a9357f5034f4",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 19c6961 fixes CVE-2015-1340 by replacing path-based os.Lchown/os.Chmod calls in doUidshiftIntoContainer (shared/idmapset.go) with a new ShiftOwner function (shared/util_linux.go) that opens files with O_PATH|O_NOFOLLOW, validates the resolved path stays within the container basepath, and uses fchownat/chmod on the file descriptor. The pre-patch file is shared/idmapset.go (renamed to shared/idmapset_linux.go in the patch). Only 2 source files were changed. Pre-assigned class race-condition (CWE-362) is correct — the vulnerability is a classic TOCTOU race between chown and chmod on a path string.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
