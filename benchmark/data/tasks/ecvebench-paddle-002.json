@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-paddle-002",
+  "ghsa_id": "GHSA-x3q9-c788-j7c8",
+  "codebase": {
+    "repo": "https://github.com/PaddlePaddle/Paddle",
+    "language": "c++",
+    "ecosystem": "pip",
+    "commit": "db700d10ff685a2f3340fa2b827ed165fc222f70"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Tensor computation kernel layer for mathematical operations"
+    },
+    "L2": {
+      "description": "A null pointer dereference vulnerability exists where a tensor operation crashes with a segmentation fault when given input tensors with zero-sized dimensions, causing a denial of service."
+    },
+    "L3": {
+      "area": "Dot product computation kernel implementations for CPU and GPU backends",
+      "description": "A null pointer dereference vulnerability exists in the dot product tensor operation where passing input tensors with zero-sized dimensions (e.g., shape [0, 0]) causes a segmentation fault and runtime crash due to missing validation of tensor element count before accessing tensor data."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 4.7,
+    "reason": "The dot product kernel dereferences tensor data pointers without first checking whether the output tensor has zero elements, causing a segmentation fault when inputs have zero-sized dimensions.",
+    "locations": [
+      {
+        "file": "paddle/phi/kernels/cpu/dot_kernel.cc",
+        "function": "DotKernel"
+      },
+      {
+        "file": "paddle/phi/kernels/gpu/dot_kernel.cu",
+        "function": "DotKernel"
+      }
+    ]
+  }
+}

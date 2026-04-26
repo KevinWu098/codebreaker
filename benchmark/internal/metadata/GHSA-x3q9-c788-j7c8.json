@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-x3q9-c788-j7c8",
+  "post_patch_commit": "19da5c0c4d8c5e4dfef2a92e24141c3f51884dcc",
+  "noisy_patch": true,
+  "curation_notes": "The advisory (PDSA-2023-008) specifically describes a segfault in paddle.dot when inputs have zero-sized dimensions. The patch commit (19da5c0) fixes 18 files with similar null/empty-tensor checks, but only the dot kernel files (cpu/dot_kernel.cc and gpu/dot_kernel.cu) are relevant to this CVE. The other files address separate security issues bundled in the same commit. Locations derived from the patch diff targeting the DotKernel function in both CPU and GPU implementations. Pre-assigned vulnerability class null-deref (CWE-476) is correct — the fix adds an early return when out->numel() <= 0 to prevent dereferencing null data pointers.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
