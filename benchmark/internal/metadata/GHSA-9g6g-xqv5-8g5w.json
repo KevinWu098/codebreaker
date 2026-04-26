@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9g6g-xqv5-8g5w",
+  "post_patch_commit": "3d68bd21240c610c6307713e2bd54a5e71c32608",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 3d68bd2 modifies only pkg/expression/util.go (plus test files). The fix replaces a call to NewFunctionInternal (which silently returns nil on failure) with NewFunction (which returns an error), and adds error handling. The pre-assigned class null-deref is correct: CWE-476 maps to null-deref, the advisory explicitly states 'nil pointer dereference in expression.inferCollation', and the patch adds the missing nil/error check. No sibling files share the same vulnerability pattern — the other calls to NewFunctionInternal in util.go are in different code paths with different downstream usage.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
