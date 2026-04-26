@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wq32-8rp4-w2mc",
+  "post_patch_commit": "51074875941aa111c5dd2b41f2ec890a4a15b587",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff which modifies starknet/compiler/rust/src/lib.rs (compileSierraToCasm function). The fix adds overflow-checks=true to Cargo.toml and wraps the compilation call in panic::catch_unwind() in lib.rs. No sibling files share the same vulnerability pattern - lib.rs is the only Rust source file in the module. The Go wrapper compiler.go calls the Rust FFI but does not itself contain the overflow vulnerability. Pre-assigned class integer-overflow confirmed by CWE-190, advisory description explicitly stating 'integer overflow', and the patch enabling runtime overflow detection.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
