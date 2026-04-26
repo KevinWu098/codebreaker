@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hgch-jjmr-gp7w",
+  "post_patch_commit": "1c29f6a6e304fb650c05056e217e457a0d2cc3c5",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only src/index.js, adding Object.constructor = function () {} before evaluating user code in the Node.js VM sandbox. The vulnerability is in the runInContext method of the SaferEval class. The browser counterpart (src/browser.js) already had a similar this.constructor.constructor override and was not changed by the patch. Pre-assigned class command-injection retained: CWE-94 (Code Injection) maps closely, and the sandbox escape enables arbitrary code execution similar to command injection.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
