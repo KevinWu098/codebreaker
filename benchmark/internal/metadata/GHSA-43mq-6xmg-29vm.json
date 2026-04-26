@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-43mq-6xmg-29vm",
+  "post_patch_commit": "930fef7679d7247db9e460c146b1698a9d7ad1e4",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit 930fef7 is the merge of PR #1180 which fixes CVE-2024-53677 on the 2-3-x branch. It modifies only FileUploadInterceptor.java (+12/-9 lines). The fix renames putCaseInsensitive to putWithCheck and changes the parameter matching from equalsIgnoreCase to contains, preventing OGNL expression prefixes (e.g., 'top.uploadFileName') from bypassing parameter sanitization. The pre-assigned vulnerability class path-traversal is correct per the advisory description and CWE-22. Locations derived from the patch diff: the intercept method where vulnerable putCaseInsensitive calls are made, and the putCaseInsensitive method itself which has the insufficient equality check.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
