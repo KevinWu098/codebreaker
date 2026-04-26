@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-q445-7m23-qrmw",
+  "post_patch_commit": "aef36e0f3950653148d6644309ee41ccf16e02bb",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only openssl/src/bio.rs, adding a null/empty check before calling slice::from_raw_parts in MemBio::get_buf. The pre-assigned class null-deref (CWE-476) is correct — the vulnerability is a null pointer passed to slice::from_raw_parts when BIO_get_mem_data returns a null pointer for an empty buffer. No sibling files share this pattern; MemBio is the only BIO abstraction in the crate.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
