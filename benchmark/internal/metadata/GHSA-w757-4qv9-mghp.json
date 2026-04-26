@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-w757-4qv9-mghp",
+  "post_patch_commit": "01e9fbc5e66e9a2500b71a75a44775dd1fc2d1de",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff: the convert_to_value method in string.rb used eval(self) on array-like input strings. The patch replaces eval() with YAML.safe_load(). The Python sibling (extract.py) already used the safe ast.literal_eval() and was not vulnerable. No sibling files in the core_ext directory share the eval() pattern. Kept pre-assigned class command-injection (CWE-95 eval injection maps to command-injection as the closest available class).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
