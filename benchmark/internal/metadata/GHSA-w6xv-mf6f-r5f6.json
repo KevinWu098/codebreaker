@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-w6xv-mf6f-r5f6",
   "post_patch_commit": "96d5f5bec734c7a0e7c64654cdb7aacc81fdc867",
   "noisy_patch": true,
-  "curation_notes": "Patch commit is a merge commit (PR #1) with 258 files changed, mostly due to removal of the third_party_tls/tlslite directory and third_party/oscrypto vendor libraries. The vulnerability is in scalyr_agent/connection.py: (1) HTTPSConnectionWithTimeoutAndVerification.connect() calls ssl.wrap_socket() with CERT_REQUIRED but no hostname verification, and (2) ScalyrHttpConnection._validate_chain_openssl() invokes the openssl verify command without -verify_hostname. The patch replaces these with ssl.SSLContext using check_hostname=True and adds ssl_match_hostname for older Python versions.",
+  "curation_notes": "Patch commit is a merge commit (PR #1) with 258 files changed, mostly due to removal of third_party_tls/tlslite and third_party/oscrypto vendor libraries. The vulnerability is in scalyr_agent/connection.py in two locations: (1) HTTPSConnectionWithTimeoutAndVerification.connect() calls ssl.wrap_socket() with CERT_REQUIRED but without hostname verification (no server_hostname argument, no check_hostname, no ssl_match_hostname call), and (2) ScalyrHttpConnection._validate_chain_openssl() invokes the openssl verify command without the -verify_hostname flag. The patch replaces these with ssl.SSLContext using check_hostname=True and adds ssl_match_hostname for older Python versions. Pre-assigned class crypto-weakness (CWE-295) is correct — missing SSL hostname verification is a cryptographic configuration weakness. L3 area narrowed to TLS/SSL connection setup within the HTTP client layer; L3 description adds detail about the multiple vulnerable code paths.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

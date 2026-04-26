@@ -13,11 +13,11 @@
       "area": "Network connectivity and remote server communication"
     },
     "L2": {
-      "description": "The agent's TLS implementation fails to verify the hostname of the server's SSL certificate in certain code paths. Although the certificate chain is validated against trusted roots, the lack of hostname verification means an attacker who possesses a valid certificate for any domain could intercept and tamper with encrypted communications via a man-in-the-middle attack."
+      "description": "The agent's TLS implementation fails to verify the hostname of the server's SSL certificate during connection establishment. Although the certificate chain may be validated against trusted certificate authorities, the absence of hostname verification allows an attacker who possesses a valid certificate for any domain to perform man-in-the-middle attacks on encrypted communications."
     },
     "L3": {
-      "area": "Network connectivity and remote server communication",
-      "description": "The agent's TLS implementation fails to verify the hostname of the server's SSL certificate in certain code paths. Although the certificate chain is validated against trusted roots, the lack of hostname verification means an attacker who possesses a valid certificate for any domain could intercept and tamper with encrypted communications via a man-in-the-middle attack."
+      "area": "TLS/SSL connection setup and certificate verification within the agent's HTTP client layer",
+      "description": "The agent's TLS implementation fails to verify the hostname of the server's SSL certificate when establishing HTTPS connections. In multiple code paths used for certificate validation — including both the native Python SSL wrapper and an external certificate verification callout — only the certificate chain is checked against trusted roots while hostname verification is omitted. An attacker with a valid certificate for any domain can intercept encrypted communications via a man-in-the-middle attack."
     }
   },
   "ground_truth": {

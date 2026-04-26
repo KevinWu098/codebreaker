@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-c3xq-cj8f-7829",
   "post_patch_commit": "eeefb784f24c37d5f56a421e1ccc911cace9385e",
   "noisy_patch": false,
-  "curation_notes": "Locations derived from the patch diff. The patch rewrote the memcache crypto middleware in memcache_crypt.py, replacing weak SHA1-based MAC, simple SHA256 key derivation, and non-constant-time signature verification with HMAC-SHA384-based key derivation, proper encrypt-then-MAC, and constant-time comparison. The auth_token.py changes are callers of the crypto module and were refactored accordingly, but the core vulnerability resides in the crypto primitives themselves. Only 2 non-test source files were changed, so the patch is not noisy.",
+  "curation_notes": "Re-curated with updated guidelines. Locations derived from the patch diff. The patch rewrote the memcache crypto middleware in memcache_crypt.py, replacing SHA1-based MAC (hash_data, compute_mac, sign_data), non-constant-time MAC verification (verify_signed_data), simple SHA256 key derivation (generate_aes_key), and AES-CFB encryption (encrypt_data, decrypt_data) with HMAC-SHA384-based key derivation, proper encrypt-then-MAC, AES-CBC with padding, and constant-time comparison. The auth_token.py changes are callers of the crypto module that were refactored accordingly; the core vulnerability resides in the crypto primitives in memcache_crypt.py. Only 2 non-test source files were changed, so the patch is not noisy. Vulnerability class crypto-weakness confirmed: CWE-326 (Inadequate Encryption Strength) matches the use of weak hashing, weak KDF, unauthenticated cipher mode, and timing-vulnerable MAC verification.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
