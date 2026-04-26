@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-7q8p-9953-pxvr",
   "post_patch_commit": "d08e25824ae9feaf0876adba9acd2938f34759b1",
   "noisy_patch": false,
-  "curation_notes": "The patch commit d08e258 is a merge commit on the 5.13 branch (included in v5.12.0 tag) that replaced the entire serialize_blacklist.txt with broader package-prefix entries (+174/-54 lines). Only 1 non-test source file was changed. The location is derived from the patch diff since the advisory description does not name specific files. The vulnerability is in the blacklist data being insufficient (specific class names instead of package prefixes), allowing a JDK-only gadget chain to bypass deserialization protection. A second related commit (42d19b1) on the same branch removes 2 entries as a follow-up cleanup.",
+  "curation_notes": "Re-curation with improved hints. The patch commit d08e258 is a merge commit that replaced the entire serialize_blacklist.txt with broader package-prefix entries (+174/-54 lines). Only 1 non-test source file was changed. Location derived from the patch diff since the advisory does not name specific files. The vulnerability is in the blacklist data being insufficient (specific class names instead of package prefixes), allowing a JDK-only gadget chain to bypass deserialization protection. L1/L3 hints were previously identical and have been differentiated: L1 now points broadly at the codec layer, L3 narrows to Hessian codec security configuration. L3 description adds distinguishing context about specific class names vs. package prefixes. Vulnerability class insecure-deserialization confirmed from CWE-502 and advisory description.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
