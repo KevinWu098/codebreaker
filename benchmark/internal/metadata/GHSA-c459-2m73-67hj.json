@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-c459-2m73-67hj",
+  "post_patch_commit": "764ef4b216aee6aeb4b111aec8947a4e8b53bb87",
+  "noisy_patch": false,
+  "curation_notes": "The patch only modified one non-test source file: src/main/resources/security/serialize.blacklist, expanding the deserialization blacklist from ~44 entries to ~157 entries to block a JDK-only gadget chain. The test file change (SerializerFactoryTest.java) was cosmetic — swapping java.awt.Color for java.util.Date since Color was newly blacklisted. Pre-assigned class 'insecure-deserialization' is correct: CWE-502 (Deserialization of Untrusted Data) directly maps to this class, the advisory explicitly describes a deserialization blacklist bypass, and the patch adds classes to a deserialization blacklist. No sibling locations identified — the blacklist file is the sole security configuration resource for deserialization filtering.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
