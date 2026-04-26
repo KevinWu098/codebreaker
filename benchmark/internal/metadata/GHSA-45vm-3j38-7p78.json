@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-45vm-3j38-7p78",
+  "post_patch_commit": "a248898655e56cbcc6c308a5f1c8752231624bae",
+  "noisy_patch": false,
+  "curation_notes": "Primary locations derived from the patch diff. The handler (GetCustomerThreadForViewingHandler.php) constructs a direct public URL to the uploaded attachment file using _THEME_PROD_PIC_DIR_ concatenated with the filename, and the Twig template (thread_messages.html.twig) renders this as a direct link. The patch replaces both: the handler now stores only the filename, and the template routes through a new SecuredFileReaderController that validates file extensions and sets proper Content-Type/Content-Disposition headers. No sibling files share the same vulnerability pattern. The pre-assigned xss class is correct — CWE-79 matches the XSS via unsanitized file serving.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
