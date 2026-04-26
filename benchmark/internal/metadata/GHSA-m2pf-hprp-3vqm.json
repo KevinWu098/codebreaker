@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-m2pf-hprp-3vqm",
+  "post_patch_commit": "65d17446c4242da0f9e1ae84b9dbce5108a822f5",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only src/hdr/decoder.rs (1 file). The vulnerability is in read_image_transform which uses unsafe Vec::set_len on an uninitialized vector with a user-provided type parameter T. If T implements Drop and a panic occurs during scanline reading or the scoped thread pool execution, Drop runs on uninitialized memory (use-after-free). The fix changes the interface to accept a pre-allocated &mut [T] slice, eliminating the unsafe set_len call. No sibling files share this pattern — encoder.rs and mod.rs do not use set_len with generic type parameters. Pre-assigned class use-after-free is correct per CWE-416 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
