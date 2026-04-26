@@ -1667,6 +1667,7 @@ const BenchmarkRunsTable = ({
           <tr>
             <th>run</th>
             <th>task</th>
+            <th>model</th>
             <th>status</th>
             <th>
               <DevinWord />
@@ -1699,6 +1700,12 @@ const BenchmarkRunsTable = ({
               </td>
               <td className="font-mono text-fg-muted">
                 {taskWithDifficulty(run)}
+              </td>
+              <td
+                className="max-w-40 whitespace-normal break-words font-mono text-fg-muted text-xs"
+                title={`${run.modelProvider}/${run.modelId}`}
+              >
+                {run.modelProvider}/{run.modelId}
               </td>
               <td>
                 <Badge status={badgeStatusForRun(run.status)} />
