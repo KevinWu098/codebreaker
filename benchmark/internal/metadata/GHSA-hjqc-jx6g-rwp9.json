@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-hjqc-jx6g-rwp9",
+  "post_patch_commit": "47fcb397ee4caffd5a75efd1fa3067559594e951",
+  "noisy_patch": false,
+  "curation_notes": "Primary location is extract_archive() in keras/src/utils/file_utils.py, which calls tarfile.extractall() with a custom filter_safe_paths() member filter but without the filter='data' parameter. The PATH_MAX symlink resolution bug in Python's tarfile module bypasses the member-level filtering. Secondary location is DiskIOStore.__init__() in keras/src/saving/saving_lib.py, which called archive.extractall() with no path filtering at all. The pre-assigned vulnerability class path-traversal (CWE-22) is correct — the advisory explicitly describes directory traversal via malicious tar archives.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
