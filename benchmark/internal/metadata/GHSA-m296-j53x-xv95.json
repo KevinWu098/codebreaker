@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-m296-j53x-xv95",
+  "post_patch_commit": "c7919199a0f6d1ce0e3c33499d1b37f862c990e4",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds Send trait bounds to the unsafe Send impl for Future<T, U> in src/lib.rs. The pre-assigned class race-condition (CWE-362) is correct: the missing bounds allow non-Send types to cross thread boundaries via Future, enabling data races. The Sync impl also lacks bounds but is not addressed in this patch commit. Only one source file (src/lib.rs) was modified; not a noisy patch. No sibling files exist in this single-file crate.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
