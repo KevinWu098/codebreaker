@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-99wh-973f-779p",
+  "post_patch_commit": "4d6b666cd0291abd618c3b95cdbb51aa4208e748",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff: the constructor of AbstractXmlConfigRootTagRecognizer used SAXParserFactory.newInstance() without XXE protection. The patch replaces it with XmlUtil.getSAXParserFactory() which disables doctype declarations. Subclasses (MemberXmlConfigRootTagRecognizer, ClientXmlConfigRootTagRecognizer, ClientFailoverXmlConfigRootTagRecognizer) only call super() and do not instantiate their own parsers, so only the abstract class is listed. XmlUtil.java was also modified to add helper methods but the vulnerability origin is the unprotected parser factory instantiation in the config recognizer. Pre-assigned class xxe confirmed: CWE-611 matches, advisory explicitly describes XXE via unprotected SAXParserFactory.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
