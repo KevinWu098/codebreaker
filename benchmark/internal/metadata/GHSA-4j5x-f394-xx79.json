@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-4j5x-f394-xx79",
+  "post_patch_commit": "ca1b894dac3627f7d9b0bb0ac223247eac72dc45",
+  "noisy_patch": false,
+  "curation_notes": "The fix was applied across three PRs (#11, #12, #13) merged between v0.0.3 and v0.1.0. PR #11 sanitized the path parameter in downloadFile using filepath.Clean. PR #12 sanitized the pack path in parsePackMetadata. PR #13 refined PR #12's fix. The pre-patch commit is e8546ea (parent of the first fix merge), which still contains both vulnerabilities. Only one non-test source file was changed (internal/pkg/gitjacker/retriever.go). No sibling files exist in the same directory — only retriever.go and retriever_test.go. Pre-assigned vuln_class path-traversal (CWE-22) confirmed: the patch adds filepath.Clean sanitization to prevent directory traversal via crafted .git metadata paths.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
