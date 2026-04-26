@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-impresscms-001",
+  "ghsa_id": "GHSA-389p-fchr-q2mg",
+  "codebase": {
+    "repo": "https://github.com/ImpressCMS/impresscms",
+    "language": "php",
+    "ecosystem": "composer",
+    "commit": "e174e84f000add55a731ffc435b8ed08b6a03d06"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Content management object persistence and form data processing layer"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability allows unauthenticated remote code execution via crafted directory traversal sequences in user-supplied file name parameters. Specially crafted input containing sequences to escape the intended directory can interact with server-side image processing scripts. The attack can be facilitated when the server's PHP installation supports upload progress tracking."
+    },
+    "L3": {
+      "area": "IPF (ImpressCMS Persistence Framework) controller and object management layer",
+      "description": "A path traversal vulnerability allows unauthenticated remote code execution via crafted directory traversal sequences in user-submitted file name fields during form data processing for image and file data types. The traversal sequences escape the intended upload directory to reach server-side image processing scripts, and the attack payload may leverage PHP session upload progress functionality."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 9.8,
+    "reason": "The postDataToObject method in the IPF Controller does not sanitize user-supplied file name parameters for directory traversal sequences (e.g., .....///), allowing attackers to escape the intended upload directory and interact with arbitrary server-side scripts.",
+    "locations": [
+      {
+        "file": "htdocs/libraries/icms/ipf/Controller.php",
+        "function": "postDataToObject"
+      }
+    ]
+  }
+}

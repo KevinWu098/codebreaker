@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-389p-fchr-q2mg",
+  "post_patch_commit": "a66d7bb499faafab803e24833606028fa0ba4261",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies only htdocs/libraries/icms/ipf/Controller.php, adding preg_replace sanitization for directory traversal sequences in the postDataToObject method for XOBJ_DTYPE_IMAGE and XOBJ_DTYPE_FILE cases. Pre-assigned class path-traversal confirmed: CWE-22 maps directly, advisory explicitly describes directory traversal, and the fix strips ../ sequences from user-supplied file names. No sibling files share the same vulnerability pattern — other files in the ipf directory serve different roles (Handler, Object, Tree, etc.).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
