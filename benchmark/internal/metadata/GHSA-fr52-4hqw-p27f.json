@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-fr52-4hqw-p27f",
+  "post_patch_commit": "c1d1f7121194036608bf555f08d3062a36fd344b",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as buffer-overflow from CWE-119, but the advisory explicitly states 'use-after-free and memory corruption' and the commit message confirms 'Namespace nodes must be copied to avoid use-after-free errors' — reclassified to use-after-free. The patch introduces xmlXPtrNewRangeInternal which checks for XML_NAMESPACE_DECL nodes and rejects them, then refactors all seven range creation functions to use this internal helper. All locations are in xpointer.c. No sibling files contain the same vulnerability pattern since XPointer range creation is confined to this single file.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
