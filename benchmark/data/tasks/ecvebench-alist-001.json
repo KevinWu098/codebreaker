@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-alist-001",
+  "ghsa_id": "GHSA-8jmm-3xwx-w974",
+  "codebase": {
+    "repo": "https://github.com/AlistGo/alist",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "42fce722a90c1fa33695969df2fb54faae089d49"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Configuration management and external service connectivity"
+    },
+    "L2": {
+      "description": "The application disables TLS certificate verification by default for all outgoing connections, making it vulnerable to Man-in-the-Middle attacks. In certain connection paths, certificate verification is unconditionally disabled regardless of any configuration settings, enabling attackers to intercept, decrypt, and manipulate all transmitted data including authentication credentials."
+    },
+    "L3": {
+      "area": "Global configuration defaults and directory service authentication connectivity",
+      "description": "The application disables TLS certificate verification by default in its global configuration for all outgoing storage driver and service connections. Additionally, the directory service authentication connection path unconditionally disables certificate verification, ignoring any configuration settings. This enables Man-in-the-Middle attacks where attackers can intercept and steal authentication credentials and manipulate storage communications."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "crypto-weakness",
+    "cvss": 9.1,
+    "reason": "TLS certificate verification is disabled by default in the global configuration (set to true), and the LDAP authentication connection handler unconditionally skips certificate verification with a hardcoded value, enabling Man-in-the-Middle attacks on all storage and authentication communications.",
+    "locations": [
+      {
+        "file": "internal/conf/config.go",
+        "function": "DefaultConfig"
+      },
+      {
+        "file": "server/handles/ldap_login.go",
+        "function": "dial"
+      }
+    ]
+  }
+}

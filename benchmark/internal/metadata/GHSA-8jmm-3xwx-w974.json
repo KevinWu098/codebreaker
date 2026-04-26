@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-8jmm-3xwx-w974",
+  "post_patch_commit": "69629ca76a8f2c8c973ede3b616f93aa26ff23fb",
+  "noisy_patch": true,
+  "curation_notes": "The patch commit is a merge (69629ca) changing 5 non-test source files, making the patch noisy. The primary vulnerability locations are: (1) internal/conf/config.go in DefaultConfig(), which sets TlsInsecureSkipVerify to true by default, affecting all storage driver connections globally; and (2) server/handles/ldap_login.go in dial(), which hardcodes InsecureSkipVerify: true regardless of configuration. Other files (drivers/webdav/util.go, drivers/base/client.go, etc.) consume the global config value but are not independent vulnerability locations — they are affected by the insecure default. The pre-assigned class crypto-weakness (from CWE-295: Improper Certificate Validation) is correct: the vulnerability is a cryptographic misconfiguration that disables TLS verification.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
