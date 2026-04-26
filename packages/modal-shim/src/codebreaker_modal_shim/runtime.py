@@ -42,6 +42,7 @@ from codebreaker_shim_shared.helpers import (
 SANDBOXES = modal.Dict.from_name("codebreaker-sandboxes", create_if_missing=True)
 IDEMPOTENCY = modal.Dict.from_name("codebreaker-idempotency", create_if_missing=True)
 RATE_LIMITS = modal.Dict.from_name("codebreaker-ratelimits", create_if_missing=True)
+TIMEOUT_EXIT_CODE = 124
 
 
 class ModalSandboxManager:
@@ -119,15 +120,18 @@ class ModalSandboxManager:
             profile = resolve_profile(metadata.profile)
             cwd = resolve_workdir(request.cwd, profile.workdir)
             timeout_seconds = request.timeout_seconds or profile.timeout_seconds
+            wrapped_command = (
+                f"timeout {int(timeout_seconds)}s bash -lc {shell_quote(request.command)}"
+            )
             started_at = time.monotonic()
 
             try:
                 process = sandbox.exec(
                     "bash",
                     "-lc",
-                    request.command,
+                    wrapped_command,
                     workdir=cwd,
-                    timeout=timeout_seconds,
+                    timeout=timeout_seconds + 2,
                 )
             except modal.exception.NotFoundError as error:
                 last_error = error
@@ -154,6 +158,7 @@ class ModalSandboxManager:
                 stderr_truncated=stderr_truncated,
                 stdout=stdout,
                 stdout_truncated=stdout_truncated,
+                timed_out=int(exit_code) == TIMEOUT_EXIT_CODE,
             )
 
         raise last_error or RuntimeError("sandbox exec failed")

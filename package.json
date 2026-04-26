@@ -23,6 +23,8 @@
     "deploy:modal": "cd packages/modal-shim && PYTHONPATH=src:../shim-shared/src modal deploy -m codebreaker_modal_shim.main",
     "deploy:worker": "pnpm --dir packages/control-plane exec wrangler deploy --config wrangler.jsonc",
 
+    "check-org-targets": "pnpm --dir packages/control-plane check-targets",
+    "ensure-org-targets": "pnpm --dir packages/control-plane ensure-targets",
     "fix": "ultracite fix",
     "prepare": "lefthook install",
     "typecheck": "pnpm -r --parallel exec tsc --noEmit"

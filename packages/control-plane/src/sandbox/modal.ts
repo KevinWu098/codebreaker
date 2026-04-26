@@ -10,6 +10,7 @@ import {
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 100;
 const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
+const EXEC_REQUEST_GRACE_MS = 1000;
 const GIT_REQUEST_TIMEOUT_MS = 300_000;
 const AUTH_BASIC_RE = /Authorization:\s*Basic\s+[A-Za-z0-9+/=]+/gi;
 const AUTH_BEARER_RE = /Authorization:\s*Bearer\s+[^\s'"`]+/gi;
@@ -130,9 +131,13 @@ export class ModalExecutor {
   }
 
   async exec(options: ExecRemoteOptions): Promise<ExecResult> {
+    const timeoutMs = options.timeoutSeconds
+      ? options.timeoutSeconds * 1000 + EXEC_REQUEST_GRACE_MS
+      : undefined;
     const result = await this.request<ShimExecResult>("POST", "/exec", {
       body: toShimExecRequest(options),
       idempotencyKey: crypto.randomUUID(),
+      ...(timeoutMs ? { timeoutMs } : {}),
     });
 
     return fromShimExecResult(result);
