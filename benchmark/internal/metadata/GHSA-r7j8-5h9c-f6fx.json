@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-r7j8-5h9c-f6fx",
+  "post_patch_commit": "c94baec9ca923f38c19f0c7c5af722b9ec04022a",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from patch diff which modifies only internal/route/repo/editor.go in the editFilePost function. The patch adds two symlink checks: one for the new target path and one for the old file path when renaming. The pre-assigned class path-traversal (CWE-22) is correct — the vulnerability uses symlinks to traverse outside the repository directory. No sibling files contain the same vulnerability pattern; wiki.go has no symlink handling.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
