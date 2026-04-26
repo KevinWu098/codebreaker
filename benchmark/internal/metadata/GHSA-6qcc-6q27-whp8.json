@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6qcc-6q27-whp8",
+  "post_patch_commit": "237f3af891a90df9b903b85f1cd3438040ca261a",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from advisory description which explicitly names deleteFile() in handler.go:645-671 with a missing return after the path traversal check. The patch introduces a centralized sanitizePath() helper in helper.go and replaces ad-hoc path construction across all HTTP handlers. Additional locations (handler, CreateShareHandler, handleMkdir in handler.go and put, upload, bulkDownload in updown.go) were identified from the patch diff as having the same vulnerable pattern of constructing filesystem paths from unsanitized URL input without verifying the result stays within the webroot. Vulnerability class path-traversal confirmed from CWE-22 and the advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
