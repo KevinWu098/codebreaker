@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-libosdp-001",
+  "ghsa_id": "GHSA-7945-5mcv-f2pp",
+  "codebase": {
+    "repo": "https://github.com/goToMain/libosdp",
+    "language": "c",
+    "ecosystem": "pip",
+    "commit": "d33cd5a5ccfcc629ffed8ac67fa2f83cdd5af481"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Core protocol handling and message processing infrastructure"
+    },
+    "L2": {
+      "description": "A null pointer dereference vulnerability exists where a sparse lookup table used for converting protocol message identifiers to human-readable names does not have entries for all valid identifiers within the accepted range. When an identifier without a corresponding table entry is encountered, a null pointer is returned and immediately dereferenced without validation, causing a crash. This can be triggered remotely without authentication."
+    },
+    "L3": {
+      "area": "Protocol command and reply message name resolution utilities",
+      "description": "A null pointer dereference vulnerability exists in the reply name resolution logic where a sparse lookup table does not define entries for all valid reply identifiers in the accepted range. When a valid but undefined reply identifier is looked up, the table returns a null pointer which is immediately dereferenced without a null check, causing a denial of service. An attacker can trigger this remotely without establishing a secure connection."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "null-deref",
+    "cvss": 6.5,
+    "reason": "In the osdp_reply_name function, the names lookup table does not define entries for all valid reply IDs in the REPLY_ACK to REPLY_XRD range. When an undefined but in-range reply ID is looked up, the returned null pointer is dereferenced without a null check, causing a crash.",
+    "locations": [
+      {
+        "file": "src/osdp_common.c",
+        "function": "osdp_reply_name"
+      },
+      {
+        "file": "src/osdp_common.c",
+        "function": "osdp_cmd_name"
+      }
+    ]
+  }
+}
