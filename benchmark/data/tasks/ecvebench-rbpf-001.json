@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-rbpf-001",
+  "ghsa_id": "GHSA-ffx3-8qvm-pq3j",
+  "codebase": {
+    "repo": "https://github.com/solana-labs/rbpf",
+    "language": "rust",
+    "ecosystem": "rust",
+    "commit": "3896feae6b81ca273ea2b8c96b23ac5594fd31a4"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Binary program loading, parsing, and validation"
+    },
+    "L2": {
+      "description": "An integer overflow vulnerability exists in the processing of program headers from binary program files. The addition of virtual address and memory size fields can overflow, leading to a panic when handling crafted input with malformed headers."
+    },
+    "L3": {
+      "area": "ELF binary parsing, validation, and relocation",
+      "description": "An integer overflow vulnerability exists in the processing of ELF program headers where the addition of virtual address and memory size fields can overflow when virtual address mapping is enabled, causing a panic when handling a crafted eBPF program with malformed program headers."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "integer-overflow",
+    "cvss": 7.5,
+    "reason": "The ELF validator does not check for integer overflow when adding program header virtual address and memory size fields, causing a panic on crafted input with malformed program headers.",
+    "locations": [
+      {
+        "file": "src/elf.rs",
+        "function": "validate"
+      }
+    ]
+  }
+}

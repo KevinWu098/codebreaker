@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-ffx3-8qvm-pq3j",
+  "post_patch_commit": "2b702ad30ba2cc8493d0f632bafd39d9dc63498d",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #320 into main. Only src/elf.rs was changed (1 non-test source file). The fix adds a checked_add call for p_vaddr + p_memsz in the validate() function to catch integer overflow from malformed ELF program headers before they cause a panic in relocate(). Pre-assigned class integer-overflow (CWE-190) is correct — the patch directly replaces unchecked addition with checked_add. No sibling files share this pattern; elf.rs is the sole ELF loader.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
