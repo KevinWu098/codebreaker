@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "HTTP cookie management and data persistence layer"
+      "area": "Client-side state persistence and HTTP request data handling utilities"
     },
     "L2": {
-      "description": "An insecure deserialization vulnerability exists where user-controlled cookie values are deserialized using an unsafe mechanism without proper validation, allowing PHP object injection. An attacker can craft a malicious cookie payload that, when processed by the application, triggers arbitrary code execution through magic methods during the deserialization process."
+      "description": "An insecure deserialization vulnerability exists where user-controlled values stored in client-side browser state are passed to PHP's native deserialization mechanism without any validation or object type checking. An attacker can craft a malicious serialized PHP object payload that, when processed by the application during data retrieval, triggers arbitrary code execution through PHP magic methods invoked during the deserialization process."
     },
     "L3": {
-      "area": "HTTP cookie management and data persistence layer",
-      "description": "An insecure deserialization vulnerability exists where user-controlled cookie values are deserialized using an unsafe mechanism without proper validation, allowing PHP object injection. An attacker can craft a malicious cookie payload that, when processed by the application, triggers arbitrary code execution through magic methods during the deserialization process."
+      "area": "Cookie state management and retrieval within the HTTP data handling subsystem",
+      "description": "An insecure deserialization vulnerability exists where user-controlled cookie values are passed to PHP's native deserialization mechanism without any validation or object type checking when reading stored cookie data. An attacker can craft a malicious serialized PHP object as a cookie value, triggering arbitrary code execution through PHP magic methods like __wakeup() during the deserialization process. The vulnerability is exploitable via the Spoon library's cookie retrieval path used by Fork CMS."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "insecure-deserialization",
     "cvss": 9.8,
-    "reason": "The cookie retrieval method uses PHP's unserialize() on user-controlled cookie values without validation, enabling PHP object injection and arbitrary code execution via magic methods like __wakeup().",
+    "reason": "The cookie retrieval method uses PHP's unserialize() on user-controlled cookie values without validation, enabling PHP object injection and arbitrary code execution via magic methods.",
     "locations": [
       {
         "file": "spoon/cookie/cookie.php",
