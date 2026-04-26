@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Scripting language runtime and expression interpretation"
+      "area": "Scripting language runtime and expression evaluation"
     },
     "L2": {
-      "description": "A use-after-free vulnerability exists where in-place mutation optimizations for data merging and patching operations use unsafe memory transmutation to convert immutable references to mutable ones. When a variable is both the target of such an operation and the assignment destination, the operation can insert references to data from another source. After that source data is freed, those references become dangling, allowing access to freed or reallocated memory through stale string keys or values."
+      "description": "A use-after-free vulnerability exists where in-place mutation optimizations for data transformation operations use unsafe memory conversion to treat immutable references as mutable. When a variable is both the source and destination of such an operation, references to freed data can persist, allowing access to deallocated memory through stale keys or values."
     },
     "L3": {
-      "area": "Scripting language runtime and expression interpretation",
-      "description": "A use-after-free vulnerability exists where in-place mutation optimizations for data merging and patching operations use unsafe memory transmutation to convert immutable references to mutable ones. When a variable is both the target of such an operation and the assignment destination, the operation can insert references to data from another source. After that source data is freed, those references become dangling, allowing access to freed or reallocated memory through stale string keys or values."
+      "area": "Mutable expression interpreter and its data assignment optimization paths within the scripting engine",
+      "description": "A use-after-free vulnerability exists where in-place mutation optimizations for patch and merge operations on scripting language data structures use unsafe memory transmutation to convert immutable references to mutable ones. When a variable is both the target of such an operation and the assignment destination, references from event data can be inserted into persistent state. After the event data is freed, those references become dangling pointers, allowing access to deallocated memory."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "use-after-free",
     "cvss": 9.8,
-    "reason": "The patch_in_place and merge_in_place optimization functions use unsafe transmute to convert immutable references to mutable ones, enabling in-place mutation that can insert references to event data into state. After the event is freed, those references become dangling pointers.",
+    "reason": "The patch_in_place and merge_in_place functions use unsafe transmute to convert immutable references to mutable ones for in-place optimization, which can cause dangling pointers when event data is freed after references to it have been inserted into persistent state.",
     "locations": [
       {
         "file": "tremor-script/src/interpreter/expr.rs",

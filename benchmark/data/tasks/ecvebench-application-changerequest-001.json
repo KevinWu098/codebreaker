@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Change request rendering and UI template layer"
+      "area": "Change request workflow UI and rendering components"
     },
     "L2": {
-      "description": "A cross-site scripting (XSS) vulnerability allows a user without any specific rights to perform script injection and remote code execution by inserting a crafted title when creating a new change request. The title value is rendered without proper output escaping in the user interface, allowing arbitrary script execution in the context of other users' sessions."
+      "description": "A cross-site scripting (XSS) vulnerability allows a user without any specific privileges to perform script injection and remote code execution by inserting a crafted title when creating a new change request. The user-supplied title is rendered without proper output escaping in the user interface, enabling arbitrary script execution in the context of other users' browser sessions."
     },
     "L3": {
-      "area": "Change request rendering and UI template layer",
-      "description": "A cross-site scripting (XSS) vulnerability allows a user without any specific rights to perform script injection and remote code execution by inserting a crafted title when creating a new change request. The title value is rendered without proper output escaping in the user interface, allowing arbitrary script execution in the context of other users' sessions."
+      "area": "Change request detail view and inline title editing components",
+      "description": "A cross-site scripting (XSS) vulnerability allows a user without any specific privileges to perform script injection and remote code execution by inserting a crafted title when creating a new change request. The title is rendered without proper output escaping in the change request detail view's title display area, enabling arbitrary script execution in the context of other users' browser sessions. The vulnerability is particularly critical as change requests are designed to be created by users without elevated privileges."
     }
   },
   "ground_truth": {

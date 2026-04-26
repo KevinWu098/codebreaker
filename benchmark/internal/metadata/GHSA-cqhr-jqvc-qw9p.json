@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-cqhr-jqvc-qw9p",
   "post_patch_commit": "e0497c1980acebd257d3da78dfde29ae9bdffdf6",
   "noisy_patch": false,
-  "curation_notes": "Patch commit e0497c1 was directly referenced in the advisory. It modifies a single file (HtmlCoreReport.java), adding htmlEncodeButNotSpace() around the message parameter in the writeMessageIfNotNull function before it is embedded into a JavaScript alert() call in generated HTML. The location was derived from the patch diff. Only 1 source file was changed, so noisy_patch is false.",
+  "curation_notes": "Patch commit e0497c1 was directly referenced in the advisory. It modifies a single file (HtmlCoreReport.java), adding htmlEncodeButNotSpace() around the message parameter in the writeMessageIfNotNull function before it is embedded into a JavaScript alert() call in generated HTML. The location was derived from the patch diff. Only 1 source file was changed, so noisy_patch is false. No sibling Html*Report.java files contained the same vulnerable pattern (alert with unescaped message embedding). Pre-assigned vuln_class xss is correct per CWE-79, advisory description, and patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

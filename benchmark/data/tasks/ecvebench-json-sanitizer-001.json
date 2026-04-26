@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "JSON content processing and output sanitization"
+      "area": "JSON content processing and output encoding logic"
     },
     "L2": {
-      "description": "A vulnerability exists where crafted JSON-like input can cause the sanitizer to emit HTML and XML control sequences in its output, including closing script element markers and CDATA section delimiters. The sanitizer fails to properly account for character escape sequences when detecting dangerous patterns within string content, allowing attackers to bypass output encoding and inject arbitrary HTML or XML into documents that embed the sanitized output."
+      "description": "A vulnerability exists where crafted JSON-like input can cause the sanitizer to emit HTML and XML control sequences in its output, including closing script element markers and CDATA section delimiters. The sanitizer fails to properly decode character escape sequences when detecting dangerous output patterns within string content, allowing attackers to bypass output encoding and inject arbitrary HTML or XML into documents that embed the sanitized output."
     },
     "L3": {
-      "area": "JSON content processing and output sanitization",
-      "description": "A vulnerability exists where crafted JSON-like input can cause the sanitizer to emit HTML and XML control sequences in its output, including closing script element markers and CDATA section delimiters. The sanitizer fails to properly account for character escape sequences when detecting dangerous patterns within string content, allowing attackers to bypass output encoding and inject arbitrary HTML or XML into documents that embed the sanitized output."
+      "area": "JSON string content sanitization and HTML/XML escape sequence handling",
+      "description": "A vulnerability exists where crafted JSON-like input containing escape sequences can cause the sanitizer to emit HTML and XML control sequences in its output. The string sanitization logic uses direct character lookups instead of first decoding escape sequences when checking for dangerous patterns such as closing script element markers, comment delimiters, and CDATA section closers, allowing attackers to inject arbitrary HTML or XML into documents that embed the sanitized output."
     }
   },
   "ground_truth": {
     "vulnerable": true,
-    "vuln_class": "xxe",
+    "vuln_class": "xss",
     "cvss": 9.8,
-    "reason": "The sanitizeString method in JsonSanitizer uses direct charAt() lookups instead of decoding escape sequences when checking for dangerous HTML/XML patterns like <script, <!--, -->, and ]]>, allowing crafted inputs with escape sequences to bypass output encoding checks and inject arbitrary HTML or XML into embedding documents.",
+    "reason": "The sanitizeString method uses direct charAt() lookups instead of decoding escape sequences when checking for dangerous HTML/XML patterns like </script>, <!--, -->, and ]]>, allowing crafted inputs with escape sequences to bypass output encoding checks and inject arbitrary HTML or XML into embedding documents.",
     "locations": [
       {
         "file": "src/main/java/com/google/json/JsonSanitizer.java",

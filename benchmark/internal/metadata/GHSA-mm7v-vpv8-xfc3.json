@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-mm7v-vpv8-xfc3",
   "post_patch_commit": "c20cfa8584e649f00dc0767ab6fad63a3f59a296",
   "noisy_patch": false,
-  "curation_notes": "The patch commit c20cfa8 (PR #151) adds an 'else { return; }' branch in the grow method of lib.rs to prevent deallocation when the requested capacity equals the current capacity of a spilled SmallVec. The vulnerability location was derived directly from the patch diff, which modifies only lib.rs in the grow function. The advisory description explicitly names the grow method and describes the double-free behavior. Only 1 non-test source file was changed with a 2-line fix.",
+  "curation_notes": "Re-curation with updated hints. The patch commit c20cfa8 (PR #151) adds an 'else { return; }' branch in the grow method of lib.rs to prevent deallocation when the requested capacity equals the current capacity of a spilled SmallVec. The vulnerability location was derived from the patch diff which modifies only lib.rs in the grow function. The advisory explicitly describes calling grow with a value equal to the current capacity on a spilled vector. CWE-415 (Double Free) maps to use-after-free since the freed memory is subsequently accessed. Only 1 non-test source file was changed. L3 hints were differentiated from L1/L2 to provide narrower targeting.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

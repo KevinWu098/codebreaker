@@ -10,14 +10,14 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "Message consumption and selector evaluation logic"
+      "area": "Message filtering and selector processing layer"
     },
     "L2": {
-      "description": "An XML external entity (XXE) vulnerability allows remote consumers to have unspecified impact via vectors involving an XPath-based selector when dequeuing XML messages. The XML parser used for selector processing does not disable external entity resolution, allowing attackers to craft malicious XML content that triggers external entity processing."
+      "description": "An XML external entity (XXE) vulnerability allows remote consumers to have unspecified impact via vectors involving an XPath-based selector when dequeuing XML messages. The XML parser used for processing message content during selector evaluation does not disable external entity resolution, enabling attackers to craft malicious XML content that triggers external entity processing."
     },
     "L3": {
-      "area": "Message consumption and selector evaluation logic",
-      "description": "An XML external entity (XXE) vulnerability allows remote consumers to have unspecified impact via vectors involving an XPath-based selector when dequeuing XML messages. The XML parser used for selector processing does not disable external entity resolution, allowing attackers to craft malicious XML content that triggers external entity processing."
+      "area": "XPath-based message selector evaluation within the message filtering subsystem",
+      "description": "An XML external entity (XXE) vulnerability exists in the XPath-based message selector evaluation logic in Apache ActiveMQ Apollo 1.x before 1.7.1. When dequeuing XML messages, the XML parser does not disable external entity resolution during XPath selector processing, allowing remote consumers to craft messages with external entity declarations that trigger XXE processing."
     }
   },
   "ground_truth": {

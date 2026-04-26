@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-g5mj-c26g-vmpm",
   "post_patch_commit": "cfb0fc3cd807cb72c24424cef98ce39710f2e5fb",
   "noisy_patch": false,
-  "curation_notes": "The patch commit is a merge commit (cfb0fc3) for PR #10. Only one non-test source file was changed: LogNodeUtils.java in the parser package. The fix adds a secureDocumentBuilderFactory method that disables external entities, external DTDs, XInclude, and entity reference expansion, and calls it in getRootDocumentNodeFromArchive before building the XML document. The pre-patch commit 194ae55 is the first parent of the merge commit. Location derived directly from the patch diff.",
+  "curation_notes": "The patch commit is a merge commit (cfb0fc3) for PR #10. Only one non-test source file was changed: LogNodeUtils.java in the parser package. The fix adds a secureDocumentBuilderFactory method that disables external general entities, external parameter entities, external DTD loading, XInclude, and entity reference expansion, then calls it in getRootDocumentNodeFromArchive before building the XML document. The pre-patch commit 194ae55 is the first parent of the merge commit. Sibling files LogParser.java and LogParser2.java call the vulnerable function but do not directly instantiate DocumentBuilderFactory, so no sibling locations were added. L3 hints narrowed to the XML document parsing utilities and added TestComplete-specific context. Vulnerability class xxe confirmed from CWE-611/CWE-776 and the patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }

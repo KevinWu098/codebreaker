@@ -13,11 +13,11 @@
       "area": "Dynamic array capacity management and memory reallocation logic"
     },
     "L2": {
-      "description": "A use-after-free and double free vulnerability exists in the capacity growth logic of a dynamically-sized array. When the array is asked to grow its backing storage to a size equal to its current capacity, it incorrectly deallocates the existing memory. This results in a double free immediately and use-after-free on subsequent accesses to the array contents. An attacker who controls the target growth size may exploit this to read sensitive memory contents or achieve remote code execution."
+      "description": "A double free and use-after-free vulnerability exists in the capacity growth logic of a dynamically-sized array type. When the array has already spilled to heap storage and is asked to grow to a size equal to its current capacity, it incorrectly frees the existing backing memory without reallocating. This performs a double free immediately and leads to use-after-free on subsequent accesses to the array contents. An attacker who controls the target growth size may exploit this to obtain memory contents or achieve remote code execution."
     },
     "L3": {
-      "area": "Dynamic array capacity management and memory reallocation logic",
-      "description": "A use-after-free and double free vulnerability exists in the capacity growth logic of a dynamically-sized array. When the array is asked to grow its backing storage to a size equal to its current capacity, it incorrectly deallocates the existing memory. This results in a double free immediately and use-after-free on subsequent accesses to the array contents. An attacker who controls the target growth size may exploit this to read sensitive memory contents or achieve remote code execution."
+      "area": "Heap capacity growth and deallocation logic in the stack-optimized dynamic array implementation",
+      "description": "A double free and use-after-free vulnerability exists in the capacity growth logic of a stack-optimized dynamic array. When the array has spilled its storage to the heap and is asked to grow to a capacity exactly equal to its current heap capacity, the conditional branching in the growth method fails to handle this edge case and falls through to a deallocation path that frees the still-referenced backing storage. An attacker who controls the requested growth capacity can exploit this to obtain memory contents or achieve remote code execution."
     }
   },
   "ground_truth": {

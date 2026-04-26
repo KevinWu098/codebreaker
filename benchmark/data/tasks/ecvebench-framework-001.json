@@ -16,8 +16,8 @@
       "description": "A cross-site scripting vulnerability exists in the forum software where user-provided string inputs are converted into HTML DOM nodes when rendered in the UI. This allows any user to inject malicious HTML markup through user input fields, which executes in other users' browsers. The attack could be used to perform AJAX requests on behalf of victims, potentially deleting content, modifying settings, or compromising administrator accounts."
     },
     "L3": {
-      "area": "Frontend internationalization and content rendering layer",
-      "description": "A cross-site scripting vulnerability exists in the forum software where user-provided string inputs are converted into HTML DOM nodes when rendered in the UI. This allows any user to inject malicious HTML markup through user input fields, which executes in other users' browsers. The attack could be used to perform AJAX requests on behalf of victims, potentially deleting content, modifying settings, or compromising administrator accounts."
+      "area": "Frontend translation system's parameter handling and string rendering subsystem",
+      "description": "A cross-site scripting vulnerability exists in the forum software's translation system where user-provided string parameters undergo a preprocessing step that converts them directly into HTML DOM nodes without escaping. When translation parameters include user-controlled strings such as search queries, these strings are rendered as raw HTML in the browser, allowing any user to inject malicious markup that executes in other users' browsers."
     }
   },
   "ground_truth": {

@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-f776-w9v2-7vfj",
   "post_patch_commit": "7565e720117f73102f5a276239eabfe85e15cff4",
   "noisy_patch": false,
-  "curation_notes": "The patch modifies a single XML UI template file, adding $services.rendering.escape() around $doc.title in a label element to prevent XSS. The location was derived directly from the patch diff, which changed only one file. The advisory description also explicitly references the ChangeRequestSheet document as the workaround target, confirming the location.",
+  "curation_notes": "Re-curation with updated guidelines. The patch modifies a single XML UI template file, wrapping $doc.title with $services.rendering.escape() in a label element to prevent XSS. Location derived from the patch diff (1 file changed). No sibling files in ChangeRequest/Code/ use the same unescaped $doc.title pattern. L3 hints improved to be more specific than L1/L2 — L3 area narrows to the detail view and title editing components, and L3 description adds context about the title display area and the criticality of the attack surface. Pre-assigned vuln_class 'xss' confirmed correct based on CWE-79, the advisory description, and the patch adding output escaping.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
