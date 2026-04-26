@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-22j4-qc48-j8f8",
+  "post_patch_commit": "835f0d889fa14b14e900c95ac6846dc3b7a3c8d4",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is the merge of PR #7223 into apache/inlong master. The fix modifies the filterSensitive method in MySQLSinkDTO.java to decode the JDBC URL in a loop (while it still contains '%') instead of a single pass. This prevents double-URL-encoding bypass of the sensitive parameter filter (autoDeserialize, allowLoadLocalInfile, etc.). The InlongConstants.java change only adds a PERCENT constant used by the fix. No sibling sink DTOs (PostgreSQL, Oracle, etc.) have the filterSensitive pattern, so no additional locations were added. Vulnerability class insecure-deserialization confirmed from CWE-502 and advisory description.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
