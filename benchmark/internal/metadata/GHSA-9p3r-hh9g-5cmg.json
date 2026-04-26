@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-9p3r-hh9g-5cmg",
+  "post_patch_commit": "121870a08583033ed6a0ed73d9ffea32991252bb",
+  "noisy_patch": false,
+  "curation_notes": "Primary location derived from the patch diff. The readFile method in remote-fs-bridge.ts performed path resolution (resolveCanonicalPath), a hardlink check (assertNoHardlinkedFile), and then a separate shell cat command to read the file — a classic TOCTOU pattern. The fix replaces this with an atomic pinned-directory read via the mutation helper that opens the parent directory fd first and reads the file relative to it, eliminating the race window. The local fs-bridge.ts already used a pinned read approach so no sibling vulnerability exists. Pre-assigned class race-condition (CWE-367) is correct.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
