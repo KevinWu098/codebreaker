@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3vjh-xrhf-v9xh",
+  "post_patch_commit": "f56bc8e40be6c0ae0825e6c7396f4db80620b799",
+  "noisy_patch": false,
+  "curation_notes": "The patch modifies only src/Image/Cache.php (1 file, +33 lines). The fix adds SVG image reference validation inside the resolve_url static method: after determining a file is an SVG, the code now parses the SVG XML and checks each <image> element's href/xlink:href attribute against the same protocol restrictions and URL validation used for top-level images. It also blocks SVG self-references. Pre-assigned vuln_class 'xxe' (CWE-611) is correct — the vulnerability allows SVG documents to reference external/restricted entities via embedded image tags, bypassing isRemoteEnabled restrictions. No sibling files exist in src/Image/ (Cache.php is the only file).",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
