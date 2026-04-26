@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-h2rm-29ch-wfmh",
   "post_patch_commit": "d805d3154b17c6bf455ddf5deb0a3461a3833bc6",
   "noisy_patch": false,
-  "curation_notes": "The patch commit d805d31 fixes XSS by adding $escapetool.xml() and $escapetool.javascript() calls around user-controlled and translation-rendered content. The primary vulnerability is in LoginUIExtension.vm where $request.identityOAuth (a GET parameter) flows into $statusMsg and is rendered unescaped in an HTML comment. Secondary locations are the t and tp translation macros in IdentityOAuthConfigMacros.vm which output raw translation strings without escaping. WebHome.xml also received escaping fixes for rendered translations. The 3 translation .properties files had only i18n string updates. Locations derived from both the advisory description (which points to LoginUIExtension) and the patch diff.",
+  "curation_notes": "Re-curated with updated hint guidelines. The primary vulnerability is in LoginUIExtension.vm where $request.identityOAuth (a user-controlled GET parameter) flows into $statusMsg and is rendered unescaped in an HTML comment (<!-- ======= ${statusMsg} ====== -->). The fix adds $escapetool.xml($statusMsg). Secondary locations are the t and tp Velocity macros in IdentityOAuthConfigMacros.vm which output translation strings without escaping; the fix wraps output in $escapetool.xml() or $escapetool.javascript() depending on context. WebHome.xml also received escaping fixes but was excluded from locations since it only renders static translation keys. L1 broadened to cover the full UI template layer (~20 files). L3 narrowed to the login page extension and translation-rendering macros (~3-5 files). Pre-assigned vuln_class xss confirmed by CWE-79, advisory description, and patch diff.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
