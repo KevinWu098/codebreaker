@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wvpv-8524-wg6x",
+  "post_patch_commit": "97b3718db64a6ca9afb3382de2926eb8da660052",
+  "noisy_patch": true,
+  "curation_notes": "Patch commit is a release commit (3.7.6) with 747 files changed. The XXE fix is isolated to mxGraphViewImageReader.java where the convert() method's SAXParser was missing security features (disallow-doctype-decl, load-external-dtd, external-general-entities, external-parameter-entities). ExportServlet.java in examples already had most protections and received one additional feature flag, but is excluded as an example file. No sibling files in the reader package use SAXParser directly. Pre-assigned class xxe confirmed via CWE-611 and patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
