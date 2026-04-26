@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-74r6-grj9-8rq6",
+  "post_patch_commit": "b0e63be5f0bb20dfce507cb8a1a9568f6e73de57",
+  "noisy_patch": true,
+  "curation_notes": "Primary location derived from the patch diff. The patch adds type allow-list/deny-list validation in DeserializeCustomObject before calling Activator.CreateInstance(type). The pre-patch code had a commented-out security check with a TODO note acknowledging the security concern. 15 files changed total but many were project config, deleted demo services, and vendor JS (jquery removal). The core fix spans 4 source files (JavaScriptDeserializer.cs, AjaxSettings.cs, AjaxSettingsSectionHandler.cs, AjaxProcHelper.cs), so noisy_patch is true. GHSA-74r6-grj9-8rq6 is a withdrawn duplicate of GHSA-6r7c-6w96-8pvw (CVE-2021-23758); both reference the same patch commit. Vulnerability class insecure-deserialization confirmed from CWE-502 and the patch diff.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}

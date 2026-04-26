@@ -1,0 +1,35 @@
+{
+  "task_id": "ecvebench-ajax-net-professional-001",
+  "ghsa_id": "GHSA-74r6-grj9-8rq6",
+  "codebase": {
+    "repo": "https://github.com/michaelschwarz/Ajax.NET-Professional",
+    "language": "csharp",
+    "ecosystem": "nuget",
+    "commit": "2e242304e712f436b68dbc14a2d91ce46f607262"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "JSON data processing and object conversion layer"
+    },
+    "L2": {
+      "description": "An insecure deserialization vulnerability exists where arbitrary .NET types can be instantiated from untrusted JSON input without any type validation or restriction. An attacker can exploit this to deserialize dangerous classes, achieving remote code execution."
+    },
+    "L3": {
+      "area": "JSON deserialization and custom object type resolution logic",
+      "description": "An insecure deserialization vulnerability exists where arbitrary .NET types can be instantiated from untrusted JSON input without any type allow-list or deny-list validation. When processing AJAX requests, the deserialization of custom objects does not restrict which types can be created, allowing an attacker to instantiate dangerous .NET classes to achieve remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "insecure-deserialization",
+    "cvss": 9.8,
+    "reason": "The JSON deserializer instantiates arbitrary .NET types from untrusted input using Activator.CreateInstance without any type allow-list or deny-list validation, enabling remote code execution via deserialization of dangerous classes.",
+    "locations": [
+      {
+        "file": "AjaxPro/JSON/JavaScriptDeserializer.cs",
+        "function": "DeserializeCustomObject"
+      }
+    ]
+  }
+}
