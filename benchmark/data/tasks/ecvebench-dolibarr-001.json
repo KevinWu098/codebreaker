@@ -13,21 +13,25 @@
       "area": "Membership and subscription record management"
     },
     "L2": {
-      "description": "A SQL injection vulnerability exists where a user-supplied HTTP request parameter is directly used in database operations without proper type enforcement or sanitization, allowing remote unauthenticated attackers to execute arbitrary SQL commands."
+      "description": "A SQL injection vulnerability exists where user-supplied HTTP request parameters are directly interpolated into database queries without type enforcement or sanitization, allowing remote unauthenticated attackers to execute arbitrary SQL commands."
     },
     "L3": {
-      "area": "Membership and subscription record management",
-      "description": "A SQL injection vulnerability exists where a user-supplied HTTP request parameter is directly used in database operations without proper type enforcement or sanitization, allowing remote unauthenticated attackers to execute arbitrary SQL commands."
+      "area": "Subscription detail and listing pages within the membership management module",
+      "description": "A SQL injection vulnerability exists where HTTP request parameters used as record identifiers and date filters are directly interpolated into SQL query strings without type casting or proper sanitization in the membership subscription management pages, allowing remote unauthenticated attackers to execute arbitrary SQL commands."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "sql-injection",
     "cvss": 9.8,
-    "reason": "The rowid parameter in the subscription info page is taken directly from unsanitized GET/POST input and used in database queries, allowing remote SQL injection.",
+    "reason": "The rowid parameter in the subscription info page and the date_select parameter in the subscription list page are taken directly from unsanitized GET/POST input and interpolated into SQL queries, allowing remote SQL injection.",
     "locations": [
       {
         "file": "htdocs/adherents/subscription/info.php",
+        "function": null
+      },
+      {
+        "file": "htdocs/adherents/subscription/list.php",
         "function": null
       }
     ]
