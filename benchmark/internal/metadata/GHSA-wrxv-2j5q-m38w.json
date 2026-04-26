@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-wrxv-2j5q-m38w",
+  "post_patch_commit": "86368e9cf70a0ad23cccd5ee32de847149af0c6f",
+  "noisy_patch": false,
+  "curation_notes": "Patch modifies 2 non-test source files: src/lxml/iterparse.pxi (functions _countNsDefs and _appendStartNsEvents) and src/lxml/apihelpers.pxi (function _build_nsmap). All three functions iterate over namespace definitions (c_ns = c_node.nsDef) without checking for NULL c_ns.href before dereferencing. The fix adds explicit null checks (if c_ns.href:) and adjusts counting logic (count += (c_ns.href is not NULL)). Pre-assigned class null-deref from CWE-476 is correct — the vulnerability is a textbook NULL pointer dereference.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
