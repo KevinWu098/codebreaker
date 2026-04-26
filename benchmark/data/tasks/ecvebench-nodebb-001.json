@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-nodebb-001",
+  "ghsa_id": "GHSA-vh2g-6c4x-5hmp",
+  "codebase": {
+    "repo": "https://github.com/NodeBB/NodeBB",
+    "language": "javascript",
+    "ecosystem": "npm",
+    "commit": "8cf4a6f62eab74961f351f0cbf83e53722378e04"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "User data export and socket-based request handling"
+    },
+    "L2": {
+      "description": "A path traversal vulnerability exists where attacker-controlled input can override an internal parameter via object destructuring, allowing the manipulated value to be interpolated into a file path passed to a child process execution call. This enables arbitrary JavaScript file execution on the host system."
+    },
+    "L3": {
+      "area": "User profile export pipeline and its socket.io entry points",
+      "description": "A path traversal vulnerability exists where attacker-controlled socket data can override an internal type parameter via object spread syntax during user export operations. The unsanitized type value is then interpolated into a file path used to fork a child process, enabling arbitrary JavaScript file execution on the host system."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "path-traversal",
+    "cvss": 10.0,
+    "reason": "The user export functionality does not validate the type parameter, and the socket handler uses object spread that allows user-controlled data to overwrite it, enabling path traversal to execute arbitrary JavaScript files via child_process.fork().",
+    "locations": [
+      {
+        "file": "src/api/users.js",
+        "function": "usersAPI.generateExport"
+      },
+      {
+        "file": "src/socket.io/user/profile.js",
+        "function": "doExport"
+      }
+    ]
+  }
+}
