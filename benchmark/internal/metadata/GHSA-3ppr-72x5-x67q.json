@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-3ppr-72x5-x67q",
+  "post_patch_commit": "f9b9b0cbdf7559fdd8fc4004e5a242f5801daa67",
+  "noisy_patch": false,
+  "curation_notes": "Locations derived from the patch diff which modified two source files: MSTestReportConverter.java (containsData and getDocumentBuilder functions) and XslTransformer.java (constructor). The patch adds XXE protection by disabling DTD processing, external general/parameter entities, and setting secure processing features on DocumentBuilderFactory and TransformerFactory. No sibling files in the same directory use XML parsing APIs, so no additional locations were added. Pre-assigned vulnerability class 'xxe' confirmed by CWE-611/CWE-776 and the patch content.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
