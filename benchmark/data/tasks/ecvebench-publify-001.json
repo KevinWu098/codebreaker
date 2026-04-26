@@ -10,21 +10,21 @@
   "hints": {
     "L0": null,
     "L1": {
-      "area": "User account management and data persistence layer"
+      "area": "Application data models and record validation"
     },
     "L2": {
-      "description": "An integer overflow or wraparound vulnerability exists because a text attribute has no length constraint. By supplying an excessively long string value, an attacker can trigger an integer overflow condition during processing, potentially leading to denial of service or other security impacts."
+      "description": "An integer overflow or wraparound vulnerability exists because a user-controlled text attribute has no length constraint. An attacker can supply an excessively long string value, triggering an integer overflow condition during processing, potentially leading to denial of service or other security impacts."
     },
     "L3": {
-      "area": "User account management and data persistence layer",
-      "description": "An integer overflow or wraparound vulnerability exists because a text attribute has no length constraint. By supplying an excessively long string value, an attacker can trigger an integer overflow condition during processing, potentially leading to denial of service or other security impacts."
+      "area": "User account data model and its attribute validation logic",
+      "description": "An integer overflow or wraparound vulnerability exists because a user account's name attribute, stored as an unconstrained text column, has no length validation. An attacker can supply an excessively long name value during registration or profile update, triggering an integer overflow condition during processing."
     }
   },
   "ground_truth": {
     "vulnerable": true,
     "vuln_class": "integer-overflow",
     "cvss": 9.8,
-    "reason": "The user model's name attribute is a text column with no length validation, allowing unlimited-length input that can cause integer overflow or wraparound when processed.",
+    "reason": "The User model's name attribute is a text column with no length validation, allowing unlimited-length input that can cause integer overflow or wraparound when processed.",
     "locations": [
       {
         "file": "publify_core/app/models/user.rb",

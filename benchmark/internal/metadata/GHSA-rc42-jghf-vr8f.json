@@ -2,7 +2,7 @@
   "ghsa_id": "GHSA-rc42-jghf-vr8f",
   "post_patch_commit": "29a5837c29620e33857d7a5afce01384e3f8e41a",
   "noisy_patch": false,
-  "curation_notes": "Patch commit adds a length validation (maximum: 2048) to the name attribute in the User model. Only one non-test source file was changed (publify_core/app/models/user.rb). The vulnerability location was derived directly from the patch diff. The function is null because the validation is a class-level declaration in a Rails model, not inside a specific method.",
+  "curation_notes": "Patch adds validates :name, length: { maximum: 2048 } to the User model. Only one non-test source file changed (publify_core/app/models/user.rb). The vulnerability is a class-level missing validation, so function is null. Pre-assigned class integer-overflow confirmed — CWE-190 and advisory description both indicate integer overflow/wraparound from an unlimited-length name field. No sibling models share this exact vulnerability pattern.",
   "dataset_version": "0.1.0",
-  "snapshot_date": "2026-04-25"
+  "snapshot_date": "2026-04-26"
 }
