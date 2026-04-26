@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-24wv-6c99-f843",
+  "post_patch_commit": "24c82b0e335fb5d7a844226b08abf9f176e592f0",
+  "noisy_patch": false,
+  "curation_notes": "Pre-assigned as command-injection from CWE-94, but the patch adds strict regex validation to locale and namespace query parameters to prevent directory traversal in the translation file loader. No shell or OS command execution is involved; the vulnerability is unsanitized file path input passed to PHP's include-based translation loader — reclassified to path-traversal. Primary location derived from the patch diff: the __invoke method in LocaleController.php accepts arbitrary locale and namespace values and passes them to the file loader with str_replace('.', '/', $namespace), enabling path traversal. The only sibling in the same directory (IndexController.php) is a simple view renderer with no similar pattern.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
