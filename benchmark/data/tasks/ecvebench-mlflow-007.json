@@ -1,0 +1,39 @@
+{
+  "task_id": "ecvebench-mlflow-007",
+  "ghsa_id": "GHSA-6749-m5cp-6cg7",
+  "codebase": {
+    "repo": "https://github.com/mlflow/mlflow",
+    "language": "python",
+    "ecosystem": "pip",
+    "commit": "65ef8af0ec070fdfd1e4b3adf6ace9b2bc6005ef"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Recipe execution and step card rendering pipeline"
+    },
+    "L2": {
+      "description": "A cross-site scripting vulnerability exists where user-controlled content from an untrusted recipe is rendered through template variables without proper escaping. When a recipe is executed in a notebook environment, attacker-controlled data is interpolated into HTML output, enabling arbitrary script injection and client-side remote code execution."
+    },
+    "L3": {
+      "area": "Recipe step card rendering and data ingestion card generation",
+      "description": "A cross-site scripting vulnerability exists where user-controlled content from an untrusted recipe is rendered through Jinja2 template variables without applying the escape filter. When step cards are built during recipe execution in a Jupyter Notebook environment, attacker-controlled data such as error tracebacks and dataset schema information is interpolated into HTML output without sanitization, enabling arbitrary script injection and client-side remote code execution."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "xss",
+    "cvss": 9.7,
+    "reason": "Insufficient sanitization of Jinja2 template variables in MLflow recipe step cards allows attacker-controlled content to be rendered as raw HTML, enabling cross-site scripting and client-side remote code execution when running untrusted recipes in Jupyter Notebook.",
+    "locations": [
+      {
+        "file": "mlflow/recipes/cards/__init__.py",
+        "function": "__init__"
+      },
+      {
+        "file": "mlflow/recipes/steps/ingest/__init__.py",
+        "function": "_build_step_card"
+      }
+    ]
+  }
+}

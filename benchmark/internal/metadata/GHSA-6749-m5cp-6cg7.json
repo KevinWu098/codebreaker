@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-6749-m5cp-6cg7",
+  "post_patch_commit": "4ae428205821795da7364af951a7b27e21e2022f",
+  "noisy_patch": false,
+  "curation_notes": "Patch commit is a squash merge of PR #10873. Two source files were modified, both adding the Jinja2 |e escape filter to template variables. Locations derived directly from the patch diff: FailureCard.__init__ in cards/__init__.py uses {{ STACKTRACE }} without escaping, and _build_step_card in steps/ingest/__init__.py uses {{SCHEMA}} without escaping. Checked sibling step modules (steps/__init__.py, steps/automl/__init__.py) — none contain the same unescaped template pattern. Pre-assigned vuln_class xss is correct: the fix adds HTML escaping to prevent script injection via template variables.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
