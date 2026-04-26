@@ -1,0 +1,47 @@
+{
+  "task_id": "ecvebench-olivetin-002",
+  "ghsa_id": "GHSA-45m3-398w-m2m9",
+  "codebase": {
+    "repo": "https://github.com/OliveTin/OliveTin",
+    "language": "go",
+    "ecosystem": "go",
+    "commit": "aa2bd95ccb8f00a1c97ebcb0a03e8d49867ffde6"
+  },
+  "hints": {
+    "L0": null,
+    "L1": {
+      "area": "Authentication and authorization middleware"
+    },
+    "L2": {
+      "description": "A race condition vulnerability exists in the OAuth2 login flow where concurrent HTTP requests trigger unsynchronized access to a shared in-memory state map used for tracking login sessions. This allows remote unauthenticated attackers to cause a runtime panic and process termination, resulting in denial of service."
+    },
+    "L3": {
+      "area": "OAuth2 authentication handler and its per-login state tracking logic",
+      "description": "A race condition vulnerability exists in the OAuth2 login flow where concurrent requests to the OAuth2 login and callback endpoints trigger unsynchronized read and write access to a shared in-memory map that tracks per-login state entries. This causes a Go runtime panic due to concurrent map operations, allowing remote unauthenticated attackers to crash the service when OAuth2 authentication is enabled."
+    }
+  },
+  "ground_truth": {
+    "vulnerable": true,
+    "vuln_class": "race-condition",
+    "cvss": 7.5,
+    "reason": "Concurrent HTTP requests to OAuth2 login and callback endpoints access a shared in-memory map without synchronization, causing a Go runtime panic (fatal error: concurrent map writes) and process termination.",
+    "locations": [
+      {
+        "file": "service/internal/auth/otoauth2/restapi_auth_oauth2.go",
+        "function": "HandleOAuthLogin"
+      },
+      {
+        "file": "service/internal/auth/otoauth2/restapi_auth_oauth2.go",
+        "function": "checkOAuthCallbackCookie"
+      },
+      {
+        "file": "service/internal/auth/otoauth2/restapi_auth_oauth2.go",
+        "function": "HandleOAuthCallback"
+      },
+      {
+        "file": "service/internal/auth/otoauth2/restapi_auth_oauth2.go",
+        "function": "CheckUserFromOAuth2Cookie"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ghsa_id": "GHSA-45m3-398w-m2m9",
+  "post_patch_commit": "f044d90d5525c4c8e3f421b32ed7eff771c22d36",
+  "noisy_patch": false,
+  "curation_notes": "The patch adds a sync.RWMutex to the OAuth2Handler struct and wraps all accesses to the shared registeredStates map with appropriate Lock/Unlock or RLock/RUnlock calls. Only one source file was modified (restapi_auth_oauth2.go). The sibling file (restapi_auth_oauth2_providers.go) does not access the registeredStates map. The pre-assigned vulnerability class race-condition is correct — CWE-362, CWE-400, and CWE-662 all align with concurrent unsynchronized map access causing a Go runtime panic.",
+  "dataset_version": "0.1.0",
+  "snapshot_date": "2026-04-26"
+}
