@@ -5,19 +5,21 @@ description: How ECVEBench tasks are sourced, filtered, curated, and validated.
 
 ## Data Source
 
-All tasks are derived from the [GitHub Advisory Database](https://github.com/advisories), the largest open collection of reviewed security advisories for open-source software. We restrict to **reviewed** advisories only — these have been triaged by GitHub's security team.
+All tasks are derived from the [GitHub Advisory Database](https://github.com/advisories), the largest open collection of reviewed security advisories for open-source software. We restrict to **reviewed** advisories only — these have been triaged by GitHub's security team, ensuring a baseline of accuracy for severity ratings, CWE classifications, and linked references.
+
+Each advisory (identified by a GHSA ID) describes a vulnerability in one or more open-source packages and typically links to the patch commit, pull request, or release that fixed it.
 
 ### Why GitHub Advisories?
 
 - **Scale**: Tens of thousands of reviewed advisories across all major ecosystems.
 - **Structured metadata**: CWE IDs, CVSS scores, affected version ranges, and reference links are machine-readable.
-- **Multi-language coverage**: Unlike NVD, which skews toward C/C++ due to historical CVE reporting patterns, GHSA covers JavaScript, Python, Go, Rust, Java, Ruby, and more.
-- **Patch linkage**: Most reviewed advisories link directly to the commit or PR that fixed the vulnerability.
+- **Multi-language coverage**: Unlike NVD, which skews toward C/C++ due to historical CVE reporting patterns, GHSA covers JavaScript, Python, Go, Rust, Java, Ruby, and more. This directly addresses a key limitation of existing benchmarks like CyberGYM.
+- **Patch linkage**: Most reviewed advisories link directly to the commit or PR that fixed the vulnerability, enabling automatic identification of the pre-patch (vulnerable) and post-patch (fixed) states.
 
 ### What We Do Not Use
 
-- **NVD (National Vulnerability Database)**: NVD data is not fetched during curation. If an advisory lacks a CVSS score on GitHub, the field is set to `null`.
-- **Unreviewed advisories**: These are community-submitted and may contain inaccurate or incomplete information.
+- **NVD (National Vulnerability Database)**: NVD data is not fetched during curation. If an advisory lacks a CVSS score on GitHub, the field is set to `null` rather than cross-referencing NVD.
+- **Unreviewed advisories**: These are community-submitted and may contain inaccurate or incomplete information. We exclude them entirely.
 
 ## Selection Criteria
 
@@ -26,18 +28,46 @@ An advisory is eligible for curation if it passes all of the following hard filt
 | Criterion | Rationale |
 | --- | --- |
 | **Reviewed status** | Ensures advisory has been vetted by GitHub's security team. |
-| **Resolvable patch commit** | The advisory must reference a commit, PR, or tag that can be resolved to a specific Git SHA. |
-| **Single repository** | The vulnerability must be localizable to one repository. |
-| **English description** | The advisory description must be in English. |
-| **Classifiable vulnerability** | The vulnerability must fit one of the 13 canonical vulnerability classes. |
+| **Resolvable patch commit** | The advisory must reference a commit, PR, or tag that can be resolved to a specific Git SHA. Without this, we cannot identify the pre-patch state. |
+| **Single repository** | The vulnerability must be localizable to one repository. Advisories spanning multiple repos are excluded. |
+| **English description** | The advisory description must be in English. Non-English advisories are skipped for consistency in hint generation. |
+| **Classifiable vulnerability** | The vulnerability must fit one of the 13 canonical [vulnerability classes](/docs/benchmark/vulnerability-classes). Advisories for misconfigurations, information leaks without a clear code-level root cause, or denial-of-service via resource exhaustion are excluded. |
 
 ### Soft Preferences for Balance
 
 | Criterion | Notes |
 | --- | --- |
-| **Language diversity** | Prefer advisories that increase coverage of underrepresented languages. |
+| **Language diversity** | Prefer advisories that increase coverage of underrepresented languages in the dataset. |
 | **Class diversity** | Prefer advisories that fill gaps in underrepresented vulnerability classes. |
-| **Clean patch** | Prefer advisories where the patch modifies 3 or fewer non-test source files. |
+| **Clean patch** | Prefer advisories where the patch modifies 3 or fewer non-test source files. Noisy patches are allowed but flagged in metadata. |
+
+## Pipeline Overview
+
+Curation is a three-stage process. See the [Pipeline](/docs/pipeline/overview) section for full details.
+
+1. **[Filter](/docs/pipeline/filter)** (script) — Paginate through all reviewed GHSAs and apply cheap metadata filters. No repos are cloned, no diffs are read. Produces a broad candidate list.
+2. **[Select](/docs/pipeline/select)** (script) — Map CWE IDs to the 13 vulnerability classes, apply a CVSS floor, and perform stratified random sampling so every class is represented.
+3. **[Dispatch](/docs/pipeline/dispatch)** (Devin agents) — For each selected GHSA, a Devin AI agent clones the repo, reads the diff, classifies the vulnerability, localizes it, writes the task and metadata JSON files, and opens a PR.
+
+## Output Artifacts
+
+Each curated advisory produces two files:
+
+### Task File
+
+**Path**: `benchmark/data/tasks/{task_id}.json`
+
+Contains everything needed for evaluation: the codebase pointer (repo, language, pre-patch commit), hints at each difficulty level, and the ground truth (vulnerability class, locations, CVSS score, explanation). See [Task Format](/docs/benchmark/task-format) for the full field reference.
+
+### Metadata File
+
+**Path**: `benchmark/internal/metadata/{GHSA_ID}.json`
+
+Contains internal curation data not exposed to agents: the post-patch commit SHA (reserved for future POC-based evaluation), whether the patch was noisy, free-text curation notes, the dataset version, and the snapshot date.
+
+## Quality Assurance
+
+Every curated task is validated against the [Quality Checklist](/docs/contributing/quality-checklist) before merging. Key checks include SHA correctness, hint scrubbing verification, schema compliance, and location validity.
 
 ## Dataset Versioning
 
